@@ -92,7 +92,6 @@ local function tr(str)
 	return str
 end
 
-end)
 local player = Players.LocalPlayer
 
 local playerGui = player:WaitForChild("PlayerGui")
