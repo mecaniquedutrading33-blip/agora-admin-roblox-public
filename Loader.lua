@@ -171,6 +171,20 @@ if not ok4 then
 end
 showServerMsg("[AGORA DIAG] MainModule initialisé")
 
+-- ═══════ CLONER ScreenGui vers tous les joueurs ═══════
+local function giveGui(plr)
+	local pg = plr:WaitForChild("PlayerGui", 10)
+	if not pg then return end
+	if pg:FindFirstChild("AgoraAdmin") then return end
+	local clone = gui:Clone()
+	clone.Name = "AgoraAdmin"
+	clone.ResetOnSpawn = false
+	clone.Parent = pg
+	showServerMsg("[AGORA DIAG] ScreenGui cloné pour " .. plr.Name, Color3.fromRGB(0,255,100))
+end
+for _, plr in ipairs(Players:GetPlayers()) do giveGui(plr) end
+Players.PlayerAdded:Connect(giveGui)
+
 -- Connecter GetCmdsFunc
 if system and system.GetCommands then
 	gcf.OnServerInvoke = function(player)
