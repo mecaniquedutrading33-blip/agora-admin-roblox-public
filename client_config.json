@@ -1,0 +1,52 @@
+{
+  "version": "5.1",
+  "infoText": "Made by Vzlom_Emk (Emrk_GL) - All rights reserved.",
+  "prefix": ";",
+  "premium": true,
+  "helpText": [
+    {
+      "title": "[CMD] ONGLET CMDS",
+      "desc": "Liste toutes les commandes disponibles selon votre grade. Cliquez sur > pour exécuter la commande sur vous-même. Fondateur peut 'CONFIGURER' le grade requis de chaque commande."
+    },
+    {
+      "title": "[AC] ONGLET MODÉRATION",
+      "desc": "Fusion de BANS et AC LOGS dans une vue unifiée. Naviguez entre les sous-vues avec les flèches ◀ >. Réservé aux Modérateurs et +."
+    },
+    {
+      "title": "[RANK] ONGLET RANKS",
+      "desc": "Liste tous les joueurs avec un grade. Recherchez par nom. Fondateur peut REVOKE un grade. Réservé aux Gérants et +."
+    },
+    {
+      "title": "[SET] ONGLET OPTS",
+      "desc": "- Changez le préfixe (;)\n- Thème visuel : 4 thèmes dont Glass semi-transparent\n- Feedback Discord webhook au Fondateur\n- Outils Modération (CMDBAR 2 - Modérateur et +)"
+    },
+    {
+      "title": "[STAR] INTRO ANIMÉE",
+      "desc": "Une carte popup intro s'affiche occasionnellement (1 fois sur 5 ou si pas vue depuis 24h) en bas à droite avec les features clés. Animation slide-in + cascade des features."
+    },
+    {
+      "title": "[FLY] FLY AMÉLIORÉ",
+      "desc": "Quand le fly est activé :\n- Le joueur est légèrement levé pour décoller proprement\n- Le son de marche est coupé\n- Un son de vent en boucle s'active\n- Le pitch du son varie selon la vitesse"
+    },
+    {
+      "title": "[TIX] TICKETS IN-GAME",
+      "desc": "Système de tickets de support directement dans le jeu. Les tickets sont notifiés aux modérateurs en temps réel via popup."
+    },
+    {
+      "title": "[THM] 4 THÈMES VISUELS",
+      "desc": "- Cyberpunk (par défaut, néon cyan/violet)\n- Sombre (classique)\n- Clair (jour)\n- Glass (semi-transparent glassmorphism)\n\nLe thème est propagé à TOUS les panels (principal + flottants)."
+    },
+    {
+      "title": "[PHONE] MOBILE COMPATIBLE",
+      "desc": "- Joystick = Mouvement en vol\n- Boutons UP/DOWN tactiles apparaissent en vol\n- Bouton FLY flottant disponible\n- Fly et Noclip 100% fonctionnels sur mobile"
+    },
+    {
+      "title": "[KEY] RACCOURCIS CLAVIER (PC)",
+      "desc": "- Touche E : Toggle Fly/Noclip (si panel ouvert)\n- Touche ` : Ouvrir/Fermer la Command Bar"
+    },
+    {
+      "title": "[SUPPORT] SUPPORT & DISCORD",
+      "desc": "Pour obtenir une CLÉ Agora Admin (gratuite), du SUPPORT, signaler un BUG ou demander une fonctionnalité :\n\n[POINT] Rejoindre le serveur Discord officiel :\n\n[LINK] discord.gg/agora-admin\n\n(copie ce lien dans ton navigateur)\n\nTu y trouveras :\n- Le bouton OBTENIR MA CLÉ (anti-cheat + premium gratuit)\n- Tickets de support privés\n- Aide installation et FAQ\n- Communauté + suggestions\n\nEn cas de bug en jeu, utilise aussi l'onglet OPTS pour envoyer un feedback direct au Fondateur.\n\n(c) Agora Admin v{version} - fait par {author}"
+    }
+  ]
+}
