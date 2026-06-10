@@ -2198,7 +2198,7 @@ refreshCmdUI = function()
 				t1.BackgroundTransparency = 1
 				t1.ZIndex = 1007
 				if not hasPermission then
-					t1.Text = "[L] " .. currentPrefix .. cmd
+					t1.Text = "📷 " .. currentPrefix .. cmd
 					t1.TextColor3 = PALETTE.dim
 				elseif cmd == "titleb" then
 					t1.Text = currentPrefix .. cmd
