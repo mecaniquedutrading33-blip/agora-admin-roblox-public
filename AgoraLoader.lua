@@ -1,7 +1,7 @@
 -- Agora Admin Loader v17.0 - Auto-clone ScreenGui + LocalScript depuis le dossier
 -- Place ce Script dans ServerScriptService/TON_DOSSIER/
 -- Place Settings.lua + ScreenGui (avec LocalScript DEDANS) dans le MEME dossier
--- Le Loader clone AUTOMATIQUEMENT le ScreenGui dans StarterGui a chaque joueur
+-- Le Loader clone AUTOMATIQUEMENT le ScreenGui dans StarterGui à chaque joueur
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -75,12 +75,14 @@ print("[AGORA] 6 remotes verifies dans SystemRemotes")
 -- Trouve le ScreenGui original dans le dossier (meme nom que Settings ou "AgoraAdmin")
 local originalGui = scriptFolder:FindFirstChild("AgoraAdmin")
 if not originalGui or not originalGui:IsA("ScreenGui") then
+    -- Cherche n'importe quel ScreenGui dans le dossier
     for _, child in ipairs(scriptFolder:GetChildren()) do
         if child:IsA("ScreenGui") then
             originalGui = child
             break
         end
     end
+    -- Cherche aussi dans les descendants
     if not originalGui then
         for _, child in ipairs(scriptFolder:GetDescendants()) do
             if child:IsA("ScreenGui") then
@@ -94,6 +96,7 @@ end
 if originalGui then
     print("[AGORA] ScreenGui trouve dans dossier : " .. originalGui.Name)
     
+    -- Vérifie que le LocalScript est bien DEDANS
     local hasLS = false
     for _, child in ipairs(originalGui:GetDescendants()) do
         if child:IsA("LocalScript") and (child.Name:lower():find("client") or child.Name:lower():find("admin") or child.Name == "AgoraAdminLS") then
@@ -111,6 +114,7 @@ if originalGui then
         warn("[AGORA] ATTENTION: pas de LocalScript dans le ScreenGui!")
     end
     
+    -- Supprime les anciens clones dans StarterGui pour eviter les doublons
     for _, child in ipairs(StarterGui:GetChildren()) do
         if child:IsA("ScreenGui") and child.Name == originalGui.Name then
             child:Destroy()
@@ -118,10 +122,23 @@ if originalGui then
         end
     end
     
+    -- Clone DANS StarterGui (pas PlayerGui directement — Roblox le repliquera automatiquement)
     local cloneGui = originalGui:Clone()
     cloneGui.ResetOnSpawn = false
     cloneGui.Parent = StarterGui
     print("[AGORA] ScreenGui clone dans StarterGui: " .. cloneGui.Name)
+    
+    -- FIX Play Solo : les joueurs deja presents ne recoivent pas le clone de StarterGui
+    -- On clone aussi directement dans leur PlayerGui
+    for _, plr in ipairs(Players:GetPlayers()) do
+        local pg = plr:FindFirstChild("PlayerGui")
+        if pg and not pg:FindFirstChild(cloneGui.Name) then
+            local playClone = originalGui:Clone()
+            playClone.ResetOnSpawn = false
+            playClone.Parent = pg
+            print("[AGORA] ScreenGui clone directement dans PlayerGui de " .. plr.Name)
+        end
+    end
 else
     warn("[AGORA] ScreenGui NON TROUVE dans " .. scriptFolder.Name .. ". Cherche 'AgoraAdmin' ou n'importe quel ScreenGui.")
 end
