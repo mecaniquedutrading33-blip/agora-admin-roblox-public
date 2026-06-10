@@ -907,15 +907,15 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 	else
 
-		rolesHierarchy = {["Fondateur"]=1,["G�rant"]=2,["Staffs"]=3,["Mod�rateur"]=4,["VIP"]=5,["Joueurs"]=6}
+		rolesHierarchy = {["Fondateur"]=1,["G rant"]=2,["Staffs"]=3,["Mod rateur"]=4,["VIP"]=5,["Joueurs"]=6}
 
-		rolesOrder     = {"Fondateur","G�rant","Staffs","Mod�rateur","VIP","Joueurs"}
+		rolesOrder     = {"Fondateur","G rant","Staffs","Mod rateur","VIP","Joueurs"}
 
 		roleColors     = {
 
-			["Fondateur"]=Color3.fromRGB(241,196,15), ["G�rant"]=Color3.fromRGB(230,126,34),
+			["Fondateur"]=Color3.fromRGB(241,196,15), ["G rant"]=Color3.fromRGB(230,126,34),
 
-			["Staffs"]=Color3.fromRGB(52,152,219),    ["Mod�rateur"]=Color3.fromRGB(46,204,113),
+			["Staffs"]=Color3.fromRGB(52,152,219),    ["Mod rateur"]=Color3.fromRGB(46,204,113),
 
 			["VIP"]=Color3.fromRGB(155,89,182),        ["Joueurs"]=Color3.fromRGB(149,165,166)
 
@@ -941,84 +941,84 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 		end
 
-	_G.Agora_getPlayerRole = function(plr)
+		_G.Agora_getPlayerRole = function(plr)
 
-		-- [FIX v8.1.3] Safety: rolesOrder peut être nil pendant l'init rapide
-		if not rolesOrder or #rolesOrder == 0 then return "Joueurs" end
+			-- [FIX v8.1.3] Safety: rolesOrder peut être nil pendant l'init rapide
+			if not rolesOrder or #rolesOrder == 0 then return "Joueurs" end
 
-		if _G.Agora_isFounder(plr) then return rolesOrder[1] end
+			if _G.Agora_isFounder(plr) then return rolesOrder[1] end
 
-		if tempRanks[plr.UserId] and rolesHierarchy[tempRanks[plr.UserId]] then
+			if tempRanks[plr.UserId] and rolesHierarchy[tempRanks[plr.UserId]] then
 
-			return tempRanks[plr.UserId]
-
-		end
-
-	local vipRoleName = SETTINGS.VIP_Role_Name or "VIP"
-
-	local activeJails    = {}
-
-	local activeLoops    = {}
-
-	local commandLogs    = {}
-
-	local feedbackLimits = {}
-
-	local tempRanks      = {}
-
-	-- [FEATURE UNDO] Pile des actions annulables (max 20 par admin)
-
-	local undoStacks     = {}
-
-	local function pushUndo(plr, cmdName, data)
-
-		if not plr then return end
-
-		local uid = plr.UserId
-
-		undoStacks[uid] = undoStacks[uid] or {}
-
-		table.insert(undoStacks[uid], 1, {
-
-			Cmd = cmdName,
-
-			Data = data,
-
-			Time = os.time(),
-
-			AdminName = plr.Name,
-
-		})
-
-		-- Max 20 entrées par admin
-
-		while #undoStacks[uid] > 20 do
-
-			table.remove(undoStacks[uid])
-
-		end
-
-	end
-
-	-- ------------------------------------------------
-
-	-- HELPERS
-
-	-- ------------------------------------------------
-
-		if SETTINGS.FounderNames then
-
-			for _, v in pairs(SETTINGS.FounderNames) do
-
-				if string.lower(v) == string.lower(name) then return true end
+				return tempRanks[plr.UserId]
 
 			end
 
+			local vipRoleName = SETTINGS.VIP_Role_Name or "VIP"
+
+			local activeJails    = {}
+
+			local activeLoops    = {}
+
+			local commandLogs    = {}
+
+			local feedbackLimits = {}
+
+			local tempRanks      = {}
+
+			-- [FEATURE UNDO] Pile des actions annulables (max 20 par admin)
+
+			local undoStacks     = {}
+
+			local function pushUndo(plr, cmdName, data)
+
+				if not plr then return end
+
+				local uid = plr.UserId
+
+				undoStacks[uid] = undoStacks[uid] or {}
+
+				table.insert(undoStacks[uid], 1, {
+
+					Cmd = cmdName,
+
+					Data = data,
+
+					Time = os.time(),
+
+					AdminName = plr.Name,
+
+				})
+
+				-- Max 20 entrées par admin
+
+				while #undoStacks[uid] > 20 do
+
+					table.remove(undoStacks[uid])
+
+				end
+
+			end
+
+			-- ------------------------------------------------
+
+			-- HELPERS
+
+			-- ------------------------------------------------
+
+			if SETTINGS.FounderNames then
+
+				for _, v in pairs(SETTINGS.FounderNames) do
+
+					if string.lower(v) == string.lower(name) then return true end
+
+				end
+
+			end
+
+			return false
+
 		end
-
-		return false
-
-	end
 
 		local attr = plr:GetAttribute("Role")
 
@@ -1293,27 +1293,18 @@ return function(SETTINGS, commandsObj, loaderScript)
 	-- Search StarterGui first (Loader puts ScreenGui there)
 	local guiToGive = StarterGui:FindFirstChild("AgoraAdmin")
 
-	-- Fallback: search the Loader scriptRef itself
+	-- Fallback: search the Loader's PARENT folder (everything local = siblings in same folder)
 	if not guiToGive then
-
-		guiToGive = scriptRef:FindFirstChild("AgoraAdmin")
-
+		guiToGive = scriptRef.Parent:FindFirstChild("AgoraAdmin")
 	end
 
 	if not guiToGive then
-
-		for _, child in pairs(scriptRef:GetDescendants()) do
-
+		for _, child in pairs(scriptRef.Parent:GetDescendants()) do
 			if child:IsA("ScreenGui") then
-
 				guiToGive = child
-
 				break
-
 			end
-
 		end
-
 	end
 
 	if not guiToGive then
@@ -1576,7 +1567,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 				if tLvl == 1 and myLvl > 1 then
 
-					ageStr = "Masqu�"
+					ageStr = "Masqu "
 
 				else
 
@@ -1686,7 +1677,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 		if targetPlr and _G.Agora_isFounder(targetPlr) then
 
-			notifEvent:FireClient(plr, "Impossible de r�voquer un Cr�ateur absolu.")
+			notifEvent:FireClient(plr, "Impossible de r voquer un Cr ateur absolu.")
 
 			return
 
@@ -1766,7 +1757,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 		end)
 
-		notifEvent:FireClient(plr, "Grade r�voqu� avec succ�s.")
+		notifEvent:FireClient(plr, "Grade r voqu  avec succ s.")
 
 	end)
 
@@ -1908,7 +1899,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 				acUnwhitelistFn(t, "noclip")
 
-			-- Jail : teleporte la cible dans une cage
+				-- Jail : teleporte la cible dans une cage
 
 			elseif cmd == "jail" then
 
@@ -1930,7 +1921,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 				end)
 
-			-- Unjail : libere la cible
+				-- Unjail : libere la cible
 
 			elseif cmd == "unjail" then
 
@@ -1946,7 +1937,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 				end)
 
-			-- Punt/kick physique : lance le joueur
+				-- Punt/kick physique : lance le joueur
 
 			elseif cmd == "punt" or cmd == "kick" then
 
@@ -1988,7 +1979,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 		if cmd == "shutdown" then
 
-			for _, v in pairs(Players:GetPlayers()) do v:Kick("\nSERVEUR FERM� PAR LE FONDATEUR") end
+			for _, v in pairs(Players:GetPlayers()) do v:Kick("\nSERVEUR FERM  PAR LE FONDATEUR") end
 
 			return
 
@@ -2040,7 +2031,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 			return
 
-		-- [TEAM] Créer une équipe (no-target)
+				-- [TEAM] Créer une équipe (no-target)
 
 		elseif cmd == "newteam" then
 
@@ -2090,7 +2081,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 			return
 
-		-- [TEAM] Supprimer une équipe (no-target)
+				-- [TEAM] Supprimer une équipe (no-target)
 
 		elseif cmd == "removeteam" then
 
@@ -2208,7 +2199,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 					if tLvl < myLvl then
 
-						notifEvent:FireClient(plr, "Immunit� : Grade sup�rieur.")
+						notifEvent:FireClient(plr, "Immunit  : Grade sup rieur.")
 
 						continue
 
@@ -2216,7 +2207,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 					if tLvl == myLvl and myLvl > 1 then
 
-						notifEvent:FireClient(plr, "Immunit� : m�me grade.")
+						notifEvent:FireClient(plr, "Immunit  : m me grade.")
 
 						continue
 
@@ -3882,13 +3873,13 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 					else
 
-						notifEvent:FireClient(plr, "ID invalide ou priv�.")
+						notifEvent:FireClient(plr, "ID invalide ou priv .")
 
 					end
 
 				else
 
-					notifEvent:FireClient(plr, "Sp�cifiez un ID.")
+					notifEvent:FireClient(plr, "Sp cifiez un ID.")
 
 				end
 
@@ -4042,7 +4033,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 				Lighting.Ambient = Color3.fromRGB(r,g,b)
 
-			-- [TEAM] Assigner un joueur à une équipe (par target)
+				-- [TEAM] Assigner un joueur à une équipe (par target)
 
 			elseif cmd == "team" then
 
@@ -4082,7 +4073,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 				end
 
-			-- [CONTROL] Le caller prend le contrôle physique du target (Staffs+)
+				-- [CONTROL] Le caller prend le contrôle physique du target (Staffs+)
 
 			elseif cmd == "control" then
 
@@ -4162,7 +4153,7 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 				end
 
-			-- [CONTROL] Relâcher le contrôle (self-only — t = plr)
+				-- [CONTROL] Relâcher le contrôle (self-only — t = plr)
 
 			elseif cmd == "uncontrol" then
 
@@ -4264,59 +4255,81 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 				-- HD ADMIN LIKE : effets rigolos
 
-				elseif cmd == "paint" then
+			elseif cmd == "paint" then
 
-					local colorMap = {
+				local colorMap = {
 
-						rouge=Color3.fromRGB(255,40,40), bleu=Color3.fromRGB(40,80,255),
+					rouge=Color3.fromRGB(255,40,40), bleu=Color3.fromRGB(40,80,255),
 
-						vert=Color3.fromRGB(40,200,80), jaune=Color3.fromRGB(255,220,40),
+					vert=Color3.fromRGB(40,200,80), jaune=Color3.fromRGB(255,220,40),
 
-						rose=Color3.fromRGB(255,100,180), violet=Color3.fromRGB(180,60,220),
+					rose=Color3.fromRGB(255,100,180), violet=Color3.fromRGB(180,60,220),
 
-						orange=Color3.fromRGB(255,140,40), noir=Color3.fromRGB(20,20,20),
+					orange=Color3.fromRGB(255,140,40), noir=Color3.fromRGB(20,20,20),
 
-						blanc=Color3.fromRGB(245,245,245), ["or"]=Color3.fromRGB(255,200,40),
+					blanc=Color3.fromRGB(245,245,245), ["or"]=Color3.fromRGB(255,200,40),
 
-						argent=Color3.fromRGB(200,200,210), cyan=Color3.fromRGB(40,220,220),
+					argent=Color3.fromRGB(200,200,210), cyan=Color3.fromRGB(40,220,220),
 
-					}
+				}
 
-					local clr
+				local clr
 
-					if arg3 then
+				if arg3 then
 
-						local low = tostring(arg3):lower()
+					local low = tostring(arg3):lower()
 
-						if colorMap[low] then
+					if colorMap[low] then
 
-							clr = colorMap[low]
+						clr = colorMap[low]
 
-						else
+					else
 
-							local r,g,b = tostring(arg3):match("(%d+)%s*,%s*(%d+)%s*,%s*(%d+)")
+						local r,g,b = tostring(arg3):match("(%d+)%s*,%s*(%d+)%s*,%s*(%d+)")
 
-							if r then clr = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b)) end
+						if r then clr = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b)) end
+
+					end
+
+				end
+
+				if not clr then clr = Color3.fromRGB(math.random(50,255), math.random(50,255), math.random(50,255)) end
+
+				if char then
+
+					for _, p in ipairs(char:GetDescendants()) do
+
+						if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
+
+							if not p:GetAttribute("_PaintOrig") then
+
+								p:SetAttribute("_PaintOrig", p.Color:ToHex())
+
+							end
+
+							p.Color = clr
 
 						end
 
 					end
 
-					if not clr then clr = Color3.fromRGB(math.random(50,255), math.random(50,255), math.random(50,255)) end
+				end
 
-					if char then
+			elseif cmd == "unpaint" then
 
-						for _, p in ipairs(char:GetDescendants()) do
+				if char then
 
-							if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
+					for _, p in ipairs(char:GetDescendants()) do
 
-								if not p:GetAttribute("_PaintOrig") then
+						if p:IsA("BasePart") then
 
-									p:SetAttribute("_PaintOrig", p.Color:ToHex())
+							local orig = p:GetAttribute("_PaintOrig")
 
-								end
+							if orig then
 
-								p.Color = clr
+								pcall(function() p.Color = Color3.fromHex(orig) end)
+
+								p:SetAttribute("_PaintOrig", nil)
 
 							end
 
@@ -4324,357 +4337,335 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 					end
 
-				elseif cmd == "unpaint" then
+				end
 
-					if char then
+			elseif cmd == "aura" then
 
-						for _, p in ipairs(char:GetDescendants()) do
+				if not char or not root then return end
 
-							if p:IsA("BasePart") then
+				local old = root:FindFirstChild("AgoraAura")
 
-								local orig = p:GetAttribute("_PaintOrig")
+				if old then old:Destroy() end
 
-								if orig then
+				local clrMap = {
 
-									pcall(function() p.Color = Color3.fromHex(orig) end)
+					rouge=Color3.fromRGB(255,30,30), bleu=Color3.fromRGB(30,80,255),
 
-									p:SetAttribute("_PaintOrig", nil)
+					vert=Color3.fromRGB(30,255,80), jaune=Color3.fromRGB(255,230,30),
 
-								end
+					rose=Color3.fromRGB(255,80,200), violet=Color3.fromRGB(180,30,255),
 
-							end
+					["or"]=Color3.fromRGB(255,200,30), blanc=Color3.fromRGB(255,255,255),
 
-						end
+				}
+
+				local clr = (arg3 and clrMap[tostring(arg3):lower()]) or Color3.fromRGB(255, 200, 30)
+
+				local att = Instance.new("Attachment", root)
+
+				att.Name = "AgoraAura"
+
+				local pe = Instance.new("ParticleEmitter", att)
+
+				pe.Texture = "rbxassetid://243660364"
+
+				pe.Color = ColorSequence.new(clr)
+
+				pe.Lifetime = NumberRange.new(0.6, 1.2)
+
+				pe.Rate = 60
+
+				pe.Speed = NumberRange.new(2, 4)
+
+				pe.SpreadAngle = Vector2.new(360, 360)
+
+				pe.Size = NumberSequence.new({
+
+					NumberSequenceKeypoint.new(0, 1.2),
+
+					NumberSequenceKeypoint.new(1, 0.2),
+
+				})
+
+				pe.Transparency = NumberSequence.new({
+
+					NumberSequenceKeypoint.new(0, 0.2),
+
+					NumberSequenceKeypoint.new(1, 1),
+
+				})
+
+				pe.LightEmission = 0.5
+
+			elseif cmd == "unaura" then
+
+				if root then
+
+					local a = root:FindFirstChild("AgoraAura")
+
+					if a then a:Destroy() end
+
+				end
+
+			elseif cmd == "disco" then
+
+				if not root then return end
+
+				local old = root:FindFirstChild("AgoraDisco")
+
+				if old then old:Destroy() end
+
+				local discoFolder = Instance.new("Folder", root)
+
+				discoFolder.Name = "AgoraDisco"
+
+				local ball = Instance.new("Part", discoFolder)
+
+				ball.Shape = Enum.PartType.Ball
+
+				ball.Size = Vector3.new(2, 2, 2)
+
+				ball.Material = Enum.Material.Neon
+
+				ball.CanCollide = false
+
+				ball.Massless = true
+
+				ball.Color = Color3.fromRGB(255, 255, 255)
+
+				ball.Reflectance = 0.5
+
+				ball.CFrame = root.CFrame * CFrame.new(0, 8, 0)
+
+				local weld = Instance.new("Weld", ball)
+
+				weld.Part0 = root weld.Part1 = ball
+
+				weld.C0 = CFrame.new(0, 8, 0)
+
+				local pl = Instance.new("PointLight", ball)
+
+				pl.Brightness = 5 pl.Range = 25
+
+				task.spawn(function()
+
+					while ball.Parent do
+
+						local c = Color3.fromHSV(math.random(), 1, 1)
+
+						ball.Color = c
+
+						pl.Color = c
+
+						task.wait(0.25)
 
 					end
 
-				elseif cmd == "aura" then
+				end)
 
-					if not char or not root then return end
+			elseif cmd == "undisco" then
 
-					local old = root:FindFirstChild("AgoraAura")
+				if root then
 
-					if old then old:Destroy() end
+					local d = root:FindFirstChild("AgoraDisco")
 
-					local clrMap = {
+					if d then d:Destroy() end
 
-						rouge=Color3.fromRGB(255,30,30), bleu=Color3.fromRGB(30,80,255),
+				end
 
-						vert=Color3.fromRGB(30,255,80), jaune=Color3.fromRGB(255,230,30),
+			elseif cmd == "hh" or cmd == "hipheight" then
 
-						rose=Color3.fromRGB(255,80,200), violet=Color3.fromRGB(180,30,255),
+				if hum then
 
-						["or"]=Color3.fromRGB(255,200,30), blanc=Color3.fromRGB(255,255,255),
+					local val = tonumber(arg3) or 5
 
-					}
+					hum.HipHeight = math.clamp(val, 0, 50)
 
-					local clr = (arg3 and clrMap[tostring(arg3):lower()]) or Color3.fromRGB(255, 200, 30)
+				end
 
-					local att = Instance.new("Attachment", root)
+			elseif cmd == "tools" then
 
-					att.Name = "AgoraAura"
+				local src = game:GetService("ServerStorage"):FindFirstChild("Tools")
 
-					local pe = Instance.new("ParticleEmitter", att)
+				if not src then src = Lighting:FindFirstChild("Tools") end
 
-					pe.Texture = "rbxassetid://243660364"
+				if not src then
 
-					pe.Color = ColorSequence.new(clr)
+					pcall(function() notifEvent:FireClient(plr, "Aucun dossier Tools dans ServerStorage.") end)
 
-					pe.Lifetime = NumberRange.new(0.6, 1.2)
+					return
 
-					pe.Rate = 60
+				end
 
-					pe.Speed = NumberRange.new(2, 4)
+				local backpack = t and t:FindFirstChildOfClass("Backpack")
 
-					pe.SpreadAngle = Vector2.new(360, 360)
+				if not backpack then return end
 
-					pe.Size = NumberSequence.new({
+				local count = 0
 
-						NumberSequenceKeypoint.new(0, 1.2),
+				for _, tool in ipairs(src:GetChildren()) do
 
-						NumberSequenceKeypoint.new(1, 0.2),
+					if tool:IsA("Tool") then
 
-					})
+						pcall(function() tool:Clone().Parent = backpack end)
 
-					pe.Transparency = NumberSequence.new({
-
-						NumberSequenceKeypoint.new(0, 0.2),
-
-						NumberSequenceKeypoint.new(1, 1),
-
-					})
-
-					pe.LightEmission = 0.5
-
-				elseif cmd == "unaura" then
-
-					if root then
-
-						local a = root:FindFirstChild("AgoraAura")
-
-						if a then a:Destroy() end
+						count = count + 1
 
 					end
 
-				elseif cmd == "disco" then
+				end
 
-					if not root then return end
+				pcall(function() notifEvent:FireClient(plr, count.." outils donnes a "..t.Name..".") end)
 
-					local old = root:FindFirstChild("AgoraDisco")
+			elseif cmd == "respawnall" then
 
-					if old then old:Destroy() end
+				for _, pp in ipairs(Players:GetPlayers()) do
 
-					local discoFolder = Instance.new("Folder", root)
+					pcall(function() pp:LoadCharacter() end)
 
-					discoFolder.Name = "AgoraDisco"
+				end
 
-					local ball = Instance.new("Part", discoFolder)
+			elseif cmd == "nuke" then
 
-					ball.Shape = Enum.PartType.Ball
+				if not root then return end
 
-					ball.Size = Vector3.new(2, 2, 2)
+				local pos = root.Position
 
-					ball.Material = Enum.Material.Neon
+				local flash = Instance.new("Part")
 
-					ball.CanCollide = false
+				flash.Shape = Enum.PartType.Ball
 
-					ball.Massless = true
+				flash.Size = Vector3.new(8, 8, 8)
 
-					ball.Color = Color3.fromRGB(255, 255, 255)
+				flash.Position = pos
 
-					ball.Reflectance = 0.5
+				flash.Anchored = true flash.CanCollide = false
 
-					ball.CFrame = root.CFrame * CFrame.new(0, 8, 0)
+				flash.Material = Enum.Material.Neon
 
-					local weld = Instance.new("Weld", ball)
+				flash.Color = Color3.fromRGB(255, 255, 200)
 
-					weld.Part0 = root weld.Part1 = ball
+				flash.Transparency = 0.1
 
-					weld.C0 = CFrame.new(0, 8, 0)
+				flash.Parent = workspace
 
-					local pl = Instance.new("PointLight", ball)
+				local TS = game:GetService("TweenService")
 
-					pl.Brightness = 5 pl.Range = 25
+				TS:Create(flash, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 
-					task.spawn(function()
+					Size = Vector3.new(160, 160, 160),
 
-						while ball.Parent do
+					Transparency = 1,
 
-							local c = Color3.fromHSV(math.random(), 1, 1)
+				}):Play()
 
-							ball.Color = c
+				task.delay(2, function() flash:Destroy() end)
 
-							pl.Color = c
+				local mush = Instance.new("Part")
 
-							task.wait(0.25)
+				mush.Size = Vector3.new(3,3,3) mush.Position = pos + Vector3.new(0, 30, 0)
 
-						end
+				mush.Anchored = true mush.CanCollide = false mush.Transparency = 1
 
-					end)
+				mush.Parent = workspace
 
-				elseif cmd == "undisco" then
+				local pe = Instance.new("ParticleEmitter", mush)
 
-					if root then
+				pe.Texture = "rbxassetid://242102147"
 
-						local d = root:FindFirstChild("AgoraDisco")
+				pe.Lifetime = NumberRange.new(2, 4)
 
-						if d then d:Destroy() end
+				pe.Rate = 200 pe.Speed = NumberRange.new(15, 30)
 
-					end
+				pe.SpreadAngle = Vector2.new(180, 180)
 
-				elseif cmd == "hh" or cmd == "hipheight" then
+				pe.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 5), NumberSequenceKeypoint.new(1, 25)})
 
-					if hum then
+				pe.Color = ColorSequence.new(Color3.fromRGB(255, 200, 80))
 
-						local val = tonumber(arg3) or 5
+				task.delay(4, function() mush:Destroy() end)
 
-						hum.HipHeight = math.clamp(val, 0, 50)
+				for _, pp in ipairs(Players:GetPlayers()) do
 
-					end
+					local pc = pp.Character
 
-				elseif cmd == "tools" then
+					local pr = pc and pc:FindFirstChild("HumanoidRootPart")
 
-					local src = game:GetService("ServerStorage"):FindFirstChild("Tools")
+					if pr and (pr.Position - pos).Magnitude <= 80 then
 
-					if not src then src = Lighting:FindFirstChild("Tools") end
-
-					if not src then
-
-						pcall(function() notifEvent:FireClient(plr, "Aucun dossier Tools dans ServerStorage.") end)
-
-						return
+						pcall(function() pc:BreakJoints() end)
 
 					end
 
-					local backpack = t and t:FindFirstChildOfClass("Backpack")
+				end
 
-					if not backpack then return end
+				local sound = Instance.new("Sound", workspace)
 
-					local count = 0
+				sound.SoundId = "rbxassetid://168513088"
 
-					for _, tool in ipairs(src:GetChildren()) do
+				sound.Volume = 4
 
-						if tool:IsA("Tool") then
+				sound:Play()
 
-							pcall(function() tool:Clone().Parent = backpack end)
+				game.Debris:AddItem(sound, 6)
 
-							count = count + 1
+			elseif cmd == "spook" then
 
-						end
+				if not t then return end
 
-					end
+				pcall(function() warnEvent:FireClient(t, "BOO !") end)
 
-					pcall(function() notifEvent:FireClient(plr, count.." outils donnes a "..t.Name..".") end)
+				local s = Instance.new("Sound", workspace)
 
-				elseif cmd == "respawnall" then
+				s.SoundId = "rbxassetid://138081509"
 
-					for _, pp in ipairs(Players:GetPlayers()) do
+				s.Volume = 3
 
-						pcall(function() pp:LoadCharacter() end)
+				if root then s.Parent = root end
 
-					end
+				pcall(function() s:Play() end)
 
-				elseif cmd == "nuke" then
+				game.Debris:AddItem(s, 4)
 
-					if not root then return end
+			elseif cmd == "emotes" then
 
-					local pos = root.Position
+				pcall(function() emotePanelEvent:FireClient(plr, "OPEN") end)
 
-					local flash = Instance.new("Part")
+			elseif cmd == "zombify" then
 
-					flash.Shape = Enum.PartType.Ball
+				if t and t.Parent and _G._AgoraZombify then
 
-					flash.Size = Vector3.new(8, 8, 8)
+					pcall(function() _G._AgoraZombify(t) end)
 
-					flash.Position = pos
+				end
 
-					flash.Anchored = true flash.CanCollide = false
+			elseif cmd == "unzombify" then
 
-					flash.Material = Enum.Material.Neon
+				if t and t.Parent and _G._AgoraUnzombify then
 
-					flash.Color = Color3.fromRGB(255, 255, 200)
+					pcall(function() _G._AgoraUnzombify(t) end)
 
-					flash.Transparency = 0.1
+				end
 
-					flash.Parent = workspace
+			elseif cmd == "backroom" then
 
-					local TS = game:GetService("TweenService")
+				if t and t.Parent and _G._AgoraBackroomEnter then
 
-					TS:Create(flash, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+					pcall(function() _G._AgoraBackroomEnter(plr, t) end)
 
-						Size = Vector3.new(160, 160, 160),
+					pcall(function() notifEvent:FireClient(plr, "🚪 "..t.Name.." envoye dans le Backroom.") end)
 
-						Transparency = 1,
+				end
 
-					}):Play()
+			elseif cmd == "unbackroom" then
 
-					task.delay(2, function() flash:Destroy() end)
+				if t and t.Parent and _G._AgoraBackroomExit then
 
-					local mush = Instance.new("Part")
+					pcall(function() _G._AgoraBackroomExit(t) end)
 
-					mush.Size = Vector3.new(3,3,3) mush.Position = pos + Vector3.new(0, 30, 0)
+					pcall(function() notifEvent:FireClient(plr, "🚪 "..t.Name.." sorti du Backroom.") end)
 
-					mush.Anchored = true mush.CanCollide = false mush.Transparency = 1
-
-					mush.Parent = workspace
-
-					local pe = Instance.new("ParticleEmitter", mush)
-
-					pe.Texture = "rbxassetid://242102147"
-
-					pe.Lifetime = NumberRange.new(2, 4)
-
-					pe.Rate = 200 pe.Speed = NumberRange.new(15, 30)
-
-					pe.SpreadAngle = Vector2.new(180, 180)
-
-					pe.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 5), NumberSequenceKeypoint.new(1, 25)})
-
-					pe.Color = ColorSequence.new(Color3.fromRGB(255, 200, 80))
-
-					task.delay(4, function() mush:Destroy() end)
-
-					for _, pp in ipairs(Players:GetPlayers()) do
-
-						local pc = pp.Character
-
-						local pr = pc and pc:FindFirstChild("HumanoidRootPart")
-
-						if pr and (pr.Position - pos).Magnitude <= 80 then
-
-							pcall(function() pc:BreakJoints() end)
-
-						end
-
-					end
-
-					local sound = Instance.new("Sound", workspace)
-
-					sound.SoundId = "rbxassetid://168513088"
-
-					sound.Volume = 4
-
-					sound:Play()
-
-					game.Debris:AddItem(sound, 6)
-
-				elseif cmd == "spook" then
-
-					if not t then return end
-
-					pcall(function() warnEvent:FireClient(t, "BOO !") end)
-
-					local s = Instance.new("Sound", workspace)
-
-					s.SoundId = "rbxassetid://138081509"
-
-					s.Volume = 3
-
-					if root then s.Parent = root end
-
-					pcall(function() s:Play() end)
-
-					game.Debris:AddItem(s, 4)
-
-				elseif cmd == "emotes" then
-
-					pcall(function() emotePanelEvent:FireClient(plr, "OPEN") end)
-
-				elseif cmd == "zombify" then
-
-					if t and t.Parent and _G._AgoraZombify then
-
-						pcall(function() _G._AgoraZombify(t) end)
-
-					end
-
-				elseif cmd == "unzombify" then
-
-					if t and t.Parent and _G._AgoraUnzombify then
-
-						pcall(function() _G._AgoraUnzombify(t) end)
-
-					end
-
-				elseif cmd == "backroom" then
-
-					if t and t.Parent and _G._AgoraBackroomEnter then
-
-						pcall(function() _G._AgoraBackroomEnter(plr, t) end)
-
-						pcall(function() notifEvent:FireClient(plr, "🚪 "..t.Name.." envoye dans le Backroom.") end)
-
-					end
-
-				elseif cmd == "unbackroom" then
-
-					if t and t.Parent and _G._AgoraBackroomExit then
-
-						pcall(function() _G._AgoraBackroomExit(t) end)
-
-						pcall(function() notifEvent:FireClient(plr, "🚪 "..t.Name.." sorti du Backroom.") end)
-
-					end
+				end
 
 			elseif EMOTE_IDS[cmd] then
 
@@ -5775,968 +5766,282 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 	if IS_PREMIUM then
 
-	local acWhitelist  = {} -- [userId] = {fly=true, noclip=true, speed=true, teleport=true}
+		local acWhitelist  = {} -- [userId] = {fly=true, noclip=true, speed=true, teleport=true}
 
-	local acPlayerData = {} -- [userId] = {lastPos, lastValidPos, strikes, airTime, ...}
-	local acLastClearPos = {} -- [uid] = derniere pos hors mur
+		local acPlayerData = {} -- [userId] = {lastPos, lastValidPos, strikes, airTime, ...}
+		local acLastClearPos = {} -- [uid] = derniere pos hors mur
 
-	local acAlertCooldown = {} -- [userId] = dernière alerte timestamp
+		local acAlertCooldown = {} -- [userId] = dernière alerte timestamp
 
-	acWhitelistFn = function(plr, cheatType, value)
+		acWhitelistFn = function(plr, cheatType, value)
 
-		local uid = plr.UserId
+			local uid = plr.UserId
 
-		if not acWhitelist[uid] then acWhitelist[uid] = {} end
+			if not acWhitelist[uid] then acWhitelist[uid] = {} end
 
-		acWhitelist[uid][cheatType] = value or true
-
-	end
-
-	-- Expose pour usage dans les modules natifs (backroom, etc.)
-
-	_G._AgoraACWhitelist = acWhitelistFn
-
-	acUnwhitelistFn = function(plr, cheatType)
-
-		local uid = plr.UserId
-
-		if acWhitelist[uid] then acWhitelist[uid][cheatType] = nil end
-
-	end
-
-	-- Expose pour usage dans les modules natifs (backroom, etc.)
-
-	_G._AgoraACUnwhitelist = acUnwhitelistFn
-
-	-- Ecoute les requetes de whitelist d'autres scripts serveur
-
-	acWhitelistBindable.Event:Connect(function(plr, cheatType, duration)
-
-		if not plr or not plr:IsA("Player") then return end
-
-		acWhitelistFn(plr, cheatType or "teleport", true)
-
-		if duration and duration > 0 then
-
-			task.delay(duration, function()
-
-				acUnwhitelistFn(plr, cheatType or "teleport")
-
-			end)
+			acWhitelist[uid][cheatType] = value or true
 
 		end
 
-	end)
+		-- Expose pour usage dans les modules natifs (backroom, etc.)
 
-	acUnwhitelistBindable.Event:Connect(function(plr, cheatType)
+		_G._AgoraACWhitelist = acWhitelistFn
 
-		if not plr or not plr:IsA("Player") then return end
+		acUnwhitelistFn = function(plr, cheatType)
 
-		if cheatType then
+			local uid = plr.UserId
 
-			acUnwhitelistFn(plr, cheatType)
-
-		else
-
-			acWhitelist[plr.UserId] = nil
+			if acWhitelist[uid] then acWhitelist[uid][cheatType] = nil end
 
 		end
 
-	end)
+		-- Expose pour usage dans les modules natifs (backroom, etc.)
 
-	-- ════════════════════════════════════════════════════════════════════════
+		_G._AgoraACUnwhitelist = acUnwhitelistFn
 
-	-- [AC HEARTBEAT] State client signale toutes les 2s (fly/noclip)
+		-- Ecoute les requetes de whitelist d'autres scripts serveur
 
-	-- Le client envoie {fly=bool, noclip=bool}. Le serveur maintient la whitelist
+		acWhitelistBindable.Event:Connect(function(plr, cheatType, duration)
 
-	-- tant que le client envoie true, et l'enleve apres CLIENT_STATE_TTL sans heartbeat.
+			if not plr or not plr:IsA("Player") then return end
 
-	-- Resout: ;fly + ;slap qui ecrase la whitelist permanente apres 8s, OU mort/respawn
+			acWhitelistFn(plr, cheatType or "teleport", true)
 
-	-- pendant qu'une commande timeout est active.
+			if duration and duration > 0 then
 
-	-- ════════════════════════════════════════════════════════════════════════
+				task.delay(duration, function()
 
-	local clientStates = {}  -- [userId] = { fly=bool, noclip=bool, lastUpdate=tick() }
+					acUnwhitelistFn(plr, cheatType or "teleport")
 
-	local CLIENT_STATE_TTL = 5  -- secondes sans heartbeat avant unwhitelist auto
-
-	clientStateReport.OnServerEvent:Connect(function(plr, state)
-
-		if not plr or not plr:IsA("Player") then return end
-
-		if type(state) ~= "table" then return end
-
-		local uid = plr.UserId
-
-		local prev = clientStates[uid]
-
-		local newFly = state.fly == true
-
-		local newNoc = state.noclip == true
-
-		local newPan = state.panel == true
-
-		-- [VOLUNTARY OFF DEBOUNCE] Si fly/noclip est OFF pendant >= 5s consecutives ET
-
-		-- l'attribute persistant est encore true ET le panel est OUVERT (admin actif),
-
-		-- alors c'est un voluntary off (touche E/Q/bouton). Sinon (transient post-respawn,
-
-		-- LS reset, mort), on garde la whitelist via attribute. Avant: detection immediate
-
-		-- causait faux unwhitelist au respawn quand isFlying=false transitoirement.
-
-		local now = tick()
-
-		if prev then
-
-			-- Tracking timestamp depuis quand fly/noclip est OFF
-
-			local prevOffSinceFly = prev.flyOffSince
-
-			local prevOffSinceNoc = prev.noclipOffSince
-
-			if prev.fly and not newFly then prevOffSinceFly = now end  -- transition ON→OFF
-
-			if newFly then prevOffSinceFly = nil end                    -- ON: reset
-
-			if prev.noclip and not newNoc then prevOffSinceNoc = now end
-
-			if newNoc then prevOffSinceNoc = nil end
-
-			-- Voluntary off confirme apres 5s OFF + panel ouvert + attribute encore true
-
-			if prevOffSinceFly and (now - prevOffSinceFly) >= 5 and newPan
-
-				and plr:GetAttribute("_FlyAllowed") then
-
-				pcall(function() plr:SetAttribute("_FlyAllowed", false) end)
-
-				if acUnwhitelistFn then acUnwhitelistFn(plr, "fly") end
-
-				prevOffSinceFly = nil
+				end)
 
 			end
 
-			if prevOffSinceNoc and (now - prevOffSinceNoc) >= 5 and newPan
+		end)
 
-				and plr:GetAttribute("_NoclipAllowed") then
+		acUnwhitelistBindable.Event:Connect(function(plr, cheatType)
 
-				pcall(function() plr:SetAttribute("_NoclipAllowed", false) end)
+			if not plr or not plr:IsA("Player") then return end
 
-				if acUnwhitelistFn then acUnwhitelistFn(plr, "noclip") end
+			if cheatType then
 
-				prevOffSinceNoc = nil
+				acUnwhitelistFn(plr, cheatType)
 
-			end
+			else
 
-			clientStates[uid] = {
-
-				fly = newFly, noclip = newNoc, panel = newPan,
-
-				flyOffSince = prevOffSinceFly, noclipOffSince = prevOffSinceNoc,
-
-				lastUpdate = now,
-
-			}
-
-		else
-
-			clientStates[uid] = {
-
-				fly = newFly, noclip = newNoc, panel = newPan,
-
-				flyOffSince = nil, noclipOffSince = nil,
-
-				lastUpdate = now,
-
-			}
-
-		end
-
-		-- Re-applique la whitelist en LIVE selon l'etat client.
-
-		-- On ne whitelist QUE si l'AC a deja recu une whitelist pour ce joueur (poke par
-
-		-- une commande admin). Sinon n'importe qui spammerait le remote pour bypasser.
-
-		local w = acWhitelist[uid]
-
-		if w then
-
-			if newFly and w.fly ~= nil then
-
-				acWhitelistFn(plr, "fly", true)
+				acWhitelist[plr.UserId] = nil
 
 			end
 
-			if newNoc and w.noclip ~= nil then
+		end)
 
-				acWhitelistFn(plr, "noclip", true)
+		-- ════════════════════════════════════════════════════════════════════════
+
+		-- [AC HEARTBEAT] State client signale toutes les 2s (fly/noclip)
+
+		-- Le client envoie {fly=bool, noclip=bool}. Le serveur maintient la whitelist
+
+		-- tant que le client envoie true, et l'enleve apres CLIENT_STATE_TTL sans heartbeat.
+
+		-- Resout: ;fly + ;slap qui ecrase la whitelist permanente apres 8s, OU mort/respawn
+
+		-- pendant qu'une commande timeout est active.
+
+		-- ════════════════════════════════════════════════════════════════════════
+
+		local clientStates = {}  -- [userId] = { fly=bool, noclip=bool, lastUpdate=tick() }
+
+		local CLIENT_STATE_TTL = 5  -- secondes sans heartbeat avant unwhitelist auto
+
+		clientStateReport.OnServerEvent:Connect(function(plr, state)
+
+			if not plr or not plr:IsA("Player") then return end
+
+			if type(state) ~= "table" then return end
+
+			local uid = plr.UserId
+
+			local prev = clientStates[uid]
+
+			local newFly = state.fly == true
+
+			local newNoc = state.noclip == true
+
+			local newPan = state.panel == true
+
+			-- [VOLUNTARY OFF DEBOUNCE] Si fly/noclip est OFF pendant >= 5s consecutives ET
+
+			-- l'attribute persistant est encore true ET le panel est OUVERT (admin actif),
+
+			-- alors c'est un voluntary off (touche E/Q/bouton). Sinon (transient post-respawn,
+
+			-- LS reset, mort), on garde la whitelist via attribute. Avant: detection immediate
+
+			-- causait faux unwhitelist au respawn quand isFlying=false transitoirement.
+
+			local now = tick()
+
+			if prev then
+
+				-- Tracking timestamp depuis quand fly/noclip est OFF
+
+				local prevOffSinceFly = prev.flyOffSince
+
+				local prevOffSinceNoc = prev.noclipOffSince
+
+				if prev.fly and not newFly then prevOffSinceFly = now end  -- transition ON→OFF
+
+				if newFly then prevOffSinceFly = nil end                    -- ON: reset
+
+				if prev.noclip and not newNoc then prevOffSinceNoc = now end
+
+				if newNoc then prevOffSinceNoc = nil end
+
+				-- Voluntary off confirme apres 5s OFF + panel ouvert + attribute encore true
+
+				if prevOffSinceFly and (now - prevOffSinceFly) >= 5 and newPan
+
+					and plr:GetAttribute("_FlyAllowed") then
+
+					pcall(function() plr:SetAttribute("_FlyAllowed", false) end)
+
+					if acUnwhitelistFn then acUnwhitelistFn(plr, "fly") end
+
+					prevOffSinceFly = nil
+
+				end
+
+				if prevOffSinceNoc and (now - prevOffSinceNoc) >= 5 and newPan
+
+					and plr:GetAttribute("_NoclipAllowed") then
+
+					pcall(function() plr:SetAttribute("_NoclipAllowed", false) end)
+
+					if acUnwhitelistFn then acUnwhitelistFn(plr, "noclip") end
+
+					prevOffSinceNoc = nil
+
+				end
+
+				clientStates[uid] = {
+
+					fly = newFly, noclip = newNoc, panel = newPan,
+
+					flyOffSince = prevOffSinceFly, noclipOffSince = prevOffSinceNoc,
+
+					lastUpdate = now,
+
+				}
+
+			else
+
+				clientStates[uid] = {
+
+					fly = newFly, noclip = newNoc, panel = newPan,
+
+					flyOffSince = nil, noclipOffSince = nil,
+
+					lastUpdate = now,
+
+				}
 
 			end
 
-			-- [PANEL OPEN] Si le panel est ouvert ET que l'attribute persistant existe,
+			-- Re-applique la whitelist en LIVE selon l'etat client.
 
-			-- on remet la whitelist meme si fly/noclip client est temporairement OFF
+			-- On ne whitelist QUE si l'AC a deja recu une whitelist pour ce joueur (poke par
 
-			-- (cas: respawn, le LS pas encore reinit son isFlying mais l'admin tient
+			-- une commande admin). Sinon n'importe qui spammerait le remote pour bypasser.
 
-			-- le panel ouvert = on lui donne 5s de tolerance heartbeat sans cleanup).
+			local w = acWhitelist[uid]
 
-			if newPan then
+			if w then
 
-				if plr:GetAttribute("_FlyAllowed") and w.fly ~= nil then
+				if newFly and w.fly ~= nil then
 
 					acWhitelistFn(plr, "fly", true)
 
 				end
 
-				if plr:GetAttribute("_NoclipAllowed") and w.noclip ~= nil then
+				if newNoc and w.noclip ~= nil then
 
 					acWhitelistFn(plr, "noclip", true)
 
 				end
 
-			end
+				-- [PANEL OPEN] Si le panel est ouvert ET que l'attribute persistant existe,
 
-		end
+				-- on remet la whitelist meme si fly/noclip client est temporairement OFF
 
-	end)
+				-- (cas: respawn, le LS pas encore reinit son isFlying mais l'admin tient
 
-	-- Boucle cleanup : retire la whitelist si pas de heartbeat depuis CLIENT_STATE_TTL.
+				-- le panel ouvert = on lui donne 5s de tolerance heartbeat sans cleanup).
 
-	-- Garantit que les commandes one-shot (slap/fling/freecandy) cessent d'etre whitelist
+				if newPan then
 
-	-- meme si le client n'envoie jamais false (deconnexion, freeze).
+					if plr:GetAttribute("_FlyAllowed") and w.fly ~= nil then
 
-	task.spawn(function()
-
-		while true do
-
-			task.wait(2)
-
-			local now = tick()
-
-			for uid, s in pairs(clientStates) do
-
-				local plr = Players:GetPlayerByUserId(uid)
-
-				if not plr then
-
-					clientStates[uid] = nil
-
-				elseif now - s.lastUpdate > CLIENT_STATE_TTL then
-
-					if acWhitelist[uid] then
-
-						-- [FIX FLY TOGGLE E] Ne PAS retirer si l'attribute persistant est true
-
-						-- (la cmd ;fly admin a ete appliquee, le joueur peut toggle E librement)
-
-						if not plr:GetAttribute("_FlyAllowed") then
-
-							acWhitelist[uid].fly = nil
-
-						end
-
-						if not plr:GetAttribute("_NoclipAllowed") then
-
-							acWhitelist[uid].noclip = nil
-
-						end
+						acWhitelistFn(plr, "fly", true)
 
 					end
 
-					clientStates[uid] = nil
+					if plr:GetAttribute("_NoclipAllowed") and w.noclip ~= nil then
+
+						acWhitelistFn(plr, "noclip", true)
+
+					end
 
 				end
 
 			end
 
-		end
+		end)
 
-	end)
+		-- Boucle cleanup : retire la whitelist si pas de heartbeat depuis CLIENT_STATE_TTL.
 
-	-- [FIX FLY TOGGLE E] Boucle de MAINTENANCE: tant que l'attribute _FlyAllowed/
+		-- Garantit que les commandes one-shot (slap/fling/freecandy) cessent d'etre whitelist
 
-	-- _NoclipAllowed est true (set par ;fly/;noclip), on s'assure que la whitelist
+		-- meme si le client n'envoie jamais false (deconnexion, freeze).
 
-	-- AC est bien posee, peu importe si le heartbeat client envoie ou pas, et peu
+		task.spawn(function()
 
-	-- importe si une cmd timeout (slap/fling/jail) avait tente de la retirer.
+			while true do
 
-	task.spawn(function()
+				task.wait(2)
 
-		while true do
+				local now = tick()
 
-			task.wait(1.5)
+				for uid, s in pairs(clientStates) do
 
-			for _, plr in ipairs(Players:GetPlayers()) do
+					local plr = Players:GetPlayerByUserId(uid)
 
-				if plr:GetAttribute("_FlyAllowed") then
+					if not plr then
 
-					if not acWhitelist[plr.UserId] then acWhitelist[plr.UserId] = {} end
+						clientStates[uid] = nil
 
-					acWhitelist[plr.UserId].fly = true
+					elseif now - s.lastUpdate > CLIENT_STATE_TTL then
 
-				end
+						if acWhitelist[uid] then
 
-				if plr:GetAttribute("_NoclipAllowed") then
+							-- [FIX FLY TOGGLE E] Ne PAS retirer si l'attribute persistant est true
 
-					if not acWhitelist[plr.UserId] then acWhitelist[plr.UserId] = {} end
+							-- (la cmd ;fly admin a ete appliquee, le joueur peut toggle E librement)
 
-					acWhitelist[plr.UserId].noclip = true
+							if not plr:GetAttribute("_FlyAllowed") then
 
-				end
-
-			end
-
-		end
-
-	end)
-
-	-- Helper: true si le client utilise activement le cheatType (heartbeat actif + state ON)
-
-	-- ou si l'attribute persistant _FlyAllowed/_NoclipAllowed est set (cmd admin appliquee).
-
-	-- Utilise par les task.delay des commandes timeout pour eviter unwhitelist premature.
-
-	local function clientStateActive(plr, cheatType)
-
-		if not plr then return false end
-
-		-- Attribute persistant prioritaire (set par ;fly/;noclip, retire par ;unfly/;clip)
-
-		if cheatType == "fly" and plr:GetAttribute("_FlyAllowed") then return true end
-
-		if cheatType == "noclip" and plr:GetAttribute("_NoclipAllowed") then return true end
-
-		local s = clientStates[plr.UserId]
-
-		if not s then return false end
-
-		if cheatType == "fly" then return s.fly == true end
-
-		if cheatType == "noclip" then return s.noclip == true end
-
-		return false
-
-	end
-
-	-- Expose pour usage dans le bloc execute() plus bas
-
-	_G._AgoraClientStateActive = clientStateActive
-
-	-- Cleanup quand le joueur quitte
-
-	Players.PlayerRemoving:Connect(function(plr)
-
-		clientStates[plr.UserId] = nil
-
-	end)
-
-	local function acIsWhitelisted(plr, cheatType)
-
-		local w = acWhitelist[plr.UserId]
-
-		return w and w[cheatType]
-
-	end
-
-	local function acIsStaff(plr)
-
-		return (rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99) <= 4
-
-	end
-
-	-- [COMBO TRACKING] Detection de combos : si plusieurs cheats actifs en 3s, notif combo
-
-	local acRecentCheats = {} -- [uid] = {[reason] = ts}
-
-	-- Mapping nom court → nom exact pour notifs claires
-
-	local AC_NICE_NAMES = {
-
-		["SPEED HACK"]    = "Speed Hack (vitesse anormale)",
-
-		["FLY HACK"]      = "Fly Hack (vol invisible)",
-
-		["NOCLIP"]        = "Noclip (traverse mur)",
-
-		["NOCLIP INJECT"] = "Noclip Inject (CanCollide=false)",
-
-		["TELEPORT HACK"] = "Teleport Hack (TP instantane)",
-
-		["JUMP HACK"]     = "Jump Hack (JumpPower modifie)",
-
-		["SPEED MODIF"]   = "Speed Modif (WalkSpeed modifie)",
-
-		["INFINITE JUMP"] = "Infinite Jump (saut en l'air)",
-
-		["HEALTH HACK"]   = "Health Hack (MaxHealth modifie)",
-
-		["SCALE HACK"]    = "Scale Hack (taille body modifiee)",
-
-		["VELOCITY HACK"] = "Velocity Hack (BodyVelocity injection)",
-
-		["FLY INJECT"]    = "Fly Inject (BodyMover injecte)",
-
-		["ANCHOR HACK"]   = "Position anormale (HRP fixe)",
-
-		["PHYSICS HACK"]  = "Physics Hack (Massless/Anchor/Density)",
-
-		["REACH HACK"]    = "Reach Hack (Tool Grip etendu)",
-
-		["MULTI HACK"]    = "Multi-hack persistant (bloque 8s)",
-
-		["HARD RESET"]    = "Hard Reset (multi-hack persistant)",
-
-		["FREECAM"]       = "Camera libre detectee",
-
-		["ESP"]           = "ESP (highlights/box sur autres joueurs)",
-
-		["AIMBOT"]        = "Aimbot (snap camera rapide vers joueurs)",
-
-		["VIEW_OTHER"]    = "Camera sur joueur distant",
-
-		["CAMERA_DETACHED"] = "Camera deconnectee",
-
-		["HONEYPOT TRIGGER"] = "Acces non autorise detecte",
-
-	}
-
-	acSendAlert = function(plr, reason, details)
-
-		local uid = plr.UserId
-
-		local now = os.clock()
-
-		-- [COMBO] Tracker les cheats recents (3s de fenetre)
-
-		acRecentCheats[uid] = acRecentCheats[uid] or {}
-
-		acRecentCheats[uid][reason] = now
-
-		-- Compter les cheats actifs (recents)
-
-		local active = {}
-
-		for r, ts in pairs(acRecentCheats[uid]) do
-
-			if (now - ts) < 3 then
-
-				table.insert(active, r)
-
-			else
-
-				acRecentCheats[uid][r] = nil
-
-			end
-
-		end
-
-		-- [AC HARDER] Cooldown réduit (8s vs 20s) pour voir les retentatives
-
-		if acAlertCooldown[uid] and (now - acAlertCooldown[uid]) < 8 then return end
-
-		acAlertCooldown[uid] = now
-
-		-- Construire le nom complet (nice name + combo si plusieurs)
-
-		local niceReason = AC_NICE_NAMES[reason] or reason
-
-		if #active >= 2 then
-
-			-- Combo : lister tous les noms nice
-
-			local niceList = {}
-
-			for _, r in ipairs(active) do
-
-				table.insert(niceList, AC_NICE_NAMES[r] or r)
-
-			end
-
-			niceReason = "COMBO [" .. #active .. "x] " .. table.concat(niceList, " + ")
-
-		end
-
-		local alertData = {
-
-			PlayerName = plr.Name, PlayerId = uid,
-
-			Reason = niceReason, Details = details,
-
-			Time = os.date("%H:%M:%S"),
-
-		}
-
-		for _, staff in pairs(Players:GetPlayers()) do
-
-			if acIsStaff(staff) then
-
-				acAlertEvent:FireClient(staff, alertData.Reason, alertData.Details, alertData.PlayerName)
-
-			end
-
-		end
-
-	end
-
-	-- Cleanup recentCheats au PlayerRemoving
-
-	Players.PlayerRemoving:Connect(function(p) acRecentCheats[p.UserId] = nil end)
-
-	-- CONFIG — valeurs DURCIES (Emerick: l'AC laissait passer si on persistait)
-
-	local AC_INTERVAL      = 0.06  -- scan plus rapide (60ms vs 80ms)
-
-	local AC_SPEED_MARGIN  = 2.0   -- 100% marge: tolere shift-to-run / sprint avec WalkSpeed boost
-
-	local AC_FLY_AIRTIME   = 2.5   -- max temps "anormal" en l'air avant strike (gros sauts/obby OK grace au branch Jumping/Freefall + marge etendue)
-
-	local AC_FLY_RAYCAST   = 30    -- raycast profond (inchangé)
-
-	local AC_TP_MAX        = 30    -- studs max par tick (sensible — petits TP detectes)
-
-	local AC_STRIKES_ALERT = 2     -- alerte au 2ème strike (inchangé)
-
-	local AC_STRIKES_BLOCK = 2     -- 2 strikes avant blocage (était 3)
-
-	local AC_DECAY         = 0.10  -- décroissance lente (les strikes restent, était 0.25)
-
-	local AC_NOCLIP_MIN    = 0.4   -- noclip plus sensible (était 0.5)
-
-	local acTimer = 0
-
-	-- Helper : verifie si une part DOIT etre traitee comme un mur solide pour le check noclip.
-
-	-- Skip si la part est:
-
-	--  - CanCollide = false (decoration, trigger, effet visuel) -> jamais un vrai mur
-
-	--  - CollisionGroup incompatible avec le HRP du joueur (ex: Decor vs Default = no collision)
-
-	--  - Attribute "AgoraIgnore" = true (way pour les jeux clients de marquer leurs parts speciales)
-
-	--  - Transparency >= 0.9 (fantome / invisible)
-
-	--  - Size.Magnitude < 2 (trop petit pour etre un mur)
-
-	local _PhysicsService = game:GetService("PhysicsService")
-
-	local _BUSH_KEYWORDS = {
-
-		"bush", "buisson", "leaf", "leave", "feuille", "grass", "herbe",
-
-		"fern", "vine", "plant", "tree", "arbre", "branch", "branche",
-
-		"flower", "fleur", "fence", "grille", "decor", "deco",
-
-	}
-
-	local function _looksLikeBushOrFoliage(part)
-
-		local nm = part.Name and string.lower(part.Name) or ""
-
-		for _, kw in ipairs(_BUSH_KEYWORDS) do
-
-			if string.find(nm, kw, 1, true) then return true end
-
-		end
-
-		if part.Parent then
-
-			local pnm = string.lower(part.Parent.Name or "")
-
-			for _, kw in ipairs(_BUSH_KEYWORDS) do
-
-				if string.find(pnm, kw, 1, true) then return true end
-
-			end
-
-		end
-
-		return false
-
-	end
-
-	local function _isSolidWall(part, hrp)
-
-		if not part or not part.Parent then return false end
-
-		if not part.CanCollide then return false end
-
-		if part.Transparency >= 0.95 then return false end
-
-		if part.Size.Magnitude < 2 then return false end
-
-		local _mat = nil
-
-		pcall(function() _mat = part.Material end)
-
-		if _mat == Enum.Material.Water then return false end
-
-		local hasIgnore = false
-
-		pcall(function() hasIgnore = part:GetAttribute("AgoraIgnore") == true end)
-
-		if hasIgnore then return false end
-
-		if _looksLikeBushOrFoliage(part) then return false end
-
-		if part:IsA("MeshPart") then
-
-			local hasMesh = false
-
-			pcall(function() hasMesh = part.MeshId ~= nil and part.MeshId ~= "" end)
-
-			if hasMesh then
-
-				local cf = nil
-
-				pcall(function() cf = part.CollisionFidelity end)
-
-				if cf == Enum.CollisionFidelity.Box or cf == Enum.CollisionFidelity.Hull then
-
-					return false
-
-				end
-
-				if part.Size.Magnitude < 12 then return false end
-
-			end
-
-		end
-
-		local hrpGroup = hrp.CollisionGroup
-
-		local partGroup = part.CollisionGroup
-
-		if hrpGroup and partGroup and hrpGroup ~= "" and partGroup ~= "" then
-
-			local _ok, _canCollide = pcall(function()
-
-				return _PhysicsService:CollisionGroupsAreCollidable(hrpGroup, partGroup)
-
-			end)
-
-			if _ok and not _canCollide then return false end
-
-		end
-
-		return true
-
-	end
-
-	-- ════════════════════════════════════════════════════════════════════════
-
-	-- CALCUL DE PROBABILITE (decision multi-signaux pour TOUS les cheats)
-
-	-- ════════════════════════════════════════════════════════════════════════
-
-	-- Score 0-100 (= probabilite de cheat en %). Decision standard:
-
-	--   >= 95 -> block IMMEDIAT (haute confiance)
-
-	--   75-95 -> +2 strikes (block en 2 ticks)
-
-	--   55-75 -> +1 strike  (block en ~5 ticks)
-
-	--   < 55  -> ignore (faux-positif probable)
-
-	--
-
-	-- Chaque signal a un poids (style classifier Bayesian). Plus on a de signaux
-
-	-- qui pointent vers cheat, plus le score monte.
-
-	--
-
-	-- cheatType: "noclip" / "fly" / "speed" / "teleport" / "velocity" / "jump"
-
-	local _STRIKE_KEY = {
-
-		noclip="noclipStrikes", fly="flyStrikes", speed="speedStrikes",
-
-		teleport="tpStrikes", velocity="velStrikes", jump="jumpStrikes",
-
-	}
-
-	local function _acProbCheat(plr, data, hrp, hum, cheatType, signalData)
-
-		signalData = signalData or {}
-
-		local score = 50  -- base neutre
-
-		-- ── 1. PERMISSION DU ROLE pour cette commande ──
-
-		local plrRole = _G.Agora_getPlayerRole(plr)
-
-		local plrLvl = rolesHierarchy[plrRole] or 99
-
-		local cmd = cheatType  -- nom de la commande Agora correspondante (noclip / fly / speed / tp)
-
-		if commandRegistry[cmd] then
-
-			local reqLvl = rolesHierarchy[commandRegistry[cmd].Role] or 99
-
-			if plrLvl <= reqLvl then score = score - 15 end
-
-		end
-
-		-- ── 2. WHITELIST ACTIVE (commande admin en cours) ──
-
-		if acIsWhitelisted(plr, cheatType) then score = score - 50 end -- fait par AC, normal
-
-		-- Whitelist d'autres types reduit aussi un peu le score (peut justifier mouvement)
-
-		if cheatType ~= "fly" and acIsWhitelisted(plr, "fly") then score = score - 10 end
-
-		if cheatType ~= "noclip" and acIsWhitelisted(plr, "noclip") then score = score - 5 end
-
-		-- ── 3. ETAT DU HUMANOID ──
-
-		local state = hum:GetState()
-
-		if state == Enum.HumanoidStateType.Climbing then score = score - 30 end
-
-		if state == Enum.HumanoidStateType.Seated then score = score - 40 end
-
-		if state == Enum.HumanoidStateType.Ragdoll or state == Enum.HumanoidStateType.Physics then
-
-			score = score - 35
-
-		end
-
-		if state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall then
-
-			-- Pour fly check, l'etat Freefall n'est PAS suspect (au contraire), pour les autres si.
-
-			if cheatType ~= "fly" then score = score - 10 end
-
-		end
-
-		-- ── 4. SPAWN RECENT (grace) ──
-
-		if data.lastSafePos == nil then score = score - 20 end
-
-		-- ── 5. STRIKES RECENTS (recidive) ──
-
-		local ownKey = _STRIKE_KEY[cheatType]
-
-		local ownStrikes = ownKey and (data[ownKey] or 0) or 0
-
-		if ownStrikes >= 2 then score = score + 15
-
-		elseif ownStrikes >= 1 then score = score + 5 end
-
-		-- ── 6. COMBO MULTI-CHEAT (autres types de cheat detectes recemment) ──
-
-		local otherStrikes = 0
-
-		for _ct, _key in pairs(_STRIKE_KEY) do
-
-			if _ct ~= cheatType then otherStrikes = otherStrikes + (data[_key] or 0) end
-
-		end
-
-		if otherStrikes >= 3 then score = score + 15
-
-		elseif otherStrikes >= 1 then score = score + 5 end
-
-		-- ── 7. SIGNAUX SPECIFIQUES PAR TYPE ──
-
-		if cheatType == "noclip" then
-
-			local depth = signalData.depth or 0
-
-			if depth > 3 then score = score + 40
-
-			elseif depth > 1.5 then score = score + 30
-
-			elseif depth > 0.5 then score = score + 15 end
-
-			if signalData.method == "raycast_traverse" then score = score + 25
-
-			elseif signalData.method == "overlap" then score = score + 5 end
-
-		elseif cheatType == "fly" then
-
-			local airTime = signalData.airTime or data.airTime or 0
-
-			if airTime > 2 then score = score + 35
-
-			elseif airTime > 1 then score = score + 20
-
-			elseif airTime > 0.5 then score = score + 10 end
-
-			local velY = signalData.velY or 0
-
-			if velY > 2 then score = score + 25       -- monte sans saut = quasi certain fly
-
-			elseif math.abs(velY) < 2 then score = score + 15 end -- flotte = suspect
-
-		elseif cheatType == "speed" then
-
-			local ratio = signalData.ratio or 1  -- dist / maxAllowed
-
-			if ratio > 5 then score = score + 40
-
-			elseif ratio > 2.5 then score = score + 25
-
-			elseif ratio > 1.5 then score = score + 15 end
-
-		elseif cheatType == "teleport" then
-
-			local dist = signalData.dist or 0
-
-			local tpMax = signalData.tpMax or 8
-
-			local ratio = dist / math.max(tpMax, 1)
-
-			if ratio > 10 then score = score + 40   -- TP > 10x le max attendu
-
-			elseif ratio > 3 then score = score + 30
-
-			elseif ratio > 1.5 then score = score + 15 end
-
-		elseif cheatType == "velocity" then
-
-			local ratio = signalData.ratio or 1  -- horizSpeed / maxVel
-
-			if ratio > 5 then score = score + 35
-
-			elseif ratio > 2 then score = score + 20
-
-			elseif ratio > 1.2 then score = score + 10 end
-
-		elseif cheatType == "jump" then
-
-			local velY = signalData.velY or 0
-
-			local airTime = signalData.airTime or 0
-
-			if velY > 50 and airTime > 1.5 then score = score + 35
-
-			elseif velY > 35 and airTime > 1.0 then score = score + 25
-
-			elseif velY > 25 and airTime > 0.5 then score = score + 10 end
-
-		end
-
-		return math.clamp(math.floor(score), 0, 100)
-
-	end
-
-	-- Helper decision: applique le score et retourne action ("block_now" / "strike2" / "strike1" / "ignore")
-
-	local function _acProbDecide(score)
-
-		if score >= 95 then return "block_now"
-
-		elseif score >= 75 then return "strike2"
-
-		elseif score >= 55 then return "strike1"
-
-		else return "ignore" end
-
-	end
-
-	local RunService = game:GetService("RunService")
-
-	RunService.Heartbeat:Connect(function(dt)
-
-		if not AC_ENABLED then return end
-
-		acTimer = acTimer + dt
-
-		if acTimer < AC_INTERVAL then return end
-
-		-- [AC GLOBAL TOGGLE] Skip tous les checks si Fondateur a desactive l'AC.
-
-		-- IMPORTANT: on continue a mettre a jour data.lastPos pour CHAQUE joueur sinon
-
-		-- au moment du re-activate, le delta currentPos - lastPos (vieux) est enorme et
-
-		-- declenche TELEPORT HACK → freeze sur tous les joueurs = casse les commandes.
-
-		if acGloballyDisabled then
-
-			for _, _plr in pairs(Players:GetPlayers()) do
-
-				local _char = _plr.Character
-
-				local _hrp = _char and _char:FindFirstChild("HumanoidRootPart")
-
-				local _hum = _char and _char:FindFirstChildOfClass("Humanoid")
-
-				-- [FIX BUG LATENT] avant: utilisait playerData (nil) -> bloc no-op + erreur potentielle
-
-				if _hrp and acPlayerData[_plr.UserId] then
-
-					local _d = acPlayerData[_plr.UserId]
-
-					_d.lastPos      = _hrp.Position
-
-					_d.lastValidPos = _hrp.Position
-
-					_d.lastSafePos  = _hrp.Position
-
-					-- Reset strikes pour eviter le carry-over au re-activate
-
-					_d.airTime       = 0
-
-					_d.flyStrikes    = 0
-
-					_d.noclipStrikes = 0
-
-					_d.speedStrikes  = 0
-
-					_d.tpStrikes     = 0
-
-					_d.jumpStrikes   = 0
-
-					_d.velStrikes    = 0
-
-					-- [FIX TOGGLE = STOP BLOCAGE] Liberer immediatement les freeze actifs
-
-					-- (sinon le joueur reste anchored / PlatformStand jusqu'a respawn).
-
-					if _d._severeUntil then
-
-						if _d._anchoredParts then
-
-							for _bp, _origAnchored in pairs(_d._anchoredParts) do
-
-								if _bp and _bp.Parent then _bp.Anchored = _origAnchored end
+								acWhitelist[uid].fly = nil
 
 							end
 
-							_d._anchoredParts = nil
+							if not plr:GetAttribute("_NoclipAllowed") then
+
+								acWhitelist[uid].noclip = nil
+
+							end
 
 						end
 
-						if _hum then
-
-							_hum.PlatformStand = false
-
-							if _d._origWS then _hum.WalkSpeed = _d._origWS _d._origWS = nil end
-
-							if _d._origJP then _hum.JumpPower = _d._origJP _d._origJP = nil end
-
-						end
-
-						pcall(function() _hrp:SetNetworkOwnershipAuto() end)
-
-						_d._severeUntil = nil
-
-						_d._severeFrozenPos = nil
-
-						_d._severeFrozenRot = nil
+						clientStates[uid] = nil
 
 					end
 
@@ -6744,289 +6049,2373 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 			end
 
-			acTimer = 0
+		end)
 
-			return
+		-- [FIX FLY TOGGLE E] Boucle de MAINTENANCE: tant que l'attribute _FlyAllowed/
+
+		-- _NoclipAllowed est true (set par ;fly/;noclip), on s'assure que la whitelist
+
+		-- AC est bien posee, peu importe si le heartbeat client envoie ou pas, et peu
+
+		-- importe si une cmd timeout (slap/fling/jail) avait tente de la retirer.
+
+		task.spawn(function()
+
+			while true do
+
+				task.wait(1.5)
+
+				for _, plr in ipairs(Players:GetPlayers()) do
+
+					if plr:GetAttribute("_FlyAllowed") then
+
+						if not acWhitelist[plr.UserId] then acWhitelist[plr.UserId] = {} end
+
+						acWhitelist[plr.UserId].fly = true
+
+					end
+
+					if plr:GetAttribute("_NoclipAllowed") then
+
+						if not acWhitelist[plr.UserId] then acWhitelist[plr.UserId] = {} end
+
+						acWhitelist[plr.UserId].noclip = true
+
+					end
+
+				end
+
+			end
+
+		end)
+
+		-- Helper: true si le client utilise activement le cheatType (heartbeat actif + state ON)
+
+		-- ou si l'attribute persistant _FlyAllowed/_NoclipAllowed est set (cmd admin appliquee).
+
+		-- Utilise par les task.delay des commandes timeout pour eviter unwhitelist premature.
+
+		local function clientStateActive(plr, cheatType)
+
+			if not plr then return false end
+
+			-- Attribute persistant prioritaire (set par ;fly/;noclip, retire par ;unfly/;clip)
+
+			if cheatType == "fly" and plr:GetAttribute("_FlyAllowed") then return true end
+
+			if cheatType == "noclip" and plr:GetAttribute("_NoclipAllowed") then return true end
+
+			local s = clientStates[plr.UserId]
+
+			if not s then return false end
+
+			if cheatType == "fly" then return s.fly == true end
+
+			if cheatType == "noclip" then return s.noclip == true end
+
+			return false
 
 		end
 
-		local elapsed = acTimer
+		-- Expose pour usage dans le bloc execute() plus bas
 
-		acTimer = 0
+		_G._AgoraClientStateActive = clientStateActive
 
-		for _, plr in pairs(Players:GetPlayers()) do
+		-- Cleanup quand le joueur quitte
 
-			local _safeMode = false
+		Players.PlayerRemoving:Connect(function(plr)
 
-			pcall(function()
+			clientStates[plr.UserId] = nil
 
-				if plr.Character then
+		end)
 
-					_safeMode = plr.Character:GetAttribute("AgoraSafeMode") == true
-
-						or plr:GetAttribute("AgoraSafeMode") == true
-
-				end
-
-			end)
-
-			if _safeMode then
-
-				local _ch = plr.Character
-
-				local _hrp2 = _ch and _ch:FindFirstChild("HumanoidRootPart")
-
-				if _hrp2 and acPlayerData[plr.UserId] then
-
-					acPlayerData[plr.UserId].lastPos = _hrp2.Position
-
-					acPlayerData[plr.UserId].lastValidPos = _hrp2.Position
-
-					acPlayerData[plr.UserId].lastSafePos = _hrp2.Position
-
-					acPlayerData[plr.UserId].airTime = 0
-
-					acPlayerData[plr.UserId].flyStrikes = 0
-
-					acPlayerData[plr.UserId].noclipStrikes = 0
-
-					acPlayerData[plr.UserId].speedStrikes = 0
-
-					acPlayerData[plr.UserId].tpStrikes = 0
-
-					acPlayerData[plr.UserId].jumpStrikes = 0
-
-				end
-
-				continue
-
-			end
-
-			local isStaffMember = false
-
-			if isStaffMember then
-
-				local char2 = plr.Character
-
-				if char2 then
-
-					local hrp2 = char2:FindFirstChild("HumanoidRootPart")
-
-					if hrp2 and acPlayerData[plr.UserId] then
-
-						acPlayerData[plr.UserId].lastPos = hrp2.Position
-
-						acPlayerData[plr.UserId].lastValidPos = hrp2.Position
-
-					end
-
-				end
-
-				-- Ne pas bloquer le staff, mais continuer le scan (whitelist gère les exemptions)
-
-				-- continue  ← retiré : le staff est maintenant scanné
-
-			end
-
-			-- Si le joueur est whitelisté pour une action admin (fly, modcam, etc.)
-
-			-- on skip TOUT le scan AC pour éviter les faux positifs
+		local function acIsWhitelisted(plr, cheatType)
 
 			local w = acWhitelist[plr.UserId]
 
-			if w and (w.fly or w.speed or w.noclip) then
+			return w and w[cheatType]
 
-				-- Garder lastPos à jour pour quand la whitelist expire
+		end
 
-				local char2 = plr.Character
+		local function acIsStaff(plr)
 
-				if char2 then
+			return (rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99) <= 4
 
-					local hrp2 = char2:FindFirstChild("HumanoidRootPart")
+		end
 
-					if hrp2 and acPlayerData[plr.UserId] then
+		-- [COMBO TRACKING] Detection de combos : si plusieurs cheats actifs en 3s, notif combo
 
-						acPlayerData[plr.UserId].lastPos = hrp2.Position
+		local acRecentCheats = {} -- [uid] = {[reason] = ts}
 
-						acPlayerData[plr.UserId].lastValidPos = hrp2.Position
+		-- Mapping nom court → nom exact pour notifs claires
+
+		local AC_NICE_NAMES = {
+
+			["SPEED HACK"]    = "Speed Hack (vitesse anormale)",
+
+			["FLY HACK"]      = "Fly Hack (vol invisible)",
+
+			["NOCLIP"]        = "Noclip (traverse mur)",
+
+			["NOCLIP INJECT"] = "Noclip Inject (CanCollide=false)",
+
+			["TELEPORT HACK"] = "Teleport Hack (TP instantane)",
+
+			["JUMP HACK"]     = "Jump Hack (JumpPower modifie)",
+
+			["SPEED MODIF"]   = "Speed Modif (WalkSpeed modifie)",
+
+			["INFINITE JUMP"] = "Infinite Jump (saut en l'air)",
+
+			["HEALTH HACK"]   = "Health Hack (MaxHealth modifie)",
+
+			["SCALE HACK"]    = "Scale Hack (taille body modifiee)",
+
+			["VELOCITY HACK"] = "Velocity Hack (BodyVelocity injection)",
+
+			["FLY INJECT"]    = "Fly Inject (BodyMover injecte)",
+
+			["ANCHOR HACK"]   = "Position anormale (HRP fixe)",
+
+			["PHYSICS HACK"]  = "Physics Hack (Massless/Anchor/Density)",
+
+			["REACH HACK"]    = "Reach Hack (Tool Grip etendu)",
+
+			["MULTI HACK"]    = "Multi-hack persistant (bloque 8s)",
+
+			["HARD RESET"]    = "Hard Reset (multi-hack persistant)",
+
+			["FREECAM"]       = "Camera libre detectee",
+
+			["ESP"]           = "ESP (highlights/box sur autres joueurs)",
+
+			["AIMBOT"]        = "Aimbot (snap camera rapide vers joueurs)",
+
+			["VIEW_OTHER"]    = "Camera sur joueur distant",
+
+			["CAMERA_DETACHED"] = "Camera deconnectee",
+
+			["HONEYPOT TRIGGER"] = "Acces non autorise detecte",
+
+		}
+
+		acSendAlert = function(plr, reason, details)
+
+			local uid = plr.UserId
+
+			local now = os.clock()
+
+			-- [COMBO] Tracker les cheats recents (3s de fenetre)
+
+			acRecentCheats[uid] = acRecentCheats[uid] or {}
+
+			acRecentCheats[uid][reason] = now
+
+			-- Compter les cheats actifs (recents)
+
+			local active = {}
+
+			for r, ts in pairs(acRecentCheats[uid]) do
+
+				if (now - ts) < 3 then
+
+					table.insert(active, r)
+
+				else
+
+					acRecentCheats[uid][r] = nil
+
+				end
+
+			end
+
+			-- [AC HARDER] Cooldown réduit (8s vs 20s) pour voir les retentatives
+
+			if acAlertCooldown[uid] and (now - acAlertCooldown[uid]) < 8 then return end
+
+			acAlertCooldown[uid] = now
+
+			-- Construire le nom complet (nice name + combo si plusieurs)
+
+			local niceReason = AC_NICE_NAMES[reason] or reason
+
+			if #active >= 2 then
+
+				-- Combo : lister tous les noms nice
+
+				local niceList = {}
+
+				for _, r in ipairs(active) do
+
+					table.insert(niceList, AC_NICE_NAMES[r] or r)
+
+				end
+
+				niceReason = "COMBO [" .. #active .. "x] " .. table.concat(niceList, " + ")
+
+			end
+
+			local alertData = {
+
+				PlayerName = plr.Name, PlayerId = uid,
+
+				Reason = niceReason, Details = details,
+
+				Time = os.date("%H:%M:%S"),
+
+			}
+
+			for _, staff in pairs(Players:GetPlayers()) do
+
+				if acIsStaff(staff) then
+
+					acAlertEvent:FireClient(staff, alertData.Reason, alertData.Details, alertData.PlayerName)
+
+				end
+
+			end
+
+		end
+
+		-- Cleanup recentCheats au PlayerRemoving
+
+		Players.PlayerRemoving:Connect(function(p) acRecentCheats[p.UserId] = nil end)
+
+		-- CONFIG — valeurs DURCIES (Emerick: l'AC laissait passer si on persistait)
+
+		local AC_INTERVAL      = 0.06  -- scan plus rapide (60ms vs 80ms)
+
+		local AC_SPEED_MARGIN  = 2.0   -- 100% marge: tolere shift-to-run / sprint avec WalkSpeed boost
+
+		local AC_FLY_AIRTIME   = 2.5   -- max temps "anormal" en l'air avant strike (gros sauts/obby OK grace au branch Jumping/Freefall + marge etendue)
+
+		local AC_FLY_RAYCAST   = 30    -- raycast profond (inchangé)
+
+		local AC_TP_MAX        = 30    -- studs max par tick (sensible — petits TP detectes)
+
+		local AC_STRIKES_ALERT = 2     -- alerte au 2ème strike (inchangé)
+
+		local AC_STRIKES_BLOCK = 2     -- 2 strikes avant blocage (était 3)
+
+		local AC_DECAY         = 0.10  -- décroissance lente (les strikes restent, était 0.25)
+
+		local AC_NOCLIP_MIN    = 0.4   -- noclip plus sensible (était 0.5)
+
+		local acTimer = 0
+
+		-- Helper : verifie si une part DOIT etre traitee comme un mur solide pour le check noclip.
+
+		-- Skip si la part est:
+
+		--  - CanCollide = false (decoration, trigger, effet visuel) -> jamais un vrai mur
+
+		--  - CollisionGroup incompatible avec le HRP du joueur (ex: Decor vs Default = no collision)
+
+		--  - Attribute "AgoraIgnore" = true (way pour les jeux clients de marquer leurs parts speciales)
+
+		--  - Transparency >= 0.9 (fantome / invisible)
+
+		--  - Size.Magnitude < 2 (trop petit pour etre un mur)
+
+		local _PhysicsService = game:GetService("PhysicsService")
+
+		local _BUSH_KEYWORDS = {
+
+			"bush", "buisson", "leaf", "leave", "feuille", "grass", "herbe",
+
+			"fern", "vine", "plant", "tree", "arbre", "branch", "branche",
+
+			"flower", "fleur", "fence", "grille", "decor", "deco",
+
+		}
+
+		local function _looksLikeBushOrFoliage(part)
+
+			local nm = part.Name and string.lower(part.Name) or ""
+
+			for _, kw in ipairs(_BUSH_KEYWORDS) do
+
+				if string.find(nm, kw, 1, true) then return true end
+
+			end
+
+			if part.Parent then
+
+				local pnm = string.lower(part.Parent.Name or "")
+
+				for _, kw in ipairs(_BUSH_KEYWORDS) do
+
+					if string.find(pnm, kw, 1, true) then return true end
+
+				end
+
+			end
+
+			return false
+
+		end
+
+		local function _isSolidWall(part, hrp)
+
+			if not part or not part.Parent then return false end
+
+			if not part.CanCollide then return false end
+
+			if part.Transparency >= 0.95 then return false end
+
+			if part.Size.Magnitude < 2 then return false end
+
+			local _mat = nil
+
+			pcall(function() _mat = part.Material end)
+
+			if _mat == Enum.Material.Water then return false end
+
+			local hasIgnore = false
+
+			pcall(function() hasIgnore = part:GetAttribute("AgoraIgnore") == true end)
+
+			if hasIgnore then return false end
+
+			if _looksLikeBushOrFoliage(part) then return false end
+
+			if part:IsA("MeshPart") then
+
+				local hasMesh = false
+
+				pcall(function() hasMesh = part.MeshId ~= nil and part.MeshId ~= "" end)
+
+				if hasMesh then
+
+					local cf = nil
+
+					pcall(function() cf = part.CollisionFidelity end)
+
+					if cf == Enum.CollisionFidelity.Box or cf == Enum.CollisionFidelity.Hull then
+
+						return false
+
+					end
+
+					if part.Size.Magnitude < 12 then return false end
+
+				end
+
+			end
+
+			local hrpGroup = hrp.CollisionGroup
+
+			local partGroup = part.CollisionGroup
+
+			if hrpGroup and partGroup and hrpGroup ~= "" and partGroup ~= "" then
+
+				local _ok, _canCollide = pcall(function()
+
+					return _PhysicsService:CollisionGroupsAreCollidable(hrpGroup, partGroup)
+
+				end)
+
+				if _ok and not _canCollide then return false end
+
+			end
+
+			return true
+
+		end
+
+		-- ════════════════════════════════════════════════════════════════════════
+
+		-- CALCUL DE PROBABILITE (decision multi-signaux pour TOUS les cheats)
+
+		-- ════════════════════════════════════════════════════════════════════════
+
+		-- Score 0-100 (= probabilite de cheat en %). Decision standard:
+
+		--   >= 95 -> block IMMEDIAT (haute confiance)
+
+		--   75-95 -> +2 strikes (block en 2 ticks)
+
+		--   55-75 -> +1 strike  (block en ~5 ticks)
+
+		--   < 55  -> ignore (faux-positif probable)
+
+		--
+
+		-- Chaque signal a un poids (style classifier Bayesian). Plus on a de signaux
+
+		-- qui pointent vers cheat, plus le score monte.
+
+		--
+
+		-- cheatType: "noclip" / "fly" / "speed" / "teleport" / "velocity" / "jump"
+
+		local _STRIKE_KEY = {
+
+			noclip="noclipStrikes", fly="flyStrikes", speed="speedStrikes",
+
+			teleport="tpStrikes", velocity="velStrikes", jump="jumpStrikes",
+
+		}
+
+		local function _acProbCheat(plr, data, hrp, hum, cheatType, signalData)
+
+			signalData = signalData or {}
+
+			local score = 50  -- base neutre
+
+			-- ── 1. PERMISSION DU ROLE pour cette commande ──
+
+			local plrRole = _G.Agora_getPlayerRole(plr)
+
+			local plrLvl = rolesHierarchy[plrRole] or 99
+
+			local cmd = cheatType  -- nom de la commande Agora correspondante (noclip / fly / speed / tp)
+
+			if commandRegistry[cmd] then
+
+				local reqLvl = rolesHierarchy[commandRegistry[cmd].Role] or 99
+
+				if plrLvl <= reqLvl then score = score - 15 end
+
+			end
+
+			-- ── 2. WHITELIST ACTIVE (commande admin en cours) ──
+
+			if acIsWhitelisted(plr, cheatType) then score = score - 50 end -- fait par AC, normal
+
+			-- Whitelist d'autres types reduit aussi un peu le score (peut justifier mouvement)
+
+			if cheatType ~= "fly" and acIsWhitelisted(plr, "fly") then score = score - 10 end
+
+			if cheatType ~= "noclip" and acIsWhitelisted(plr, "noclip") then score = score - 5 end
+
+			-- ── 3. ETAT DU HUMANOID ──
+
+			local state = hum:GetState()
+
+			if state == Enum.HumanoidStateType.Climbing then score = score - 30 end
+
+			if state == Enum.HumanoidStateType.Seated then score = score - 40 end
+
+			if state == Enum.HumanoidStateType.Ragdoll or state == Enum.HumanoidStateType.Physics then
+
+				score = score - 35
+
+			end
+
+			if state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall then
+
+				-- Pour fly check, l'etat Freefall n'est PAS suspect (au contraire), pour les autres si.
+
+				if cheatType ~= "fly" then score = score - 10 end
+
+			end
+
+			-- ── 4. SPAWN RECENT (grace) ──
+
+			if data.lastSafePos == nil then score = score - 20 end
+
+			-- ── 5. STRIKES RECENTS (recidive) ──
+
+			local ownKey = _STRIKE_KEY[cheatType]
+
+			local ownStrikes = ownKey and (data[ownKey] or 0) or 0
+
+			if ownStrikes >= 2 then score = score + 15
+
+			elseif ownStrikes >= 1 then score = score + 5 end
+
+			-- ── 6. COMBO MULTI-CHEAT (autres types de cheat detectes recemment) ──
+
+			local otherStrikes = 0
+
+			for _ct, _key in pairs(_STRIKE_KEY) do
+
+				if _ct ~= cheatType then otherStrikes = otherStrikes + (data[_key] or 0) end
+
+			end
+
+			if otherStrikes >= 3 then score = score + 15
+
+			elseif otherStrikes >= 1 then score = score + 5 end
+
+			-- ── 7. SIGNAUX SPECIFIQUES PAR TYPE ──
+
+			if cheatType == "noclip" then
+
+				local depth = signalData.depth or 0
+
+				if depth > 3 then score = score + 40
+
+				elseif depth > 1.5 then score = score + 30
+
+				elseif depth > 0.5 then score = score + 15 end
+
+				if signalData.method == "raycast_traverse" then score = score + 25
+
+				elseif signalData.method == "overlap" then score = score + 5 end
+
+			elseif cheatType == "fly" then
+
+				local airTime = signalData.airTime or data.airTime or 0
+
+				if airTime > 2 then score = score + 35
+
+				elseif airTime > 1 then score = score + 20
+
+				elseif airTime > 0.5 then score = score + 10 end
+
+				local velY = signalData.velY or 0
+
+				if velY > 2 then score = score + 25       -- monte sans saut = quasi certain fly
+
+				elseif math.abs(velY) < 2 then score = score + 15 end -- flotte = suspect
+
+			elseif cheatType == "speed" then
+
+				local ratio = signalData.ratio or 1  -- dist / maxAllowed
+
+				if ratio > 5 then score = score + 40
+
+				elseif ratio > 2.5 then score = score + 25
+
+				elseif ratio > 1.5 then score = score + 15 end
+
+			elseif cheatType == "teleport" then
+
+				local dist = signalData.dist or 0
+
+				local tpMax = signalData.tpMax or 8
+
+				local ratio = dist / math.max(tpMax, 1)
+
+				if ratio > 10 then score = score + 40   -- TP > 10x le max attendu
+
+				elseif ratio > 3 then score = score + 30
+
+				elseif ratio > 1.5 then score = score + 15 end
+
+			elseif cheatType == "velocity" then
+
+				local ratio = signalData.ratio or 1  -- horizSpeed / maxVel
+
+				if ratio > 5 then score = score + 35
+
+				elseif ratio > 2 then score = score + 20
+
+				elseif ratio > 1.2 then score = score + 10 end
+
+			elseif cheatType == "jump" then
+
+				local velY = signalData.velY or 0
+
+				local airTime = signalData.airTime or 0
+
+				if velY > 50 and airTime > 1.5 then score = score + 35
+
+				elseif velY > 35 and airTime > 1.0 then score = score + 25
+
+				elseif velY > 25 and airTime > 0.5 then score = score + 10 end
+
+			end
+
+			return math.clamp(math.floor(score), 0, 100)
+
+		end
+
+		-- Helper decision: applique le score et retourne action ("block_now" / "strike2" / "strike1" / "ignore")
+
+		local function _acProbDecide(score)
+
+			if score >= 95 then return "block_now"
+
+			elseif score >= 75 then return "strike2"
+
+			elseif score >= 55 then return "strike1"
+
+			else return "ignore" end
+
+		end
+
+		local RunService = game:GetService("RunService")
+
+		RunService.Heartbeat:Connect(function(dt)
+
+			if not AC_ENABLED then return end
+
+			acTimer = acTimer + dt
+
+			if acTimer < AC_INTERVAL then return end
+
+			-- [AC GLOBAL TOGGLE] Skip tous les checks si Fondateur a desactive l'AC.
+
+			-- IMPORTANT: on continue a mettre a jour data.lastPos pour CHAQUE joueur sinon
+
+			-- au moment du re-activate, le delta currentPos - lastPos (vieux) est enorme et
+
+			-- declenche TELEPORT HACK → freeze sur tous les joueurs = casse les commandes.
+
+			if acGloballyDisabled then
+
+				for _, _plr in pairs(Players:GetPlayers()) do
+
+					local _char = _plr.Character
+
+					local _hrp = _char and _char:FindFirstChild("HumanoidRootPart")
+
+					local _hum = _char and _char:FindFirstChildOfClass("Humanoid")
+
+					-- [FIX BUG LATENT] avant: utilisait playerData (nil) -> bloc no-op + erreur potentielle
+
+					if _hrp and acPlayerData[_plr.UserId] then
+
+						local _d = acPlayerData[_plr.UserId]
+
+						_d.lastPos      = _hrp.Position
+
+						_d.lastValidPos = _hrp.Position
+
+						_d.lastSafePos  = _hrp.Position
+
+						-- Reset strikes pour eviter le carry-over au re-activate
+
+						_d.airTime       = 0
+
+						_d.flyStrikes    = 0
+
+						_d.noclipStrikes = 0
+
+						_d.speedStrikes  = 0
+
+						_d.tpStrikes     = 0
+
+						_d.jumpStrikes   = 0
+
+						_d.velStrikes    = 0
+
+						-- [FIX TOGGLE = STOP BLOCAGE] Liberer immediatement les freeze actifs
+
+						-- (sinon le joueur reste anchored / PlatformStand jusqu'a respawn).
+
+						if _d._severeUntil then
+
+							if _d._anchoredParts then
+
+								for _bp, _origAnchored in pairs(_d._anchoredParts) do
+
+									if _bp and _bp.Parent then _bp.Anchored = _origAnchored end
+
+								end
+
+								_d._anchoredParts = nil
+
+							end
+
+							if _hum then
+
+								_hum.PlatformStand = false
+
+								if _d._origWS then _hum.WalkSpeed = _d._origWS _d._origWS = nil end
+
+								if _d._origJP then _hum.JumpPower = _d._origJP _d._origJP = nil end
+
+							end
+
+							pcall(function() _hrp:SetNetworkOwnershipAuto() end)
+
+							_d._severeUntil = nil
+
+							_d._severeFrozenPos = nil
+
+							_d._severeFrozenRot = nil
+
+						end
 
 					end
 
 				end
 
-				continue
+				acTimer = 0
+
+				return
 
 			end
 
-			local char = plr.Character
+			local elapsed = acTimer
 
-			if not char then continue end
+			acTimer = 0
 
-			local hrp = char:FindFirstChild("HumanoidRootPart")
+			for _, plr in pairs(Players:GetPlayers()) do
 
-			local hum = char:FindFirstChildOfClass("Humanoid")
+				local _safeMode = false
 
-			if not hrp or not hum or hum.Health <= 0 then continue end
+				pcall(function()
 
-			local uid = plr.UserId
+					if plr.Character then
 
-			if not acPlayerData[uid] then
+						_safeMode = plr.Character:GetAttribute("AgoraSafeMode") == true
 
-				acPlayerData[uid] = {
-
-					lastPos = hrp.Position, lastValidPos = hrp.Position, lastSafePos = hrp.Position,
-
-					speedStrikes = 0, flyStrikes = 0, noclipStrikes = 0, tpStrikes = 0,
-
-					airTime = 0, lastJumpPower = hum.JumpPower, lastWalkSpeed = hum.WalkSpeed,
-
-					lastMaxHealth = hum.MaxHealth,
-
-				}
-
-				continue
-
-			end
-
-			local data = acPlayerData[uid]
-
-			local currentPos = hrp.Position
-
-			local state = hum:GetState()
-
-			local isFalling = (state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.FallingDown)
-
-			local isRagdoll = (state == Enum.HumanoidStateType.Ragdoll or state == Enum.HumanoidStateType.Physics)
-
-			local isSwimming = (state == Enum.HumanoidStateType.Swimming)
-
-			local isSeated = (state == Enum.HumanoidStateType.Seated)
-
-			local isClimbing = (state == Enum.HumanoidStateType.Climbing)
-
-			local moveInput = (hum.MoveDirection or Vector3.zero).Magnitude
-
-			-- ══ SEVERE BLOCK : refresh / release ══
-
-			-- Blocage IN-PLACE (pas de TP loin, pas de LoadCharacter) pour preserver
-
-			-- les teleporteurs natifs du jeu et autres mecaniques legitimes des clients.
-
-			if data._severeUntil then
-
-				if os.clock() >= data._severeUntil then
-
-					-- Liberation complete: tout restaurer
-
-					-- Restaurer Anchored sur tous les body parts (qu'on avait tous Anchore)
-
-					if data._anchoredParts then
-
-						for _bp, _origAnchored in pairs(data._anchoredParts) do
-
-							if _bp and _bp.Parent then _bp.Anchored = _origAnchored end
-
-						end
-
-						data._anchoredParts = nil
+							or plr:GetAttribute("AgoraSafeMode") == true
 
 					end
 
-					hum.PlatformStand = false
+				end)
 
-					if data._origWS then hum.WalkSpeed = data._origWS data._origWS = nil end
+				if _safeMode then
 
-					if data._origJP then hum.JumpPower = data._origJP data._origJP = nil end
+					local _ch = plr.Character
 
-					pcall(function() hrp:SetNetworkOwnershipAuto() end)
+					local _hrp2 = _ch and _ch:FindFirstChild("HumanoidRootPart")
 
-					data._severeUntil = nil
+					if _hrp2 and acPlayerData[plr.UserId] then
 
-					local _frozenPos = data._severeFrozenPos
+						acPlayerData[plr.UserId].lastPos = _hrp2.Position
 
-					data._severeFrozenPos = nil
+						acPlayerData[plr.UserId].lastValidPos = _hrp2.Position
 
-					data._severeFrozenRot = nil
+						acPlayerData[plr.UserId].lastSafePos = _hrp2.Position
 
-					data.speedStrikes = 0
+						acPlayerData[plr.UserId].airTime = 0
 
-					data.flyStrikes = 0
+						acPlayerData[plr.UserId].flyStrikes = 0
 
-					data.noclipStrikes = 0
+						acPlayerData[plr.UserId].noclipStrikes = 0
 
-					data.tpStrikes = 0
+						acPlayerData[plr.UserId].speedStrikes = 0
 
-					data.velStrikes = 0
+						acPlayerData[plr.UserId].tpStrikes = 0
 
-					data.jumpStrikes = 0
+						acPlayerData[plr.UserId].jumpStrikes = 0
 
-					data.airTime = 0
-
-					data.lastPos = _frozenPos or currentPos
-
-					data.lastValidPos = _frozenPos or currentPos
-
-					data.lastSafePos = _frozenPos or currentPos
-
-				else
-
-					-- Encore en blocage. La boucle Heartbeat dediee force CFrame chaque frame.
-
-					-- Ici on update juste lastPos pour que la detection au prochain scan calcule
-
-					-- les deltas par rapport a la position figee, pas une fausse pos client.
-
-					data.lastPos = data._severeFrozenPos or currentPos
+					end
 
 					continue
 
 				end
 
-			end
+				local isStaffMember = false
 
-			-- Helper local : RETOUR a la position d'AVANT le cheat + freeze TOTAL.
+				if isStaffMember then
 
-			-- Anchor TOUS les body parts (pas que HRP) + PlatformStand + force CFrame chaque frame.
+					local char2 = plr.Character
 
-			-- Bloque le moindre mouvement, meme en spammant les touches.
+					if char2 then
 
-			local function _acSevereBlock(durationSec)
+						local hrp2 = char2:FindFirstChild("HumanoidRootPart")
 
-				-- Position d'avant le cheat (lastSafePos = derniere pos sans aucun strike).
+						if hrp2 and acPlayerData[plr.UserId] then
 
-				data._severeFrozenPos = data.lastSafePos or data.lastValidPos or hrp.Position
+							acPlayerData[plr.UserId].lastPos = hrp2.Position
 
-				data._severeFrozenRot = hrp.CFrame - hrp.CFrame.Position
-
-				-- IMPORTANT ordre: SetNetworkOwner(nil) AVANT Anchored=true sinon Roblox throw.
-
-				pcall(function() hrp:SetNetworkOwner(nil) end)
-
-				-- Anchor TOUS les body parts (Solara peut bouger les parts non-HRP)
-
-				data._anchoredParts = data._anchoredParts or {}
-
-				for _, _bp in ipairs(char:GetDescendants()) do
-
-					if _bp:IsA("BasePart") then
-
-						-- Memoriser l'etat original pour restore au release
-
-						if data._anchoredParts[_bp] == nil then
-
-							data._anchoredParts[_bp] = _bp.Anchored
+							acPlayerData[plr.UserId].lastValidPos = hrp2.Position
 
 						end
 
-						_bp.Anchored = true
+					end
 
-						_bp.AssemblyLinearVelocity = Vector3.zero
+					-- Ne pas bloquer le staff, mais continuer le scan (whitelist gère les exemptions)
 
-						_bp.AssemblyAngularVelocity = Vector3.zero
+					-- continue  ← retiré : le staff est maintenant scanné
+
+				end
+
+				-- Si le joueur est whitelisté pour une action admin (fly, modcam, etc.)
+
+				-- on skip TOUT le scan AC pour éviter les faux positifs
+
+				local w = acWhitelist[plr.UserId]
+
+				if w and (w.fly or w.speed or w.noclip) then
+
+					-- Garder lastPos à jour pour quand la whitelist expire
+
+					local char2 = plr.Character
+
+					if char2 then
+
+						local hrp2 = char2:FindFirstChild("HumanoidRootPart")
+
+						if hrp2 and acPlayerData[plr.UserId] then
+
+							acPlayerData[plr.UserId].lastPos = hrp2.Position
+
+							acPlayerData[plr.UserId].lastValidPos = hrp2.Position
+
+						end
 
 					end
 
-					-- Detruire les BodyMovers de Solara/Delta (fly via BodyVelocity etc.)
+					continue
+
+				end
+
+				local char = plr.Character
+
+				if not char then continue end
+
+				local hrp = char:FindFirstChild("HumanoidRootPart")
+
+				local hum = char:FindFirstChildOfClass("Humanoid")
+
+				if not hrp or not hum or hum.Health <= 0 then continue end
+
+				local uid = plr.UserId
+
+				if not acPlayerData[uid] then
+
+					acPlayerData[uid] = {
+
+						lastPos = hrp.Position, lastValidPos = hrp.Position, lastSafePos = hrp.Position,
+
+						speedStrikes = 0, flyStrikes = 0, noclipStrikes = 0, tpStrikes = 0,
+
+						airTime = 0, lastJumpPower = hum.JumpPower, lastWalkSpeed = hum.WalkSpeed,
+
+						lastMaxHealth = hum.MaxHealth,
+
+					}
+
+					continue
+
+				end
+
+				local data = acPlayerData[uid]
+
+				local currentPos = hrp.Position
+
+				local state = hum:GetState()
+
+				local isFalling = (state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.FallingDown)
+
+				local isRagdoll = (state == Enum.HumanoidStateType.Ragdoll or state == Enum.HumanoidStateType.Physics)
+
+				local isSwimming = (state == Enum.HumanoidStateType.Swimming)
+
+				local isSeated = (state == Enum.HumanoidStateType.Seated)
+
+				local isClimbing = (state == Enum.HumanoidStateType.Climbing)
+
+				local moveInput = (hum.MoveDirection or Vector3.zero).Magnitude
+
+				-- ══ SEVERE BLOCK : refresh / release ══
+
+				-- Blocage IN-PLACE (pas de TP loin, pas de LoadCharacter) pour preserver
+
+				-- les teleporteurs natifs du jeu et autres mecaniques legitimes des clients.
+
+				if data._severeUntil then
+
+					if os.clock() >= data._severeUntil then
+
+						-- Liberation complete: tout restaurer
+
+						-- Restaurer Anchored sur tous les body parts (qu'on avait tous Anchore)
+
+						if data._anchoredParts then
+
+							for _bp, _origAnchored in pairs(data._anchoredParts) do
+
+								if _bp and _bp.Parent then _bp.Anchored = _origAnchored end
+
+							end
+
+							data._anchoredParts = nil
+
+						end
+
+						hum.PlatformStand = false
+
+						if data._origWS then hum.WalkSpeed = data._origWS data._origWS = nil end
+
+						if data._origJP then hum.JumpPower = data._origJP data._origJP = nil end
+
+						pcall(function() hrp:SetNetworkOwnershipAuto() end)
+
+						data._severeUntil = nil
+
+						local _frozenPos = data._severeFrozenPos
+
+						data._severeFrozenPos = nil
+
+						data._severeFrozenRot = nil
+
+						data.speedStrikes = 0
+
+						data.flyStrikes = 0
+
+						data.noclipStrikes = 0
+
+						data.tpStrikes = 0
+
+						data.velStrikes = 0
+
+						data.jumpStrikes = 0
+
+						data.airTime = 0
+
+						data.lastPos = _frozenPos or currentPos
+
+						data.lastValidPos = _frozenPos or currentPos
+
+						data.lastSafePos = _frozenPos or currentPos
+
+					else
+
+						-- Encore en blocage. La boucle Heartbeat dediee force CFrame chaque frame.
+
+						-- Ici on update juste lastPos pour que la detection au prochain scan calcule
+
+						-- les deltas par rapport a la position figee, pas une fausse pos client.
+
+						data.lastPos = data._severeFrozenPos or currentPos
+
+						continue
+
+					end
+
+				end
+
+				-- Helper local : RETOUR a la position d'AVANT le cheat + freeze TOTAL.
+
+				-- Anchor TOUS les body parts (pas que HRP) + PlatformStand + force CFrame chaque frame.
+
+				-- Bloque le moindre mouvement, meme en spammant les touches.
+
+				local function _acSevereBlock(durationSec)
+
+					-- Position d'avant le cheat (lastSafePos = derniere pos sans aucun strike).
+
+					data._severeFrozenPos = data.lastSafePos or data.lastValidPos or hrp.Position
+
+					data._severeFrozenRot = hrp.CFrame - hrp.CFrame.Position
+
+					-- IMPORTANT ordre: SetNetworkOwner(nil) AVANT Anchored=true sinon Roblox throw.
+
+					pcall(function() hrp:SetNetworkOwner(nil) end)
+
+					-- Anchor TOUS les body parts (Solara peut bouger les parts non-HRP)
+
+					data._anchoredParts = data._anchoredParts or {}
+
+					for _, _bp in ipairs(char:GetDescendants()) do
+
+						if _bp:IsA("BasePart") then
+
+							-- Memoriser l'etat original pour restore au release
+
+							if data._anchoredParts[_bp] == nil then
+
+								data._anchoredParts[_bp] = _bp.Anchored
+
+							end
+
+							_bp.Anchored = true
+
+							_bp.AssemblyLinearVelocity = Vector3.zero
+
+							_bp.AssemblyAngularVelocity = Vector3.zero
+
+						end
+
+						-- Detruire les BodyMovers de Solara/Delta (fly via BodyVelocity etc.)
+
+						if _bp:IsA("BodyVelocity") or _bp:IsA("BodyForce") or _bp:IsA("BodyGyro")
+
+							or _bp:IsA("BodyAngularVelocity") or _bp:IsA("BodyPosition") or _bp:IsA("BodyThrust")
+
+							or _bp:IsA("AlignPosition") or _bp:IsA("AlignOrientation")
+
+							or _bp:IsA("LinearVelocity") or _bp:IsA("AngularVelocity")
+
+							or _bp:IsA("VectorForce") or _bp:IsA("Torque") then
+
+							_bp:Destroy()
+
+						end
+
+					end
+
+					-- Bloquer les inputs de mouvement (touches direction) du Humanoid
+
+					data._origWS = data._origWS or hum.WalkSpeed
+
+					data._origJP = data._origJP or hum.JumpPower
+
+					hum.WalkSpeed = 0
+
+					hum.JumpPower = 0
+
+					hum.PlatformStand = true
+
+					pcall(function() hum:Move(Vector3.zero, false) end)
+
+					pcall(function() hum:ChangeState(Enum.HumanoidStateType.Physics) end)
+
+					-- Force la position TOUT DE SUITE
+
+					hrp.CFrame = CFrame.new(data._severeFrozenPos) * data._severeFrozenRot
+
+					data._severeUntil = math.max(data._severeUntil or 0, os.clock() + (durationSec or 2.5))
+
+				end
+
+				-- ══ SPEED CHECK (inclut freefall pour détecter fly+speed) ══
+
+				-- IMPORTANT: les whitelists sont independantes. Skip total UNIQUEMENT si whitelist
+
+				-- speed explicite. Pour fly whitelist, on TOLERE plus mais on continue de surveiller
+
+				-- (un user avec ;fly + cheat speed serait sinon non-detecte).
+
+				if not acIsWhitelisted(plr, "speed") and not isRagdoll and not isSeated and not isClimbing and moveInput > 0.05 and (data.airTime or 0) < 0.2 then
+
+					local flatCur  = Vector3.new(currentPos.X, 0, currentPos.Z)
+
+					local flatLast = Vector3.new(data.lastPos.X, 0, data.lastPos.Z)
+
+					local dist = (flatCur - flatLast).Magnitude
+
+					local maxAllowed = hum.WalkSpeed * elapsed * AC_SPEED_MARGIN
+
+					-- En freefall normal, on tolère un peu plus (gravité + inertie)
+
+					if isFalling then maxAllowed = maxAllowed * 1.5 end
+
+					-- En fly admin legitime, on tolere 5x plus (vol rapide acceptable)
+
+					-- mais on continue de detecter une vitesse anormale au-dela
+
+					if acIsWhitelisted(plr, "fly") then maxAllowed = maxAllowed * 5 end
+
+					if not isSwimming and dist > maxAllowed then
+
+						-- [SCORE PROBABILISTE] On combine signaux. Ratio dist/maxAllowed:
+
+						--   < 1.5 (sprint normal) -> +0  -> ignore
+
+						--   1.5-2.5 (suspect)      -> +15 -> +1 strike
+
+						--   2.5-5 (clair)          -> +25 -> +2 strikes
+
+						--   > 5 (delirant)         -> +40 -> bloc
+
+						local _ratio = dist / math.max(maxAllowed, 0.01)
+
+						local _prob = _acProbCheat(plr, data, hrp, hum, "speed", { ratio = _ratio })
+
+						if _prob >= 95 then
+
+							data.speedStrikes = (data.speedStrikes or 0) + AC_STRIKES_BLOCK
+
+							if not isStaffMember then _acSevereBlock(2.0) end
+
+							acSendAlert(plr, "SPEED HACK",
+
+								string.format("%.0f studs/%.1fs ratio=%.1fx score=%d%%", dist, elapsed, _ratio, _prob))
+
+						elseif _prob >= 75 then
+
+							data.speedStrikes = (data.speedStrikes or 0) + 2
+
+							if not isStaffMember and data.speedStrikes >= AC_STRIKES_BLOCK then
+
+								_acSevereBlock(2.0)
+
+								acSendAlert(plr, "SPEED HACK",
+
+									string.format("%.0f studs/%.1fs ratio=%.1fx strikes=%d score=%d%%", dist, elapsed, _ratio, data.speedStrikes, _prob))
+
+							end
+
+						elseif _prob >= 55 then
+
+							data.speedStrikes = (data.speedStrikes or 0) + 1
+
+							if not isStaffMember and data.speedStrikes >= AC_STRIKES_BLOCK then
+
+								_acSevereBlock(2.0)
+
+							end
+
+						end
+
+						-- < 55: ignore (sprint normal, lag, ou skill)
+
+					else
+
+						data.speedStrikes = math.max(0, (data.speedStrikes or 0) - AC_DECAY)
+
+						if dist < maxAllowed then data.lastValidPos = currentPos end
+
+					end
+
+				else
+
+					data.speedStrikes = 0
+
+					data.lastValidPos = currentPos
+
+				end
+
+				-- ══ FLY CHECK ══
+
+				-- [ANTI-FAUX-POSITIFS] Skip si:
+
+				--   - seated/climbing/swimming
+
+				--   - spawn recent (<8s) -> evite faux-positif quand 2 joueurs spawn empiles
+
+				--     OU quand un script jeu client TP/lift/pose le perso au load.
+
+				if not data._spawnTime then data._spawnTime = os.clock() end
+
+				local _justSpawned = (os.clock() - data._spawnTime) < 8
+
+				if not acIsWhitelisted(plr, "fly") and not isSeated and not isClimbing and not isSwimming and not _justSpawned then
+
+					local rayParams = RaycastParams.new()
+
+					rayParams.FilterType = Enum.RaycastFilterType.Exclude
+
+					-- [FIX SAUT SUR TETE JOUEUR] On exclut SEULEMENT le character analyse, pas
+
+					-- les autres joueurs. Avant: tous les chars exclus -> raycast traversait la
+
+					-- tete d'un joueur sous toi et trouvait le sol loin -> faux fly hack.
+
+					-- Maintenant le raycast s'arrete sur le char d'un autre joueur = grounded.
+
+					local filter = {char}
+
+					rayParams.FilterDescendantsInstances = filter
+
+					local result = workspace:Raycast(hrp.Position, Vector3.new(0, -AC_FLY_RAYCAST, 0), rayParams)
+
+					-- Aussi check sur les côtés (pentes)
+
+					local resultL = workspace:Raycast(hrp.Position + Vector3.new(2,0,0), Vector3.new(0,-AC_FLY_RAYCAST,0), rayParams)
+
+					local resultR = workspace:Raycast(hrp.Position + Vector3.new(-2,0,0), Vector3.new(0,-AC_FLY_RAYCAST,0), rayParams)
+
+					-- [DETECTE FLY LENT] On considere "grounded" UNIQUEMENT si le sol est PROCHE
+
+					-- (<= 5 studs sous le HRP) ET que l'humanoid est en etat sol-compatible.
+
+					-- Avant: raycast hit dans 30 studs = grounded -> fly lent a 5+ studs passait.
+
+					local _isGrounded = false
+
+					local _closestGroundDist = math.huge
+
+					for _, _ray in ipairs({result, resultL, resultR}) do
+
+						if _ray then
+
+							local _d = (hrp.Position - _ray.Position).Magnitude
+
+							if _d < _closestGroundDist then _closestGroundDist = _d end
+
+						end
+
+					end
+
+					-- [FIX SAUT SUR OBJETS / TETE JOUEUR] Threshold elargi (8→12) pour les
+
+					-- sauts sur petits objets, obby, ou tete d'un autre joueur (~5 studs).
+
+					-- La transition Jumping->Landed est rapide; avant on ratait des frames
+
+					-- "between" sans state Landed → faux positif.
+
+					local _groundedThreshold = math.max(12, (hum.HipHeight or 2) + hrp.Size.Y/2 + 6)
+
+					if _closestGroundDist <= _groundedThreshold
+
+						or state == Enum.HumanoidStateType.Running
+
+						or state == Enum.HumanoidStateType.RunningNoPhysics
+
+						or state == Enum.HumanoidStateType.Landed
+
+						or state == Enum.HumanoidStateType.Seated
+
+						or state == Enum.HumanoidStateType.Climbing then
+
+						_isGrounded = true
+
+					end
+
+					if _isGrounded then
+
+						data.airTime = 0
+
+					else
+
+						-- [DETECTION FLY AMELIOREE] On regarde le SIGNE de velY, pas que l'absolu.
+
+						local velY = hrp.AssemblyLinearVelocity.Y
+
+						local absVY = math.abs(velY)
+
+						-- [FIX SAUT HAUT / OBBY] Si Roblox nous dit explicitement que c'est un
+
+						-- saut legitime (Jumping) ou une chute libre (Freefall), on DECREMENT
+
+						-- au lieu de pénaliser. Ces states sont positionnes par le moteur, pas
+
+						-- par le client → un fly hack ne peut pas les forger sans casser autre.
+
+						if state == Enum.HumanoidStateType.Jumping
+
+							or state == Enum.HumanoidStateType.Freefall
+
+							or state == Enum.HumanoidStateType.FallingDown then
+
+							-- Saut/chute legitime: decrement (couvre apex de saut + chutes longues)
+
+							-- [FIX SAUTS INFINIS] memorise le timestamp du dernier state legitime
+
+							-- pour donner une grace dans les transitions Jumping->RunningNoPhysics->Jumping
+
+							-- (sauts en chaine, jump pads, obby = pas de faux positif)
+
+							data._lastJumpStateAt = os.clock()
+
+							data.airTime = math.max(0, (data.airTime or 0) - elapsed * 0.5)
+
+						elseif velY > 1 and state ~= Enum.HumanoidStateType.Jumping then
+
+							-- Monte dans le vide SANS etre en saut legitime = fly quasi-certain
+
+							-- Accumule TRES vite (1.5x temps reel -> trigger en ~0.5s)
+
+							-- [FIX SAUTS INFINIS] grace 0.8s apres un Jumping/Freefall recent
+
+							-- (apex de saut, transitions de state moteur) = decrement au lieu d'accumule
+
+							if os.clock() - (data._lastJumpStateAt or 0) < 0.8 then
+
+								data.airTime = math.max(0, (data.airTime or 0) - elapsed * 0.5)
+
+							else
+
+								data.airTime = (data.airTime or 0) + elapsed * 1.5
+
+							end
+
+						elseif absVY < 6 then
+
+							-- Flottement (velY entre -6 et +1) sans state Jumping/Freefall = suspect
+
+							-- [FIX SAUTS INFINIS] meme grace ici (apex = velY ~ 0)
+
+							if os.clock() - (data._lastJumpStateAt or 0) < 0.8 then
+
+								data.airTime = math.max(0, (data.airTime or 0) - elapsed * 0.3)
+
+							else
+
+								data.airTime = (data.airTime or 0) + elapsed
+
+							end
+
+						elseif velY > -10 then
+
+							-- Chute lente (entre -10 et -6) sans state Freefall = on tombe pas vraiment
+
+							data.airTime = (data.airTime or 0) + elapsed * 0.5
+
+						else
+
+							-- Vraie chute libre (velY <= -10) = on tombe, RESET airTime
+
+							-- (la chute peut durer longtemps depuis une grande hauteur, pas de strike)
+
+							data.airTime = math.max(0, (data.airTime or 0) - elapsed)
+
+						end
+
+					end
+
+					if (data.airTime or 0) > AC_FLY_AIRTIME then
+
+						data.flyStrikes = (data.flyStrikes or 0) + 1
+
+						if data.flyStrikes >= AC_STRIKES_BLOCK then
+
+							-- [BLOCAGE IN-PLACE] Plus de TP au sol. Freeze sur place 2.5s.
+
+							if not isStaffMember then
+
+								_acSevereBlock(2.5)
+
+							end
+
+							data.airTime = 0
+
+						end
+
+						if data.flyStrikes >= AC_STRIKES_ALERT then
+
+							acSendAlert(plr, "FLY HACK",
+
+								string.format("En l'air %.1fs, velocity Y: %.1f", data.airTime or 0, hrp.AssemblyLinearVelocity.Y))
+
+							data.flyStrikes = AC_STRIKES_ALERT
+
+						end
+
+					else
+
+						data.flyStrikes = math.max(0, (data.flyStrikes or 0) - 0.15)
+
+					end
+
+				else
+
+					data.airTime = 0
+
+					data.flyStrikes = 0
+
+				end
+
+				-- ══ NOCLIP CHECK (raycast + overlap — double detection) ══
+
+				-- IMPORTANT: les whitelists sont independantes par type. Si l'user a ;fly,
+
+				-- on whitelist UNIQUEMENT fly et speed. Le noclip CONTINUE d'etre surveille
+
+				-- pour empecher le combo "commande fly admin + cheat noclip".
+
+				-- Skip uniquement si whitelist explicite NOCLIP (commande ;noclip admin).
+
+				-- Le raycast est skip en fly admin (faux positif quand le fly frole un mur),
+
+				-- mais l'overlap reste actif (detecte si le HRP est DANS un mur epais).
+
+				local _flyWhitelistedNC = acIsWhitelisted(plr, "fly")
+
+				if not acIsWhitelisted(plr, "noclip") and not isRagdoll and not isSeated and not isClimbing and not isSwimming then
+
+					local noclipDetected = false
+
+					local _strongDetect = false  -- methode 1 raycast confirmee = vraie traversee, bloc immediat
+
+					local _signalDepth = 0       -- profondeur d'enfoncement (studs), pour scoring
+
+					local _signalMethod = nil    -- "raycast_traverse" ou "overlap"
+
+					local hitName = "?"
+
+					-- Filtre commun (exclure tous les characters)
+
+					local ncFilter = {char}
+
+					for _, p2 in pairs(Players:GetPlayers()) do
+
+						if p2.Character then table.insert(ncFilter, p2.Character) end
+
+					end
+
+					-- METHODE 1 : Raycast (detecte le passage a travers un mur).
+
+					-- ACTIF MEME EN FLY ADMIN: si le perso traverse vraiment un mur, c'est noclip
+
+					-- meme avec ;fly. On ajoute un check "vraie traversee": le rayon doit hit un
+
+					-- mur ET la position courante doit etre de l'AUTRE cote du mur (pas juste froler).
+
+					if data.lastPos then
+
+						local dir = currentPos - data.lastPos
+
+						if dir.Magnitude > AC_NOCLIP_MIN then
+
+							local rayParams = RaycastParams.new()
+
+							rayParams.FilterType = Enum.RaycastFilterType.Exclude
+
+							rayParams.FilterDescendantsInstances = ncFilter
+
+							local offsets = {Vector3.new(0,0,0), Vector3.new(0,2,0), Vector3.new(0,-1.5,0)}
+
+							for _, off in ipairs(offsets) do
+
+								local result = workspace:Raycast(data.lastPos + off, dir, rayParams)
+
+								if result and _isSolidWall(result.Instance, hrp) then
+
+									-- [ANTI-FAUX-POSITIF ESCALIERS/BORDURES] Ignorer les parts dont
+
+									-- le sommet est <= hauteur des hanches +0.5 (le perso peut marcher dessus)
+
+									-- ou dont la hauteur (Size.Y) est < 4 (trop petit pour etre un mur).
+
+									local _partTop = result.Instance.Position.Y + (result.Instance.Size.Y / 2)
+
+									local _hrpBottom = hrp.Position.Y - hrp.Size.Y / 2
+
+									local _isFloorOrStep = _partTop <= (_hrpBottom + 3.0) or result.Instance.Size.Y < 4
+
+									if not _isFloorOrStep then
+
+										-- [ANTI-FAUX-POSITIF FROLER] Verifier que c'est une VRAIE
+
+										-- traversee : lastPos et currentPos doivent etre de cotes
+
+										-- OPPOSES du plan de la part touchee. Et currentPos doit
+
+										-- etre enfonce d'au moins 0.5 stud de l'autre cote.
+
+										local _n = result.Normal
+
+										local _hitPos = result.Position
+
+										local _sideAfter = (currentPos - _hitPos):Dot(_n)
+
+										local _sideBefore = (data.lastPos - _hitPos):Dot(_n)
+
+										-- sideBefore > 0 = on etait du cote de la normale (exterieur).
+
+										-- sideAfter < -0.5 = on est de l'autre cote, enfonce de plus de 0.5 stud.
+
+										if _sideBefore > 0 and _sideAfter < -0.5 then
+
+											noclipDetected = true
+
+											_strongDetect = true  -- vraie traversee confirmee = bloc immediat
+
+											_signalDepth = math.abs(_sideAfter)
+
+											_signalMethod = "raycast_traverse"
+
+											hitName = result.Instance.Name
+
+											break
+
+										end
+
+									end
+
+								end
+
+							end
+
+						end
+
+					end
+
+					-- METHODE 2 : Overlap (detecte si le joueur est DANS un mur)
+
+					if not noclipDetected then
+
+						local overlapParams = OverlapParams.new()
+
+						overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+
+						overlapParams.FilterDescendantsInstances = ncFilter
+
+						local _miniBox = Vector3.new(1.0, 1.0, 0.5)
+
+						local ok, parts = pcall(function()
+
+							return workspace:GetPartBoundsInBox(hrp.CFrame, _miniBox, overlapParams)
+
+						end)
+
+						if ok and parts then
+
+							for _, part in pairs(parts) do
+
+								if _isSolidWall(part, hrp) then
+
+									-- [ANTI-FAUX-POSITIF ESCALIERS/BORDURES] Ignorer parts a hauteur de
+
+									-- hanche ou plus bas (escaliers/bordures que le perso peut grimper).
+
+									local _partTop = part.Position.Y + (part.Size.Y / 2)
+
+									local _hrpBottom = hrp.Position.Y - hrp.Size.Y / 2
+
+									local _isFloorOrStep = _partTop <= (_hrpBottom + 3.0) or part.Size.Y < 4
+
+									if not _isFloorOrStep then
+
+										noclipDetected = true
+
+										_signalMethod = _signalMethod or "overlap"
+
+										_signalDepth = math.max(_signalDepth, 0.7)  -- mini-box overlap = enfonce ~0.7 stud min
+
+										hitName = part.Name
+
+										break
+
+									end
+
+								end
+
+							end
+
+						end
+
+					end
+
+					if noclipDetected then
+
+						-- [SCORE PROBABILISTE] Combine signaux (depth, methode, role, etat,
+
+						-- strikes recents, fly admin, combo) -> score 0-100. Decision:
+
+						--   >= 95 -> bloc IMMEDIAT (haute confiance)
+
+						--   75-95 -> +2 strikes (faut 2 ticks pour bloc)
+
+						--   55-75 -> +1 strike (faut 4-5 ticks)
+
+						--   < 55  -> ignore (faux positif probable)
+
+						-- [FIX BUG VIP-FLY-NOCLIP] Avant: appel oubliait l'arg "noclip" (5e param),
+
+						-- passait {depth,method} comme cheatType. Score restait a ~40 (< 55 = ignore)
+
+						-- => VIP avec ;fly pouvait traverser les murs librement. Maintenant l'appel
+
+						-- est correct et le scoring noclip-specifique s'applique vraiment.
+
+						local _prob = _acProbCheat(plr, data, hrp, hum, "noclip", {
+
+							depth = _signalDepth,
+
+							method = _signalMethod or "overlap",
+
+						})
+
+						-- [VIP FLY != NOCLIP] Si le joueur est en ;fly admin ET que c'est un raycast_traverse
+
+						-- (vraie traversee, pas overlap minor), on RAJOUTE +25 au score pour compenser
+
+						-- le -10 fly-whitelist du scoring de base. Le ;fly autorise voler pas traverser.
+
+						if _strongDetect and _flyWhitelistedNC then
+
+							_prob = math.min(100, _prob + 25)
+
+						end
+
+						if _prob >= 95 then
+
+							-- Quasi certain: bloc immediat
+
+							data.noclipStrikes = (data.noclipStrikes or 0) + AC_STRIKES_BLOCK
+
+							if not isStaffMember then _acSevereBlock(2.5) end
+
+						elseif _prob >= 75 then
+
+							data.noclipStrikes = (data.noclipStrikes or 0) + 2
+
+							if not isStaffMember and data.noclipStrikes >= AC_STRIKES_BLOCK then
+
+								_acSevereBlock(2.5)
+
+							end
+
+						elseif _prob >= 55 then
+
+							data.noclipStrikes = (data.noclipStrikes or 0) + 1
+
+							if not isStaffMember and data.noclipStrikes >= AC_STRIKES_BLOCK then
+
+								_acSevereBlock(2.5)
+
+							end
+
+						else
+
+							-- < 55 = faux-positif probable, on ignore (mais ne reset pas non plus)
+
+							-- Le decay s'occupera de baisser noclipStrikes naturellement.
+
+						end
+
+						if data.noclipStrikes >= AC_STRIKES_ALERT then
+
+							acSendAlert(plr, "NOCLIP",
+
+								string.format("Traverse '%s' — score=%d%% depth=%.1f via %s", hitName, _prob, _signalDepth, _signalMethod or "?"))
+
+							data.noclipStrikes = AC_STRIKES_ALERT
+
+						end
+
+					else
+
+						data.noclipStrikes = math.max(0, (data.noclipStrikes or 0) - AC_DECAY)
+
+					end
+
+				else
+
+					data.noclipStrikes = 0
+
+				end
+
+				-- ══ TELEPORT CHECK ══
+
+				local _hasBodyMover = false
+
+				pcall(function()
+
+					for _, c in ipairs(hrp:GetChildren()) do
+
+						if c:IsA("BodyVelocity") or c:IsA("BodyPosition") or c:IsA("BodyGyro")
+
+							or c:IsA("BodyAngularVelocity") or c:IsA("AlignPosition")
+
+							or c:IsA("AlignOrientation") or c:IsA("LinearVelocity")
+
+							or c:IsA("VectorForce") or c:IsA("AngularVelocity")
+
+							or c:IsA("Torque") or c:IsA("RodConstraint")
+
+							or c:IsA("RopeConstraint") or c:IsA("SpringConstraint") then
+
+							local agora = false
+
+							pcall(function() agora = c:GetAttribute("AgoraAdmin") == true end)
+
+							if not agora then _hasBodyMover = true break end
+
+						end
+
+					end
+
+				end)
+
+				if not acIsWhitelisted(plr, "teleport") and not isRagdoll and not isSeated and not isClimbing and not isSwimming and not _justSpawned and not _hasBodyMover then
+
+					-- [TELEPORT = teleportation HORIZONTALE seule] Le Y peut etre grand sans cheat
+
+					-- (chute libre de haut, saut, gravite). On ne check que la distance XZ qui
+
+					-- represente vraiment un mouvement teleporte (chute = mouvement vertical naturel).
+
+					local _dxz = Vector3.new(currentPos.X - data.lastPos.X, 0, currentPos.Z - data.lastPos.Z)
+
+					local dist = _dxz.Magnitude
+
+					local _baseSpeed = math.max(hum.WalkSpeed, 16)
+
+					local tpMax = math.max(_baseSpeed * elapsed * 8, 8)
+
+					if acIsWhitelisted(plr, "fly") then tpMax = tpMax * 4 end
+
+					-- En chute libre / freefall, tolerer encore plus (saut en avant + gravite)
+
+					if isFalling then tpMax = tpMax * 2 end
+
+					-- [PRESERVE PORTAILS NATIFS] TP > 50 studs = tres probable script serveur
+
+					-- (portail, teleporter custom, lift). Auto-whitelist 1.5s, pas de strike.
+
+					-- SAUF si l'utilisateur avait deja des strikes (sinon un exploit pourrait abuser).
+
+					if dist > 50 and (data.tpStrikes or 0) == 0 and (data.flyStrikes or 0) == 0
+
+						and (data.noclipStrikes or 0) == 0 and (data.velStrikes or 0) == 0 then
+
+						acWhitelistFn(plr, "teleport", true)
+
+						acWhitelistFn(plr, "speed", true)
+
+						task.delay(1.5, function()
+
+							acUnwhitelistFn(plr, "teleport")
+
+							acUnwhitelistFn(plr, "speed")
+
+						end)
+
+						data.lastPos = currentPos
+
+						data.lastValidPos = currentPos
+
+						data.lastSafePos = currentPos
+
+					elseif dist > tpMax then
+
+						-- [SCORE PROBABILISTE] On combine signaux pour decider.
+
+						local _prob = _acProbCheat(plr, data, hrp, hum, "teleport", {
+
+							dist = dist, tpMax = tpMax,
+
+						})
+
+						if _prob >= 95 then
+
+							-- Quasi certain TP hack: bloc immediat
+
+							data.tpStrikes = (data.tpStrikes or 0) + AC_STRIKES_BLOCK
+
+							if not isStaffMember then _acSevereBlock(3.0) end
+
+							acSendAlert(plr, "TELEPORT HACK",
+
+								string.format("%.0f studs (%.0fx) score=%d%%", dist, dist/tpMax, _prob))
+
+						elseif _prob >= 75 then
+
+							data.tpStrikes = (data.tpStrikes or 0) + 2
+
+							if not isStaffMember and data.tpStrikes >= AC_STRIKES_BLOCK then
+
+								_acSevereBlock(3.0)
+
+								acSendAlert(plr, "TELEPORT HACK",
+
+									string.format("%.0f studs strikes=%d score=%d%%", dist, data.tpStrikes, _prob))
+
+							end
+
+						elseif _prob >= 55 then
+
+							data.tpStrikes = (data.tpStrikes or 0) + 1
+
+							if not isStaffMember and data.tpStrikes >= AC_STRIKES_BLOCK then
+
+								_acSevereBlock(3.0)
+
+							end
+
+						end
+
+						-- < 55 = ignore (probablement portail / lift / lag)
+
+					else
+
+						data.tpStrikes = math.max(0, (data.tpStrikes or 0) - AC_DECAY)
+
+					end
+
+				else
+
+					data.tpStrikes = 0
+
+				end
+
+				-- ══ JUMP POWER + INFINITE JUMP CHECK ══
+
+				if not acIsWhitelisted(plr, "speed") and not acIsWhitelisted(plr, "fly") then
+
+					-- JumpPower modifié
+
+					if hum.JumpPower > 80 and data.lastJumpPower <= 80 then
+
+						hum.JumpPower = 50
+
+						acSendAlert(plr, "JUMP HACK", string.format("JumpPower: %.0f (reset a 50)", hum.JumpPower))
+
+					end
+
+					-- WalkSpeed anormalement élevé
+
+					if hum.WalkSpeed > 50 then
+
+						local allowed = data.lastWalkSpeed or 16
+
+						if hum.WalkSpeed > allowed * 2 and allowed <= 50 then
+
+							hum.WalkSpeed = allowed
+
+							acSendAlert(plr, "SPEED MODIF", string.format("WalkSpeed: %.0f (reset a %.0f)", hum.WalkSpeed, allowed))
+
+						end
+
+					end
+
+					-- [INFINITE JUMP V2] Detection PAR TRANSITION STATE: si Jumping survient
+
+					-- alors que l'etat precedent etait NON-grounded (Freefall/Jumping/FallingDown)
+
+					-- = saut sans avoir touche le sol = infinite jump quasi-certain.
+
+					-- Marche meme si le hack utilise des velY faibles (~20).
+
+					if state == Enum.HumanoidStateType.Jumping
+
+						and data.lastAcState ~= Enum.HumanoidStateType.Jumping
+
+						and data.lastAcState ~= Enum.HumanoidStateType.Landed
+
+						and data.lastAcState ~= Enum.HumanoidStateType.Running
+
+						and data.lastAcState ~= Enum.HumanoidStateType.RunningNoPhysics
+
+						and data.lastAcState ~= Enum.HumanoidStateType.Climbing
+
+						and data.lastAcState ~= Enum.HumanoidStateType.Seated
+
+						and data.lastAcState ~= nil
+
+						and not isStaffMember
+
+						and not acIsWhitelisted(plr, "fly") then
+
+						data.jumpStrikes = (data.jumpStrikes or 0) + 2  -- gros strike (transition tres suspect)
+
+						if data.jumpStrikes >= 3 then
+
+							hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 0, hrp.AssemblyLinearVelocity.Z)
+
+							acSendAlert(plr, "INFINITE JUMP", "Saut consecutif sans landing (state: "..tostring(data.lastAcState)..")")
+
+							data.jumpStrikes = 4
+
+						end
+
+					end
+
+					-- Reset jumpStrikes quand on touche vraiment le sol
+
+					if state == Enum.HumanoidStateType.Landed
+
+						or state == Enum.HumanoidStateType.Running
+
+						or state == Enum.HumanoidStateType.RunningNoPhysics then
+
+						data.jumpStrikes = math.max(0, (data.jumpStrikes or 0) - 0.5)
+
+					end
+
+					-- Track le state precedent pour la prochaine iteration
+
+					data.lastAcState = state
+
+					-- Saut infini (legacy): détecter jump pendant freefall
+
+					if isFalling then
+
+						local velY = hrp.AssemblyLinearVelocity.Y
+
+						-- Si le joueur monte PENDANT qu'il est en freefall = saut infini
+
+						-- [FIX FAUX POSITIF] Seuils plus stricts pour eviter de bloquer les sauts normaux
+
+						-- velY > 35 (au lieu 20) ET airTime > 1.0 (au lieu 0.5) ET 2 strikes (au lieu 1)
+
+						if velY > 35 and (data.airTime or 0) > 1.0 then
+
+							data.jumpStrikes = (data.jumpStrikes or 0) + 1
+
+							if data.jumpStrikes >= 2 then
+
+								-- [SIMPLE COMME FLY] juste velocity Y = 0 (chute naturelle par gravité)
+
+								hrp.AssemblyLinearVelocity = Vector3.new(
+
+									hrp.AssemblyLinearVelocity.X, 0,
+
+									hrp.AssemblyLinearVelocity.Z)
+
+								acSendAlert(plr, "INFINITE JUMP",
+
+									string.format("Jump en l'air (Y vel: %.0f, airTime: %.1fs)", velY, data.airTime or 0))
+
+								data.jumpStrikes = 3
+
+							end
+
+						else
+
+							data.jumpStrikes = math.max(0, (data.jumpStrikes or 0) - 0.1)
+
+						end
+
+					else
+
+						data.jumpStrikes = 0
+
+					end
+
+				else
+
+					data.jumpStrikes = 0
+
+				end
+
+				data.lastJumpPower = hum.JumpPower
+
+				data.lastWalkSpeed = hum.WalkSpeed
+
+				-- ══ HEALTH CHECK ══
+
+				if not acIsWhitelisted(plr, "god") and not plr:GetAttribute("GodMode") then
+
+					if hum.MaxHealth > 200 and data.lastMaxHealth <= 200 then
+
+						hum.MaxHealth = 100
+
+						hum.Health = 100
+
+						acSendAlert(plr, "HEALTH HACK", string.format("MaxHealth: %.0f (reset à 100)", data.lastMaxHealth))
+
+					end
+
+				end
+
+				data.lastMaxHealth = hum.MaxHealth
+
+				-- ══ SCALE CHECK ══
+
+				-- [FIX SIZE] Skip si la commande size a été appliquée par un admin
+
+				if not plr:GetAttribute("_AdminScaled") then
+
+					local headScale = hum:FindFirstChild("HeadScale")
+
+					local bodyHeight = hum:FindFirstChild("BodyHeightScale")
+
+					if headScale and headScale.Value > 3 and not acIsWhitelisted(plr, "speed") then
+
+						headScale.Value = 1
+
+						acSendAlert(plr, "SCALE HACK", "HeadScale trop grand")
+
+					end
+
+					if bodyHeight and bodyHeight.Value > 3 and not acIsWhitelisted(plr, "speed") then
+
+						bodyHeight.Value = 1
+
+						acSendAlert(plr, "SCALE HACK", "BodyHeight trop grand")
+
+					end
+
+				end
+
+				-- ══ VELOCITY CHECK (détecte les fly scripts qui utilisent BodyVelocity) ══
+
+				-- [ANTI-FAUX-POSITIFS] Skip si seated/climbing/ragdoll (vehicule pousse, echelle, ragdoll fling)
+
+				if not acIsWhitelisted(plr, "fly") and not acIsWhitelisted(plr, "speed") then
+
+					local vel = hrp.AssemblyLinearVelocity
+
+					local horizSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
+
+					-- [SEUIL DYNAMIQUE] Pas de plancher fixe. Detection sur anomalie pure.
+
+					local maxVel = hum.WalkSpeed * 2
+
+					-- Velocity horizontale impossible sans fly/fling
+
+					if horizSpeed > maxVel and not isRagdoll and not isSeated and not isClimbing then
+
+						data.velStrikes = (data.velStrikes or 0) + 1
+
+						if data.velStrikes >= AC_STRIKES_BLOCK then
+
+							-- [BLOCAGE IN-PLACE] Plus de TP au lastSafePos. Freeze sur place 2s.
+
+							if not isStaffMember then _acSevereBlock(2.0) end
+
+						end
+
+						if data.velStrikes >= AC_STRIKES_ALERT then
+
+							acSendAlert(plr, "VELOCITY HACK",
+
+								string.format("Vitesse: %.0f studs/s (max: %.0f)", horizSpeed, maxVel))
+
+							data.velStrikes = AC_STRIKES_ALERT
+
+						end
+
+					else
+
+						data.velStrikes = math.max(0, (data.velStrikes or 0) - AC_DECAY)
+
+					end
+
+				else
+
+					data.velStrikes = 0
+
+				end
+
+				-- ══ PHYSICS OBJECTS CHECK — toujours actif même whitelist ══
+
+				for _, obj in pairs(char:GetDescendants()) do
+
+					if (obj:IsA("BodyVelocity") or obj:IsA("BodyGyro") or obj:IsA("BodyPosition")
+
+						or obj:IsA("LinearVelocity") or obj:IsA("AlignPosition") or obj:IsA("AlignOrientation")
+
+						or obj:IsA("VectorForce") or obj:IsA("LineForce"))
+
+						and not obj:GetAttribute("AgoraAdmin") then
+
+						obj:Destroy()
+
+						acSendAlert(plr, "FLY INJECT",
+
+							string.format("'%s' supprimé de '%s'", obj.ClassName, obj.Parent and obj.Parent.Name or "?"))
+
+					end
+
+				end
+
+				-- ══ HUMANOID STATE CHECK (toujours actif) ══
+
+				if hrp.Anchored and not acIsWhitelisted(plr, "noclip") and not data._severeUntil then
+
+					hrp.Anchored = false
+
+					acSendAlert(plr, "ANCHOR HACK", "HumanoidRootPart était ancré")
+
+				end
+
+				-- ══ PHYSICS HACK CHECK (Delta / Synapse / Krnl / etc.) ══
+
+				-- Ces hacks bypass la velocity/noclip detection en modifiant les proprietes physiques
+
+				-- des body parts. On reset systematiquement ce qui est anormal.
+
+				-- IMPORTANT: skip pendant _severeUntil (le bloc peut Anchorer HRP exprès).
+
+				if not data._severeUntil and not acIsWhitelisted(plr, "noclip") and not acIsWhitelisted(plr, "fly") then
+
+					local _physHack = nil
+
+					for _, _bp in ipairs(char:GetDescendants()) do
+
+						if _bp:IsA("BasePart") and _bp ~= hrp then
+
+							-- 1. Anchor hack sur autres body parts (Delta technique)
+
+							if _bp.Anchored then
+
+								_bp.Anchored = false
+
+								_physHack = _physHack or ("Anchor sur " .. _bp.Name)
+
+							end
+
+							-- 2. Massless hack (active = body part flotte / pas de gravite)
+
+							if _bp.Massless then
+
+								_bp.Massless = false
+
+								_physHack = _physHack or ("Massless sur " .. _bp.Name)
+
+							end
+
+							-- 3. CustomPhysicalProperties anormale (Density < 0.05 = quasi flotte)
+
+							if _bp.CustomPhysicalProperties then
+
+								local cpp = _bp.CustomPhysicalProperties
+
+								if cpp.Density < 0.05 or cpp.Density > 200 then
+
+									_bp.CustomPhysicalProperties = nil  -- restore default
+
+									_physHack = _physHack or ("Density anormale sur " .. _bp.Name)
+
+								end
+
+							end
+
+						end
+
+					end
+
+					-- 4. Humanoid HipHeight anormale (defaut R15: 2, R6: 0). >5 = exploit fly-like
+
+					if hum.HipHeight and (hum.HipHeight > 5 or hum.HipHeight < -1) then
+
+						hum.HipHeight = (hum.RigType == Enum.HumanoidRigType.R15) and 2.0 or 0.0
+
+						_physHack = _physHack or ("HipHeight: " .. tostring(hum.HipHeight))
+
+					end
+
+					if _physHack then
+
+						acSendAlert(plr, "PHYSICS HACK", _physHack .. " — reset")
+
+					end
+
+				end
+
+				-- ══ TOOL REACH HACK CHECK (Delta technique pour augmenter la portee des tools) ══
+
+				-- Detecte les Tool dont le Grip a ete deplace anormalement loin (reach hack typique).
+
+				if not acIsWhitelisted(plr, "noclip") then
+
+					for _, _tool in ipairs(char:GetChildren()) do
+
+						if _tool:IsA("Tool") then
+
+							-- Grip modifie : si la position du grip est > 8 studs du HRP origin, suspect
+
+							local gpos = _tool.Grip.Position
+
+							if gpos.Magnitude > 8 then
+
+								_tool.Grip = CFrame.new()  -- reset au default (CFrame.new())
+
+								acSendAlert(plr, "REACH HACK", "Tool '" .. _tool.Name .. "' Grip anormal — reset")
+
+							end
+
+						end
+
+					end
+
+				end
+
+				-- ══ COLLISION CHECK (noclip exploit = body parts critiques en CanCollide false) ══
+
+				-- [FIX FAUX POSITIF] Ne check QUE les body parts critiques R6/R15 + skip pendant
+
+				-- les etats transitoires (Jumping/Freefall/FallingDown) ou Roblox set CanCollide=false
+
+				-- temporairement, et requiert PERSISTANCE de 1.5s avant de strike.
+
+				if not acIsWhitelisted(plr, "noclip") and not acIsWhitelisted(plr, "fly")
+
+					and not isFalling
+
+					and state ~= Enum.HumanoidStateType.Jumping
+
+					and state ~= Enum.HumanoidStateType.Landed
+
+					and state ~= Enum.HumanoidStateType.Ragdoll
+
+					and state ~= Enum.HumanoidStateType.Physics then
+
+					local CRITICAL_PARTS = {
+
+						-- R6
+
+						Torso=true, ["Left Arm"]=true, ["Right Arm"]=true,
+
+						["Left Leg"]=true, ["Right Leg"]=true,
+
+						-- R15
+
+						UpperTorso=true, LowerTorso=true,
+
+						LeftUpperArm=true, LeftLowerArm=true, LeftHand=true,
+
+						RightUpperArm=true, RightLowerArm=true, RightHand=true,
+
+						LeftUpperLeg=true, LeftLowerLeg=true, LeftFoot=true,
+
+						RightUpperLeg=true, RightLowerLeg=true, RightFoot=true,
+
+					}
+
+					local noCollideCount = 0
+
+					local criticalParts = {}
+
+					for _, part in pairs(char:GetChildren()) do
+
+						if part:IsA("BasePart") and CRITICAL_PARTS[part.Name] then
+
+							table.insert(criticalParts, part)
+
+							if not part.CanCollide then noCollideCount = noCollideCount + 1 end
+
+						end
+
+					end
+
+					-- Persistance : on detecte la condition "TOUTES CanCollide=false" mais on
+
+					-- ne strike qu'apres 1.5s consecutif (= 25 ticks a 60ms). Roblox lui-meme
+
+					-- toggle CanCollide pendant les transitions, ne pas faux-positiver.
+
+					if #criticalParts >= 4 and noCollideCount == #criticalParts then
+
+						data._collideAccum = (data._collideAccum or 0) + elapsed
+
+						if data._collideAccum >= 1.5 then
+
+							-- Vraie injection persistante. Force CanCollide=true et alerte.
+
+							for _, part in ipairs(criticalParts) do
+
+								part.CanCollide = true
+
+							end
+
+							acSendAlert(plr, "NOCLIP INJECT",
+
+								string.format("Body parts CanCollide=false depuis %.1fs (forcé true)", data._collideAccum))
+
+							data._collideAccum = 0
+
+						end
+
+					else
+
+						-- Au moins une part collide -> reset compteur (pas d'injection)
+
+						data._collideAccum = 0
+
+					end
+
+				else
+
+					-- Skip pendant les etats transitoires : reset le compteur sinon ca s'accumule
+
+					if data then data._collideAccum = 0 end
+
+				end
+
+				-- [AC HARDER] Mettre à jour lastSafePos UNIQUEMENT quand tout est safe ET au sol
+
+				local _allClean = (data.speedStrikes or 0) == 0
+
+					and (data.flyStrikes or 0) == 0
+
+					and (data.noclipStrikes or 0) == 0
+
+					and (data.tpStrikes or 0) == 0
+
+					and (data.velStrikes or 0) == 0
+
+					and (data.jumpStrikes or 0) == 0
+
+					and (data.airTime or 0) < 0.3
+
+				if _allClean then
+
+					data.lastSafePos = currentPos
+
+				end
+
+				-- [BLOCAGE PROLONGE] Persistance multi-hack -> freeze in-place 8s (plus de LoadCharacter).
+
+				-- LoadCharacter respawnait le joueur ce qui peut casser des mecaniques de jeu (inventaire,
+
+				-- quetes, position de checkpoint, etc.). Maintenant on bloque sur place 8s.
+
+				local totalStrikes = (data.speedStrikes or 0)
+
+					+ (data.flyStrikes or 0)
+
+					+ (data.noclipStrikes or 0)
+
+					+ (data.tpStrikes or 0)
+
+					+ (data.velStrikes or 0)
+
+					+ (data.jumpStrikes or 0)
+
+				if totalStrikes >= 6 and not isStaffMember then
+
+					if not data.lastHardReset or (os.clock() - data.lastHardReset) > 15 then
+
+						data.lastHardReset = os.clock()
+
+						acSendAlert(plr, "MULTI HACK", "Persistance multi-hack — bloque 8s sur place")
+
+						_acSevereBlock(8.0)
+
+						-- Note: les strikes seront reset automatiquement quand _severeUntil expire
+
+						-- (dans le bloc SEVERE BLOCK release au debut du tick suivant).
+
+					end
+
+				end
+
+				-- Sauvegarder position
+
+				data.lastPos = currentPos
+
+			end
+
+		end)
+
+		-- ════════════════════════════════════════════════════════════════════════
+
+		-- SEVERE BLOCK — REFRESH CHAQUE FRAME (Anchored + PlatformStand + force CFrame)
+
+		-- ════════════════════════════════════════════════════════════════════════
+
+		-- Tourne a CHAQUE Heartbeat (pas seulement toutes les 60ms du scan AC).
+
+		-- Garantit que le joueur en _severeUntil ne fait AUCUNE distance, meme en
+
+		-- spammant les touches direction:
+
+		--   1. SetNetworkOwner(nil) - le client ne controle plus la physique
+
+		--   2. Anchored=true - aucune physics step ne s'applique au HRP
+
+		--   3. PlatformStand=true - bloque tous les inputs de mouvement Humanoid
+
+		--   4. WalkSpeed=0 + JumpPower=0 - bloque toute commande Move
+
+		--   5. Move(zero, false) - annule toute commande Move en cours
+
+		--   6. CFrame force - meme si tout est bypass, on reset la position
+
+		--   7. velocity = 0 - reset au cas ou
+
+		RunService.Heartbeat:Connect(function()
+
+			-- [FIX TOGGLE = STOP BLOCAGE] Si AC desactive globalement, ne pas refresh les freeze.
+
+			-- Le scan AC libere deja les anchored/PlatformStand au moment du toggle off.
+
+			if acGloballyDisabled then return end
+
+			local now = os.clock()
+
+			for _, plr in pairs(Players:GetPlayers()) do
+
+				local data = acPlayerData[plr.UserId]
+
+				if not data or not data._severeUntil then continue end
+
+				if now >= data._severeUntil then continue end
+
+				local char = plr.Character
+
+				if not char then continue end
+
+				local hrp = char:FindFirstChild("HumanoidRootPart")
+
+				local hum = char:FindFirstChildOfClass("Humanoid")
+
+				if not hrp or not data._severeFrozenPos then continue end
+
+				-- Re-claim network ownership (anti-Solara qui tente de la reprendre)
+
+				pcall(function() hrp:SetNetworkOwner(nil) end)
+
+				-- Re-Anchorer TOUS les body parts (le client peut tenter de set Anchored=false)
+
+				for _, _bp in ipairs(char:GetDescendants()) do
+
+					if _bp:IsA("BasePart") and not _bp.Anchored then
+
+						_bp.Anchored = true
+
+					end
+
+					-- Re-detruire les BodyMovers que Solara aurait re-poses
 
 					if _bp:IsA("BodyVelocity") or _bp:IsA("BodyForce") or _bp:IsA("BodyGyro")
 
@@ -7044,461 +8433,199 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 				end
 
-				-- Bloquer les inputs de mouvement (touches direction) du Humanoid
+				-- Bloquer les inputs de mouvement (touches direction)
 
-				data._origWS = data._origWS or hum.WalkSpeed
+				if hum then
 
-				data._origJP = data._origJP or hum.JumpPower
+					if hum.WalkSpeed ~= 0 then hum.WalkSpeed = 0 end
 
-				hum.WalkSpeed = 0
+					if hum.JumpPower ~= 0 then hum.JumpPower = 0 end
 
-				hum.JumpPower = 0
+					if not hum.PlatformStand then hum.PlatformStand = true end
 
-				hum.PlatformStand = true
+					pcall(function() hum:Move(Vector3.zero, false) end)
 
-				pcall(function() hum:Move(Vector3.zero, false) end)
+				end
 
-				pcall(function() hum:ChangeState(Enum.HumanoidStateType.Physics) end)
+				-- Force la position d'avant le cheat
 
-				-- Force la position TOUT DE SUITE
+				hrp.CFrame = CFrame.new(data._severeFrozenPos) * (data._severeFrozenRot or CFrame.new())
 
-				hrp.CFrame = CFrame.new(data._severeFrozenPos) * data._severeFrozenRot
+				hrp.AssemblyLinearVelocity = Vector3.zero
 
-				data._severeUntil = math.max(data._severeUntil or 0, os.clock() + (durationSec or 2.5))
+				hrp.AssemblyAngularVelocity = Vector3.zero
 
 			end
 
-			-- ══ SPEED CHECK (inclut freefall pour détecter fly+speed) ══
+		end)
 
-			-- IMPORTANT: les whitelists sont independantes. Skip total UNIQUEMENT si whitelist
+		-- Cleanup quand un joueur part
 
-			-- speed explicite. Pour fly whitelist, on TOLERE plus mais on continue de surveiller
+		Players.PlayerRemoving:Connect(function(p)
 
-			-- (un user avec ;fly + cheat speed serait sinon non-detecte).
+			acPlayerData[p.UserId] = nil
 
-			if not acIsWhitelisted(plr, "speed") and not isRagdoll and not isSeated and not isClimbing and moveInput > 0.05 and (data.airTime or 0) < 0.2 then
+			acWhitelist[p.UserId] = nil
 
-				local flatCur  = Vector3.new(currentPos.X, 0, currentPos.Z)
+			acAlertCooldown[p.UserId] = nil
 
-				local flatLast = Vector3.new(data.lastPos.X, 0, data.lastPos.Z)
+		end)
 
-				local dist = (flatCur - flatLast).Magnitude
+		-- ════════════════════════════════════════════════════════════════════════
 
-				local maxAllowed = hum.WalkSpeed * elapsed * AC_SPEED_MARGIN
+		-- [DESACTIVE - cause du conflit avec la boucle PRINCIPALE noclip 60ms]
 
-				-- En freefall normal, on tolère un peu plus (gravité + inertie)
+		-- La boucle principale (lignes ~6780) fait deja le check + Anchor + paralyze.
 
-				if isFalling then maxAllowed = maxAllowed * 1.5 end
+		-- Garder UNE seule boucle = pas de conflit. Le code mort ci-dessous est
 
-				-- En fly admin legitime, on tolere 5x plus (vol rapide acceptable)
+		-- conserve pour reference (jamais execute grace au if false).
 
-				-- mais on continue de detecter une vitesse anormale au-dela
+		-- ════════════════════════════════════════════════════════════════════════
 
-				if acIsWhitelisted(plr, "fly") then maxAllowed = maxAllowed * 5 end
+		if false then
 
-				if not isSwimming and dist > maxAllowed then
+			-- ════════════════════════════════════════════════════════════════════════
 
-					-- [SCORE PROBABILISTE] On combine signaux. Ratio dist/maxAllowed:
+			-- [DEAD CODE] ancienne boucle Heartbeat qui dupliquait le check :
 
-					--   < 1.5 (sprint normal) -> +0  -> ignore
+			-- juste CFrame.new(backTo) + velocity = 0. PAS d'Anchor, PAS de SetNetworkOwner,
 
-					--   1.5-2.5 (suspect)      -> +15 -> +1 strike
+			-- PAS de paralyze. Le fly marche avec ça, le noclip marchera pareil.
 
-					--   2.5-5 (clair)          -> +25 -> +2 strikes
+			-- ════════════════════════════════════════════════════════════════════════
 
-					--   > 5 (delirant)         -> +40 -> bloc
+			local acNoclipPersist = {} -- [uid] = nb de frames consécutives dans un mur
 
-					local _ratio = dist / math.max(maxAllowed, 0.01)
+			local acNoclipLastReset = {} -- [uid] = os.clock()
 
-					local _prob = _acProbCheat(plr, data, hrp, hum, "speed", { ratio = _ratio })
+			local acLastClearPos = {} -- [uid] = derniere pos hors mur
 
-					if _prob >= 95 then
+			RunService.Heartbeat:Connect(function()
 
-						data.speedStrikes = (data.speedStrikes or 0) + AC_STRIKES_BLOCK
+				for _, plr in pairs(Players:GetPlayers()) do
 
-						if not isStaffMember then _acSevereBlock(2.0) end
+					if acIsStaff(plr) then continue end
 
-						acSendAlert(plr, "SPEED HACK",
+					if acIsWhitelisted(plr, "noclip") then continue end
 
-							string.format("%.0f studs/%.1fs ratio=%.1fx score=%d%%", dist, elapsed, _ratio, _prob))
+					local char = plr.Character
 
-					elseif _prob >= 75 then
+					if not char then continue end
 
-						data.speedStrikes = (data.speedStrikes or 0) + 2
+					local hrp = char:FindFirstChild("HumanoidRootPart")
 
-						if not isStaffMember and data.speedStrikes >= AC_STRIKES_BLOCK then
+					local hum = char:FindFirstChildOfClass("Humanoid")
 
-							_acSevereBlock(2.0)
+					if not hrp or not hum or hum.Health <= 0 then continue end
 
-							acSendAlert(plr, "SPEED HACK",
+					local state = hum:GetState()
 
-								string.format("%.0f studs/%.1fs ratio=%.1fx strikes=%d score=%d%%", dist, elapsed, _ratio, data.speedStrikes, _prob))
+					if state == Enum.HumanoidStateType.Seated then continue end
 
-						end
+					if state == Enum.HumanoidStateType.Ragdoll or state == Enum.HumanoidStateType.Physics then continue end
 
-					elseif _prob >= 55 then
+					-- Skip si en saut/chute (états transitoires, faux positifs possibles)
 
-						data.speedStrikes = (data.speedStrikes or 0) + 1
+					if state == Enum.HumanoidStateType.Climbing then continue end
 
-						if not isStaffMember and data.speedStrikes >= AC_STRIKES_BLOCK then
+					local uid = plr.UserId
 
-							_acSevereBlock(2.0)
+					-- Filtre commun
 
-						end
+					local ncFilter = {char}
+
+					for _, p2 in pairs(Players:GetPlayers()) do
+
+						if p2.Character then table.insert(ncFilter, p2.Character) end
 
 					end
 
-					-- < 55: ignore (sprint normal, lag, ou skill)
+					local overlapParams = OverlapParams.new()
 
-				else
+					overlapParams.FilterType = Enum.RaycastFilterType.Exclude
 
-					data.speedStrikes = math.max(0, (data.speedStrikes or 0) - AC_DECAY)
+					overlapParams.FilterDescendantsInstances = ncFilter
 
-					if dist < maxAllowed then data.lastValidPos = currentPos end
+					local insideWall = false
 
-				end
+					local hitName = "?"
 
-			else
+					-- [METHODE 1 RAYCAST DIRECTIONNEL] (méthode fly-like, plus fiable contre Solara)
 
-				data.speedStrikes = 0
+					-- Raycast depuis acLastClearPos vers position actuelle. Si ça hit un mur, noclip.
 
-				data.lastValidPos = currentPos
+					local prevPos = acLastClearPos[uid] or hrp.Position
 
-			end
+					local moveVec = hrp.Position - prevPos
 
-			-- ══ FLY CHECK ══
+					if moveVec.Magnitude > 0.5 then
 
-			-- [ANTI-FAUX-POSITIFS] Skip si:
+						local rayParams2 = RaycastParams.new()
 
-			--   - seated/climbing/swimming
+						rayParams2.FilterType = Enum.RaycastFilterType.Exclude
 
-			--   - spawn recent (<8s) -> evite faux-positif quand 2 joueurs spawn empiles
+						rayParams2.FilterDescendantsInstances = ncFilter
 
-			--     OU quand un script jeu client TP/lift/pose le perso au load.
+						-- Raycast à 3 hauteurs : centre HRP, haut, bas (couvre marches/sauts)
 
-			if not data._spawnTime then data._spawnTime = os.clock() end
-
-			local _justSpawned = (os.clock() - data._spawnTime) < 8
-
-			if not acIsWhitelisted(plr, "fly") and not isSeated and not isClimbing and not isSwimming and not _justSpawned then
-
-				local rayParams = RaycastParams.new()
-
-				rayParams.FilterType = Enum.RaycastFilterType.Exclude
-
-				-- [FIX SAUT SUR TETE JOUEUR] On exclut SEULEMENT le character analyse, pas
-
-				-- les autres joueurs. Avant: tous les chars exclus -> raycast traversait la
-
-				-- tete d'un joueur sous toi et trouvait le sol loin -> faux fly hack.
-
-				-- Maintenant le raycast s'arrete sur le char d'un autre joueur = grounded.
-
-				local filter = {char}
-
-				rayParams.FilterDescendantsInstances = filter
-
-				local result = workspace:Raycast(hrp.Position, Vector3.new(0, -AC_FLY_RAYCAST, 0), rayParams)
-
-				-- Aussi check sur les côtés (pentes)
-
-				local resultL = workspace:Raycast(hrp.Position + Vector3.new(2,0,0), Vector3.new(0,-AC_FLY_RAYCAST,0), rayParams)
-
-				local resultR = workspace:Raycast(hrp.Position + Vector3.new(-2,0,0), Vector3.new(0,-AC_FLY_RAYCAST,0), rayParams)
-
-				-- [DETECTE FLY LENT] On considere "grounded" UNIQUEMENT si le sol est PROCHE
-
-				-- (<= 5 studs sous le HRP) ET que l'humanoid est en etat sol-compatible.
-
-				-- Avant: raycast hit dans 30 studs = grounded -> fly lent a 5+ studs passait.
-
-				local _isGrounded = false
-
-				local _closestGroundDist = math.huge
-
-				for _, _ray in ipairs({result, resultL, resultR}) do
-
-					if _ray then
-
-						local _d = (hrp.Position - _ray.Position).Magnitude
-
-						if _d < _closestGroundDist then _closestGroundDist = _d end
-
-					end
-
-				end
-
-				-- [FIX SAUT SUR OBJETS / TETE JOUEUR] Threshold elargi (8→12) pour les
-
-				-- sauts sur petits objets, obby, ou tete d'un autre joueur (~5 studs).
-
-				-- La transition Jumping->Landed est rapide; avant on ratait des frames
-
-				-- "between" sans state Landed → faux positif.
-
-				local _groundedThreshold = math.max(12, (hum.HipHeight or 2) + hrp.Size.Y/2 + 6)
-
-				if _closestGroundDist <= _groundedThreshold
-
-					or state == Enum.HumanoidStateType.Running
-
-					or state == Enum.HumanoidStateType.RunningNoPhysics
-
-					or state == Enum.HumanoidStateType.Landed
-
-					or state == Enum.HumanoidStateType.Seated
-
-					or state == Enum.HumanoidStateType.Climbing then
-
-					_isGrounded = true
-
-				end
-
-				if _isGrounded then
-
-					data.airTime = 0
-
-				else
-
-					-- [DETECTION FLY AMELIOREE] On regarde le SIGNE de velY, pas que l'absolu.
-
-					local velY = hrp.AssemblyLinearVelocity.Y
-
-					local absVY = math.abs(velY)
-
-					-- [FIX SAUT HAUT / OBBY] Si Roblox nous dit explicitement que c'est un
-
-					-- saut legitime (Jumping) ou une chute libre (Freefall), on DECREMENT
-
-					-- au lieu de pénaliser. Ces states sont positionnes par le moteur, pas
-
-					-- par le client → un fly hack ne peut pas les forger sans casser autre.
-
-					if state == Enum.HumanoidStateType.Jumping
-
-						or state == Enum.HumanoidStateType.Freefall
-
-						or state == Enum.HumanoidStateType.FallingDown then
-
-						-- Saut/chute legitime: decrement (couvre apex de saut + chutes longues)
-
-						-- [FIX SAUTS INFINIS] memorise le timestamp du dernier state legitime
-
-						-- pour donner une grace dans les transitions Jumping->RunningNoPhysics->Jumping
-
-						-- (sauts en chaine, jump pads, obby = pas de faux positif)
-
-						data._lastJumpStateAt = os.clock()
-
-						data.airTime = math.max(0, (data.airTime or 0) - elapsed * 0.5)
-
-					elseif velY > 1 and state ~= Enum.HumanoidStateType.Jumping then
-
-						-- Monte dans le vide SANS etre en saut legitime = fly quasi-certain
-
-						-- Accumule TRES vite (1.5x temps reel -> trigger en ~0.5s)
-
-						-- [FIX SAUTS INFINIS] grace 0.8s apres un Jumping/Freefall recent
-
-						-- (apex de saut, transitions de state moteur) = decrement au lieu d'accumule
-
-						if os.clock() - (data._lastJumpStateAt or 0) < 0.8 then
-
-							data.airTime = math.max(0, (data.airTime or 0) - elapsed * 0.5)
-
-						else
-
-							data.airTime = (data.airTime or 0) + elapsed * 1.5
-
-						end
-
-					elseif absVY < 6 then
-
-						-- Flottement (velY entre -6 et +1) sans state Jumping/Freefall = suspect
-
-						-- [FIX SAUTS INFINIS] meme grace ici (apex = velY ~ 0)
-
-						if os.clock() - (data._lastJumpStateAt or 0) < 0.8 then
-
-							data.airTime = math.max(0, (data.airTime or 0) - elapsed * 0.3)
-
-						else
-
-							data.airTime = (data.airTime or 0) + elapsed
-
-						end
-
-					elseif velY > -10 then
-
-						-- Chute lente (entre -10 et -6) sans state Freefall = on tombe pas vraiment
-
-						data.airTime = (data.airTime or 0) + elapsed * 0.5
-
-					else
-
-						-- Vraie chute libre (velY <= -10) = on tombe, RESET airTime
-
-						-- (la chute peut durer longtemps depuis une grande hauteur, pas de strike)
-
-						data.airTime = math.max(0, (data.airTime or 0) - elapsed)
-
-					end
-
-				end
-
-				if (data.airTime or 0) > AC_FLY_AIRTIME then
-
-					data.flyStrikes = (data.flyStrikes or 0) + 1
-
-					if data.flyStrikes >= AC_STRIKES_BLOCK then
-
-						-- [BLOCAGE IN-PLACE] Plus de TP au sol. Freeze sur place 2.5s.
-
-						if not isStaffMember then
-
-							_acSevereBlock(2.5)
-
-						end
-
-						data.airTime = 0
-
-					end
-
-					if data.flyStrikes >= AC_STRIKES_ALERT then
-
-						acSendAlert(plr, "FLY HACK",
-
-							string.format("En l'air %.1fs, velocity Y: %.1f", data.airTime or 0, hrp.AssemblyLinearVelocity.Y))
-
-						data.flyStrikes = AC_STRIKES_ALERT
-
-					end
-
-				else
-
-					data.flyStrikes = math.max(0, (data.flyStrikes or 0) - 0.15)
-
-				end
-
-			else
-
-				data.airTime = 0
-
-				data.flyStrikes = 0
-
-			end
-
-			-- ══ NOCLIP CHECK (raycast + overlap — double detection) ══
-
-			-- IMPORTANT: les whitelists sont independantes par type. Si l'user a ;fly,
-
-			-- on whitelist UNIQUEMENT fly et speed. Le noclip CONTINUE d'etre surveille
-
-			-- pour empecher le combo "commande fly admin + cheat noclip".
-
-			-- Skip uniquement si whitelist explicite NOCLIP (commande ;noclip admin).
-
-			-- Le raycast est skip en fly admin (faux positif quand le fly frole un mur),
-
-			-- mais l'overlap reste actif (detecte si le HRP est DANS un mur epais).
-
-			local _flyWhitelistedNC = acIsWhitelisted(plr, "fly")
-
-			if not acIsWhitelisted(plr, "noclip") and not isRagdoll and not isSeated and not isClimbing and not isSwimming then
-
-				local noclipDetected = false
-
-				local _strongDetect = false  -- methode 1 raycast confirmee = vraie traversee, bloc immediat
-
-				local _signalDepth = 0       -- profondeur d'enfoncement (studs), pour scoring
-
-				local _signalMethod = nil    -- "raycast_traverse" ou "overlap"
-
-				local hitName = "?"
-
-				-- Filtre commun (exclure tous les characters)
-
-				local ncFilter = {char}
-
-				for _, p2 in pairs(Players:GetPlayers()) do
-
-					if p2.Character then table.insert(ncFilter, p2.Character) end
-
-				end
-
-				-- METHODE 1 : Raycast (detecte le passage a travers un mur).
-
-				-- ACTIF MEME EN FLY ADMIN: si le perso traverse vraiment un mur, c'est noclip
-
-				-- meme avec ;fly. On ajoute un check "vraie traversee": le rayon doit hit un
-
-				-- mur ET la position courante doit etre de l'AUTRE cote du mur (pas juste froler).
-
-				if data.lastPos then
-
-					local dir = currentPos - data.lastPos
-
-					if dir.Magnitude > AC_NOCLIP_MIN then
-
-						local rayParams = RaycastParams.new()
-
-						rayParams.FilterType = Enum.RaycastFilterType.Exclude
-
-						rayParams.FilterDescendantsInstances = ncFilter
-
-						local offsets = {Vector3.new(0,0,0), Vector3.new(0,2,0), Vector3.new(0,-1.5,0)}
+						local offsets = {Vector3.new(0,0,0), Vector3.new(0,1.5,0), Vector3.new(0,-1.5,0)}
 
 						for _, off in ipairs(offsets) do
 
-							local result = workspace:Raycast(data.lastPos + off, dir, rayParams)
+							local r = workspace:Raycast(prevPos + off, moveVec, rayParams2)
 
-							if result and _isSolidWall(result.Instance, hrp) then
+							if r and r.Instance.CanCollide and r.Instance.Transparency < 0.9
 
-								-- [ANTI-FAUX-POSITIF ESCALIERS/BORDURES] Ignorer les parts dont
+								and r.Instance.Size.Magnitude > 2 then
 
-								-- le sommet est <= hauteur des hanches +0.5 (le perso peut marcher dessus)
+								-- Vérifier que c'est un VRAI mur (pas une marche d'escalier)
 
-								-- ou dont la hauteur (Size.Y) est < 4 (trop petit pour etre un mur).
+								local partTop = r.Instance.Position.Y + (r.Instance.Size.Y / 2)
 
-								local _partTop = result.Instance.Position.Y + (result.Instance.Size.Y / 2)
+								local hrpBottom = hrp.Position.Y - 2
 
-								local _hrpBottom = hrp.Position.Y - hrp.Size.Y / 2
+								local isFloorOrStep = partTop <= (hrpBottom + 1.5)
 
-								local _isFloorOrStep = _partTop <= (_hrpBottom + 3.0) or result.Instance.Size.Y < 4
+								if not isFloorOrStep then
 
-								if not _isFloorOrStep then
+									insideWall = true
 
-									-- [ANTI-FAUX-POSITIF FROLER] Verifier que c'est une VRAIE
+									hitName = r.Instance.Name
 
-									-- traversee : lastPos et currentPos doivent etre de cotes
+									break
 
-									-- OPPOSES du plan de la part touchee. Et currentPos doit
+								end
 
-									-- etre enfonce d'au moins 0.5 stud de l'autre cote.
+							end
 
-									local _n = result.Normal
+						end
 
-									local _hitPos = result.Position
+					end
 
-									local _sideAfter = (currentPos - _hitPos):Dot(_n)
+					-- [METHODE 2 OVERLAP] (en plus du raycast, pour catch HRP DANS le mur)
 
-									local _sideBefore = (data.lastPos - _hitPos):Dot(_n)
+					if not insideWall then
 
-									-- sideBefore > 0 = on etait du cote de la normale (exterieur).
+						local ok, parts = pcall(function() return workspace:GetPartsInPart(hrp, overlapParams) end)
 
-									-- sideAfter < -0.5 = on est de l'autre cote, enfonce de plus de 0.5 stud.
+						if ok and parts then
 
-									if _sideBefore > 0 and _sideAfter < -0.5 then
+							for _, part in pairs(parts) do
 
-										noclipDetected = true
+								if _isSolidWall(part, hrp) then
 
-										_strongDetect = true  -- vraie traversee confirmee = bloc immediat
+									local partTop = part.Position.Y + (part.Size.Y / 2)
 
-										_signalDepth = math.abs(_sideAfter)
+									local hrpBottom = hrp.Position.Y - 2
 
-										_signalMethod = "raycast_traverse"
+									local isFloorOrStep = partTop <= (hrpBottom + 1.5)
 
-										hitName = result.Instance.Name
+									if not isFloorOrStep then
+
+										insideWall = true
+
+										hitName = part.Name
 
 										break
 
@@ -7512,189 +8639,133 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 					end
 
-				end
+					if insideWall then
 
-				-- METHODE 2 : Overlap (detecte si le joueur est DANS un mur)
+						acNoclipPersist[uid] = (acNoclipPersist[uid] or 0) + 1
 
-				if not noclipDetected then
+						local data = acPlayerData[uid]
 
-					local overlapParams = OverlapParams.new()
+						-- [BLOC + WARN seulement, PAS de kill] Chaque frame dans le mur :
 
-					overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+						-- 1. Anchor PERSISTANT (pas de timer désanchor — désancher quand sort du mur)
 
-					overlapParams.FilterDescendantsInstances = ncFilter
+						-- 2. TP au sol via raycast vertical
 
-					local _miniBox = Vector3.new(1.0, 1.0, 0.5)
+						-- 3. Velocity = 0 + paralyze WS/JP
 
-					local ok, parts = pcall(function()
+						-- 4. Détruire les BodyMovers de Solara (BodyVelocity/AlignPosition/etc)
 
-						return workspace:GetPartBoundsInBox(hrp.CFrame, _miniBox, overlapParams)
+						hrp.Anchored = true
 
-					end)
+						local rayDown = RaycastParams.new()
 
-					if ok and parts then
+						rayDown.FilterType = Enum.RaycastFilterType.Exclude
 
-						for _, part in pairs(parts) do
+						rayDown.FilterDescendantsInstances = ncFilter
 
-							if _isSolidWall(part, hrp) then
+						local searchFrom = acLastClearPos[uid] or (data and (data.lastSafePos or data.lastValidPos)) or hrp.Position
 
-								-- [ANTI-FAUX-POSITIF ESCALIERS/BORDURES] Ignorer parts a hauteur de
+						local groundRay = workspace:Raycast(searchFrom + Vector3.new(0, 50, 0), Vector3.new(0, -500, 0), rayDown)
 
-								-- hanche ou plus bas (escaliers/bordures que le perso peut grimper).
+						local backTo = groundRay and (groundRay.Position + Vector3.new(0, 4, 0)) or searchFrom
 
-								local _partTop = part.Position.Y + (part.Size.Y / 2)
+						hrp.CFrame = CFrame.new(backTo)
 
-								local _hrpBottom = hrp.Position.Y - hrp.Size.Y / 2
+						hrp.AssemblyLinearVelocity = Vector3.zero
 
-								local _isFloorOrStep = _partTop <= (_hrpBottom + 3.0) or part.Size.Y < 4
+						hrp.AssemblyAngularVelocity = Vector3.zero
 
-								if not _isFloorOrStep then
+						-- Paralyser humanoid + sauvegarder valeurs originales
 
-									noclipDetected = true
+						if data then
 
-									_signalMethod = _signalMethod or "overlap"
+							data._origWS = data._origWS or 16
 
-									_signalDepth = math.max(_signalDepth, 0.7)  -- mini-box overlap = enfonce ~0.7 stud min
+							data._origJP = data._origJP or 50
 
-									hitName = part.Name
+						end
 
-									break
+						hum.WalkSpeed = 0
 
-								end
+						hum.JumpPower = 0
+
+						hum.JumpHeight = 0
+
+						-- Détruire les BodyMovers injectés par Solara (qui peuvent forcer mouvement)
+
+						for _, obj in pairs(char:GetDescendants()) do
+
+							if (obj:IsA("BodyVelocity") or obj:IsA("BodyGyro") or obj:IsA("BodyPosition")
+
+								or obj:IsA("LinearVelocity") or obj:IsA("AlignPosition") or obj:IsA("AlignOrientation")
+
+								or obj:IsA("VectorForce") or obj:IsA("LineForce"))
+
+								and not obj:GetAttribute("AgoraAdmin") then
+
+								obj:Destroy()
 
 							end
 
 						end
 
-					end
+						-- Warn au 3e strike (~50ms), pas spam (cooldown 5s)
 
-				end
+						if acNoclipPersist[uid] == 3 then
 
-				if noclipDetected then
+							local now = os.clock()
 
-					-- [SCORE PROBABILISTE] Combine signaux (depth, methode, role, etat,
+							if not acNoclipLastReset[uid] or (now - acNoclipLastReset[uid]) > 5 then
 
-					-- strikes recents, fly admin, combo) -> score 0-100. Decision:
+								acNoclipLastReset[uid] = now
 
-					--   >= 95 -> bloc IMMEDIAT (haute confiance)
+								acSendAlert(plr, "NOCLIP",
 
-					--   75-95 -> +2 strikes (faut 2 ticks pour bloc)
+									string.format("Bloque dans '%s' (Anchor + paralyze)", hitName))
 
-					--   55-75 -> +1 strike (faut 4-5 ticks)
-
-					--   < 55  -> ignore (faux positif probable)
-
-					-- [FIX BUG VIP-FLY-NOCLIP] Avant: appel oubliait l'arg "noclip" (5e param),
-
-					-- passait {depth,method} comme cheatType. Score restait a ~40 (< 55 = ignore)
-
-					-- => VIP avec ;fly pouvait traverser les murs librement. Maintenant l'appel
-
-					-- est correct et le scoring noclip-specifique s'applique vraiment.
-
-					local _prob = _acProbCheat(plr, data, hrp, hum, "noclip", {
-
-						depth = _signalDepth,
-
-						method = _signalMethod or "overlap",
-
-					})
-
-					-- [VIP FLY != NOCLIP] Si le joueur est en ;fly admin ET que c'est un raycast_traverse
-
-					-- (vraie traversee, pas overlap minor), on RAJOUTE +25 au score pour compenser
-
-					-- le -10 fly-whitelist du scoring de base. Le ;fly autorise voler pas traverser.
-
-					if _strongDetect and _flyWhitelistedNC then
-
-						_prob = math.min(100, _prob + 25)
-
-					end
-
-					if _prob >= 95 then
-
-						-- Quasi certain: bloc immediat
-
-						data.noclipStrikes = (data.noclipStrikes or 0) + AC_STRIKES_BLOCK
-
-						if not isStaffMember then _acSevereBlock(2.5) end
-
-					elseif _prob >= 75 then
-
-						data.noclipStrikes = (data.noclipStrikes or 0) + 2
-
-						if not isStaffMember and data.noclipStrikes >= AC_STRIKES_BLOCK then
-
-							_acSevereBlock(2.5)
-
-						end
-
-					elseif _prob >= 55 then
-
-						data.noclipStrikes = (data.noclipStrikes or 0) + 1
-
-						if not isStaffMember and data.noclipStrikes >= AC_STRIKES_BLOCK then
-
-							_acSevereBlock(2.5)
+							end
 
 						end
 
 					else
 
-						-- < 55 = faux-positif probable, on ignore (mais ne reset pas non plus)
+						-- Pas dans un mur → libérer + mettre à jour lastClearPos
 
-						-- Le decay s'occupera de baisser noclipStrikes naturellement.
+						if hrp.Anchored then
 
-					end
+							hrp.Anchored = false
 
-					if data.noclipStrikes >= AC_STRIKES_ALERT then
+						end
 
-						acSendAlert(plr, "NOCLIP",
+						-- Restaurer WalkSpeed/JumpPower si paralyse précédemment
 
-							string.format("Traverse '%s' — score=%d%% depth=%.1f via %s", hitName, _prob, _signalDepth, _signalMethod or "?"))
+						local data = acPlayerData[uid]
 
-						data.noclipStrikes = AC_STRIKES_ALERT
+						if data and data._origWS then
 
-					end
+							hum.WalkSpeed = data._origWS
 
-				else
+							hum.JumpPower = data._origJP or 50
 
-					data.noclipStrikes = math.max(0, (data.noclipStrikes or 0) - AC_DECAY)
+							hum.JumpHeight = 7.2
 
-				end
+							data._origWS = nil
 
-			else
+							data._origJP = nil
 
-				data.noclipStrikes = 0
+						end
 
-			end
+						acLastClearPos[uid] = hrp.Position
 
-			-- ══ TELEPORT CHECK ══
+						-- Décrémenter
 
-			local _hasBodyMover = false
+						if acNoclipPersist[uid] then
 
-			pcall(function()
+							acNoclipPersist[uid] = math.max(0, acNoclipPersist[uid] - 1)
 
-				for _, c in ipairs(hrp:GetChildren()) do
+							if acNoclipPersist[uid] == 0 then acNoclipPersist[uid] = nil end
 
-					if c:IsA("BodyVelocity") or c:IsA("BodyPosition") or c:IsA("BodyGyro")
-
-						or c:IsA("BodyAngularVelocity") or c:IsA("AlignPosition")
-
-						or c:IsA("AlignOrientation") or c:IsA("LinearVelocity")
-
-						or c:IsA("VectorForce") or c:IsA("AngularVelocity")
-
-						or c:IsA("Torque") or c:IsA("RodConstraint")
-
-						or c:IsA("RopeConstraint") or c:IsA("SpringConstraint") then
-
-						local agora = false
-
-						pcall(function() agora = c:GetAttribute("AgoraAdmin") == true end)
-
-						if not agora then _hasBodyMover = true break end
+						end
 
 					end
 
@@ -7702,43 +8773,759 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 			end)
 
-			if not acIsWhitelisted(plr, "teleport") and not isRagdoll and not isSeated and not isClimbing and not isSwimming and not _justSpawned and not _hasBodyMover then
+			-- Cleanup acNoclipPersist quand joueur part
 
-				-- [TELEPORT = teleportation HORIZONTALE seule] Le Y peut etre grand sans cheat
+			Players.PlayerRemoving:Connect(function(p)
 
-				-- (chute libre de haut, saut, gravite). On ne check que la distance XZ qui
+				acNoclipPersist[p.UserId] = nil
 
-				-- represente vraiment un mouvement teleporte (chute = mouvement vertical naturel).
+				acNoclipLastReset[p.UserId] = nil
 
-				local _dxz = Vector3.new(currentPos.X - data.lastPos.X, 0, currentPos.Z - data.lastPos.Z)
+				acLastClearPos[p.UserId] = nil
 
-				local dist = _dxz.Magnitude
+			end)
 
-				local _baseSpeed = math.max(hum.WalkSpeed, 16)
+		end -- fin if false (boucle Heartbeat noclip dupliquee desactivee)
 
-				local tpMax = math.max(_baseSpeed * elapsed * 8, 8)
+		-- Reset au respawn + [FIX STABILITÉ] Whitelist 3s après respawn pour éviter faux positifs
 
-				if acIsWhitelisted(plr, "fly") then tpMax = tpMax * 4 end
+		local acRespawnConnections = {}
 
-				-- En chute libre / freefall, tolerer encore plus (saut en avant + gravite)
+		local function acResetOnSpawn(plr)
 
-				if isFalling then tpMax = tpMax * 2 end
+			-- Évite les doubles connexions si la fonction est appelée plusieurs fois pour le même joueur
 
-				-- [PRESERVE PORTAILS NATIFS] TP > 50 studs = tres probable script serveur
+			if acRespawnConnections[plr.UserId] then return end
 
-				-- (portail, teleporter custom, lift). Auto-whitelist 1.5s, pas de strike.
+			local conn = plr.CharacterAdded:Connect(function(char)
 
-				-- SAUF si l'utilisateur avait deja des strikes (sinon un exploit pourrait abuser).
+				local uid = plr.UserId
 
-				if dist > 50 and (data.tpStrikes or 0) == 0 and (data.flyStrikes or 0) == 0
+				if acPlayerData[uid] then
 
-					and (data.noclipStrikes or 0) == 0 and (data.velStrikes or 0) == 0 then
+					acPlayerData[uid].lastPos = nil
+
+					acPlayerData[uid].lastValidPos = nil
+
+					acPlayerData[uid].airTime = 0
+
+					acPlayerData[uid]._spawnTime = os.clock()
+
+					acPlayerData[uid].speedStrikes = 0
+
+					acPlayerData[uid].flyStrikes = 0
+
+					acPlayerData[uid].noclipStrikes = 0
+
+					acPlayerData[uid].tpStrikes = 0
+
+					acPlayerData[uid].velStrikes = 0
+
+				end
+
+				-- [FIX TP RETOUR] Initialiser lastClearPos à la position de spawn pour qu'au 1er noclip
+
+				-- on tp le joueur à un endroit valide (pas hrp.Position = pos actuelle dans le mur)
+
+				task.spawn(function()
+
+					local spawnHrp = char:WaitForChild("HumanoidRootPart", 5)
+
+					if spawnHrp then
+
+						acLastClearPos[uid] = spawnHrp.Position
+
+						if acPlayerData[uid] then
+
+							acPlayerData[uid].lastSafePos = spawnHrp.Position
+
+							acPlayerData[uid].lastValidPos = spawnHrp.Position
+
+						end
+
+					end
+
+				end)
+
+				-- [FIX ANTI-CHEAT] Whitelist temporaire 3s après respawn (évite fausses détections
+
+				-- TP/speed). PRESERVE les whitelists PERMANENTES (ex: ;fly admin actif): on ne
+
+				-- reset que les types qu'on a ajoute pendant ce respawn, pas ceux qui etaient deja la.
+
+				acWhitelist[uid] = acWhitelist[uid] or {}
+
+				-- [FIX SEAT] Whitelist teleport+noclip 2s a chaque fois que le joueur s'assoit
+				task.spawn(function()
+					local _hum = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid", 5)
+					if not _hum then return end
+					_hum.Seated:Connect(function(active)
+						if not active then return end
+						local _seatAdded = {}
+						acWhitelist[uid] = acWhitelist[uid] or {}
+						for _, _t in ipairs({"teleport", "noclip"}) do
+							if not acWhitelist[uid][_t] then
+								_seatAdded[_t] = true
+								acWhitelist[uid][_t] = true
+							end
+						end
+						task.delay(2, function()
+							if acWhitelist[uid] then
+								for _t in pairs(_seatAdded) do
+									acWhitelist[uid][_t] = nil
+								end
+							end
+						end)
+					end)
+				end)
+
+				-- Memoriser l'etat AVANT pour ne pas ecraser les whitelists permanentes
+
+				local _addedBySpawn = {}
+
+				for _, _t in ipairs({"speed", "fly", "noclip"}) do
+
+					if not acWhitelist[uid][_t] then
+
+						_addedBySpawn[_t] = true
+
+						acWhitelist[uid][_t] = true
+
+					end
+
+				end
+
+				task.delay(3, function()
+
+					if acWhitelist[uid] then
+
+						-- Reset UNIQUEMENT les types qu'on a ajoute (preserve les permanentes)
+
+						for _t, _ in pairs(_addedBySpawn) do
+
+							acWhitelist[uid][_t] = nil
+
+						end
+
+					end
+
+				end)
+
+			end)
+
+			acRespawnConnections[plr.UserId] = conn
+
+		end
+
+		-- Cleanup quand le joueur part
+
+		Players.PlayerRemoving:Connect(function(plr)
+
+			local conn = acRespawnConnections[plr.UserId]
+
+			if conn then
+
+				conn:Disconnect()
+
+				acRespawnConnections[plr.UserId] = nil
+
+			end
+
+		end)
+
+		Players.PlayerAdded:Connect(acResetOnSpawn)
+
+		for _, p in pairs(Players:GetPlayers()) do acResetOnSpawn(p) end
+
+		print("[Agora Admin] Anti-Cheat intégré et actif.")
+
+		-- ------------------------------------------------
+
+		-- TICKETS — Système serveur
+
+		-- ------------------------------------------------
+
+		local activeTickets = {}
+
+		local ticketId = 0
+
+		ticketSubmitEvent.OnServerEvent:Connect(function(plr, data)
+
+			if type(data) ~= "table" then return end
+
+			if not data.Description or #data.Description < 5 then return end
+
+			if #data.Description > 500 then data.Description = string.sub(data.Description, 1, 500) end
+
+			ticketId = ticketId + 1
+
+			local ticket = {
+
+				Id         = ticketId,
+
+				ReporterId = plr.UserId,
+
+				Reporter   = plr.Name,
+
+				TargetName = data.Target or "",
+
+				Category   = data.Category or "Autre",
+
+				Description= data.Description,
+
+				Time       = os.date("%H:%M:%S"),
+
+				Claimed    = false,
+
+				ClaimedBy  = nil,
+
+			}
+
+			table.insert(activeTickets, 1, ticket) -- plus récent en premier
+
+			if #activeTickets > 50 then table.remove(activeTickets) end
+
+			-- Notifier le reporter
+
+			notifEvent:FireClient(plr, "Ticket #"..ticketId.." envoyé aux modérateurs.")
+
+			-- Notifier tous les modérateurs+ avec alerte visuelle
+
+			for _, staff in pairs(Players:GetPlayers()) do
+
+				local lvl = rolesHierarchy[_G.Agora_getPlayerRole(staff)] or 99
+
+				if lvl <= 4 then
+
+					ticketAlertEvent:FireClient(staff, {
+
+						Reporter = plr.Name,
+
+						Category = data.Category,
+
+						Target = data.Target or "",
+
+						Description = string.sub(data.Description, 1, 80),
+
+					})
+
+				end
+
+			end
+
+		end)
+
+		ticketListFunc.OnServerInvoke = function(plr)
+
+			local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
+
+			if lvl > 4 then return {} end -- Modérateur+ seulement
+
+			local list = {}
+
+			for _, t in ipairs(activeTickets) do
+
+				if not t.Claimed then
+
+					table.insert(list, t)
+
+				end
+
+			end
+
+			return list
+
+		end
+
+		ticketClaimEvent.OnServerEvent:Connect(function(plr, tId)
+
+			local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
+
+			if lvl > 4 then return end
+
+			for _, t in ipairs(activeTickets) do
+
+				if t.Id == tId and not t.Claimed then
+
+					t.Claimed = true
+
+					t.ClaimedBy = plr.Name
+
+					notifEvent:FireClient(plr, "Ticket #"..tId.." pris en charge.")
+
+					-- Notifier le reporter
+
+					local reporter = Players:GetPlayerByUserId(t.ReporterId)
+
+					if reporter then
+
+						notifEvent:FireClient(reporter, "Un modérateur traite votre ticket #"..tId..".")
+
+					end
+
+					break
+
+				end
+
+			end
+
+		end)
+
+		-- ------------------------------------------------
+
+		-- MOD CAM — Invisible + whitelist serveur
+
+		-- ------------------------------------------------
+
+		modCamEvent.OnServerEvent:Connect(function(plr, action, camPosition)
+
+			local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
+
+			if lvl > 4 then return end
+
+			local char = plr.Character
+
+			if not char then return end
+
+			local hrp = char:FindFirstChild("HumanoidRootPart")
+
+			local hum = char:FindFirstChildOfClass("Humanoid")
+
+			if not hrp then return end
+
+			if action == "Enter" then
+
+				-- Whitelist anti-cheat COMPLÈTE
+
+				acWhitelistFn(plr, "fly", true)
+
+				acWhitelistFn(plr, "noclip", true)
+
+				acWhitelistFn(plr, "speed", true)
+
+				acWhitelistFn(plr, "teleport", true)
+
+				-- Reset AC data
+
+				local uid = plr.UserId
+
+				if acPlayerData[uid] then
+
+					acPlayerData[uid].speedStrikes = 0
+
+					acPlayerData[uid].flyStrikes = 0
+
+					acPlayerData[uid].tpStrikes = 0
+
+					acPlayerData[uid].velStrikes = 0
+
+					acPlayerData[uid].airTime = 0
+
+					acPlayerData[uid].noclipStrikes = 0
+
+				end
+
+				-- Sauvegarder la position avant
+
+				plr:SetAttribute("ModCamOriginX", hrp.CFrame.X)
+
+				plr:SetAttribute("ModCamOriginY", hrp.CFrame.Y)
+
+				plr:SetAttribute("ModCamOriginZ", hrp.CFrame.Z)
+
+				-- Rendre TOUT invisible : parts, decals, BillboardGui, nametags
+
+				for _, v in pairs(char:GetDescendants()) do
+
+					if v:IsA("BasePart") then
+
+						v:SetAttribute("_MCT", v.Transparency)
+
+						v:SetAttribute("_MCC", v.CanCollide)
+
+						v.Transparency = 1
+
+						v.CanCollide = false
+
+					elseif v:IsA("Decal") or v:IsA("Texture") then
+
+						v:SetAttribute("_MCT", v.Transparency)
+
+						v.Transparency = 1
+
+					elseif v:IsA("BillboardGui") or v:IsA("SurfaceGui") then
+
+						v:SetAttribute("_MCE", v.Enabled)
+
+						v.Enabled = false
+
+					elseif v:IsA("ParticleEmitter") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") then
+
+						v:SetAttribute("_MCE", v.Enabled)
+
+						v.Enabled = false
+
+					end
+
+				end
+
+				-- Cacher le nametag Roblox
+
+				if hum then hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None end
+
+				-- [FIX] NE PAS téléporter sous la map — juste invisible + ancrer sur place
+
+				-- (Avant: tp à Y=-500 faisait que la caméra apparaissait sous la map ailleurs)
+
+				hrp.Anchored = true
+
+				-- hrp.CFrame INCHANGÉ (le character reste exactement là où il était)
+
+				if hum then hum.PlatformStand = true end
+
+			elseif action == "Exit" then
+
+				-- D'abord téléporter le corps à la position de la caméra
+
+				if camPosition and typeof(camPosition) == "Vector3" then
+
+					hrp.CFrame = CFrame.new(camPosition + Vector3.new(0, -3, 0))
+
+				else
+
+					local ox = plr:GetAttribute("ModCamOriginX") or 0
+
+					local oy = plr:GetAttribute("ModCamOriginY") or 10
+
+					local oz = plr:GetAttribute("ModCamOriginZ") or 0
+
+					hrp.CFrame = CFrame.new(ox, oy, oz)
+
+				end
+
+				-- Désancrer AVANT de rendre visible
+
+				hrp.Anchored = false
+
+				hrp.AssemblyLinearVelocity = Vector3.zero
+
+				hrp.AssemblyAngularVelocity = Vector3.zero
+
+				if hum then
+
+					hum.PlatformStand = false
+
+					hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Viewer
+
+				end
+
+				-- Rendre TOUT visible (fallback robuste si attributs perdus)
+
+				for _, v in pairs(char:GetDescendants()) do
+
+					if v:IsA("BasePart") then
+
+						local savedT = v:GetAttribute("_MCT")
+
+						if savedT ~= nil then
+
+							v.Transparency = savedT
+
+						elseif v.Name == "HumanoidRootPart" then
+
+							v.Transparency = 1
+
+						else
+
+							v.Transparency = 0
+
+						end
+
+						local savedC = v:GetAttribute("_MCC")
+
+						if savedC ~= nil then
+
+							v.CanCollide = savedC
+
+						else
+
+							v.CanCollide = (v.Name ~= "HumanoidRootPart")
+
+						end
+
+						v:SetAttribute("_MCT", nil)
+
+						v:SetAttribute("_MCC", nil)
+
+					elseif v:IsA("Decal") or v:IsA("Texture") then
+
+						local savedT = v:GetAttribute("_MCT")
+
+						v.Transparency = (savedT ~= nil) and savedT or 0
+
+						v:SetAttribute("_MCT", nil)
+
+					elseif v:IsA("BillboardGui") or v:IsA("SurfaceGui") then
+
+						local savedE = v:GetAttribute("_MCE")
+
+						v.Enabled = (savedE ~= nil) and savedE or true
+
+						v:SetAttribute("_MCE", nil)
+
+					elseif v:IsA("ParticleEmitter") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") then
+
+						local savedE = v:GetAttribute("_MCE")
+
+						v.Enabled = (savedE ~= nil) and savedE or true
+
+						v:SetAttribute("_MCE", nil)
+
+					end
+
+				end
+
+				-- Whitelist TP temporaire puis retirer tout
+
+				acWhitelistFn(plr, "teleport", true)
+
+				task.delay(3, function()
+
+					acUnwhitelistFn(plr, "fly")
+
+					acUnwhitelistFn(plr, "noclip")
+
+					acUnwhitelistFn(plr, "speed")
+
+					acUnwhitelistFn(plr, "teleport")
+
+				end)
+
+				-- Confirmer au client
+
+				modCamEvent:FireClient(plr, "Restored")
+
+			elseif action == "ModFly" then
+
+				-- Vol invisible : whitelist AC + invisible MAIS reste en jeu (pas sous la map)
+
+				acWhitelistFn(plr, "fly", true)
+
+				acWhitelistFn(plr, "noclip", true)
+
+				acWhitelistFn(plr, "speed", true)
+
+				acWhitelistFn(plr, "teleport", true)
+
+				-- Reset les données AC pour éviter faux positifs (position stale)
+
+				local uid = plr.UserId
+
+				if acPlayerData[uid] then
+
+					acPlayerData[uid].lastPos = hrp.Position
+
+					acPlayerData[uid].lastValidPos = hrp.Position
+
+					acPlayerData[uid].speedStrikes = 0
+
+					acPlayerData[uid].flyStrikes = 0
+
+					acPlayerData[uid].tpStrikes = 0
+
+					acPlayerData[uid].velStrikes = 0
+
+					acPlayerData[uid].airTime = 0
+
+					acPlayerData[uid].noclipStrikes = 0
+
+					acPlayerData[uid].jumpStrikes = 0
+
+				end
+
+				for _, v in pairs(char:GetDescendants()) do
+
+					if v:IsA("BasePart") then
+
+						v:SetAttribute("_MFT", v.Transparency)
+
+						v:SetAttribute("_MFC", v.CanCollide)
+
+						v.Transparency = 1
+
+						v.CanCollide = false
+
+					elseif v:IsA("Decal") or v:IsA("Texture") then
+
+						v:SetAttribute("_MFT", v.Transparency)
+
+						v.Transparency = 1
+
+					elseif v:IsA("BillboardGui") or v:IsA("SurfaceGui") then
+
+						v:SetAttribute("_MFE", v.Enabled)
+
+						v.Enabled = false
+
+					elseif v:IsA("ParticleEmitter") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") then
+
+						v:SetAttribute("_MFE", v.Enabled)
+
+						v.Enabled = false
+
+					end
+
+				end
+
+				if hum then
+
+					hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+
+				end
+
+				modCamEvent:FireClient(plr, "FlyStarted")
+
+			elseif action == "ModFlyExit" then
+
+				local uid = plr.UserId
+
+				-- Reset AC data
+
+				if acPlayerData[uid] then
+
+					acPlayerData[uid].lastPos = hrp.Position
+
+					acPlayerData[uid].lastValidPos = hrp.Position
+
+					acPlayerData[uid].speedStrikes = 0
+
+					acPlayerData[uid].flyStrikes = 0
+
+					acPlayerData[uid].tpStrikes = 0
+
+					acPlayerData[uid].velStrikes = 0
+
+					acPlayerData[uid].airTime = 0
+
+					acPlayerData[uid].noclipStrikes = 0
+
+				end
+
+				-- Restaurer la visibilité côté serveur (pour les autres joueurs)
+
+				-- Le client restaure sa propre vue via flySavedParts (pas de LoadCharacter)
+
+				if hum then
+
+					hum.PlatformStand = false
+
+					hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Viewer
+
+				end
+
+				for _, v in pairs(char:GetDescendants()) do
+
+					if v:IsA("BasePart") then
+
+						local savedT = v:GetAttribute("_MFT")
+
+						local savedC = v:GetAttribute("_MFC")
+
+						v.Transparency = (savedT ~= nil) and savedT or 0
+
+						v.CanCollide   = (savedC ~= nil) and savedC or (v.Name ~= "HumanoidRootPart")
+
+					elseif v:IsA("Decal") or v:IsA("Texture") then
+
+						local savedT = v:GetAttribute("_MFT")
+
+						v.Transparency = (savedT ~= nil) and savedT or 0
+
+					elseif v:IsA("BillboardGui") or v:IsA("SurfaceGui") then
+
+						local savedE = v:GetAttribute("_MFE")
+
+						v.Enabled = (savedE == nil) or savedE
+
+					elseif v:IsA("ParticleEmitter") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") then
+
+						local savedE = v:GetAttribute("_MFE")
+
+						v.Enabled = (savedE == nil) or savedE
+
+					end
+
+				end
+
+				-- Retirer whitelist après délai (stabilisation)
+
+				task.delay(2, function()
+
+					acUnwhitelistFn(plr, "fly")
+
+					acUnwhitelistFn(plr, "noclip")
+
+					acUnwhitelistFn(plr, "speed")
+
+					acUnwhitelistFn(plr, "teleport")
+
+				end)
+
+				modCamEvent:FireClient(plr, "FlyEnded")
+
+			elseif action == "ZoneStaff" or action == "ZoneStaffTarget" then
+
+				-- Téléporter le mod + un joueur cible sur la part "zone staff"
+
+				local zonePart = workspace:FindFirstChild("zone staff", true)
+
+				if not zonePart then
+
+					notifEvent:FireClient(plr, "Part 'zone staff' introuvable dans le jeu.")
+
+					return
+
+				end
+
+				-- [FIX] CFrame.new(position) = orientation neutre (face Z+), évite d'arriver tourné
+
+				local dest = CFrame.new(zonePart.Position + Vector3.new(0, 5, 0))
+
+				-- Sauvegarder position du mod AVANT le TP
+
+				if not plr:GetAttribute("_ZoneOrigX") then
+
+					plr:SetAttribute("_ZoneOrigX", hrp.CFrame.X)
+
+					plr:SetAttribute("_ZoneOrigY", hrp.CFrame.Y)
+
+					plr:SetAttribute("_ZoneOrigZ", hrp.CFrame.Z)
+
+				end
+
+				-- TP le mod (skip si ZoneStaffTarget — TP uniquement la cible)
+
+				if action == "ZoneStaff" then
 
 					acWhitelistFn(plr, "teleport", true)
 
 					acWhitelistFn(plr, "speed", true)
 
-					task.delay(1.5, function()
+					hrp.CFrame = dest
+
+					-- [FIX] Reset Sit/PlatformStand + ChangeState pour arriver droit
+
+					if hum then
+
+						hum.Sit = false
+
+						hum.PlatformStand = false
+
+						hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+
+					end
+
+					task.delay(5, function()
 
 						acUnwhitelistFn(plr, "teleport")
 
@@ -7746,1899 +9533,61 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 					end)
 
-					data.lastPos = currentPos
+					-- Notifier le client pour afficher le bouton retour
 
-					data.lastValidPos = currentPos
-
-					data.lastSafePos = currentPos
-
-				elseif dist > tpMax then
-
-					-- [SCORE PROBABILISTE] On combine signaux pour decider.
-
-					local _prob = _acProbCheat(plr, data, hrp, hum, "teleport", {
-
-						dist = dist, tpMax = tpMax,
-
-					})
-
-					if _prob >= 95 then
-
-						-- Quasi certain TP hack: bloc immediat
-
-						data.tpStrikes = (data.tpStrikes or 0) + AC_STRIKES_BLOCK
-
-						if not isStaffMember then _acSevereBlock(3.0) end
-
-						acSendAlert(plr, "TELEPORT HACK",
-
-							string.format("%.0f studs (%.0fx) score=%d%%", dist, dist/tpMax, _prob))
-
-					elseif _prob >= 75 then
-
-						data.tpStrikes = (data.tpStrikes or 0) + 2
-
-						if not isStaffMember and data.tpStrikes >= AC_STRIKES_BLOCK then
-
-							_acSevereBlock(3.0)
-
-							acSendAlert(plr, "TELEPORT HACK",
-
-								string.format("%.0f studs strikes=%d score=%d%%", dist, data.tpStrikes, _prob))
-
-						end
-
-					elseif _prob >= 55 then
-
-						data.tpStrikes = (data.tpStrikes or 0) + 1
-
-						if not isStaffMember and data.tpStrikes >= AC_STRIKES_BLOCK then
-
-							_acSevereBlock(3.0)
-
-						end
-
-					end
-
-					-- < 55 = ignore (probablement portail / lift / lag)
-
-				else
-
-					data.tpStrikes = math.max(0, (data.tpStrikes or 0) - AC_DECAY)
+					modCamEvent:FireClient(plr, "ZoneStaffEntered")
 
 				end
 
-			else
+				-- (envoi ZoneStaffEntered fait dans le bloc if au-dessus)
 
-				data.tpStrikes = 0
+				-- TP la cible si fournie — sauvegarder sa position d'origine
 
-			end
+				if camPosition and typeof(camPosition) == "number" then
 
-			-- ══ JUMP POWER + INFINITE JUMP CHECK ══
+					local targetPlr = Players:GetPlayerByUserId(camPosition)
 
-			if not acIsWhitelisted(plr, "speed") and not acIsWhitelisted(plr, "fly") then
+					if targetPlr and targetPlr.Character then
 
-				-- JumpPower modifié
+						local tHrp = targetPlr.Character:FindFirstChild("HumanoidRootPart")
 
-				if hum.JumpPower > 80 and data.lastJumpPower <= 80 then
+						if tHrp then
 
-					hum.JumpPower = 50
+							-- Sauvegarder position d'origine SEULEMENT si pas deja en zone (evite l'ecrasement)
 
-					acSendAlert(plr, "JUMP HACK", string.format("JumpPower: %.0f (reset a 50)", hum.JumpPower))
+							if not targetPlr:GetAttribute("_ZoneOrigX") then
 
-				end
+								targetPlr:SetAttribute("_ZoneOrigX", tHrp.CFrame.X)
 
-				-- WalkSpeed anormalement élevé
+								targetPlr:SetAttribute("_ZoneOrigY", tHrp.CFrame.Y)
 
-				if hum.WalkSpeed > 50 then
-
-					local allowed = data.lastWalkSpeed or 16
-
-					if hum.WalkSpeed > allowed * 2 and allowed <= 50 then
-
-						hum.WalkSpeed = allowed
-
-						acSendAlert(plr, "SPEED MODIF", string.format("WalkSpeed: %.0f (reset a %.0f)", hum.WalkSpeed, allowed))
-
-					end
-
-				end
-
-				-- [INFINITE JUMP V2] Detection PAR TRANSITION STATE: si Jumping survient
-
-				-- alors que l'etat precedent etait NON-grounded (Freefall/Jumping/FallingDown)
-
-				-- = saut sans avoir touche le sol = infinite jump quasi-certain.
-
-				-- Marche meme si le hack utilise des velY faibles (~20).
-
-				if state == Enum.HumanoidStateType.Jumping
-
-					and data.lastAcState ~= Enum.HumanoidStateType.Jumping
-
-					and data.lastAcState ~= Enum.HumanoidStateType.Landed
-
-					and data.lastAcState ~= Enum.HumanoidStateType.Running
-
-					and data.lastAcState ~= Enum.HumanoidStateType.RunningNoPhysics
-
-					and data.lastAcState ~= Enum.HumanoidStateType.Climbing
-
-					and data.lastAcState ~= Enum.HumanoidStateType.Seated
-
-					and data.lastAcState ~= nil
-
-					and not isStaffMember
-
-					and not acIsWhitelisted(plr, "fly") then
-
-					data.jumpStrikes = (data.jumpStrikes or 0) + 2  -- gros strike (transition tres suspect)
-
-					if data.jumpStrikes >= 3 then
-
-						hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 0, hrp.AssemblyLinearVelocity.Z)
-
-						acSendAlert(plr, "INFINITE JUMP", "Saut consecutif sans landing (state: "..tostring(data.lastAcState)..")")
-
-						data.jumpStrikes = 4
-
-					end
-
-				end
-
-				-- Reset jumpStrikes quand on touche vraiment le sol
-
-				if state == Enum.HumanoidStateType.Landed
-
-					or state == Enum.HumanoidStateType.Running
-
-					or state == Enum.HumanoidStateType.RunningNoPhysics then
-
-					data.jumpStrikes = math.max(0, (data.jumpStrikes or 0) - 0.5)
-
-				end
-
-				-- Track le state precedent pour la prochaine iteration
-
-				data.lastAcState = state
-
-				-- Saut infini (legacy): détecter jump pendant freefall
-
-				if isFalling then
-
-					local velY = hrp.AssemblyLinearVelocity.Y
-
-					-- Si le joueur monte PENDANT qu'il est en freefall = saut infini
-
-					-- [FIX FAUX POSITIF] Seuils plus stricts pour eviter de bloquer les sauts normaux
-
-					-- velY > 35 (au lieu 20) ET airTime > 1.0 (au lieu 0.5) ET 2 strikes (au lieu 1)
-
-					if velY > 35 and (data.airTime or 0) > 1.0 then
-
-						data.jumpStrikes = (data.jumpStrikes or 0) + 1
-
-						if data.jumpStrikes >= 2 then
-
-							-- [SIMPLE COMME FLY] juste velocity Y = 0 (chute naturelle par gravité)
-
-							hrp.AssemblyLinearVelocity = Vector3.new(
-
-								hrp.AssemblyLinearVelocity.X, 0,
-
-								hrp.AssemblyLinearVelocity.Z)
-
-							acSendAlert(plr, "INFINITE JUMP",
-
-								string.format("Jump en l'air (Y vel: %.0f, airTime: %.1fs)", velY, data.airTime or 0))
-
-							data.jumpStrikes = 3
-
-						end
-
-					else
-
-						data.jumpStrikes = math.max(0, (data.jumpStrikes or 0) - 0.1)
-
-					end
-
-				else
-
-					data.jumpStrikes = 0
-
-				end
-
-			else
-
-				data.jumpStrikes = 0
-
-			end
-
-			data.lastJumpPower = hum.JumpPower
-
-			data.lastWalkSpeed = hum.WalkSpeed
-
-			-- ══ HEALTH CHECK ══
-
-			if not acIsWhitelisted(plr, "god") and not plr:GetAttribute("GodMode") then
-
-				if hum.MaxHealth > 200 and data.lastMaxHealth <= 200 then
-
-					hum.MaxHealth = 100
-
-					hum.Health = 100
-
-					acSendAlert(plr, "HEALTH HACK", string.format("MaxHealth: %.0f (reset à 100)", data.lastMaxHealth))
-
-				end
-
-			end
-
-			data.lastMaxHealth = hum.MaxHealth
-
-			-- ══ SCALE CHECK ══
-
-			-- [FIX SIZE] Skip si la commande size a été appliquée par un admin
-
-			if not plr:GetAttribute("_AdminScaled") then
-
-				local headScale = hum:FindFirstChild("HeadScale")
-
-				local bodyHeight = hum:FindFirstChild("BodyHeightScale")
-
-				if headScale and headScale.Value > 3 and not acIsWhitelisted(plr, "speed") then
-
-					headScale.Value = 1
-
-					acSendAlert(plr, "SCALE HACK", "HeadScale trop grand")
-
-				end
-
-				if bodyHeight and bodyHeight.Value > 3 and not acIsWhitelisted(plr, "speed") then
-
-					bodyHeight.Value = 1
-
-					acSendAlert(plr, "SCALE HACK", "BodyHeight trop grand")
-
-				end
-
-			end
-
-			-- ══ VELOCITY CHECK (détecte les fly scripts qui utilisent BodyVelocity) ══
-
-			-- [ANTI-FAUX-POSITIFS] Skip si seated/climbing/ragdoll (vehicule pousse, echelle, ragdoll fling)
-
-			if not acIsWhitelisted(plr, "fly") and not acIsWhitelisted(plr, "speed") then
-
-				local vel = hrp.AssemblyLinearVelocity
-
-				local horizSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
-
-				-- [SEUIL DYNAMIQUE] Pas de plancher fixe. Detection sur anomalie pure.
-
-				local maxVel = hum.WalkSpeed * 2
-
-				-- Velocity horizontale impossible sans fly/fling
-
-				if horizSpeed > maxVel and not isRagdoll and not isSeated and not isClimbing then
-
-					data.velStrikes = (data.velStrikes or 0) + 1
-
-					if data.velStrikes >= AC_STRIKES_BLOCK then
-
-						-- [BLOCAGE IN-PLACE] Plus de TP au lastSafePos. Freeze sur place 2s.
-
-						if not isStaffMember then _acSevereBlock(2.0) end
-
-					end
-
-					if data.velStrikes >= AC_STRIKES_ALERT then
-
-						acSendAlert(plr, "VELOCITY HACK",
-
-							string.format("Vitesse: %.0f studs/s (max: %.0f)", horizSpeed, maxVel))
-
-						data.velStrikes = AC_STRIKES_ALERT
-
-					end
-
-				else
-
-					data.velStrikes = math.max(0, (data.velStrikes or 0) - AC_DECAY)
-
-				end
-
-			else
-
-				data.velStrikes = 0
-
-			end
-
-			-- ══ PHYSICS OBJECTS CHECK — toujours actif même whitelist ══
-
-			for _, obj in pairs(char:GetDescendants()) do
-
-				if (obj:IsA("BodyVelocity") or obj:IsA("BodyGyro") or obj:IsA("BodyPosition")
-
-					or obj:IsA("LinearVelocity") or obj:IsA("AlignPosition") or obj:IsA("AlignOrientation")
-
-					or obj:IsA("VectorForce") or obj:IsA("LineForce"))
-
-					and not obj:GetAttribute("AgoraAdmin") then
-
-					obj:Destroy()
-
-					acSendAlert(plr, "FLY INJECT",
-
-						string.format("'%s' supprimé de '%s'", obj.ClassName, obj.Parent and obj.Parent.Name or "?"))
-
-				end
-
-			end
-
-			-- ══ HUMANOID STATE CHECK (toujours actif) ══
-
-			if hrp.Anchored and not acIsWhitelisted(plr, "noclip") and not data._severeUntil then
-
-				hrp.Anchored = false
-
-				acSendAlert(plr, "ANCHOR HACK", "HumanoidRootPart était ancré")
-
-			end
-
-			-- ══ PHYSICS HACK CHECK (Delta / Synapse / Krnl / etc.) ══
-
-			-- Ces hacks bypass la velocity/noclip detection en modifiant les proprietes physiques
-
-			-- des body parts. On reset systematiquement ce qui est anormal.
-
-			-- IMPORTANT: skip pendant _severeUntil (le bloc peut Anchorer HRP exprès).
-
-			if not data._severeUntil and not acIsWhitelisted(plr, "noclip") and not acIsWhitelisted(plr, "fly") then
-
-				local _physHack = nil
-
-				for _, _bp in ipairs(char:GetDescendants()) do
-
-					if _bp:IsA("BasePart") and _bp ~= hrp then
-
-						-- 1. Anchor hack sur autres body parts (Delta technique)
-
-						if _bp.Anchored then
-
-							_bp.Anchored = false
-
-							_physHack = _physHack or ("Anchor sur " .. _bp.Name)
-
-						end
-
-						-- 2. Massless hack (active = body part flotte / pas de gravite)
-
-						if _bp.Massless then
-
-							_bp.Massless = false
-
-							_physHack = _physHack or ("Massless sur " .. _bp.Name)
-
-						end
-
-						-- 3. CustomPhysicalProperties anormale (Density < 0.05 = quasi flotte)
-
-						if _bp.CustomPhysicalProperties then
-
-							local cpp = _bp.CustomPhysicalProperties
-
-							if cpp.Density < 0.05 or cpp.Density > 200 then
-
-								_bp.CustomPhysicalProperties = nil  -- restore default
-
-								_physHack = _physHack or ("Density anormale sur " .. _bp.Name)
+								targetPlr:SetAttribute("_ZoneOrigZ", tHrp.CFrame.Z)
 
 							end
-
-						end
-
-					end
-
-				end
-
-				-- 4. Humanoid HipHeight anormale (defaut R15: 2, R6: 0). >5 = exploit fly-like
-
-				if hum.HipHeight and (hum.HipHeight > 5 or hum.HipHeight < -1) then
-
-					hum.HipHeight = (hum.RigType == Enum.HumanoidRigType.R15) and 2.0 or 0.0
-
-					_physHack = _physHack or ("HipHeight: " .. tostring(hum.HipHeight))
-
-				end
-
-				if _physHack then
-
-					acSendAlert(plr, "PHYSICS HACK", _physHack .. " — reset")
-
-				end
-
-			end
-
-			-- ══ TOOL REACH HACK CHECK (Delta technique pour augmenter la portee des tools) ══
-
-			-- Detecte les Tool dont le Grip a ete deplace anormalement loin (reach hack typique).
-
-			if not acIsWhitelisted(plr, "noclip") then
-
-				for _, _tool in ipairs(char:GetChildren()) do
-
-					if _tool:IsA("Tool") then
-
-						-- Grip modifie : si la position du grip est > 8 studs du HRP origin, suspect
-
-						local gpos = _tool.Grip.Position
-
-						if gpos.Magnitude > 8 then
-
-							_tool.Grip = CFrame.new()  -- reset au default (CFrame.new())
-
-							acSendAlert(plr, "REACH HACK", "Tool '" .. _tool.Name .. "' Grip anormal — reset")
-
-						end
-
-					end
-
-				end
-
-			end
-
-			-- ══ COLLISION CHECK (noclip exploit = body parts critiques en CanCollide false) ══
-
-			-- [FIX FAUX POSITIF] Ne check QUE les body parts critiques R6/R15 + skip pendant
-
-			-- les etats transitoires (Jumping/Freefall/FallingDown) ou Roblox set CanCollide=false
-
-			-- temporairement, et requiert PERSISTANCE de 1.5s avant de strike.
-
-			if not acIsWhitelisted(plr, "noclip") and not acIsWhitelisted(plr, "fly")
-
-				and not isFalling
-
-				and state ~= Enum.HumanoidStateType.Jumping
-
-				and state ~= Enum.HumanoidStateType.Landed
-
-				and state ~= Enum.HumanoidStateType.Ragdoll
-
-				and state ~= Enum.HumanoidStateType.Physics then
-
-				local CRITICAL_PARTS = {
-
-					-- R6
-
-					Torso=true, ["Left Arm"]=true, ["Right Arm"]=true,
-
-					["Left Leg"]=true, ["Right Leg"]=true,
-
-					-- R15
-
-					UpperTorso=true, LowerTorso=true,
-
-					LeftUpperArm=true, LeftLowerArm=true, LeftHand=true,
-
-					RightUpperArm=true, RightLowerArm=true, RightHand=true,
-
-					LeftUpperLeg=true, LeftLowerLeg=true, LeftFoot=true,
-
-					RightUpperLeg=true, RightLowerLeg=true, RightFoot=true,
-
-				}
-
-				local noCollideCount = 0
-
-				local criticalParts = {}
-
-				for _, part in pairs(char:GetChildren()) do
-
-					if part:IsA("BasePart") and CRITICAL_PARTS[part.Name] then
-
-						table.insert(criticalParts, part)
-
-						if not part.CanCollide then noCollideCount = noCollideCount + 1 end
-
-					end
-
-				end
-
-				-- Persistance : on detecte la condition "TOUTES CanCollide=false" mais on
-
-				-- ne strike qu'apres 1.5s consecutif (= 25 ticks a 60ms). Roblox lui-meme
-
-				-- toggle CanCollide pendant les transitions, ne pas faux-positiver.
-
-				if #criticalParts >= 4 and noCollideCount == #criticalParts then
-
-					data._collideAccum = (data._collideAccum or 0) + elapsed
-
-					if data._collideAccum >= 1.5 then
-
-						-- Vraie injection persistante. Force CanCollide=true et alerte.
-
-						for _, part in ipairs(criticalParts) do
-
-							part.CanCollide = true
-
-						end
-
-						acSendAlert(plr, "NOCLIP INJECT",
-
-							string.format("Body parts CanCollide=false depuis %.1fs (forcé true)", data._collideAccum))
-
-						data._collideAccum = 0
-
-					end
-
-				else
-
-					-- Au moins une part collide -> reset compteur (pas d'injection)
-
-					data._collideAccum = 0
-
-				end
-
-			else
-
-				-- Skip pendant les etats transitoires : reset le compteur sinon ca s'accumule
-
-				if data then data._collideAccum = 0 end
-
-			end
-
-			-- [AC HARDER] Mettre à jour lastSafePos UNIQUEMENT quand tout est safe ET au sol
-
-			local _allClean = (data.speedStrikes or 0) == 0
-
-				and (data.flyStrikes or 0) == 0
-
-				and (data.noclipStrikes or 0) == 0
-
-				and (data.tpStrikes or 0) == 0
-
-				and (data.velStrikes or 0) == 0
-
-				and (data.jumpStrikes or 0) == 0
-
-				and (data.airTime or 0) < 0.3
-
-			if _allClean then
-
-				data.lastSafePos = currentPos
-
-			end
-
-			-- [BLOCAGE PROLONGE] Persistance multi-hack -> freeze in-place 8s (plus de LoadCharacter).
-
-			-- LoadCharacter respawnait le joueur ce qui peut casser des mecaniques de jeu (inventaire,
-
-			-- quetes, position de checkpoint, etc.). Maintenant on bloque sur place 8s.
-
-			local totalStrikes = (data.speedStrikes or 0)
-
-				+ (data.flyStrikes or 0)
-
-				+ (data.noclipStrikes or 0)
-
-				+ (data.tpStrikes or 0)
-
-				+ (data.velStrikes or 0)
-
-				+ (data.jumpStrikes or 0)
-
-			if totalStrikes >= 6 and not isStaffMember then
-
-				if not data.lastHardReset or (os.clock() - data.lastHardReset) > 15 then
-
-					data.lastHardReset = os.clock()
-
-					acSendAlert(plr, "MULTI HACK", "Persistance multi-hack — bloque 8s sur place")
-
-					_acSevereBlock(8.0)
-
-					-- Note: les strikes seront reset automatiquement quand _severeUntil expire
-
-					-- (dans le bloc SEVERE BLOCK release au debut du tick suivant).
-
-				end
-
-			end
-
-			-- Sauvegarder position
-
-			data.lastPos = currentPos
-
-		end
-
-	end)
-
-	-- ════════════════════════════════════════════════════════════════════════
-
-	-- SEVERE BLOCK — REFRESH CHAQUE FRAME (Anchored + PlatformStand + force CFrame)
-
-	-- ════════════════════════════════════════════════════════════════════════
-
-	-- Tourne a CHAQUE Heartbeat (pas seulement toutes les 60ms du scan AC).
-
-	-- Garantit que le joueur en _severeUntil ne fait AUCUNE distance, meme en
-
-	-- spammant les touches direction:
-
-	--   1. SetNetworkOwner(nil) - le client ne controle plus la physique
-
-	--   2. Anchored=true - aucune physics step ne s'applique au HRP
-
-	--   3. PlatformStand=true - bloque tous les inputs de mouvement Humanoid
-
-	--   4. WalkSpeed=0 + JumpPower=0 - bloque toute commande Move
-
-	--   5. Move(zero, false) - annule toute commande Move en cours
-
-	--   6. CFrame force - meme si tout est bypass, on reset la position
-
-	--   7. velocity = 0 - reset au cas ou
-
-	RunService.Heartbeat:Connect(function()
-
-		-- [FIX TOGGLE = STOP BLOCAGE] Si AC desactive globalement, ne pas refresh les freeze.
-
-		-- Le scan AC libere deja les anchored/PlatformStand au moment du toggle off.
-
-		if acGloballyDisabled then return end
-
-		local now = os.clock()
-
-		for _, plr in pairs(Players:GetPlayers()) do
-
-			local data = acPlayerData[plr.UserId]
-
-			if not data or not data._severeUntil then continue end
-
-			if now >= data._severeUntil then continue end
-
-			local char = plr.Character
-
-			if not char then continue end
-
-			local hrp = char:FindFirstChild("HumanoidRootPart")
-
-			local hum = char:FindFirstChildOfClass("Humanoid")
-
-			if not hrp or not data._severeFrozenPos then continue end
-
-			-- Re-claim network ownership (anti-Solara qui tente de la reprendre)
-
-			pcall(function() hrp:SetNetworkOwner(nil) end)
-
-			-- Re-Anchorer TOUS les body parts (le client peut tenter de set Anchored=false)
-
-			for _, _bp in ipairs(char:GetDescendants()) do
-
-				if _bp:IsA("BasePart") and not _bp.Anchored then
-
-					_bp.Anchored = true
-
-				end
-
-				-- Re-detruire les BodyMovers que Solara aurait re-poses
-
-				if _bp:IsA("BodyVelocity") or _bp:IsA("BodyForce") or _bp:IsA("BodyGyro")
-
-					or _bp:IsA("BodyAngularVelocity") or _bp:IsA("BodyPosition") or _bp:IsA("BodyThrust")
-
-					or _bp:IsA("AlignPosition") or _bp:IsA("AlignOrientation")
-
-					or _bp:IsA("LinearVelocity") or _bp:IsA("AngularVelocity")
-
-					or _bp:IsA("VectorForce") or _bp:IsA("Torque") then
-
-					_bp:Destroy()
-
-				end
-
-			end
-
-			-- Bloquer les inputs de mouvement (touches direction)
-
-			if hum then
-
-				if hum.WalkSpeed ~= 0 then hum.WalkSpeed = 0 end
-
-				if hum.JumpPower ~= 0 then hum.JumpPower = 0 end
-
-				if not hum.PlatformStand then hum.PlatformStand = true end
-
-				pcall(function() hum:Move(Vector3.zero, false) end)
-
-			end
-
-			-- Force la position d'avant le cheat
-
-			hrp.CFrame = CFrame.new(data._severeFrozenPos) * (data._severeFrozenRot or CFrame.new())
-
-			hrp.AssemblyLinearVelocity = Vector3.zero
-
-			hrp.AssemblyAngularVelocity = Vector3.zero
-
-		end
-
-	end)
-
-	-- Cleanup quand un joueur part
-
-	Players.PlayerRemoving:Connect(function(p)
-
-		acPlayerData[p.UserId] = nil
-
-		acWhitelist[p.UserId] = nil
-
-		acAlertCooldown[p.UserId] = nil
-
-	end)
-
-	-- ════════════════════════════════════════════════════════════════════════
-
-	-- [DESACTIVE - cause du conflit avec la boucle PRINCIPALE noclip 60ms]
-
-	-- La boucle principale (lignes ~6780) fait deja le check + Anchor + paralyze.
-
-	-- Garder UNE seule boucle = pas de conflit. Le code mort ci-dessous est
-
-	-- conserve pour reference (jamais execute grace au if false).
-
-	-- ════════════════════════════════════════════════════════════════════════
-
-	if false then
-
-	-- ════════════════════════════════════════════════════════════════════════
-
-	-- [DEAD CODE] ancienne boucle Heartbeat qui dupliquait le check :
-
-	-- juste CFrame.new(backTo) + velocity = 0. PAS d'Anchor, PAS de SetNetworkOwner,
-
-	-- PAS de paralyze. Le fly marche avec ça, le noclip marchera pareil.
-
-	-- ════════════════════════════════════════════════════════════════════════
-
-	local acNoclipPersist = {} -- [uid] = nb de frames consécutives dans un mur
-
-	local acNoclipLastReset = {} -- [uid] = os.clock()
-
-	local acLastClearPos = {} -- [uid] = derniere pos hors mur
-
-	RunService.Heartbeat:Connect(function()
-
-		for _, plr in pairs(Players:GetPlayers()) do
-
-			if acIsStaff(plr) then continue end
-
-			if acIsWhitelisted(plr, "noclip") then continue end
-
-			local char = plr.Character
-
-			if not char then continue end
-
-			local hrp = char:FindFirstChild("HumanoidRootPart")
-
-			local hum = char:FindFirstChildOfClass("Humanoid")
-
-			if not hrp or not hum or hum.Health <= 0 then continue end
-
-			local state = hum:GetState()
-
-			if state == Enum.HumanoidStateType.Seated then continue end
-
-			if state == Enum.HumanoidStateType.Ragdoll or state == Enum.HumanoidStateType.Physics then continue end
-
-			-- Skip si en saut/chute (états transitoires, faux positifs possibles)
-
-			if state == Enum.HumanoidStateType.Climbing then continue end
-
-			local uid = plr.UserId
-
-			-- Filtre commun
-
-			local ncFilter = {char}
-
-			for _, p2 in pairs(Players:GetPlayers()) do
-
-				if p2.Character then table.insert(ncFilter, p2.Character) end
-
-			end
-
-			local overlapParams = OverlapParams.new()
-
-			overlapParams.FilterType = Enum.RaycastFilterType.Exclude
-
-			overlapParams.FilterDescendantsInstances = ncFilter
-
-			local insideWall = false
-
-			local hitName = "?"
-
-			-- [METHODE 1 RAYCAST DIRECTIONNEL] (méthode fly-like, plus fiable contre Solara)
-
-			-- Raycast depuis acLastClearPos vers position actuelle. Si ça hit un mur, noclip.
-
-			local prevPos = acLastClearPos[uid] or hrp.Position
-
-			local moveVec = hrp.Position - prevPos
-
-			if moveVec.Magnitude > 0.5 then
-
-				local rayParams2 = RaycastParams.new()
-
-				rayParams2.FilterType = Enum.RaycastFilterType.Exclude
-
-				rayParams2.FilterDescendantsInstances = ncFilter
-
-				-- Raycast à 3 hauteurs : centre HRP, haut, bas (couvre marches/sauts)
-
-				local offsets = {Vector3.new(0,0,0), Vector3.new(0,1.5,0), Vector3.new(0,-1.5,0)}
-
-				for _, off in ipairs(offsets) do
-
-					local r = workspace:Raycast(prevPos + off, moveVec, rayParams2)
-
-					if r and r.Instance.CanCollide and r.Instance.Transparency < 0.9
-
-						and r.Instance.Size.Magnitude > 2 then
-
-						-- Vérifier que c'est un VRAI mur (pas une marche d'escalier)
-
-						local partTop = r.Instance.Position.Y + (r.Instance.Size.Y / 2)
-
-						local hrpBottom = hrp.Position.Y - 2
-
-						local isFloorOrStep = partTop <= (hrpBottom + 1.5)
-
-						if not isFloorOrStep then
-
-							insideWall = true
-
-							hitName = r.Instance.Name
-
-							break
-
-						end
-
-					end
-
-				end
-
-			end
-
-			-- [METHODE 2 OVERLAP] (en plus du raycast, pour catch HRP DANS le mur)
-
-			if not insideWall then
-
-				local ok, parts = pcall(function() return workspace:GetPartsInPart(hrp, overlapParams) end)
-
-				if ok and parts then
-
-					for _, part in pairs(parts) do
-
-						if _isSolidWall(part, hrp) then
-
-							local partTop = part.Position.Y + (part.Size.Y / 2)
-
-							local hrpBottom = hrp.Position.Y - 2
-
-							local isFloorOrStep = partTop <= (hrpBottom + 1.5)
-
-							if not isFloorOrStep then
-
-								insideWall = true
-
-								hitName = part.Name
-
-								break
-
-							end
-
-						end
-
-					end
-
-				end
-
-			end
-
-			if insideWall then
-
-				acNoclipPersist[uid] = (acNoclipPersist[uid] or 0) + 1
-
-				local data = acPlayerData[uid]
-
-				-- [BLOC + WARN seulement, PAS de kill] Chaque frame dans le mur :
-
-				-- 1. Anchor PERSISTANT (pas de timer désanchor — désancher quand sort du mur)
-
-				-- 2. TP au sol via raycast vertical
-
-				-- 3. Velocity = 0 + paralyze WS/JP
-
-				-- 4. Détruire les BodyMovers de Solara (BodyVelocity/AlignPosition/etc)
-
-				hrp.Anchored = true
-
-				local rayDown = RaycastParams.new()
-
-				rayDown.FilterType = Enum.RaycastFilterType.Exclude
-
-				rayDown.FilterDescendantsInstances = ncFilter
-
-				local searchFrom = acLastClearPos[uid] or (data and (data.lastSafePos or data.lastValidPos)) or hrp.Position
-
-				local groundRay = workspace:Raycast(searchFrom + Vector3.new(0, 50, 0), Vector3.new(0, -500, 0), rayDown)
-
-				local backTo = groundRay and (groundRay.Position + Vector3.new(0, 4, 0)) or searchFrom
-
-				hrp.CFrame = CFrame.new(backTo)
-
-				hrp.AssemblyLinearVelocity = Vector3.zero
-
-				hrp.AssemblyAngularVelocity = Vector3.zero
-
-				-- Paralyser humanoid + sauvegarder valeurs originales
-
-				if data then
-
-					data._origWS = data._origWS or 16
-
-					data._origJP = data._origJP or 50
-
-				end
-
-				hum.WalkSpeed = 0
-
-				hum.JumpPower = 0
-
-				hum.JumpHeight = 0
-
-				-- Détruire les BodyMovers injectés par Solara (qui peuvent forcer mouvement)
-
-				for _, obj in pairs(char:GetDescendants()) do
-
-					if (obj:IsA("BodyVelocity") or obj:IsA("BodyGyro") or obj:IsA("BodyPosition")
-
-						or obj:IsA("LinearVelocity") or obj:IsA("AlignPosition") or obj:IsA("AlignOrientation")
-
-						or obj:IsA("VectorForce") or obj:IsA("LineForce"))
-
-						and not obj:GetAttribute("AgoraAdmin") then
-
-						obj:Destroy()
-
-					end
-
-				end
-
-				-- Warn au 3e strike (~50ms), pas spam (cooldown 5s)
-
-				if acNoclipPersist[uid] == 3 then
-
-					local now = os.clock()
-
-					if not acNoclipLastReset[uid] or (now - acNoclipLastReset[uid]) > 5 then
-
-						acNoclipLastReset[uid] = now
-
-						acSendAlert(plr, "NOCLIP",
-
-							string.format("Bloque dans '%s' (Anchor + paralyze)", hitName))
-
-					end
-
-				end
-
-			else
-
-				-- Pas dans un mur → libérer + mettre à jour lastClearPos
-
-				if hrp.Anchored then
-
-					hrp.Anchored = false
-
-				end
-
-				-- Restaurer WalkSpeed/JumpPower si paralyse précédemment
-
-				local data = acPlayerData[uid]
-
-				if data and data._origWS then
-
-					hum.WalkSpeed = data._origWS
-
-					hum.JumpPower = data._origJP or 50
-
-					hum.JumpHeight = 7.2
-
-					data._origWS = nil
-
-					data._origJP = nil
-
-				end
-
-				acLastClearPos[uid] = hrp.Position
-
-				-- Décrémenter
-
-				if acNoclipPersist[uid] then
-
-					acNoclipPersist[uid] = math.max(0, acNoclipPersist[uid] - 1)
-
-					if acNoclipPersist[uid] == 0 then acNoclipPersist[uid] = nil end
-
-				end
-
-			end
-
-		end
-
-	end)
-
-	-- Cleanup acNoclipPersist quand joueur part
-
-	Players.PlayerRemoving:Connect(function(p)
-
-		acNoclipPersist[p.UserId] = nil
-
-		acNoclipLastReset[p.UserId] = nil
-
-		acLastClearPos[p.UserId] = nil
-
-	end)
-
-	end -- fin if false (boucle Heartbeat noclip dupliquee desactivee)
-
-	-- Reset au respawn + [FIX STABILITÉ] Whitelist 3s après respawn pour éviter faux positifs
-
-	local acRespawnConnections = {}
-
-	local function acResetOnSpawn(plr)
-
-		-- Évite les doubles connexions si la fonction est appelée plusieurs fois pour le même joueur
-
-		if acRespawnConnections[plr.UserId] then return end
-
-		local conn = plr.CharacterAdded:Connect(function(char)
-
-			local uid = plr.UserId
-
-			if acPlayerData[uid] then
-
-				acPlayerData[uid].lastPos = nil
-
-				acPlayerData[uid].lastValidPos = nil
-
-				acPlayerData[uid].airTime = 0
-
-				acPlayerData[uid]._spawnTime = os.clock()
-
-				acPlayerData[uid].speedStrikes = 0
-
-				acPlayerData[uid].flyStrikes = 0
-
-				acPlayerData[uid].noclipStrikes = 0
-
-				acPlayerData[uid].tpStrikes = 0
-
-				acPlayerData[uid].velStrikes = 0
-
-			end
-
-			-- [FIX TP RETOUR] Initialiser lastClearPos à la position de spawn pour qu'au 1er noclip
-
-			-- on tp le joueur à un endroit valide (pas hrp.Position = pos actuelle dans le mur)
-
-			task.spawn(function()
-
-				local spawnHrp = char:WaitForChild("HumanoidRootPart", 5)
-
-				if spawnHrp then
-
-					acLastClearPos[uid] = spawnHrp.Position
-
-					if acPlayerData[uid] then
-
-						acPlayerData[uid].lastSafePos = spawnHrp.Position
-
-						acPlayerData[uid].lastValidPos = spawnHrp.Position
-
-					end
-
-				end
-
-			end)
-
-			-- [FIX ANTI-CHEAT] Whitelist temporaire 3s après respawn (évite fausses détections
-
-			-- TP/speed). PRESERVE les whitelists PERMANENTES (ex: ;fly admin actif): on ne
-
-			-- reset que les types qu'on a ajoute pendant ce respawn, pas ceux qui etaient deja la.
-
-			acWhitelist[uid] = acWhitelist[uid] or {}
-
-			-- [FIX SEAT] Whitelist teleport+noclip 2s a chaque fois que le joueur s'assoit
-			task.spawn(function()
-				local _hum = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid", 5)
-				if not _hum then return end
-				_hum.Seated:Connect(function(active)
-					if not active then return end
-					local _seatAdded = {}
-					acWhitelist[uid] = acWhitelist[uid] or {}
-					for _, _t in ipairs({"teleport", "noclip"}) do
-						if not acWhitelist[uid][_t] then
-							_seatAdded[_t] = true
-							acWhitelist[uid][_t] = true
-						end
-					end
-					task.delay(2, function()
-						if acWhitelist[uid] then
-							for _t in pairs(_seatAdded) do
-								acWhitelist[uid][_t] = nil
-							end
-						end
-					end)
-				end)
-			end)
-
-			-- Memoriser l'etat AVANT pour ne pas ecraser les whitelists permanentes
-
-			local _addedBySpawn = {}
-
-			for _, _t in ipairs({"speed", "fly", "noclip"}) do
-
-				if not acWhitelist[uid][_t] then
-
-					_addedBySpawn[_t] = true
-
-					acWhitelist[uid][_t] = true
-
-				end
-
-			end
-
-			task.delay(3, function()
-
-				if acWhitelist[uid] then
-
-					-- Reset UNIQUEMENT les types qu'on a ajoute (preserve les permanentes)
-
-					for _t, _ in pairs(_addedBySpawn) do
-
-						acWhitelist[uid][_t] = nil
-
-					end
-
-				end
-
-			end)
-
-		end)
-
-		acRespawnConnections[plr.UserId] = conn
-
-	end
-
-	-- Cleanup quand le joueur part
-
-	Players.PlayerRemoving:Connect(function(plr)
-
-		local conn = acRespawnConnections[plr.UserId]
-
-		if conn then
-
-			conn:Disconnect()
-
-			acRespawnConnections[plr.UserId] = nil
-
-		end
-
-	end)
-
-	Players.PlayerAdded:Connect(acResetOnSpawn)
-
-	for _, p in pairs(Players:GetPlayers()) do acResetOnSpawn(p) end
-
-	print("[Agora Admin] Anti-Cheat intégré et actif.")
-
-	-- ------------------------------------------------
-
-	-- TICKETS — Système serveur
-
-	-- ------------------------------------------------
-
-	local activeTickets = {}
-
-	local ticketId = 0
-
-	ticketSubmitEvent.OnServerEvent:Connect(function(plr, data)
-
-		if type(data) ~= "table" then return end
-
-		if not data.Description or #data.Description < 5 then return end
-
-		if #data.Description > 500 then data.Description = string.sub(data.Description, 1, 500) end
-
-		ticketId = ticketId + 1
-
-		local ticket = {
-
-			Id         = ticketId,
-
-			ReporterId = plr.UserId,
-
-			Reporter   = plr.Name,
-
-			TargetName = data.Target or "",
-
-			Category   = data.Category or "Autre",
-
-			Description= data.Description,
-
-			Time       = os.date("%H:%M:%S"),
-
-			Claimed    = false,
-
-			ClaimedBy  = nil,
-
-		}
-
-		table.insert(activeTickets, 1, ticket) -- plus récent en premier
-
-		if #activeTickets > 50 then table.remove(activeTickets) end
-
-		-- Notifier le reporter
-
-		notifEvent:FireClient(plr, "Ticket #"..ticketId.." envoyé aux modérateurs.")
-
-		-- Notifier tous les modérateurs+ avec alerte visuelle
-
-		for _, staff in pairs(Players:GetPlayers()) do
-
-			local lvl = rolesHierarchy[_G.Agora_getPlayerRole(staff)] or 99
-
-			if lvl <= 4 then
-
-				ticketAlertEvent:FireClient(staff, {
-
-					Reporter = plr.Name,
-
-					Category = data.Category,
-
-					Target = data.Target or "",
-
-					Description = string.sub(data.Description, 1, 80),
-
-				})
-
-			end
-
-		end
-
-	end)
-
-	ticketListFunc.OnServerInvoke = function(plr)
-
-		local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
-
-		if lvl > 4 then return {} end -- Modérateur+ seulement
-
-		local list = {}
-
-		for _, t in ipairs(activeTickets) do
-
-			if not t.Claimed then
-
-				table.insert(list, t)
-
-			end
-
-		end
-
-		return list
-
-	end
-
-	ticketClaimEvent.OnServerEvent:Connect(function(plr, tId)
-
-		local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
-
-		if lvl > 4 then return end
-
-		for _, t in ipairs(activeTickets) do
-
-			if t.Id == tId and not t.Claimed then
-
-				t.Claimed = true
-
-				t.ClaimedBy = plr.Name
-
-				notifEvent:FireClient(plr, "Ticket #"..tId.." pris en charge.")
-
-				-- Notifier le reporter
-
-				local reporter = Players:GetPlayerByUserId(t.ReporterId)
-
-				if reporter then
-
-					notifEvent:FireClient(reporter, "Un modérateur traite votre ticket #"..tId..".")
-
-				end
-
-				break
-
-			end
-
-		end
-
-	end)
-
-	-- ------------------------------------------------
-
-	-- MOD CAM — Invisible + whitelist serveur
-
-	-- ------------------------------------------------
-
-	modCamEvent.OnServerEvent:Connect(function(plr, action, camPosition)
-
-		local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
-
-		if lvl > 4 then return end
-
-		local char = plr.Character
-
-		if not char then return end
-
-		local hrp = char:FindFirstChild("HumanoidRootPart")
-
-		local hum = char:FindFirstChildOfClass("Humanoid")
-
-		if not hrp then return end
-
-		if action == "Enter" then
-
-			-- Whitelist anti-cheat COMPLÈTE
-
-			acWhitelistFn(plr, "fly", true)
-
-			acWhitelistFn(plr, "noclip", true)
-
-			acWhitelistFn(plr, "speed", true)
-
-			acWhitelistFn(plr, "teleport", true)
-
-			-- Reset AC data
-
-			local uid = plr.UserId
-
-			if acPlayerData[uid] then
-
-				acPlayerData[uid].speedStrikes = 0
-
-				acPlayerData[uid].flyStrikes = 0
-
-				acPlayerData[uid].tpStrikes = 0
-
-				acPlayerData[uid].velStrikes = 0
-
-				acPlayerData[uid].airTime = 0
-
-				acPlayerData[uid].noclipStrikes = 0
-
-			end
-
-			-- Sauvegarder la position avant
-
-			plr:SetAttribute("ModCamOriginX", hrp.CFrame.X)
-
-			plr:SetAttribute("ModCamOriginY", hrp.CFrame.Y)
-
-			plr:SetAttribute("ModCamOriginZ", hrp.CFrame.Z)
-
-			-- Rendre TOUT invisible : parts, decals, BillboardGui, nametags
-
-			for _, v in pairs(char:GetDescendants()) do
-
-				if v:IsA("BasePart") then
-
-					v:SetAttribute("_MCT", v.Transparency)
-
-					v:SetAttribute("_MCC", v.CanCollide)
-
-					v.Transparency = 1
-
-					v.CanCollide = false
-
-				elseif v:IsA("Decal") or v:IsA("Texture") then
-
-					v:SetAttribute("_MCT", v.Transparency)
-
-					v.Transparency = 1
-
-				elseif v:IsA("BillboardGui") or v:IsA("SurfaceGui") then
-
-					v:SetAttribute("_MCE", v.Enabled)
-
-					v.Enabled = false
-
-				elseif v:IsA("ParticleEmitter") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") then
-
-					v:SetAttribute("_MCE", v.Enabled)
-
-					v.Enabled = false
-
-				end
-
-			end
-
-			-- Cacher le nametag Roblox
-
-			if hum then hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None end
-
-			-- [FIX] NE PAS téléporter sous la map — juste invisible + ancrer sur place
-
-			-- (Avant: tp à Y=-500 faisait que la caméra apparaissait sous la map ailleurs)
-
-			hrp.Anchored = true
-
-			-- hrp.CFrame INCHANGÉ (le character reste exactement là où il était)
-
-			if hum then hum.PlatformStand = true end
-
-		elseif action == "Exit" then
-
-			-- D'abord téléporter le corps à la position de la caméra
-
-			if camPosition and typeof(camPosition) == "Vector3" then
-
-				hrp.CFrame = CFrame.new(camPosition + Vector3.new(0, -3, 0))
-
-			else
-
-				local ox = plr:GetAttribute("ModCamOriginX") or 0
-
-				local oy = plr:GetAttribute("ModCamOriginY") or 10
-
-				local oz = plr:GetAttribute("ModCamOriginZ") or 0
-
-				hrp.CFrame = CFrame.new(ox, oy, oz)
-
-			end
-
-			-- Désancrer AVANT de rendre visible
-
-			hrp.Anchored = false
-
-			hrp.AssemblyLinearVelocity = Vector3.zero
-
-			hrp.AssemblyAngularVelocity = Vector3.zero
-
-			if hum then
-
-				hum.PlatformStand = false
-
-				hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Viewer
-
-			end
-
-			-- Rendre TOUT visible (fallback robuste si attributs perdus)
-
-			for _, v in pairs(char:GetDescendants()) do
-
-				if v:IsA("BasePart") then
-
-					local savedT = v:GetAttribute("_MCT")
-
-					if savedT ~= nil then
-
-						v.Transparency = savedT
-
-					elseif v.Name == "HumanoidRootPart" then
-
-						v.Transparency = 1
-
-					else
-
-						v.Transparency = 0
-
-					end
-
-					local savedC = v:GetAttribute("_MCC")
-
-					if savedC ~= nil then
-
-						v.CanCollide = savedC
-
-					else
-
-						v.CanCollide = (v.Name ~= "HumanoidRootPart")
-
-					end
-
-					v:SetAttribute("_MCT", nil)
-
-					v:SetAttribute("_MCC", nil)
-
-				elseif v:IsA("Decal") or v:IsA("Texture") then
-
-					local savedT = v:GetAttribute("_MCT")
-
-					v.Transparency = (savedT ~= nil) and savedT or 0
-
-					v:SetAttribute("_MCT", nil)
-
-				elseif v:IsA("BillboardGui") or v:IsA("SurfaceGui") then
-
-					local savedE = v:GetAttribute("_MCE")
-
-					v.Enabled = (savedE ~= nil) and savedE or true
-
-					v:SetAttribute("_MCE", nil)
-
-				elseif v:IsA("ParticleEmitter") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") then
-
-					local savedE = v:GetAttribute("_MCE")
-
-					v.Enabled = (savedE ~= nil) and savedE or true
-
-					v:SetAttribute("_MCE", nil)
-
-				end
-
-			end
-
-			-- Whitelist TP temporaire puis retirer tout
-
-			acWhitelistFn(plr, "teleport", true)
-
-			task.delay(3, function()
-
-				acUnwhitelistFn(plr, "fly")
-
-				acUnwhitelistFn(plr, "noclip")
-
-				acUnwhitelistFn(plr, "speed")
-
-				acUnwhitelistFn(plr, "teleport")
-
-			end)
-
-			-- Confirmer au client
-
-			modCamEvent:FireClient(plr, "Restored")
-
-		elseif action == "ModFly" then
-
-			-- Vol invisible : whitelist AC + invisible MAIS reste en jeu (pas sous la map)
-
-			acWhitelistFn(plr, "fly", true)
-
-			acWhitelistFn(plr, "noclip", true)
-
-			acWhitelistFn(plr, "speed", true)
-
-			acWhitelistFn(plr, "teleport", true)
-
-			-- Reset les données AC pour éviter faux positifs (position stale)
-
-			local uid = plr.UserId
-
-			if acPlayerData[uid] then
-
-				acPlayerData[uid].lastPos = hrp.Position
-
-				acPlayerData[uid].lastValidPos = hrp.Position
-
-				acPlayerData[uid].speedStrikes = 0
-
-				acPlayerData[uid].flyStrikes = 0
-
-				acPlayerData[uid].tpStrikes = 0
-
-				acPlayerData[uid].velStrikes = 0
-
-				acPlayerData[uid].airTime = 0
-
-				acPlayerData[uid].noclipStrikes = 0
-
-				acPlayerData[uid].jumpStrikes = 0
-
-			end
-
-			for _, v in pairs(char:GetDescendants()) do
-
-				if v:IsA("BasePart") then
-
-					v:SetAttribute("_MFT", v.Transparency)
-
-					v:SetAttribute("_MFC", v.CanCollide)
-
-					v.Transparency = 1
-
-					v.CanCollide = false
-
-				elseif v:IsA("Decal") or v:IsA("Texture") then
-
-					v:SetAttribute("_MFT", v.Transparency)
-
-					v.Transparency = 1
-
-				elseif v:IsA("BillboardGui") or v:IsA("SurfaceGui") then
-
-					v:SetAttribute("_MFE", v.Enabled)
-
-					v.Enabled = false
-
-				elseif v:IsA("ParticleEmitter") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") then
-
-					v:SetAttribute("_MFE", v.Enabled)
-
-					v.Enabled = false
-
-				end
-
-			end
-
-			if hum then
-
-				hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-
-			end
-
-			modCamEvent:FireClient(plr, "FlyStarted")
-
-		elseif action == "ModFlyExit" then
-
-			local uid = plr.UserId
-
-			-- Reset AC data
-
-			if acPlayerData[uid] then
-
-				acPlayerData[uid].lastPos = hrp.Position
-
-				acPlayerData[uid].lastValidPos = hrp.Position
-
-				acPlayerData[uid].speedStrikes = 0
-
-				acPlayerData[uid].flyStrikes = 0
-
-				acPlayerData[uid].tpStrikes = 0
-
-				acPlayerData[uid].velStrikes = 0
-
-				acPlayerData[uid].airTime = 0
-
-				acPlayerData[uid].noclipStrikes = 0
-
-			end
-
-			-- Restaurer la visibilité côté serveur (pour les autres joueurs)
-
-			-- Le client restaure sa propre vue via flySavedParts (pas de LoadCharacter)
-
-			if hum then
-
-				hum.PlatformStand = false
-
-				hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Viewer
-
-			end
-
-			for _, v in pairs(char:GetDescendants()) do
-
-				if v:IsA("BasePart") then
-
-					local savedT = v:GetAttribute("_MFT")
-
-					local savedC = v:GetAttribute("_MFC")
-
-					v.Transparency = (savedT ~= nil) and savedT or 0
-
-					v.CanCollide   = (savedC ~= nil) and savedC or (v.Name ~= "HumanoidRootPart")
-
-				elseif v:IsA("Decal") or v:IsA("Texture") then
-
-					local savedT = v:GetAttribute("_MFT")
-
-					v.Transparency = (savedT ~= nil) and savedT or 0
-
-				elseif v:IsA("BillboardGui") or v:IsA("SurfaceGui") then
-
-					local savedE = v:GetAttribute("_MFE")
-
-					v.Enabled = (savedE == nil) or savedE
-
-				elseif v:IsA("ParticleEmitter") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") then
-
-					local savedE = v:GetAttribute("_MFE")
-
-					v.Enabled = (savedE == nil) or savedE
-
-				end
-
-			end
-
-			-- Retirer whitelist après délai (stabilisation)
-
-			task.delay(2, function()
-
-				acUnwhitelistFn(plr, "fly")
-
-				acUnwhitelistFn(plr, "noclip")
-
-				acUnwhitelistFn(plr, "speed")
-
-				acUnwhitelistFn(plr, "teleport")
-
-			end)
-
-			modCamEvent:FireClient(plr, "FlyEnded")
-
-		elseif action == "ZoneStaff" or action == "ZoneStaffTarget" then
-
-			-- Téléporter le mod + un joueur cible sur la part "zone staff"
-
-			local zonePart = workspace:FindFirstChild("zone staff", true)
-
-			if not zonePart then
-
-				notifEvent:FireClient(plr, "Part 'zone staff' introuvable dans le jeu.")
-
-				return
-
-			end
-
-			-- [FIX] CFrame.new(position) = orientation neutre (face Z+), évite d'arriver tourné
-
-			local dest = CFrame.new(zonePart.Position + Vector3.new(0, 5, 0))
-
-			-- Sauvegarder position du mod AVANT le TP
-
-			if not plr:GetAttribute("_ZoneOrigX") then
-
-				plr:SetAttribute("_ZoneOrigX", hrp.CFrame.X)
-
-				plr:SetAttribute("_ZoneOrigY", hrp.CFrame.Y)
-
-				plr:SetAttribute("_ZoneOrigZ", hrp.CFrame.Z)
-
-			end
-
-			-- TP le mod (skip si ZoneStaffTarget — TP uniquement la cible)
-
-			if action == "ZoneStaff" then
-
-				acWhitelistFn(plr, "teleport", true)
-
-				acWhitelistFn(plr, "speed", true)
-
-				hrp.CFrame = dest
-
-				-- [FIX] Reset Sit/PlatformStand + ChangeState pour arriver droit
-
-				if hum then
-
-					hum.Sit = false
-
-					hum.PlatformStand = false
-
-					hum:ChangeState(Enum.HumanoidStateType.GettingUp)
-
-				end
-
-				task.delay(5, function()
-
-					acUnwhitelistFn(plr, "teleport")
-
-					acUnwhitelistFn(plr, "speed")
-
-				end)
-
-				-- Notifier le client pour afficher le bouton retour
-
-				modCamEvent:FireClient(plr, "ZoneStaffEntered")
-
-			end
-
-			-- (envoi ZoneStaffEntered fait dans le bloc if au-dessus)
-
-			-- TP la cible si fournie — sauvegarder sa position d'origine
-
-			if camPosition and typeof(camPosition) == "number" then
-
-				local targetPlr = Players:GetPlayerByUserId(camPosition)
-
-				if targetPlr and targetPlr.Character then
-
-					local tHrp = targetPlr.Character:FindFirstChild("HumanoidRootPart")
-
-					if tHrp then
-
-						-- Sauvegarder position d'origine SEULEMENT si pas deja en zone (evite l'ecrasement)
-
-						if not targetPlr:GetAttribute("_ZoneOrigX") then
-
-							targetPlr:SetAttribute("_ZoneOrigX", tHrp.CFrame.X)
-
-							targetPlr:SetAttribute("_ZoneOrigY", tHrp.CFrame.Y)
-
-							targetPlr:SetAttribute("_ZoneOrigZ", tHrp.CFrame.Z)
-
-						end
-
-						acWhitelistFn(targetPlr, "teleport", true)
-
-						acWhitelistFn(targetPlr, "speed", true)
-
-						tHrp.CFrame = dest * CFrame.new(4, 0, 0)
-
-						-- [FIX] Reset Sit/PlatformStand cible pour qu'elle arrive droite
-
-						local tHum = targetPlr.Character:FindFirstChildOfClass("Humanoid")
-
-						if tHum then
-
-							tHum.Sit = false
-
-							tHum.PlatformStand = false
-
-							tHum:ChangeState(Enum.HumanoidStateType.GettingUp)
-
-						end
-
-						-- Notifier la cible qu'elle a été convoquée
-
-						notifEvent:FireClient(targetPlr, plr.Name.." t'a convoqué en zone staff.")
-
-						task.delay(5, function()
-
-							acUnwhitelistFn(targetPlr, "teleport")
-
-							acUnwhitelistFn(targetPlr, "speed")
-
-						end)
-
-					end
-
-				end
-
-			end
-
-		elseif action == "ZoneStaffReturn" then
-
-			-- Remettre un joueur à sa position d'origine (avant zone staff)
-
-			if camPosition and typeof(camPosition) == "number" then
-
-				local targetPlr = Players:GetPlayerByUserId(camPosition)
-
-				if targetPlr and targetPlr.Character then
-
-					local tHrp = targetPlr.Character:FindFirstChild("HumanoidRootPart")
-
-					if tHrp then
-
-						local ox = targetPlr:GetAttribute("_ZoneOrigX")
-
-						local oy = targetPlr:GetAttribute("_ZoneOrigY")
-
-						local oz = targetPlr:GetAttribute("_ZoneOrigZ")
-
-						if ox and oy and oz then
 
 							acWhitelistFn(targetPlr, "teleport", true)
 
 							acWhitelistFn(targetPlr, "speed", true)
 
-							tHrp.CFrame = CFrame.new(ox, oy, oz)
+							tHrp.CFrame = dest * CFrame.new(4, 0, 0)
+
+							-- [FIX] Reset Sit/PlatformStand cible pour qu'elle arrive droite
+
+							local tHum = targetPlr.Character:FindFirstChildOfClass("Humanoid")
+
+							if tHum then
+
+								tHum.Sit = false
+
+								tHum.PlatformStand = false
+
+								tHum:ChangeState(Enum.HumanoidStateType.GettingUp)
+
+							end
+
+							-- Notifier la cible qu'elle a été convoquée
+
+							notifEvent:FireClient(targetPlr, plr.Name.." t'a convoqué en zone staff.")
 
 							task.delay(5, function()
 
@@ -9648,19 +9597,63 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 							end)
 
-							-- Nettoyer les attributs
+						end
 
-							targetPlr:SetAttribute("_ZoneOrigX", nil)
+					end
 
-							targetPlr:SetAttribute("_ZoneOrigY", nil)
+				end
 
-							targetPlr:SetAttribute("_ZoneOrigZ", nil)
+			elseif action == "ZoneStaffReturn" then
 
-							notifEvent:FireClient(plr, targetPlr.Name.." remis a sa position.")
+				-- Remettre un joueur à sa position d'origine (avant zone staff)
 
-						else
+				if camPosition and typeof(camPosition) == "number" then
 
-							notifEvent:FireClient(plr, "Pas de position sauvegardee pour ce joueur.")
+					local targetPlr = Players:GetPlayerByUserId(camPosition)
+
+					if targetPlr and targetPlr.Character then
+
+						local tHrp = targetPlr.Character:FindFirstChild("HumanoidRootPart")
+
+						if tHrp then
+
+							local ox = targetPlr:GetAttribute("_ZoneOrigX")
+
+							local oy = targetPlr:GetAttribute("_ZoneOrigY")
+
+							local oz = targetPlr:GetAttribute("_ZoneOrigZ")
+
+							if ox and oy and oz then
+
+								acWhitelistFn(targetPlr, "teleport", true)
+
+								acWhitelistFn(targetPlr, "speed", true)
+
+								tHrp.CFrame = CFrame.new(ox, oy, oz)
+
+								task.delay(5, function()
+
+									acUnwhitelistFn(targetPlr, "teleport")
+
+									acUnwhitelistFn(targetPlr, "speed")
+
+								end)
+
+								-- Nettoyer les attributs
+
+								targetPlr:SetAttribute("_ZoneOrigX", nil)
+
+								targetPlr:SetAttribute("_ZoneOrigY", nil)
+
+								targetPlr:SetAttribute("_ZoneOrigZ", nil)
+
+								notifEvent:FireClient(plr, targetPlr.Name.." remis a sa position.")
+
+							else
+
+								notifEvent:FireClient(plr, "Pas de position sauvegardee pour ce joueur.")
+
+							end
 
 						end
 
@@ -9668,187 +9661,185 @@ return function(SETTINGS, commandsObj, loaderScript)
 
 				end
 
+				notifEvent:FireClient(plr, "Teleporte en zone staff.")
+
+			elseif action == "ZoneStaffReturnSelf" then
+
+				-- Le mod veut revenir à sa position d'avant la zone staff
+
+				local ox = plr:GetAttribute("_ZoneOrigX")
+
+				local oy = plr:GetAttribute("_ZoneOrigY")
+
+				local oz = plr:GetAttribute("_ZoneOrigZ")
+
+				if ox and oy and oz then
+
+					acWhitelistFn(plr, "teleport", true)
+
+					acWhitelistFn(plr, "speed", true)
+
+					hrp.CFrame = CFrame.new(ox, oy, oz)
+
+					task.delay(5, function()
+
+						acUnwhitelistFn(plr, "teleport")
+
+						acUnwhitelistFn(plr, "speed")
+
+					end)
+
+					plr:SetAttribute("_ZoneOrigX", nil)
+
+					plr:SetAttribute("_ZoneOrigY", nil)
+
+					plr:SetAttribute("_ZoneOrigZ", nil)
+
+					modCamEvent:FireClient(plr, "ZoneStaffLeft")
+
+				else
+
+					notifEvent:FireClient(plr, "Pas de position sauvegardee.")
+
+				end
+
 			end
 
-			notifEvent:FireClient(plr, "Teleporte en zone staff.")
+		end)
 
-		elseif action == "ZoneStaffReturnSelf" then
+		-- ------------------------------------------------
 
-			-- Le mod veut revenir à sa position d'avant la zone staff
+		-- MOD TP — Whitelist AC pour les TP du panel mod
 
-			local ox = plr:GetAttribute("_ZoneOrigX")
+		-- ------------------------------------------------
 
-			local oy = plr:GetAttribute("_ZoneOrigY")
+		modTPEvent.OnServerEvent:Connect(function(plr)
 
-			local oz = plr:GetAttribute("_ZoneOrigZ")
+			local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
 
-			if ox and oy and oz then
+			if lvl > 4 then return end
 
-				acWhitelistFn(plr, "teleport", true)
+			acWhitelistFn(plr, "teleport", true)
 
-				acWhitelistFn(plr, "speed", true)
+			acWhitelistFn(plr, "speed", true)
 
-				hrp.CFrame = CFrame.new(ox, oy, oz)
+			task.delay(3, function()
 
-				task.delay(5, function()
+				acUnwhitelistFn(plr, "teleport")
 
-					acUnwhitelistFn(plr, "teleport")
+				acUnwhitelistFn(plr, "speed")
 
-					acUnwhitelistFn(plr, "speed")
+			end)
 
-				end)
+		end)
 
-				plr:SetAttribute("_ZoneOrigX", nil)
+		-- ------------------------------------------------
 
-				plr:SetAttribute("_ZoneOrigY", nil)
+		-- LISTE SUSPECTS — DataStore persistant
 
-				plr:SetAttribute("_ZoneOrigZ", nil)
+		-- ------------------------------------------------
 
-				modCamEvent:FireClient(plr, "ZoneStaffLeft")
+		suspectAddEvent.OnServerEvent:Connect(function(plr, targetId, targetName, reason)
 
-			else
+			local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
 
-				notifEvent:FireClient(plr, "Pas de position sauvegardee.")
+			if lvl > 4 then return end
+
+			if not targetId or not targetName then return end
+
+			task.spawn(function()
+
+				local ok, list = pcall(function() return SuspectStore:GetAsync("SuspectList") end)
+
+				list = list or {}
+
+				list[tostring(targetId)] = {
+
+					Name = targetName,
+
+					Reason = reason or "",
+
+					AddedBy = plr.Name,
+
+					Date = os.date("%Y-%m-%d %H:%M"),
+
+				}
+
+				pcall(function() SuspectStore:SetAsync("SuspectList", list) end)
+
+				notifEvent:FireClient(plr, targetName.." ajouté aux suspects.")
+
+			end)
+
+		end)
+
+		suspectRemEvent.OnServerEvent:Connect(function(plr, targetId)
+
+			local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
+
+			if lvl > 4 then return end
+
+			if not targetId then return end
+
+			task.spawn(function()
+
+				local ok, list = pcall(function() return SuspectStore:GetAsync("SuspectList") end)
+
+				list = list or {}
+
+				local name = list[tostring(targetId)] and list[tostring(targetId)].Name or "?"
+
+				list[tostring(targetId)] = nil
+
+				pcall(function() SuspectStore:SetAsync("SuspectList", list) end)
+
+				notifEvent:FireClient(plr, name.." retiré des suspects.")
+
+			end)
+
+		end)
+
+		-- ══ THEME PREFERENCE ══
+
+		themePrefFunc.OnServerInvoke = function(plr, action, value)
+
+			local uid = tostring(plr.UserId)
+
+			if action == "save" and (type(value) == "number" or type(value) == "string") then
+
+				-- [FIX] Cap string à 50 chars pour éviter abus DataStore quota
+
+				if type(value) == "string" and #value > 50 then value = value:sub(1, 50) end
+
+				pcall(function() ThemeStore:SetAsync(uid, value) end)
+
+				return true
+
+			elseif action == "load" then
+
+				local ok, v = pcall(function() return ThemeStore:GetAsync(uid) end)
+
+				return (ok and v) or nil
 
 			end
+
+			return nil
 
 		end
 
-	end)
+		suspectListFunc.OnServerInvoke = function(plr)
 
-	-- ------------------------------------------------
+			local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
 
-	-- MOD TP — Whitelist AC pour les TP du panel mod
-
-	-- ------------------------------------------------
-
-	modTPEvent.OnServerEvent:Connect(function(plr)
-
-		local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
-
-		if lvl > 4 then return end
-
-		acWhitelistFn(plr, "teleport", true)
-
-		acWhitelistFn(plr, "speed", true)
-
-		task.delay(3, function()
-
-			acUnwhitelistFn(plr, "teleport")
-
-			acUnwhitelistFn(plr, "speed")
-
-		end)
-
-	end)
-
-	-- ------------------------------------------------
-
-	-- LISTE SUSPECTS — DataStore persistant
-
-	-- ------------------------------------------------
-
-	suspectAddEvent.OnServerEvent:Connect(function(plr, targetId, targetName, reason)
-
-		local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
-
-		if lvl > 4 then return end
-
-		if not targetId or not targetName then return end
-
-		task.spawn(function()
+			if lvl > 4 then return {} end
 
 			local ok, list = pcall(function() return SuspectStore:GetAsync("SuspectList") end)
 
-			list = list or {}
-
-			list[tostring(targetId)] = {
-
-				Name = targetName,
-
-				Reason = reason or "",
-
-				AddedBy = plr.Name,
-
-				Date = os.date("%Y-%m-%d %H:%M"),
-
-			}
-
-			pcall(function() SuspectStore:SetAsync("SuspectList", list) end)
-
-			notifEvent:FireClient(plr, targetName.." ajouté aux suspects.")
-
-		end)
-
-	end)
-
-	suspectRemEvent.OnServerEvent:Connect(function(plr, targetId)
-
-		local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
-
-		if lvl > 4 then return end
-
-		if not targetId then return end
-
-		task.spawn(function()
-
-			local ok, list = pcall(function() return SuspectStore:GetAsync("SuspectList") end)
-
-			list = list or {}
-
-			local name = list[tostring(targetId)] and list[tostring(targetId)].Name or "?"
-
-			list[tostring(targetId)] = nil
-
-			pcall(function() SuspectStore:SetAsync("SuspectList", list) end)
-
-			notifEvent:FireClient(plr, name.." retiré des suspects.")
-
-		end)
-
-	end)
-
-	-- ══ THEME PREFERENCE ══
-
-	themePrefFunc.OnServerInvoke = function(plr, action, value)
-
-		local uid = tostring(plr.UserId)
-
-		if action == "save" and (type(value) == "number" or type(value) == "string") then
-
-			-- [FIX] Cap string à 50 chars pour éviter abus DataStore quota
-
-			if type(value) == "string" and #value > 50 then value = value:sub(1, 50) end
-
-			pcall(function() ThemeStore:SetAsync(uid, value) end)
-
-			return true
-
-		elseif action == "load" then
-
-			local ok, v = pcall(function() return ThemeStore:GetAsync(uid) end)
-
-			return (ok and v) or nil
+			return (ok and list) or {}
 
 		end
 
-		return nil
-
-	end
-
-	suspectListFunc.OnServerInvoke = function(plr)
-
-		local lvl = rolesHierarchy[_G.Agora_getPlayerRole(plr)] or 99
-
-		if lvl > 4 then return {} end
-
-		local ok, list = pcall(function() return SuspectStore:GetAsync("SuspectList") end)
-
-		return (ok and list) or {}
-
-	end
-
-	print("[Agora Admin] Premium actif: AC + Tickets + ModCam + Suspects")
+		print("[Agora Admin] Premium actif: AC + Tickets + ModCam + Suspects")
 
 	end -- fin if IS_PREMIUM
 
