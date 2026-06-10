@@ -1,18 +1,20 @@
--- Agora Admin Loader v16.1 - Mode StarterGui direct (ScreenGui deja dans StarterGui)
+-- Agora Admin Loader v17.0 - Auto-clone ScreenGui + LocalScript depuis le dossier
 -- Place ce Script dans ServerScriptService/TON_DOSSIER/
--- Place le ScreenGui (avec LocalScript DEDANS) dans StarterGui
+-- Place Settings.lua + ScreenGui (avec LocalScript DEDANS) dans le MEME dossier
+-- Le Loader clone AUTOMATIQUEMENT le ScreenGui dans StarterGui a chaque joueur
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 local StarterGui = game:GetService("StarterGui")
+local ServerStorage = game:GetService("ServerStorage")
 
 local isStudio = RunService:IsStudio()
 
 -- 1) Trouver Settings.lua dans le dossier actuel
 local scriptFolder = script.Parent
-print("[AGORA v16.1] Chargement depuis dossier : " .. scriptFolder.Name)
+print("[AGORA v17.0] Chargement depuis dossier : " .. scriptFolder.Name)
 
 local settingsFile = scriptFolder:FindFirstChild("Settings")
 if not settingsFile then
@@ -69,7 +71,62 @@ ensureRemote("CmdBarEvent", "RemoteEvent")
 
 print("[AGORA] 6 remotes verifies dans SystemRemotes")
 
--- 3) Charger MainModule (local ou distant)
+-- 3) ====== AUTO-CLONE DU SCREENGUI ======
+-- Trouve le ScreenGui original dans le dossier (meme nom que Settings ou "AgoraAdmin")
+local originalGui = scriptFolder:FindFirstChild("AgoraAdmin")
+if not originalGui or not originalGui:IsA("ScreenGui") then
+    for _, child in ipairs(scriptFolder:GetChildren()) do
+        if child:IsA("ScreenGui") then
+            originalGui = child
+            break
+        end
+    end
+    if not originalGui then
+        for _, child in ipairs(scriptFolder:GetDescendants()) do
+            if child:IsA("ScreenGui") then
+                originalGui = child
+                break
+            end
+        end
+    end
+end
+
+if originalGui then
+    print("[AGORA] ScreenGui trouve dans dossier : " .. originalGui.Name)
+    
+    local hasLS = false
+    for _, child in ipairs(originalGui:GetDescendants()) do
+        if child:IsA("LocalScript") and (child.Name:lower():find("client") or child.Name:lower():find("admin") or child.Name == "AgoraAdminLS") then
+            hasLS = true
+            break
+        end
+    end
+    if not hasLS then
+        hasLS = (originalGui:FindFirstChildOfClass("LocalScript") ~= nil)
+    end
+    
+    if hasLS then
+        print("[AGORA] LocalScript detecte a l'interieur du ScreenGui")
+    else
+        warn("[AGORA] ATTENTION: pas de LocalScript dans le ScreenGui!")
+    end
+    
+    for _, child in ipairs(StarterGui:GetChildren()) do
+        if child:IsA("ScreenGui") and child.Name == originalGui.Name then
+            child:Destroy()
+            print("[AGORA] Ancien clone supprime de StarterGui")
+        end
+    end
+    
+    local cloneGui = originalGui:Clone()
+    cloneGui.ResetOnSpawn = false
+    cloneGui.Parent = StarterGui
+    print("[AGORA] ScreenGui clone dans StarterGui: " .. cloneGui.Name)
+else
+    warn("[AGORA] ScreenGui NON TROUVE dans " .. scriptFolder.Name .. ". Cherche 'AgoraAdmin' ou n'importe quel ScreenGui.")
+end
+
+-- 4) Charger MainModule (local ou distant)
 local function loadMainModule()
     local module = scriptFolder:FindFirstChild("MainModule")
     if module then
@@ -95,7 +152,6 @@ local function loadMainModule()
                 return loaderFn()
             end)
             if ok3 and type(maybeFunc) == "function" then
-                -- Le MainModule retourne une function — l'appeler pour tout initialiser
                 local ok4, result = pcall(function()
                     return maybeFunc(SETTINGS, {}, script)
                 end)
@@ -139,7 +195,7 @@ if MainModule.Init then
     if not ok2 then warn("[AGORA] Erreur MainModule.Init : " .. tostring(err2)) end
 end
 
--- 4) Setup commandes pour RemoteFunction
+-- 5) Setup commandes pour RemoteFunction
 local GetCmdsFunc = SystemRemotes:FindFirstChild("GetCmdsFunc")
 if GetCmdsFunc then
     GetCmdsFunc.OnServerInvoke = function(player)
@@ -153,7 +209,7 @@ if GetCmdsFunc then
     end
 end
 
--- 5) Handle ExecCommand via RefreshEvent (backward compat)
+-- 6) Handle ExecCommand via RefreshEvent (backward compat)
 local RefreshEvent = SystemRemotes:FindFirstChild("RefreshEvent")
 if RefreshEvent then
     RefreshEvent.OnServerEvent:Connect(function(player, cmdData)
@@ -165,7 +221,7 @@ if RefreshEvent then
     end)
 end
 
--- 6) Log tous les joueurs qui joignent (verification que tout est pret)
+-- 7) Log joueurs + verifie le ScreenGui arrive bien
 Players.PlayerAdded:Connect(function(plr)
     print("[AGORA] Joueur connecte : " .. plr.Name)
     local pg = plr:WaitForChild("PlayerGui", 5)
@@ -180,6 +236,6 @@ Players.PlayerAdded:Connect(function(plr)
 end)
 
 print("=========================================")
-print("[AGORA v16.1] SERVEUR PRET")
-print("[AGORA v16.1] ScreenGui doit etre dans StarterGui avec le LocalScript DEDANS")
+print("[AGORA v17.0] SERVEUR PRET")
+print("[AGORA v17.0] ScreenGui auto-clone actif")
 print("=========================================")
