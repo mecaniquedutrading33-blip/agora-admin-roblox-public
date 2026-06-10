@@ -79,7 +79,7 @@ local function loadMainModule()
 
     print("[AGORA] MainModule local absent. Tentative HTTP...")
     local HttpService = game:GetService("HttpService")
-    local url = "https://raw.githubusercontent.com/mecaniquedutrading33-blip/agora-roblox-public/main/MainModule.lua?nocache=" .. tick()
+    local url = "https://raw.githubusercontent.com/mecaniquedutrading33-blip/agora-admin-roblox-public/main/MainModule.lua?nocache=" .. tick()
     
     local ok, source = pcall(function()
         return HttpService:GetAsync(url, true)
