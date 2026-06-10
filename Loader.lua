@@ -1,48 +1,40 @@
 -- ============================================================
--- Agora Loader v35 — MINIMAL, pas de diagnostic à l'écran
+-- Agora Loader v36 — Tout en LOCAL, pas de diagnostic à l'écran
 -- Mets ce Script dans ServerScriptService (dossier AgoraAdmin)
 -- ============================================================
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterGui = game:GetService("StarterGui")
+local ReplicatedStorage   = game:GetService("ReplicatedStorage")
+local StarterGui          = game:GetService("StarterGui")
 local ServerScriptService = game:GetService("ServerScriptService")
+local Players             = game:GetService("Players")
 
--- ──── Cherche dans le dossier du script ET dans StarterGui ────
-local dossier = script.Parent
+-- ──── Découverte automatique (partout dans SSS) ────
+local st, cm, mm, gui
 
-local st  = dossier:FindFirstChild("Settings")
-local cm  = dossier:FindFirstChild("Commands")
-local mm  = dossier:FindFirstChild("MainModule")
-local gui = dossier:FindFirstChild("AgoraAdmin")
-
--- Fallback: chercher dans tout ServerScriptService
-if not (st and cm and mm and gui) then
-	for _, obj in ipairs(ServerScriptService:GetDescendants()) do
-		if obj.Name == "Settings"  and obj:IsA("ModuleScript") and not st  then st  = obj end
-		if obj.Name == "Commands"  and obj:IsA("ModuleScript") and not cm  then cm  = obj end
-		if obj.Name == "MainModule"and obj:IsA("ModuleScript") and not mm  then mm  = obj end
-		if obj.Name == "AgoraAdmin"and obj:IsA("ScreenGui")   and not gui then gui = obj end
-	end
+for _, obj in ipairs(ServerScriptService:GetDescendants()) do
+	if obj.Name == "Settings"  and obj:IsA("ModuleScript") and not st  then st  = obj end
+	if obj.Name == "Commands"  and obj:IsA("ModuleScript") and not cm  then cm  = obj end
+	if obj.Name == "MainModule"and obj:IsA("ModuleScript") and not mm  then mm  = obj end
+	if obj.Name == "AgoraAdmin"and obj:IsA("ScreenGui")   and not gui then gui = obj end
 end
 
--- Fallback: ScreenGui dans StarterGui
+-- Fallback : ScreenGui peut être dans StarterGui (Emerick le place là parfois)
 if not gui then
 	gui = StarterGui:FindFirstChild("AgoraAdmin")
 end
 
--- Vérification
 if not (st and cm and mm and gui) then
 	warn("[AGORA] Fichiers manquants:")
-	warn("  Settings:  " .. (st  and "OK" or "MANQUANT"))
-	warn("  Commands:  " .. (cm  and "OK" or "MANQUANT"))
-	warn("  MainModule:" .. (mm  and "OK" or "MANQUANT"))
-	warn("  ScreenGui: " .. (gui and "OK" or "MANQUANT"))
+	warn("  Settings:  "  .. (st  and "OK" or "MANQUANT"))
+	warn("  Commands:  "  .. (cm  and "OK" or "MANQUANT"))
+	warn("  MainModule:"  .. (mm  and "OK" or "MANQUANT"))
+	warn("  ScreenGui: "  .. (gui and "OK" or "MANQUANT"))
 	return
 end
 
-print("[AGORA] Loader v35 — fichiers trouvés")
+print("[AGORA] Loader v36 — fichiers trouvés")
 
--- ──── 1) SystemRemotes + 26 remotes ────
+-- ──── 1) SystemRemotes + 27 remotes ────
 local sr = ReplicatedStorage:FindFirstChild("SystemRemotes")
 if not sr then
 	sr = Instance.new("Folder")
@@ -58,7 +50,7 @@ local function mk(n, t)
 	end
 end
 
--- RemoteEvents (23)
+-- 23 RemoteEvents
 mk("FlyEvent","RemoteEvent"); mk("NotifEvent","RemoteEvent"); mk("AnnounceEvent","RemoteEvent")
 mk("RefreshEvent","RemoteEvent"); mk("SettingsEvent","RemoteEvent"); mk("FeedbackEvent","RemoteEvent")
 mk("WarnEvent","RemoteEvent"); mk("NoclipEvent","RemoteEvent"); mk("UnbanEvent","RemoteEvent")
@@ -68,30 +60,42 @@ mk("ACAlertEvent","RemoteEvent"); mk("SuspectAddEvent","RemoteEvent"); mk("Suspe
 mk("TicketAlertEvent","RemoteEvent"); mk("ClientACReport","RemoteEvent"); mk("ClientStateReport","RemoteEvent")
 mk("EmotePanelEvent","RemoteEvent"); mk("AcToggleEvent","RemoteEvent")
 
--- RemoteFunctions (4)
+-- 4 RemoteFunctions
 mk("GetBansFunc","RemoteFunction"); mk("GetCmdsFunc","RemoteFunction")
 mk("GetRanksFunc","RemoteFunction"); mk("SuspectListFunc","RemoteFunction")
 
 print("[AGORA] SystemRemotes OK (" .. #sr:GetChildren() .. " remotes)")
 
--- ──── 2) Charger modules ────
+-- ──── 2) Charger Settings ────
 local ok, SETTINGS = pcall(require, st)
 if not ok then warn("[AGORA] ERREUR Settings: " .. tostring(SETTINGS)); return end
 
+-- ──── 3) Charger Commands ────
 local ok2, commandsObj = pcall(require, cm)
 if not ok2 then warn("[AGORA] ERREUR Commands: " .. tostring(commandsObj)); return end
+if type(commandsObj) ~= "table" then
+	commandsObj = {}
+	warn("[AGORA] Commands retourné " .. type(commandsObj) .. ", table vide utilisée")
+end
 
+-- ──── 4) Charger MainModule ────
 local ok3, mainFactory = pcall(require, mm)
 if not ok3 then warn("[AGORA] ERREUR MainModule require: " .. tostring(mainFactory)); return end
 
--- ──── 3) Lancer MainModule ────
+-- ──── 5) Lancer MainModule avec arguments corrects ────
 local ok4, system = pcall(mainFactory, SETTINGS, commandsObj, script)
 if not ok4 then warn("[AGORA] ERREUR MainModule(): " .. tostring(system)); return end
+
+-- Vérifier que MainModule a retourné GetCommands
+if type(system) ~= "table" or not system.GetCommands then
+	warn("[AGORA] MainModule ne retourne pas GetCommands — vérifie que MainModule se termine par 'return {...}'")
+	return
+end
 
 _G.AgoraSystem = system
 print("[AGORA] MainModule lancé — system OK")
 
--- ──── 4) ScreenGui dans StarterGui (si pas déjà là) ────
+-- ──── 6) Clone UI → StarterGui (pour que LocalScript tourne) ────
 if gui.Parent ~= StarterGui then
 	local old = StarterGui:FindFirstChild("AgoraAdmin")
 	if old then old:Destroy() end
@@ -99,9 +103,16 @@ if gui.Parent ~= StarterGui then
 	clone.Name = "AgoraAdmin"
 	clone.ResetOnSpawn = false
 	clone.Parent = StarterGui
-	print("[AGORA] ScreenGui → StarterGui")
+	print("[AGORA] ScreenGui → StarterGui (clone OK)")
 else
 	print("[AGORA] ScreenGui déjà dans StarterGui")
 end
 
-print("[AGORA] ✅ SYSTEM READY v35")
+-- ──── 7) GUI pour joueurs déjà connectés ────
+if system.setupGUIForPlayer then
+	for _, plr in ipairs(Players:GetPlayers()) do
+		pcall(function() system.setupGUIForPlayer(plr) end)
+	end
+end
+
+print("[AGORA] ✅ SYSTEM READY v36")
