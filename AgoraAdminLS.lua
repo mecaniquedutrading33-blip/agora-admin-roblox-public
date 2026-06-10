@@ -92,16 +92,6 @@ local function tr(str)
 	return str
 end
 
--- _G guard removed: causes silent failure on Studio replay because _G persists between Play/Stop
-
-local _GUARD = "_AgoraAdminLS_Running"
-if _G[_GUARD] then
-	script:Destroy()
-	return
-end
-_G[_GUARD] = true
-script.AncestryChanged:Connect(function()
-	if not script.Parent then _G[_GUARD] = nil end
 end)
 local player = Players.LocalPlayer
 
