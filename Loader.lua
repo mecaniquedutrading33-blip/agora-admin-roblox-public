@@ -1,92 +1,184 @@
--- Agora Local Loader v24 — 100% Roblox Studio, no HTTP
--- Place as Script inside ServerScriptService/AgoraAdmin/
--- siblings: MainModule (ModuleScript), Commands (ModuleScript), Settings (ModuleScript)
+-- Agora Diagnostic Loader v25 — affiche TOUT ce qui se passe
+-- Place comme Script dans ServerScriptService (PAS ailleurs)
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local s = script.Parent
+local StarterGui = game:GetService("StarterGui")
 
--- ══════════════════════ SYSTEM REMOTES (client l'attend) ══════════════════════
-local SystemRemotes = ReplicatedStorage:FindFirstChild("SystemRemotes")
-if not SystemRemotes then
-	SystemRemotes = Instance.new("Folder")
-	SystemRemotes.Name = "SystemRemotes"
-	SystemRemotes.Parent = ReplicatedStorage
+-- ═══════ Message visible à l'écran pour prouver que le serveur tourne ═══════
+local function showServerMsg(text, color)
+	for _, plr in ipairs(Players:GetPlayers()) do
+		local pg = plr:FindFirstChild("PlayerGui")
+		if pg then
+			local sg = pg:FindFirstChild("AgoraDiag")
+			if not sg then
+				sg = Instance.new("ScreenGui")
+				sg.Name = "AgoraDiag"
+				sg.ResetOnSpawn = false
+				sg.Parent = pg
+				local lbl = Instance.new("TextLabel")
+				lbl.Name = "Msg"
+				lbl.Size = UDim2.new(0, 600, 0, 200)
+				lbl.Position = UDim2.new(0.5, -300, 0, 10)
+				lbl.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+				lbl.BackgroundTransparency = 0.2
+				lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+				lbl.Font = Enum.Font.GothamBold
+				lbl.TextSize = 14
+				lbl.TextWrapped = true
+				lbl.ZIndex = 99999
+				lbl.Parent = sg
+			end
+			local lbl = sg:FindFirstChild("Msg")
+			if lbl then
+				lbl.Text = lbl.Text .. "\n" .. text
+				if color then lbl.TextColor3 = color end
+			end
+		end
+	end
+	print(text)
 end
 
-local GetCmdsFunc = SystemRemotes:FindFirstChild("GetCmdsFunc")
-if not GetCmdsFunc then
-	GetCmdsFunc = Instance.new("RemoteFunction")
-	GetCmdsFunc.Name = "GetCmdsFunc"
-	GetCmdsFunc.Parent = SystemRemotes
+showServerMsg("[AGORA DIAG] Loader v25 démarré")
+
+-- ═══════ Créer SystemRemotes ═══════
+local sr = ReplicatedStorage:FindFirstChild("SystemRemotes")
+if not sr then
+	sr = Instance.new("Folder")
+	sr.Name = "SystemRemotes"
+	sr.Parent = ReplicatedStorage
+end
+local gcf = sr:FindFirstChild("GetCmdsFunc") or Instance.new("RemoteFunction")
+gcf.Name = "GetCmdsFunc"; gcf.Parent = sr
+local cbe = sr:FindFirstChild("CmdBarEvent") or Instance.new("RemoteEvent")
+cbe.Name = "CmdBarEvent"; cbe.Parent = sr
+showServerMsg("[AGORA DIAG] SystemRemotes OK")
+
+-- ═══════ Chercher Settings / Commands / MainModule ═══════
+local function findAny(name, class)
+	for _, svc in ipairs({"ServerScriptService","ReplicatedStorage","ServerStorage","Workspace"}) do
+		local s = game:GetService(svc)
+		local f = s:FindFirstChild(name, true)
+		if f and (not class or f:IsA(class)) then return f end
+		for _, c in ipairs(s:GetDescendants()) do
+			if c.Name == name and (not class or c:IsA(class)) then return c end
+		end
+	end
+	return nil
 end
 
-local CmdBarEvent = SystemRemotes:FindFirstChild("CmdBarEvent")
-if not CmdBarEvent then
-	CmdBarEvent = Instance.new("RemoteEvent")
-	CmdBarEvent.Name = "CmdBarEvent"
-	CmdBarEvent.Parent = SystemRemotes
+local st = findAny("Settings", "ModuleScript")
+local cm = findAny("Commands", "ModuleScript")
+local mm = findAny("MainModule", "ModuleScript")
+local gui = findAny("AgoraAdmin", "ScreenGui")
+
+if not gui then
+	-- Cherche par contenu (bouton)
+	for _, svc in ipairs({"StarterGui","ServerScriptService"}) do
+		for _, c in ipairs(game:GetService(svc):GetDescendants()) do
+			if c:IsA("ScreenGui") and (c:FindFirstChild("AdminLogoBtn") or c:FindFirstChild("OpenButton")) then
+				gui = c; break
+			end
+		end
+		if gui then break end
+	end
 end
 
-print("[AGORA] ✅ SystemRemotes créé (GetCmdsFunc + CmdBarEvent)")
+showServerMsg("Settings: " .. (st and st:GetFullName() or "❌ MANQUANT"), st and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0))
+showServerMsg("Commands: " .. (cm and cm:GetFullName() or "❌ MANQUANT"), cm and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0))
+showServerMsg("MainModule: " .. (mm and mm:GetFullName() or "❌ MANQUANT"), mm and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0))
+showServerMsg("ScreenGui: " .. (gui and gui:GetFullName() or "❌ MANQUANT"), gui and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0))
 
--- ══════════════════════ 1) SETTINGS ══════════════════════
-local st = s:FindFirstChild("Settings")
+-- Si ScreenGui manquant, créer un bouton test minimal
+if not gui then
+	showServerMsg("[AGORA DIAG] ScreenGui introuvable → bouton test créé", Color3.fromRGB(255, 200, 0))
+	
+	local testGui = Instance.new("ScreenGui")
+	testGui.Name = "AgoraTestGui"
+	testGui.ResetOnSpawn = false
+	
+	local btn = Instance.new("TextButton")
+	btn.Name = "TestBtn"
+	btn.Size = UDim2.new(0, 120, 0, 40)
+	btn.Position = UDim2.new(0, 10, 0, 10)
+	btn.Text = "AGORA TEST"
+	btn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 14
+	btn.Parent = testGui
+	
+	-- Quand un joueur rejoint, lui donner le GUI
+	Players.PlayerAdded:Connect(function(plr)
+		local pg = plr:WaitForChild("PlayerGui", 10)
+		if pg then
+			testGui:Clone().Parent = pg
+		end
+	end)
+	-- Pour les joueurs déjà là
+	for _, plr in ipairs(Players:GetPlayers()) do
+		local pg = plr:FindFirstChild("PlayerGui")
+		if pg then testGui:Clone().Parent = pg end
+	end
+	
+	return
+end
+
+-- ═══════ Charger Settings ═══════
 if not st then
-	warn("[AGORA] ⚠ Settings introuvable")
+	showServerMsg("[AGORA DIAG] Settings introuvable — arrêt", Color3.fromRGB(255,0,0))
 	return
 end
 local ok, SETTINGS = pcall(require, st)
 if not ok then
-	warn("[AGORA] ⚠ Erreur Settings : " .. tostring(SETTINGS))
+	showServerMsg("[AGORA DIAG] Settings erreur: " .. tostring(SETTINGS), Color3.fromRGB(255,0,0))
 	return
 end
-print("[AGORA] ✅ Settings chargé")
+showServerMsg("[AGORA DIAG] Settings chargé")
 
--- ══════════════════════ 2) COMMANDS ══════════════════════
-local cmdMod = s:FindFirstChild("Commands")
-if not cmdMod then
-	warn("[AGORA] ⚠ Commands introuvable")
+-- ═══════ Charger Commands ═══════
+if not cm then
+	showServerMsg("[AGORA DIAG] Commands introuvable — arrêt", Color3.fromRGB(255,0,0))
 	return
 end
-local ok2, commandsObj = pcall(require, cmdMod)
+local ok2, commandsObj = pcall(require, cm)
 if not ok2 then
-	warn("[AGORA] ⚠ Erreur Commands : " .. tostring(commandsObj))
+	showServerMsg("[AGORA DIAG] Commands erreur: " .. tostring(commandsObj), Color3.fromRGB(255,0,0))
 	return
 end
 local cmdCount = 0
 for _ in pairs(commandsObj) do cmdCount += 1 end
-print("[AGORA] ✅ Commands chargé — " .. cmdCount .. " commandes")
+showServerMsg("[AGORA DIAG] Commands chargé (" .. cmdCount .. " cmds)")
 
--- ══════════════════════ 3) MAINMODULE ══════════════════════
-local mm = s:FindFirstChild("MainModule")
+-- ═══════ Charger MainModule ═══════
 if not mm then
-	warn("[AGORA] ⚠ MainModule introuvable")
+	showServerMsg("[AGORA DIAG] MainModule introuvable — arrêt", Color3.fromRGB(255,0,0))
 	return
 end
 local ok3, mainFactory = pcall(require, mm)
 if not ok3 then
-	warn("[AGORA] ⚠ Erreur MainModule : " .. tostring(mainFactory))
+	showServerMsg("[AGORA DIAG] MainModule erreur: " .. tostring(mainFactory), Color3.fromRGB(255,0,0))
 	return
 end
-print("[AGORA] ✅ MainModule factory chargée")
+showServerMsg("[AGORA DIAG] MainModule factory OK")
 
--- ══════════════════════ 4) LANCER ══════════════════════
-print("[AGORA] 🚀 Lancement MainModule(SETTINGS, commandsObj, script)...")
-local ok4, system = pcall(mainFactory, SETTINGS, commandsObj, script)
+-- ═══════ Lancer MainModule ═══════
+local scriptRef = script
+local ok4, system = pcall(mainFactory, SETTINGS, commandsObj, scriptRef)
 if not ok4 then
-	warn("[AGORA] ❌ MainModule a crashé : " .. tostring(system))
+	showServerMsg("[AGORA DIAG] MainModule CRASH: " .. tostring(system), Color3.fromRGB(255,0,0))
 	return
 end
-print("[AGORA] ✅ MainModule initialisé")
+showServerMsg("[AGORA DIAG] MainModule initialisé")
 
--- ══════════════════════ 5) CONNECTER GetCmdsFunc ══════════════════════
+-- Connecter GetCmdsFunc
 if system and system.GetCommands then
-	GetCmdsFunc.OnServerInvoke = function(player)
+	gcf.OnServerInvoke = function(player)
 		return system:GetCommands()
 	end
-	print("[AGORA] ✅ GetCmdsFunc connecté — retourne les commandes")
+	showServerMsg("[AGORA DIAG] GetCmdsFunc connecté")
 else
-	warn("[AGORA] ⚠ MainModule ne retourne pas de GetCommands()")
+	showServerMsg("[AGORA DIAG] ⚠ system.GetCommands absent", Color3.fromRGB(255,200,0))
 end
 
-print("[AGORA] ✨ SYSTEM READY — tout est local.")
+showServerMsg("[AGORA DIAG] ✅ SYSTEM READY", Color3.fromRGB(0,255,100))
