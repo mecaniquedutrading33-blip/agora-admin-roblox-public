@@ -1,14 +1,15 @@
 -- ============================================================
--- Agora Loader v36 — Tout en LOCAL, pas de diagnostic à l'écran
--- Mets ce Script dans ServerScriptService (dossier AgoraAdmin)
+-- Agora Loader v36c — Tout en LOCAL
+-- Cherche ScreenGui partout: SSS / StarterGui / StarterPlayerScripts
 -- ============================================================
 
 local ReplicatedStorage   = game:GetService("ReplicatedStorage")
 local StarterGui          = game:GetService("StarterGui")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Players             = game:GetService("Players")
+local StarterPlayer       = game:GetService("StarterPlayer")
 
--- ──── Découverte automatique (partout dans SSS) ────
+-- ──── Découverte automatique (SSS + StarterGui + StarterPlayerScripts) ────
 local st, cm, mm, gui
 
 for _, obj in ipairs(ServerScriptService:GetDescendants()) do
@@ -18,9 +19,22 @@ for _, obj in ipairs(ServerScriptService:GetDescendants()) do
 	if obj.Name == "AgoraAdmin"and obj:IsA("ScreenGui")   and not gui then gui = obj end
 end
 
--- Fallback : ScreenGui peut être dans StarterGui (Emerick le place là parfois)
+-- Fallback 1 : ScreenGui dans StarterGui
 if not gui then
 	gui = StarterGui:FindFirstChild("AgoraAdmin")
+end
+
+-- Fallback 2 : ScreenGui dans StarterPlayerScripts
+if not gui then
+	local sps = StarterPlayer:FindFirstChild("StarterPlayerScripts")
+	if sps then
+		for _, obj in ipairs(sps:GetDescendants()) do
+			if obj.Name == "AgoraAdmin" and obj:IsA("ScreenGui") then
+				gui = obj
+				break
+			end
+		end
+	end
 end
 
 if not (st and cm and mm and gui) then
@@ -32,7 +46,7 @@ if not (st and cm and mm and gui) then
 	return
 end
 
-print("[AGORA] Loader v36 — fichiers trouvés")
+print("[AGORA] Loader v36c — fichiers trouvés")
 
 -- ──── 1) SystemRemotes + 27 remotes ────
 local sr = ReplicatedStorage:FindFirstChild("SystemRemotes")
@@ -95,8 +109,11 @@ end
 _G.AgoraSystem = system
 print("[AGORA] MainModule lancé — system OK")
 
--- ──── 6) Clone UI → StarterGui (pour que LocalScript tourne) ────
-if gui.Parent ~= StarterGui then
+-- ──── 6) ScreenGui → StarterGui (le bon endroit pour Roblox) ────
+if gui.Parent == StarterGui then
+	print("[AGORA] ScreenGui déjà dans StarterGui")
+elseif gui.Parent ~= StarterGui then
+	-- Déplace ou clone vers StarterGui
 	local old = StarterGui:FindFirstChild("AgoraAdmin")
 	if old then old:Destroy() end
 	local clone = gui:Clone()
@@ -104,8 +121,6 @@ if gui.Parent ~= StarterGui then
 	clone.ResetOnSpawn = false
 	clone.Parent = StarterGui
 	print("[AGORA] ScreenGui → StarterGui (clone OK)")
-else
-	print("[AGORA] ScreenGui déjà dans StarterGui")
 end
 
 -- ──── 7) GUI pour joueurs déjà connectés ────
@@ -115,4 +130,4 @@ if system.setupGUIForPlayer then
 	end
 end
 
-print("[AGORA] ✅ SYSTEM READY v36")
+print("[AGORA] ✅ SYSTEM READY v36c")
