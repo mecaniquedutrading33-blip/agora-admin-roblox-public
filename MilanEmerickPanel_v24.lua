@@ -212,20 +212,24 @@ makeIcon(closeBtn, "×")
 makeIcon(minimizeBtn, "−")
 
 local function createButton(parent, text, yPos, color, callback)
+	local baseColor = color or Color3.fromRGB(45, 75, 160)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, -16, 0, 34)
 	btn.Position = UDim2.new(0, 8, 0, yPos)
-	btn.BackgroundColor3 = color or Color3.fromRGB(45, 75, 160)
+	btn.BackgroundColor3 = baseColor
 	btn.Text = text
 	btn.Font = Enum.Font.GothamSemibold
-	btn.TextSize = 13
+	btn.TextSize = 12
 	btn.TextColor3 = Color3.new(1, 1, 1)
 	btn.BorderSizePixel = 0
 	btn.AutoButtonColor = false
 	btn.Parent = parent
-	createCorner(btn, 8)
-	btn.MouseEnter:Connect(function() tween(btn, {BackgroundColor3 = color and color * 1.15 or Color3.fromRGB(60, 95, 200)}, 0.1) end)
-	btn.MouseLeave:Connect(function() tween(btn, {BackgroundColor3 = color or Color3.fromRGB(45, 75, 160)}, 0.1) end)
+	createCorner(btn, 10)
+	local function hoverColor(on)
+		tween(btn, {BackgroundColor3 = on and baseColor * 1.2 or baseColor}, 0.12)
+	end
+	btn.MouseEnter:Connect(function() hoverColor(true) end)
+	btn.MouseLeave:Connect(function() hoverColor(false) end)
 	btn.MouseButton1Click:Connect(callback)
 	return btn
 end
@@ -389,16 +393,22 @@ local function shutdownPanel()
 		end
 	end
 
-	-- Hide panel
-	screenGui.Enabled = false
-end
-
-local function reparentChildrenToLocalScroll()
-	for _, child in ipairs(localPage:GetChildren()) do
-		if child ~= localScroll then
-			child.Parent = localScroll
+	-- Destroy panel GUI and cleanup body movers
+	screenGui:Destroy()
+	if LocalPlayer.Character then
+		local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+		if hrp then
+			for _, v in ipairs(hrp:GetChildren()) do
+				if v:IsA("BodyVelocity") or v:IsA("BodyGyro") or v:IsA("BodyPosition") or v:IsA("AlignPosition") or v:IsA("AlignOrientation") then
+					v:Destroy()
+				end
+			end
+			hrp.AssemblyLinearVelocity = Vector3.zero
+			hrp.AssemblyAngularVelocity = Vector3.zero
 		end
 	end
+	print("[MEP] Panel fermé")
+end
 end
 
 local dragging, dragStart, startPos
@@ -494,46 +504,56 @@ end)
 
 local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	local container = Instance.new("Frame")
-	container.Size = UDim2.new(1, -16, 0, 36)
+	container.Size = UDim2.new(1, -16, 0, 34)
 	container.Position = UDim2.new(0, 8, 0, yPos)
-	container.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+	container.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
 	container.BorderSizePixel = 0
 	container.Parent = parent
-	createCorner(container, 8)
-	createStroke(container, Color3.fromRGB(45, 45, 55), 1)
+	createCorner(container, 10)
+	createStroke(container, Color3.fromRGB(50, 50, 65), 1)
 
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, -70, 1, 0)
+	label.Size = UDim2.new(1, -62, 1, 0)
 	label.Position = UDim2.new(0, 12, 0, 0)
 	label.BackgroundTransparency = 1
 	label.Text = labelText
 	label.Font = Enum.Font.GothamSemibold
-	label.TextSize = 13
-	label.TextColor3 = Color3.fromRGB(210, 210, 210)
+	label.TextSize = 12
+	label.TextColor3 = Color3.fromRGB(220, 220, 220)
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.Parent = container
 
 	local track = Instance.new("Frame")
-	track.Size = UDim2.new(0, 48, 0, 24)
-	track.Position = UDim2.new(1, -60, 0.5, -12)
-	track.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+	track.Size = UDim2.new(0, 42, 0, 22)
+	track.Position = UDim2.new(1, -54, 0.5, -11)
+	track.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 	track.BorderSizePixel = 0
 	track.Parent = container
-	createCorner(track, 12)
+	createCorner(track, 11)
 
 	local knob = Instance.new("Frame")
-	knob.Size = UDim2.new(0, 20, 0, 20)
-	knob.Position = UDim2.new(0, 2, 0.5, -10)
+	knob.Size = UDim2.new(0, 18, 0, 18)
+	knob.Position = UDim2.new(0, 2, 0.5, -9)
 	knob.BackgroundColor3 = Color3.new(1, 1, 1)
 	knob.BorderSizePixel = 0
 	knob.Parent = track
-	createCorner(knob, 10)
+	createCorner(knob, 9)
+
+	local shadow = Instance.new("Frame")
+	shadow.Size = UDim2.new(1, 0, 1, 0)
+	shadow.Position = UDim2.new(0, 0, 0, 1)
+	shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	shadow.BackgroundTransparency = 0.7
+	shadow.BorderSizePixel = 0
+	shadow.ZIndex = -1
+	shadow.Parent = container
+	createCorner(shadow, 10)
 
 	local state = defaultOn or false
 	local function update(animate)
 		local dur = animate and 0.15 or 0
-		tween(track, {BackgroundColor3 = state and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(60, 60, 70)}, dur)
-		tween(knob, {Position = state and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)}, dur)
+		tween(track, {BackgroundColor3 = state and Color3.fromRGB(80, 210, 130) or Color3.fromRGB(70, 70, 85)}, dur)
+		tween(knob, {Position = state and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)}, dur)
 	end
 	update(false)
 
@@ -543,7 +563,6 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 		callback(state)
 	end
 
-	-- Zone de clic invisible par-dessus tout le switch
 	local hitbox = Instance.new("TextButton")
 	hitbox.Name = "SwitchHitbox"
 	hitbox.Size = UDim2.new(1, 0, 1, 0)
@@ -551,7 +570,6 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	hitbox.Text = ""
 	hitbox.Parent = container
 	hitbox.ZIndex = 10
-
 	hitbox.MouseButton1Click:Connect(toggle)
 
 	return {
@@ -743,53 +761,40 @@ local function createPlayerEntry(plr)
 	statusLbl.TextXAlignment = Enum.TextXAlignment.Left
 	statusLbl.Parent = card
 
-	local tpBtn = Instance.new("TextButton")
-	tpBtn.Size = UDim2.new(0, 54, 0, 24)
-	tpBtn.Position = UDim2.new(1, -128, 0, 26)
-	tpBtn.BackgroundColor3 = Color3.fromRGB(45, 110, 190)
-	tpBtn.Text = "TP"
-	tpBtn.Font = Enum.Font.GothamSemibold
-	tpBtn.TextSize = 11
-	tpBtn.TextColor3 = Color3.new(1, 1, 1)
-	tpBtn.BorderSizePixel = 0
-	tpBtn.Parent = card
-	createCorner(tpBtn, 6)
+	local actionContainer = Instance.new("Frame")
+	actionContainer.Size = UDim2.new(0, 152, 0, 28)
+	actionContainer.Position = UDim2.new(1, -158, 0, 22)
+	actionContainer.BackgroundTransparency = 1
+	actionContainer.Parent = card
 
-	local specBtn = Instance.new("TextButton")
-	specBtn.Size = UDim2.new(0, 58, 0, 22)
-	specBtn.Position = UDim2.new(1, -64, 0, 24)
-	specBtn.BackgroundColor3 = Color3.fromRGB(190, 120, 50)
-	specBtn.Text = "Spectate"
-	specBtn.Font = Enum.Font.GothamSemibold
-	specBtn.TextSize = 9
-	specBtn.TextColor3 = Color3.new(1, 1, 1)
-	specBtn.BorderSizePixel = 0
-	specBtn.Parent = card
-	createCorner(specBtn, 6)
+	local actions = {
+		{ name = "TP", color = Color3.fromRGB(45, 110, 190) },
+		{ name = "Spec", color = Color3.fromRGB(190, 120, 50) },
+		{ name = "Echo", color = Color3.fromRGB(90, 60, 160) },
+		{ name = "ESP", color = Color3.fromRGB(60, 140, 80) },
+		{ name = "Inv", color = Color3.fromRGB(80, 80, 120) },
+		{ name = "Skin", color = Color3.fromRGB(120, 70, 150) },
+	}
 
-	local echoBtn = Instance.new("TextButton")
-	echoBtn.Size = UDim2.new(0, 48, 0, 22)
-	echoBtn.Position = UDim2.new(1, -118, 0, 48)
-	echoBtn.BackgroundColor3 = Color3.fromRGB(90, 60, 160)
-	echoBtn.Text = "Echo"
-	echoBtn.Font = Enum.Font.GothamSemibold
-	echoBtn.TextSize = 9
-	echoBtn.TextColor3 = Color3.new(1, 1, 1)
-	echoBtn.BorderSizePixel = 0
-	echoBtn.Parent = card
-	createCorner(echoBtn, 6)
+	local actionButtons = {}
+	for i, def in ipairs(actions) do
+		local b = Instance.new("TextButton")
+		b.Size = UDim2.new(0, 24, 0, 24)
+		b.Position = UDim2.new(0, (i - 1) * 26, 0, 0)
+		b.BackgroundColor3 = def.color
+		b.Text = def.name
+		b.Font = Enum.Font.GothamBold
+		b.TextSize = 8
+		b.TextColor3 = Color3.new(1, 1, 1)
+		b.BorderSizePixel = 0
+		b.Parent = actionContainer
+		createCorner(b, 6)
+		actionButtons[def.name] = b
+	end
 
-	local espBtn = Instance.new("TextButton")
-	espBtn.Size = UDim2.new(0, 58, 0, 22)
-	espBtn.Position = UDim2.new(1, -64, 0, 48)
-	espBtn.BackgroundColor3 = Color3.fromRGB(60, 140, 80)
-	espBtn.Text = "ESP"
-	espBtn.Font = Enum.Font.GothamSemibold
-	espBtn.TextSize = 9
-	espBtn.TextColor3 = Color3.new(1, 1, 1)
-	espBtn.BorderSizePixel = 0
-	espBtn.Parent = card
-	createCorner(espBtn, 6)
+	local tpBtn, specBtn, echoBtn, espBtn, invBtn, copySkinBtn =
+		actionButtons["TP"], actionButtons["Spec"], actionButtons["Echo"],
+		actionButtons["ESP"], actionButtons["Inv"], actionButtons["Skin"]
 
 	local spectating = false
 
@@ -896,29 +901,7 @@ local function createPlayerEntry(plr)
 		end)
 	end)
 
-	local invBtn = Instance.new("TextButton")
-	invBtn.Size = UDim2.new(0, 58, 0, 22)
-	invBtn.Position = UDim2.new(1, -118, 0, 72)
-	invBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
-	invBtn.Text = "Inv"
-	invBtn.Font = Enum.Font.GothamSemibold
-	invBtn.TextSize = 9
-	invBtn.TextColor3 = Color3.new(1, 1, 1)
-	invBtn.BorderSizePixel = 0
-	invBtn.Parent = card
-	createCorner(invBtn, 6)
 
-	local copySkinBtn = Instance.new("TextButton")
-	copySkinBtn.Size = UDim2.new(0, 58, 0, 22)
-	copySkinBtn.Position = UDim2.new(1, -64, 0, 72)
-	copySkinBtn.BackgroundColor3 = Color3.fromRGB(120, 70, 150)
-	copySkinBtn.Text = "Skin"
-	copySkinBtn.Font = Enum.Font.GothamSemibold
-	copySkinBtn.TextSize = 9
-	copySkinBtn.TextColor3 = Color3.new(1, 1, 1)
-	copySkinBtn.BorderSizePixel = 0
-	copySkinBtn.Parent = card
-	createCorner(copySkinBtn, 6)
 
 	copySkinBtn.MouseButton1Click:Connect(function()
 		local ok, err = pcall(function()
@@ -1715,13 +1698,13 @@ local function createSlider(parent, labelText, yPos, min, max, default, callback
 		return math.floor(v * mult + 0.5) / mult
 	end
 	local container = Instance.new("Frame")
-	container.Size = UDim2.new(1, -16, 0, 50)
+	container.Size = UDim2.new(1, -16, 0, 48)
 	container.Position = UDim2.new(0, 8, 0, yPos)
-	container.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+	container.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
 	container.BorderSizePixel = 0
 	container.Parent = parent
-	createCorner(container, 8)
-	createStroke(container, Color3.fromRGB(45, 45, 55), 1)
+	createCorner(container, 10)
+	createStroke(container, Color3.fromRGB(50, 50, 65), 1)
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, -10, 0, 18)
