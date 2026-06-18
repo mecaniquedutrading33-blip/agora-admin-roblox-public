@@ -300,6 +300,7 @@ local movePage = createTab("Move")
 local extraPage = createTab("Extra")
 local serverPage = createTab("Serveur")
 local localPage = createTab("Local")
+local protectionsPage = createTab("Protections")
 
 local localScroll = Instance.new("ScrollingFrame")
 localScroll.Size = UDim2.new(1, 0, 1, 0)
@@ -313,6 +314,21 @@ local localLayout = Instance.new("UIListLayout")
 localLayout.Padding = UDim.new(0, 6)
 localLayout.SortOrder = Enum.SortOrder.LayoutOrder
 localLayout.Parent = localScroll
+
+local protectionsScroll = Instance.new("ScrollingFrame")
+protectionsScroll.Name = "ProtectionsScroll"
+protectionsScroll.Size = UDim2.new(1, 0, 1, 0)
+protectionsScroll.Position = UDim2.new(0, 0, 0, 0)
+protectionsScroll.BackgroundTransparency = 1
+protectionsScroll.ScrollBarThickness = 4
+protectionsScroll.BorderSizePixel = 0
+protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+protectionsScroll.Parent = protectionsPage
+
+local protectionsLayout = Instance.new("UIListLayout")
+protectionsLayout.Padding = UDim.new(0, 6)
+protectionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+protectionsLayout.Parent = protectionsScroll
 
 local function reparentChildrenToLocalScroll()
 	for _, child in ipairs(localPage:GetChildren()) do
@@ -2489,20 +2505,6 @@ RunService.Stepped:Connect(function(_, dt)
 			platformState.part.CFrame = CFrame.new(target.Position.X, platformState.y + platformState.offset - 0.5, target.Position.Z)
 		end
 	end
-	-- Anti-téléportation
-	if rootPart then
-		local moving = flyState.flying or noclipState.enabled or platformState.enabled or clickTPState.enabled or hitboxState.enabled
-		local pos = rootPart.Position
-		if antiTPState.enabled and antiTPState.lastPos and not moving then
-			local delta = (pos - antiTPState.lastPos).Magnitude
-			if delta > antiTPState.threshold then
-				rootPart.CFrame = CFrame.new(antiTPState.lastPos)
-				rootPart.AssemblyLinearVelocity = Vector3.zero
-			end
-		end
-		antiTPState.lastPos = pos
-	end
-
 	-- Go to Walk : suit l'itinéraire cliqué via MoveTo
 	if humanoid and rootPart and gotoWalkState.active and #gotoWalkState.path > 0 then
 		local wp = gotoWalkState.path[1]
@@ -2567,7 +2569,6 @@ end)
 local fullbrightState = { enabled = false, old = {} }
 local clickTPState = { enabled = false }
 local hitboxState = { enabled = false }
-local antiTPState = { enabled = false, lastPos = nil, threshold = 80, active = false, destination = nil, path = {}, pathVisuals = {}, followMouse = false }
 
 local fullbrightSwitch = createSwitch(extraPage, "Fullbright", 10, function(on)
 	fullbrightState.enabled = on
@@ -2604,22 +2605,6 @@ local hitboxSwitch = createSwitch(extraPage, "Hitbox expander", 94, function(on)
 				hrp.CanCollide = false
 			end
 		end
-	end
-end)
-
-local antiTPSwitch = createSwitch(extraPage, "Anti Teleport", 136, function(on)
-	antiTPState.enabled = on
-	if on then
-		antiTPState.active = true
-	else
-		antiTPState.active = false
-		antiTPState.destination = nil
-		antiTPState.followMouse = false
-		antiTPState.path = {}
-		for _, v in ipairs(antiTPState.pathVisuals) do
-			if v then v:Destroy() end
-		end
-		antiTPState.pathVisuals = {}
 	end
 end)
 
@@ -2669,31 +2654,32 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 				local function probeGround(pos)
 					local rDown = Workspace:Raycast(pos + Vector3.new(0, 30, 0), Vector3.new(0, -60, 0), params)
 					if not rDown then return nil end
-					local ceiling = Workspace:Raycast(rDown.Position + Vector3.new(0, 0.5, 0), Vector3.new(0, 7, 0), params)
-					if ceiling and ceiling.Distance < 5 then return nil end
+					local ceiling = Workspace:Raycast(rDown.Position + Vector3.new(0, 0.5, 0), Vector3.new(0, 6, 0), params)
+					if ceiling and ceiling.Distance < 3.2 then return nil end
 					return Vector3.new(pos.X, rDown.Position.Y + 2, pos.Z)
+				end
+				local function acceptPoint(p)
+					if math.abs(p.Y - lastGood.Y) > 2.5 then return false end
+					return canWalkBetween(lastGood, p, params)
 				end
 				for i = 1, n do
 					local t = math.min(i / n, 1)
 					local base = startPos + dir * (dist * t)
 					local wp = probeGround(base)
-					if wp and math.abs(wp.Y - lastGood.Y) <= 5 then
+					if wp and acceptPoint(wp) then
 						lastGood = wp
 						table.insert(waypoints, wp)
 					else
-						-- obstacle ou dénivelé : contourner à droite/gauche
+						-- obstacle ou trop haut/bas : contourner à droite/gauche en restant plat
 						local side = dir:Cross(Vector3.new(0, 1, 0)).Unit
 						local found = false
-						for mul = 2, 10, 2 do
+						for mul = 2, 12, 2 do
 							for _, sgn in ipairs({1, -1}) do
 								local offset = side * (mul * step)
 								local tryBase = base + offset
 								local try = probeGround(tryBase)
-								if try and (try - lastGood).Magnitude < 40 then
-									-- vérifier pas de mur entre lastGood et try
-									local mid = (lastGood + try) / 2
-									local wall = Workspace:Raycast(mid + Vector3.new(0, 3, 0), Vector3.new(0, 8, 0), params)
-									if not wall or wall.Distance > 4 then
+								if try and math.abs(try.Y - lastGood.Y) <= 2.5 then
+									if canWalkBetween(lastGood, try, params) then
 										lastGood = try
 										table.insert(waypoints, try)
 										found = true
@@ -2703,24 +2689,18 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 							end
 							if found then break end
 						end
-						if not found and #waypoints > 0 then
-							-- revenir au dernier bon et ajouter point intermédiaire en avant si possible
-							local fallBack = lastGood + dir * step * 0.5
-							local fb = probeGround(fallBack)
-							if fb then
-								lastGood = fb
-								table.insert(waypoints, fb)
-							end
-						end
 					end
 				end
 				local final = probeGround(targetPos)
-				if final then
+				if final and math.abs(final.Y - lastGood.Y) <= 2.5 then
 					table.insert(waypoints, final)
-				else
-					table.insert(waypoints, targetPos)
 				end
 				gotoWalkState.path = waypoints
+				gotoWalkState.active = #waypoints > 0
+				if #waypoints > 0 and humanoid then
+					humanoid:MoveTo(waypoints[1])
+					gotoWalkState.lastMoveTo = tick()
+				end
 				-- Visualiser l'itinéraire
 				for _, v in ipairs(gotoWalkState.visuals) do if v then v:Destroy() end end
 				gotoWalkState.visuals = {}
@@ -2766,6 +2746,191 @@ task.spawn(function()
 						hrp.Color = Color3.fromRGB(255, 0, 0)
 						hrp.CanCollide = false
 					end
+				end
+			end
+		end
+	end
+end)
+
+-- ============= PROTECTIONS =============
+local protectionsState = {
+	antiFling = false,
+	antiSeat = false,
+	antiSeatWatcher = nil,
+	antiSeatSitWatcher = nil,
+	antiTeleport = false,
+	antiFall = false,
+	antiKill = false,
+	antiAFK = false,
+	antiAFKLastAction = tick(),
+	antiKillSavedCFrame = nil,
+	lastSafeCFrame = nil,
+	lastHrpPosition = nil,
+}
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+	local hum = char:WaitForChild("Humanoid")
+	hum.Died:Connect(function()
+		if not protectionsState.antiKill then return end
+		updateCharacter()
+		if rootPart then
+			protectionsState.antiKillSavedCFrame = rootPart.CFrame
+		end
+	end)
+	if not protectionsState.antiKill then return end
+	local hrp = char:WaitForChild("HumanoidRootPart")
+	task.wait(0.2)
+	if protectionsState.antiKillSavedCFrame then
+		hrp.CFrame = protectionsState.antiKillSavedCFrame
+		protectionsState.antiKillSavedCFrame = nil
+	end
+end)
+
+local function neutralizeSeat(seat)
+	if not seat then return end
+	if seat:IsA("Seat") or seat:IsA("VehicleSeat") then
+		seat.Disabled = true
+		seat.CanTouch = false
+		seat:SetAttribute("Neutralized", true)
+	end
+end
+
+local function createAntiSeatSitWatcher()
+	local function onCharacter(char)
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if not hum then
+			hum = char:WaitForChild("Humanoid")
+		end
+		local con
+		con = hum:GetPropertyChangedSignal("Sit"):Connect(function()
+			if not protectionsState.antiSeat then
+				if con then con:Disconnect() end
+				return
+			end
+			if hum.Sit then hum.Sit = false end
+		end)
+		char.AncestryChanged:Connect(function()
+			if con then con:Disconnect() end
+		end)
+	end
+	if LocalPlayer.Character then
+		task.spawn(onCharacter, LocalPlayer.Character)
+	end
+	return LocalPlayer.CharacterAdded:Connect(onCharacter)
+end
+
+local function createProtectionSwitch(name, label, y)
+	return createSwitch(protectionsScroll, label, y, function(on)
+		protectionsState[name] = on
+		if name == "antiSeat" then
+			if on then
+				if protectionsState.antiSeatWatcher then
+					protectionsState.antiSeatWatcher:Disconnect()
+					protectionsState.antiSeatWatcher = nil
+				end
+				if protectionsState.antiSeatSitWatcher then
+					protectionsState.antiSeatSitWatcher:Disconnect()
+					protectionsState.antiSeatSitWatcher = nil
+				end
+				for _, obj in ipairs(Workspace:GetDescendants()) do
+					neutralizeSeat(obj)
+				end
+				protectionsState.antiSeatWatcher = Workspace.DescendantAdded:Connect(function(obj)
+					if obj:IsA("Seat") or obj:IsA("VehicleSeat") then
+						neutralizeSeat(obj)
+					end
+				end)
+				protectionsState.antiSeatSitWatcher = createAntiSeatSitWatcher()
+			else
+				if protectionsState.antiSeatWatcher then
+					protectionsState.antiSeatWatcher:Disconnect()
+					protectionsState.antiSeatWatcher = nil
+				end
+				if protectionsState.antiSeatSitWatcher then
+					protectionsState.antiSeatSitWatcher:Disconnect()
+					protectionsState.antiSeatSitWatcher = nil
+				end
+			end
+		end
+		if name == "antiTeleport" and on then
+			updateCharacter()
+			if rootPart then
+				protectionsState.lastSafeCFrame = rootPart.CFrame
+				protectionsState.lastHrpPosition = rootPart.Position
+			end
+		end
+	end)
+end
+
+createProtectionSwitch("antiFling", "Anti Fling", 10)
+createProtectionSwitch("antiSeat", "Anti Seat", 52)
+createProtectionSwitch("antiTeleport", "Anti Teleport", 94)
+createProtectionSwitch("antiFall", "Anti Fall", 136)
+createProtectionSwitch("antiKill", "Anti Kill / Spawn TP", 178)
+createProtectionSwitch("antiAFK", "Anti AFK (5 min)", 220)
+
+RunService.Heartbeat:Connect(function()
+	updateCharacter()
+	if not rootPart or not humanoid then return end
+
+	local pos = rootPart.Position
+	local vel = rootPart.AssemblyLinearVelocity
+
+	if protectionsState.antiFling then
+		if math.abs(vel.Y) > 500 then
+			rootPart.AssemblyLinearVelocity = Vector3.new(vel.X * 0.1, 0, vel.Z * 0.1)
+		end
+	end
+
+	if protectionsState.antiSeat then
+		if humanoid.Sit then
+			humanoid.Sit = false
+		end
+		local seat = humanoid.SeatPart
+		if seat then
+			humanoid.Sit = false
+		end
+	end
+
+	if protectionsState.antiTeleport and not flyState.flying and not noclipState.enabled then
+		local last = protectionsState.lastHrpPosition
+		if last then
+			local dist = (pos - last).Magnitude
+			if dist > 1200 then
+				rootPart.CFrame = protectionsState.lastSafeCFrame or CFrame.new(last)
+				rootPart.AssemblyLinearVelocity = Vector3.zero
+			elseif humanoid and (humanoid.FloorMaterial ~= Enum.Material.Air or math.abs(vel.Y) < 5) then
+				protectionsState.lastSafeCFrame = rootPart.CFrame
+				protectionsState.lastHrpPosition = pos
+			end
+		else
+			protectionsState.lastSafeCFrame = rootPart.CFrame
+			protectionsState.lastHrpPosition = pos
+		end
+	end
+
+	if protectionsState.antiFall then
+		if vel.Y < -100 and pos.Y < -500 then
+			rootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
+			if protectionsState.lastSafeCFrame then
+				rootPart.CFrame = protectionsState.lastSafeCFrame
+			end
+		end
+	end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(10)
+		if protectionsState.antiAFK then
+			local now = tick()
+			if now - protectionsState.antiAFKLastAction >= 300 then
+				updateCharacter()
+				if humanoid then
+					humanoid:Move(Vector3.new(0.1, 0, 0), false)
+					task.wait(0.15)
+					if humanoid then humanoid:Move(Vector3.new(0, 0, 0), false) end
+					protectionsState.antiAFKLastAction = now
 				end
 			end
 		end
