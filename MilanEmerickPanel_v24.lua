@@ -2536,12 +2536,17 @@ RunService.Heartbeat:Connect(function()
 		local last = protectionsState.lastHrpPosition
 		if last then
 			local dist = (pos - last).Magnitude
-			if dist > 500 then
+			-- Seulement un vrai téléport (distance massive en un seul tick)
+			if dist > 1200 then
 				rootPart.CFrame = protectionsState.lastSafeCFrame or CFrame.new(last)
 				rootPart.AssemblyLinearVelocity = Vector3.zero
+				showNotification("Anti-teleport activé", Color3.fromRGB(255, 80, 80))
 			else
-				protectionsState.lastSafeCFrame = rootPart.CFrame
-				protectionsState.lastHrpPosition = pos
+				-- On met à jour la safe position seulement si on est au sol ou assis/stable
+				if humanoid and (humanoid.FloorMaterial ~= Enum.Material.Air or math.abs(vel.Y) < 5) then
+					protectionsState.lastSafeCFrame = rootPart.CFrame
+					protectionsState.lastHrpPosition = pos
+				end
 			end
 		else
 			protectionsState.lastSafeCFrame = rootPart.CFrame
