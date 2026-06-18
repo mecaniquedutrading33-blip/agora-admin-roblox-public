@@ -1740,7 +1740,7 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 	end
 end)
 
-local gotoWalkState = { enabled = false, active = false, target = nil, path = {}, visuals = {}, lastClick = 0, speed = walkSpeedState.value }
+local gotoWalkState = { enabled = false, active = false, target = nil, path = {}, visuals = {}, lastClick = 0, speed = walkSpeedState.value, lastMoveTo = nil, stuckPos = nil, stuckStart = nil }
 local gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, function(on)
 	gotoWalkState.enabled = on
 	gotoWalkState.active = on
@@ -2503,7 +2503,7 @@ RunService.Stepped:Connect(function(_, dt)
 		antiTPState.lastPos = pos
 	end
 
-	-- Go to Walk : suit l'itinéraire cliqué
+	-- Go to Walk : suit l'itinéraire cliqué via MoveTo
 	if humanoid and rootPart and gotoWalkState.active and #gotoWalkState.path > 0 then
 		local wp = gotoWalkState.path[1]
 		local flatHrp = Vector3.new(rootPart.Position.X, 0, rootPart.Position.Z)
@@ -2514,16 +2514,46 @@ RunService.Stepped:Connect(function(_, dt)
 			table.remove(gotoWalkState.path, 1)
 			if #gotoWalkState.path == 0 then
 				gotoWalkState.target = nil
+				gotoWalkState.active = false
 				gotoWalkSwitch.set(false)
+			else
+				-- prochain waypoint
+				humanoid:MoveTo(gotoWalkState.path[1])
 			end
 		else
-			local dir = (wp - rootPart.Position)
-			dir = Vector3.new(dir.X, 0, dir.Z)
-			if dir.Magnitude > 0.01 then dir = dir.Unit end
-			local desiredSpeed = math.min(gotoWalkState.speed, humanoid.WalkSpeed)
-			rootPart.AssemblyLinearVelocity = dir * desiredSpeed + Vector3.new(0, rootPart.AssemblyLinearVelocity.Y, 0)
-			if (wp.Y - rootPart.Position.Y) > 3 and humanoid.FloorMaterial ~= Enum.Material.Air then
-				humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+			-- Relance MoveTo si bloqué
+			if not gotoWalkState.lastMoveTo or (tick() - gotoWalkState.lastMoveTo) > 0.8 then
+				humanoid:MoveTo(wp)
+				gotoWalkState.lastMoveTo = tick()
+				gotoWalkState.stuckPos = rootPart.Position
+				gotoWalkState.stuckStart = tick()
+			else
+				-- Détection bloqué : si pas avancé en 1.2s, contourne par saut latéral
+				if gotoWalkState.stuckPos and (tick() - gotoWalkState.stuckStart) > 1.2 then
+					if (rootPart.Position - gotoWalkState.stuckPos).Magnitude < 2 then
+						local dir = (wp - rootPart.Position)
+						dir = Vector3.new(dir.X, 0, dir.Z)
+						if dir.Magnitude > 0.01 then dir = dir.Unit end
+						local side = dir:Cross(Vector3.new(0, 1, 0)).Unit * 8
+						for _, off in ipairs({side, -side, side * 2, -side * 2}) do
+							local try = rootPart.Position + off
+							local params = RaycastParams.new()
+							params.FilterDescendantsInstances = {character}
+							params.FilterType = Enum.RaycastFilterType.Exclude
+							local r = Workspace:Raycast(try + Vector3.new(0, 20, 0), Vector3.new(0, -40, 0), params)
+							if r then
+								try = Vector3.new(try.X, math.max(r.Position.Y + 2, rootPart.Position.Y + 2), try.Z)
+								table.insert(gotoWalkState.path, 1, try)
+								humanoid:MoveTo(try)
+								gotoWalkState.lastMoveTo = tick()
+								gotoWalkState.stuckPos = nil
+								break
+							end
+						end
+					end
+					gotoWalkState.stuckPos = rootPart.Position
+					gotoWalkState.stuckStart = tick()
+				end
 			end
 		end
 	end
@@ -2630,41 +2660,66 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 			if dist > 0 then
 				dir = dir.Unit
 				local waypoints = {}
-				local step = 5
+				local step = 4
 				local n = math.ceil(dist / step)
 				local lastGood = startPos
+				local params = RaycastParams.new()
+				params.FilterDescendantsInstances = {character}
+				params.FilterType = Enum.RaycastFilterType.Exclude
+				local function probeGround(pos)
+					local rDown = Workspace:Raycast(pos + Vector3.new(0, 30, 0), Vector3.new(0, -60, 0), params)
+					if not rDown then return nil end
+					local ceiling = Workspace:Raycast(rDown.Position + Vector3.new(0, 0.5, 0), Vector3.new(0, 7, 0), params)
+					if ceiling and ceiling.Distance < 5 then return nil end
+					return Vector3.new(pos.X, rDown.Position.Y + 2, pos.Z)
+				end
 				for i = 1, n do
 					local t = math.min(i / n, 1)
-					local wp = startPos + dir * (dist * t)
-					-- Vérifier hauteur au sol ici
-					local params = RaycastParams.new()
-					params.FilterDescendantsInstances = {character}
-					params.FilterType = Enum.RaycastFilterType.Exclude
-					local rDown = Workspace:Raycast(wp + Vector3.new(0, 20, 0), Vector3.new(0, -40, 0), params)
-					local rUp = Workspace:Raycast(wp + Vector3.new(0, 2, 0), Vector3.new(0, 8, 0), params)
-					if rDown and (not rUp or rUp.Distance > 4) then
-						wp = Vector3.new(wp.X, math.max(rDown.Position.Y + 2, startPos.Y - 10), wp.Z)
+					local base = startPos + dir * (dist * t)
+					local wp = probeGround(base)
+					if wp and math.abs(wp.Y - lastGood.Y) <= 5 then
 						lastGood = wp
 						table.insert(waypoints, wp)
 					else
-						-- obstacle : essayer un détour à droite
-						local side = dir:Cross(Vector3.new(0, 1, 0)).Unit * 6
-						for _, offset in ipairs({side, -side, side * 2, -side * 2}) do
-							local try = lastGood + dir * step + offset
-							local rTry = Workspace:Raycast(try + Vector3.new(0, 20, 0), Vector3.new(0, -40, 0), params)
-							if rTry then
-								try = Vector3.new(try.X, rTry.Position.Y + 2, try.Z)
-								local rUpTry = Workspace:Raycast(try + Vector3.new(0, 2, 0), Vector3.new(0, 8, 0), params)
-								if not rUpTry or rUpTry.Distance > 3 then
-									lastGood = try
-									table.insert(waypoints, try)
-									break
+						-- obstacle ou dénivelé : contourner à droite/gauche
+						local side = dir:Cross(Vector3.new(0, 1, 0)).Unit
+						local found = false
+						for mul = 2, 10, 2 do
+							for _, sgn in ipairs({1, -1}) do
+								local offset = side * (mul * step)
+								local tryBase = base + offset
+								local try = probeGround(tryBase)
+								if try and (try - lastGood).Magnitude < 40 then
+									-- vérifier pas de mur entre lastGood et try
+									local mid = (lastGood + try) / 2
+									local wall = Workspace:Raycast(mid + Vector3.new(0, 3, 0), Vector3.new(0, 8, 0), params)
+									if not wall or wall.Distance > 4 then
+										lastGood = try
+										table.insert(waypoints, try)
+										found = true
+										break
+									end
 								end
+							end
+							if found then break end
+						end
+						if not found and #waypoints > 0 then
+							-- revenir au dernier bon et ajouter point intermédiaire en avant si possible
+							local fallBack = lastGood + dir * step * 0.5
+							local fb = probeGround(fallBack)
+							if fb then
+								lastGood = fb
+								table.insert(waypoints, fb)
 							end
 						end
 					end
 				end
-				table.insert(waypoints, targetPos)
+				local final = probeGround(targetPos)
+				if final then
+					table.insert(waypoints, final)
+				else
+					table.insert(waypoints, targetPos)
+				end
 				gotoWalkState.path = waypoints
 				-- Visualiser l'itinéraire
 				for _, v in ipairs(gotoWalkState.visuals) do if v then v:Destroy() end end
