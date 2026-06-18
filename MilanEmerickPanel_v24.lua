@@ -330,9 +330,14 @@ localScroll.CanvasSize = UDim2.new(0, 0, 0, 900)
 localScroll.Parent = localPage
 
 local localLayout = Instance.new("UIListLayout")
-localLayout.Padding = UDim.new(0, 6)
+localLayout.Padding = UDim.new(0, 4)
 localLayout.SortOrder = Enum.SortOrder.LayoutOrder
 localLayout.Parent = localScroll
+
+-- Ajuster CanvasSize automatiquement
+localScroll:GetPropertyChangedSignal("AbsoluteCanvasSize"):Connect(function()
+	localScroll.CanvasSize = UDim2.new(0, 0, 0, localScroll.AbsoluteCanvasSize.Y)
+end)
 
 local function shutdownPanel()
 	-- Stop autoclicker
@@ -1899,7 +1904,7 @@ gravityContainer.Size = UDim2.new(1, -16, 0, 86)
 gravityContainer.Position = UDim2.new(0, 8, 0, 56)
 gravityContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 gravityContainer.BorderSizePixel = 0
-gravityContainer.Parent = localPage
+gravityContainer.Parent = localScroll
 createCorner(gravityContainer, 10)
 createStroke(gravityContainer, Color3.fromRGB(45, 45, 55), 1)
 
@@ -2230,7 +2235,7 @@ autoClickContainer.Size = UDim2.new(1, -16, 0, 166)
 autoClickContainer.Position = UDim2.new(0, 8, 0, 460)
 autoClickContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 autoClickContainer.BorderSizePixel = 0
-autoClickContainer.Parent = localPage
+autoClickContainer.Parent = localScroll
 createCorner(autoClickContainer, 10)
 createStroke(autoClickContainer, Color3.fromRGB(45, 45, 55), 1)
 
