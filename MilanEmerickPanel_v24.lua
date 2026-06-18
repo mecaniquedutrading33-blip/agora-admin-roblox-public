@@ -666,7 +666,7 @@ end
 
 local function createPlayerEntry(plr)
 	local card = Instance.new("Frame")
-	card.Size = UDim2.new(1, -8, 0, 108)
+	card.Size = UDim2.new(1, -8, 0, 96)
 	card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 	card.BorderSizePixel = 0
 	card.LayoutOrder = plr.Name:byte(1)
@@ -734,7 +734,7 @@ local function createPlayerEntry(plr)
 
 	local statusLbl = Instance.new("TextLabel")
 	statusLbl.Size = UDim2.new(0.55, -6, 0, 14)
-	statusLbl.Position = UDim2.new(0, 6, 0, 80)
+	statusLbl.Position = UDim2.new(0, 6, 0, 78)
 	statusLbl.BackgroundTransparency = 1
 	statusLbl.Text = "Statut: ?"
 	statusLbl.Font = Enum.Font.Gotham
@@ -756,36 +756,36 @@ local function createPlayerEntry(plr)
 	createCorner(tpBtn, 6)
 
 	local specBtn = Instance.new("TextButton")
-	specBtn.Size = UDim2.new(0, 68, 0, 24)
-	specBtn.Position = UDim2.new(1, -70, 0, 26)
+	specBtn.Size = UDim2.new(0, 58, 0, 22)
+	specBtn.Position = UDim2.new(1, -64, 0, 24)
 	specBtn.BackgroundColor3 = Color3.fromRGB(190, 120, 50)
 	specBtn.Text = "Spectate"
 	specBtn.Font = Enum.Font.GothamSemibold
-	specBtn.TextSize = 11
+	specBtn.TextSize = 9
 	specBtn.TextColor3 = Color3.new(1, 1, 1)
 	specBtn.BorderSizePixel = 0
 	specBtn.Parent = card
 	createCorner(specBtn, 6)
 
 	local echoBtn = Instance.new("TextButton")
-	echoBtn.Size = UDim2.new(0, 54, 0, 24)
-	echoBtn.Position = UDim2.new(1, -128, 0, 54)
+	echoBtn.Size = UDim2.new(0, 48, 0, 22)
+	echoBtn.Position = UDim2.new(1, -118, 0, 48)
 	echoBtn.BackgroundColor3 = Color3.fromRGB(90, 60, 160)
 	echoBtn.Text = "Echo"
 	echoBtn.Font = Enum.Font.GothamSemibold
-	echoBtn.TextSize = 11
+	echoBtn.TextSize = 9
 	echoBtn.TextColor3 = Color3.new(1, 1, 1)
 	echoBtn.BorderSizePixel = 0
 	echoBtn.Parent = card
 	createCorner(echoBtn, 6)
 
 	local espBtn = Instance.new("TextButton")
-	espBtn.Size = UDim2.new(0, 68, 0, 24)
-	espBtn.Position = UDim2.new(1, -70, 0, 54)
+	espBtn.Size = UDim2.new(0, 58, 0, 22)
+	espBtn.Position = UDim2.new(1, -64, 0, 48)
 	espBtn.BackgroundColor3 = Color3.fromRGB(60, 140, 80)
 	espBtn.Text = "ESP"
 	espBtn.Font = Enum.Font.GothamSemibold
-	espBtn.TextSize = 11
+	espBtn.TextSize = 9
 	espBtn.TextColor3 = Color3.new(1, 1, 1)
 	espBtn.BorderSizePixel = 0
 	espBtn.Parent = card
@@ -897,24 +897,24 @@ local function createPlayerEntry(plr)
 	end)
 
 	local invBtn = Instance.new("TextButton")
-	invBtn.Size = UDim2.new(0, 80, 0, 24)
-	invBtn.Position = UDim2.new(1, -70, 0, 82)
+	invBtn.Size = UDim2.new(0, 58, 0, 22)
+	invBtn.Position = UDim2.new(1, -118, 0, 72)
 	invBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
-	invBtn.Text = "Inventaire"
+	invBtn.Text = "Inv"
 	invBtn.Font = Enum.Font.GothamSemibold
-	invBtn.TextSize = 10
+	invBtn.TextSize = 9
 	invBtn.TextColor3 = Color3.new(1, 1, 1)
 	invBtn.BorderSizePixel = 0
 	invBtn.Parent = card
 	createCorner(invBtn, 6)
 
 	local copySkinBtn = Instance.new("TextButton")
-	copySkinBtn.Size = UDim2.new(0, 80, 0, 24)
-	copySkinBtn.Position = UDim2.new(1, -70, 0, 110)
+	copySkinBtn.Size = UDim2.new(0, 58, 0, 22)
+	copySkinBtn.Position = UDim2.new(1, -64, 0, 72)
 	copySkinBtn.BackgroundColor3 = Color3.fromRGB(120, 70, 150)
-	copySkinBtn.Text = "Copier skin"
+	copySkinBtn.Text = "Skin"
 	copySkinBtn.Font = Enum.Font.GothamSemibold
-	copySkinBtn.TextSize = 10
+	copySkinBtn.TextSize = 9
 	copySkinBtn.TextColor3 = Color3.new(1, 1, 1)
 	copySkinBtn.BorderSizePixel = 0
 	copySkinBtn.Parent = card
@@ -1021,15 +1021,17 @@ local function createPlayerEntry(plr)
 			invBtn.BackgroundColor3 = Color3.fromRGB(160, 60, 60)
 
 			invFrame = Instance.new("Frame")
+			invFrame.Name = "InventoryFrame"
 			invFrame.Size = UDim2.new(0, 260, 0, 300)
 			local bx, by = invBtn.AbsolutePosition.X, invBtn.AbsolutePosition.Y
 			invFrame.Position = UDim2.new(0, math.max(10, bx - 270), 0, math.min(by, screenGui.AbsoluteSize.Y - 310))
 			invFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+			invFrame.BackgroundTransparency = 0.3
 			invFrame.BorderSizePixel = 0
 			invFrame.ZIndex = 1000
 			invFrame.Parent = screenGui
 			createCorner(invFrame, 10)
-			createStroke(invFrame, Color3.fromRGB(80, 80, 100), 1)
+			createStroke(invFrame, Color3.fromRGB(200, 200, 255), 2)
 
 			-- Créer le ScrollingFrame AVANT refreshInventory
 			local scroll = Instance.new("ScrollingFrame")
