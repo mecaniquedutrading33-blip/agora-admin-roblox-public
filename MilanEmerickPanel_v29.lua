@@ -207,8 +207,8 @@ makeIcon(minimizeBtn, "−")
 
 local function createButton(parent, text, yPos, color, callback)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, -16, 0, 34)
-	btn.Position = UDim2.new(0, 8, 0, yPos)
+	btn.Size = UDim2.new(1, -20, 0, 34)
+	btn.Position = UDim2.new(0, 10, 0, yPos)
 	btn.BackgroundColor3 = color or Color3.fromRGB(45, 75, 160)
 	btn.Text = text
 	btn.Font = Enum.Font.GothamSemibold
@@ -272,7 +272,7 @@ end
 
 local function createTab(name)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0.2, -3, 1, 0)
+	btn.Size = UDim2.new(0.158, -2, 1, 0)
 	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 	btn.Text = name
 	btn.Font = Enum.Font.GothamSemibold
@@ -470,8 +470,8 @@ end
 
 local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	local container = Instance.new("Frame")
-	container.Size = UDim2.new(1, -16, 0, 36)
-	container.Position = UDim2.new(0, 8, 0, yPos)
+	container.Size = UDim2.new(1, -20, 0, 36)
+	container.Position = UDim2.new(0, 10, 0, yPos)
 	container.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 	container.BorderSizePixel = 0
 	container.Parent = parent
@@ -2505,57 +2505,48 @@ RunService.Stepped:Connect(function(_, dt)
 			platformState.part.CFrame = CFrame.new(target.Position.X, platformState.y + platformState.offset - 0.5, target.Position.Z)
 		end
 	end
-	-- Go to Walk : suit l'itinéraire cliqué via MoveTo
+	-- Go to Walk : contrôle WASD vers prochain waypoint (pas de vélocité brute)
 	if humanoid and rootPart and gotoWalkState.active and #gotoWalkState.path > 0 then
 		local wp = gotoWalkState.path[1]
 		local flatHrp = Vector3.new(rootPart.Position.X, 0, rootPart.Position.Z)
 		local flatWp = Vector3.new(wp.X, 0, wp.Z)
 		local flatDist = (flatHrp - flatWp).Magnitude
-		local heightDiff = math.abs(rootPart.Position.Y - wp.Y)
-		if flatDist < 3 and heightDiff < 6 then
+		local heightDiff = rootPart.Position.Y - wp.Y
+		if flatDist < 2.5 and math.abs(heightDiff) < 4 then
 			table.remove(gotoWalkState.path, 1)
 			if #gotoWalkState.path == 0 then
 				gotoWalkState.target = nil
 				gotoWalkState.active = false
 				gotoWalkSwitch.set(false)
 			else
-				-- prochain waypoint
 				humanoid:MoveTo(gotoWalkState.path[1])
 			end
 		else
-			-- Relance MoveTo si bloqué
-			if not gotoWalkState.lastMoveTo or (tick() - gotoWalkState.lastMoveTo) > 0.8 then
-				humanoid:MoveTo(wp)
-				gotoWalkState.lastMoveTo = tick()
-				gotoWalkState.stuckPos = rootPart.Position
-				gotoWalkState.stuckStart = tick()
-			else
-				-- Détection bloqué : si pas avancé en 1.2s, contourne par saut latéral
-				if gotoWalkState.stuckPos and (tick() - gotoWalkState.stuckStart) > 1.2 then
-					if (rootPart.Position - gotoWalkState.stuckPos).Magnitude < 2 then
-						local dir = (wp - rootPart.Position)
-						dir = Vector3.new(dir.X, 0, dir.Z)
-						if dir.Magnitude > 0.01 then dir = dir.Unit end
-						local side = dir:Cross(Vector3.new(0, 1, 0)).Unit * 8
-						for _, off in ipairs({side, -side, side * 2, -side * 2}) do
-							local try = rootPart.Position + off
-							local params = RaycastParams.new()
-							params.FilterDescendantsInstances = {character}
-							params.FilterType = Enum.RaycastFilterType.Exclude
-							local r = Workspace:Raycast(try + Vector3.new(0, 20, 0), Vector3.new(0, -40, 0), params)
-							if r then
-								try = Vector3.new(try.X, math.max(r.Position.Y + 2, rootPart.Position.Y + 2), try.Z)
-								table.insert(gotoWalkState.path, 1, try)
-								humanoid:MoveTo(try)
-								gotoWalkState.lastMoveTo = tick()
-								gotoWalkState.stuckPos = nil
-								break
-							end
-						end
-					end
-					gotoWalkState.stuckPos = rootPart.Position
-					gotoWalkState.stuckStart = tick()
+			-- Diriger avec Move() selon touches W/A/S/D, comme un joueur
+			local moveDir = Vector3.zero
+			if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + Vector3.new(0, 0, -1) end
+			if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir + Vector3.new(0, 0, 1) end
+			if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir + Vector3.new(-1, 0, 0) end
+			if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + Vector3.new(1, 0, 0) end
+			-- Si joueur n'appuie pas, l'IA appuie W vers le waypoint
+			if moveDir.Magnitude == 0 then
+				local toWp = (wp - rootPart.Position)
+				toWp = Vector3.new(toWp.X, 0, toWp.Z)
+				if toWp.Magnitude > 0.01 then
+					moveDir = toWp.Unit
 				end
+			end
+			if moveDir.Magnitude > 0 then
+				local cam = Workspace.CurrentCamera
+				local camCF = cam and cam.CFrame or CFrame.new()
+				local yaw = camCF - camCF.Position
+				local worldDir = yaw:VectorToWorldSpace(moveDir)
+				local finalDir = Vector3.new(worldDir.X, 0, worldDir.Z).Unit
+				humanoid:Move(finalDir, true)
+			end
+			-- Saut automatique si marche dans un escalier/murdevant
+			if heightDiff < -2 and heightDiff > -8 and humanoid.FloorMaterial ~= Enum.Material.Air then
+				humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 			end
 		end
 	end
