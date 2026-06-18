@@ -1010,6 +1010,7 @@ local function createPlayerEntry(plr)
 			end
 		end
 		invFrame.ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, math.max(#items * 32, invFrame.ScrollingFrame.AbsoluteSize.Y))
+		showNotification("Inv: " .. #items .. " objets", #items > 0 and Color3.fromRGB(120, 255, 120) or Color3.fromRGB(255, 120, 120))
 	end
 
 	invBtn.MouseButton1Click:Connect(function()
@@ -1023,15 +1024,16 @@ local function createPlayerEntry(plr)
 			invFrame = Instance.new("Frame")
 			invFrame.Name = "InventoryFrame"
 			invFrame.Size = UDim2.new(0, 260, 0, 300)
+			task.wait() -- attendre layout AbsolutePosition
 			local bx, by = invBtn.AbsolutePosition.X, invBtn.AbsolutePosition.Y
 			invFrame.Position = UDim2.new(0, math.max(10, bx - 270), 0, math.min(by, screenGui.AbsoluteSize.Y - 310))
-			invFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-			invFrame.BackgroundTransparency = 0.3
+			invFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+			invFrame.BackgroundTransparency = 0.15
 			invFrame.BorderSizePixel = 0
-			invFrame.ZIndex = 1000
+			invFrame.ZIndex = 10000
 			invFrame.Parent = screenGui
 			createCorner(invFrame, 10)
-			createStroke(invFrame, Color3.fromRGB(200, 200, 255), 2)
+			createStroke(invFrame, Color3.fromRGB(0, 200, 255), 3)
 
 			-- Créer le ScrollingFrame AVANT refreshInventory
 			local scroll = Instance.new("ScrollingFrame")
@@ -1875,7 +1877,7 @@ local localState = {
 	timeOfDay = 12,
 }
 
-local zeroGSwitch = createSwitch(localPage, "Zero Gravité", 10, function(on)
+local zeroGSwitch = createSwitch(localScroll, "Zero Gravité", 10, function(on)
 	localState.zeroGravity = on
 	if on then
 		Workspace.Gravity = 0
@@ -1989,13 +1991,13 @@ gravityInput.FocusLost:Connect(function(enterPressed)
 	setGravityExact(gravityInput.Text)
 end)
 
-local resetGravityBtn = createButton(localPage, "Reset gravité normale", 148, Color3.fromRGB(80, 80, 90), function()
+local resetGravityBtn = createButton(localScroll, "Reset gravité normale", 148, Color3.fromRGB(80, 80, 90), function()
 	setGravityExact(196.2)
 end)
 resetGravityBtn.Size = UDim2.new(1, -16, 0, 30)
 resetGravityBtn.Position = UDim2.new(0, 8, 0, 148)
 
-local timeSwitch = createSwitch(localPage, "Temps custom", 200, function(on)
+local timeSwitch = createSwitch(localScroll, "Temps custom", 200, function(on)
 	if on then
 		Lighting.TimeOfDay = string.format("%02d:00:00", localState.timeOfDay)
 	else
@@ -2003,18 +2005,18 @@ local timeSwitch = createSwitch(localPage, "Temps custom", 200, function(on)
 	end
 end)
 
-createSlider(localPage, "Heure du jour", 246, 0, 24, 12, function(v)
+createSlider(localScroll, "Heure du jour", 246, 0, 24, 12, function(v)
 	localState.timeOfDay = math.floor(v)
 	Lighting.TimeOfDay = string.format("%02d:00:00", localState.timeOfDay)
 end, Color3.fromRGB(255, 180, 60))
 
-createSwitch(localPage, "Freeze temps", 292, function(on)
+createSwitch(localScroll, "Freeze temps", 292, function(on)
 	if on then
 		Lighting.ClockTime = localState.timeOfDay
 	end
 end)
 
-createButton(localPage, "Reset monde", 348, Color3.fromRGB(80, 80, 90), function()
+createButton(localScroll, "Reset monde", 348, Color3.fromRGB(80, 80, 90), function()
 	Workspace.Gravity = localState.normalGravity
 	Lighting.TimeOfDay = "12:00:00"
 	zeroGSwitch.set(false)
@@ -2025,7 +2027,7 @@ end)
 
 -- Switch ESP Global dans l'onglet Local
 local globalESPEnabled = false
-local globalESPSwitch = createSwitch(localPage, "ESP Global", 404, function(on)
+local globalESPSwitch = createSwitch(localScroll, "ESP Global", 404, function(on)
 	globalESPEnabled = on
 	espState.enabled = on
 	if on then
