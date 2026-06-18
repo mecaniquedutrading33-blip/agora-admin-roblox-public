@@ -351,24 +351,19 @@ local function shutdownPanel()
 
 	-- Fly / noclip / platform
 	if flyState.flying then stopFly() end
-	noclipSwitch.set(false)
-	platformSwitch.set(false)
-	clickTpSwitch.set(false)
-	fullbrightSwitch.set(false)
-	zeroGSwitch.set(false)
-	antiFlingSwitch.set(false)
-	antiSeatSwitch.set(false)
-	antiTeleportSwitch.set(false)
-	antiFallSwitch.set(false)
-	antiKillSwitch.set(false)
-	antiAFKSwitch.set(false)
-	spiderSwitch.set(false)
-	ghostSwitch.set(false)
-	elevenSwitch.set(false)
-	infJumpSwitch.set(false)
-	walkSpeedSwitch.set(false)
-	jumpPowerSwitch.set(false)
-	hitboxSwitch.set(false)
+	local function safeSet(sw, v)
+		if sw and sw.set then sw.set(v) end
+	end
+	safeSet(noclipSwitch, false)
+	safeSet(fullbrightSwitch, false)
+	safeSet(zeroGSwitch, false)
+	protectionsState.antiFling = false
+	protectionsState.antiSeat = false
+	protectionsState.antiTeleport = false
+	protectionsState.antiFall = false
+	protectionsState.antiKill = false
+	protectionsState.antiAFK = false
+	safeSet(infJumpSwitch, false)
 
 	-- Clear ESP
 	globalESPEnabled = false
@@ -408,7 +403,6 @@ local function shutdownPanel()
 		end
 	end
 	print("[MEP] Panel fermé")
-end
 end
 
 local dragging, dragStart, startPos
