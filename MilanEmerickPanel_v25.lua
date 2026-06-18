@@ -756,8 +756,8 @@ local function createPlayerEntry(plr)
 	statusLbl.Parent = card
 
 	local actionContainer = Instance.new("Frame")
-	actionContainer.Size = UDim2.new(0, 152, 0, 28)
-	actionContainer.Position = UDim2.new(1, -158, 0, 22)
+	actionContainer.Size = UDim2.new(0, 114, 0, 70)
+	actionContainer.Position = UDim2.new(1, -120, 0, 8)
 	actionContainer.BackgroundTransparency = 1
 	actionContainer.Parent = card
 
@@ -772,13 +772,15 @@ local function createPlayerEntry(plr)
 
 	local actionButtons = {}
 	for i, def in ipairs(actions) do
+		local row = math.floor((i - 1) / 3)
+		local col = (i - 1) % 3
 		local b = Instance.new("TextButton")
-		b.Size = UDim2.new(0, 24, 0, 24)
-		b.Position = UDim2.new(0, (i - 1) * 26, 0, 0)
+		b.Size = UDim2.new(0, 34, 0, 30)
+		b.Position = UDim2.new(0, col * 38, 0, row * 34)
 		b.BackgroundColor3 = def.color
 		b.Text = def.name
 		b.Font = Enum.Font.GothamBold
-		b.TextSize = 8
+		b.TextSize = 10
 		b.TextColor3 = Color3.new(1, 1, 1)
 		b.BorderSizePixel = 0
 		b.Parent = actionContainer
@@ -959,7 +961,7 @@ local function createPlayerEntry(plr)
 			empty.Size = UDim2.new(1, -10, 0, 30)
 			empty.Position = UDim2.new(0, 5, 0, 5)
 			empty.BackgroundTransparency = 1
-			empty.Text = "Inventaire vide (visibilité locale)"
+			empty.Text = "Inventaire vide (lecture locale seule)"
 			empty.Font = Enum.Font.Gotham
 			empty.TextSize = 12
 			empty.TextColor3 = Color3.fromRGB(180, 180, 180)
@@ -969,7 +971,7 @@ local function createPlayerEntry(plr)
 				local row = Instance.new("TextButton")
 				row.Size = UDim2.new(1, -10, 0, 28)
 				row.Position = UDim2.new(0, 5, 0, (i - 1) * 32)
-				row.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+				row.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
 				row.Text = tool.Name
 				row.Font = Enum.Font.GothamSemibold
 				row.TextSize = 11
@@ -1002,10 +1004,14 @@ local function createPlayerEntry(plr)
 			invFrame.Name = "InventoryFrame"
 			invFrame.Size = UDim2.new(0, 260, 0, 300)
 			task.wait() -- attendre layout AbsolutePosition
+			local sw = screenGui.AbsoluteSize.X
+			local sh = screenGui.AbsoluteSize.Y
 			local bx, by = invBtn.AbsolutePosition.X, invBtn.AbsolutePosition.Y
-			invFrame.Position = UDim2.new(0, math.max(10, bx - 270), 0, math.min(by, screenGui.AbsoluteSize.Y - 310))
-			invFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
-			invFrame.BackgroundTransparency = 0.15
+			local targetX = math.clamp(bx - 270, 10, math.max(10, sw - 270))
+			local targetY = math.clamp(by, 10, math.max(10, sh - 310))
+			invFrame.Position = UDim2.new(0, targetX, 0, targetY)
+			invFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+			invFrame.BackgroundTransparency = 0.1
 			invFrame.BorderSizePixel = 0
 			invFrame.ZIndex = 10000
 			invFrame.Parent = screenGui
