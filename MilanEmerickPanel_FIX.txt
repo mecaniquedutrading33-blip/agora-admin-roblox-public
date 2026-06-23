@@ -1674,11 +1674,41 @@ local function createPlayerEntry(plr)
 							end
 						end
 					end)
+					-- Méthodes natives Roblox (marchent même si l'exécuteur bloque HttpGet)
 					table.insert(extra, "---")
-					table.insert(extra, "Note : Roblox ne donne pas le nombre exact de visites par user/jeu publiquement.")
-				end
-				-- Concat avec contenu initial
-				if #extra > 0 then
+					-- Membership (Premium/BC)
+					local mt = tostring(plr.MembershipType):gsub("Enum.MembershipType.", "")
+					local isPremium = (mt == "Premium" or plr.MembershipType == Enum.MembershipType.Premium)
+					table.insert(extra, "💎 " .. (isPremium and "Premium" or "Non-Premium") .. (mt ~= "None" and mt ~= "Premium" and (" (" .. mt .. ")") or ""))
+					-- Network ping (latence)
+					pcall(function()
+						local ping = plr:GetNetworkPing()
+						local pingIcon = "🟢"
+						if ping > 0.2 then pingIcon = "🟡" elseif ping > 0.4 then pingIcon = "🔴" end
+						table.insert(extra, pingIcon .. " Ping : " .. math.floor(ping * 1000) .. " ms")
+					end)
+					-- Ami avec moi ?
+					if localPlayer and plr ~= localPlayer then
+						pcall(function()
+							local isFriend = localPlayer:IsFriendsWith(plr.UserId)
+							if isFriend then
+								table.insert(extra, "👥 Ami avec toi : OUI")
+							end
+						end)
+					end
+					-- Joue à CE JEU (vérif locale, pas besoin d'API)
+					if plr ~= localPlayer then
+						local placeId = game.PlaceId
+						pcall(function()
+							local hasAsset = game:GetService("MarketplaceService"):UserOwnsGamePassAsync(plr.UserId, 0)
+						end)
+						-- Si le player est dans CE JEU, son GameId = placeId
+						if plr.GameId and tostring(plr.GameId) == tostring(placeId) then
+							table.insert(extra, "★ EST DANS CE JEU MAINTENANT")
+						end
+					end
+					end
+					-- Concat avec contenu initial
 					local base = {
 						"Display : " .. plr.DisplayName,
 						"Username : @" .. plr.Name,
@@ -1687,14 +1717,13 @@ local function createPlayerEntry(plr)
 						"Ami avec toi : " .. (isFriend and "OUI" or "non")
 					}
 					setText(table.concat(base, "\n") .. "\n" .. table.concat(extra, "\n"))
-				end
-				end)
-		end)
-	end)
+					end)
+					end)
+					end)
 
-	playerCards[plr] = card
-	return card
-end
+					playerCards[plr] = card
+					return card
+					end
 
 local function addPlayerCard(plr)
 	if plr == LocalPlayer then return end
