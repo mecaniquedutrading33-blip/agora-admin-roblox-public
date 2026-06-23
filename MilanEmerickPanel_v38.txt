@@ -767,7 +767,7 @@ serverStatsLayout.Parent = serverStatsBar
 
 local function addServerStat(name)
 	local card = Instance.new("Frame")
-	card.Size = UDim2.new(0, 78, 0, 42)
+	card.Size = UDim2.new(0, 62, 0, 42) -- 62px au lieu de 78, pour que 7 cartes rentrent (7×62+6×4=458 < 460)
 	card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 	card.BorderSizePixel = 0
 	card.Parent = serverStatsBar
@@ -775,23 +775,24 @@ local function addServerStat(name)
 	createStroke(card, Color3.fromRGB(45, 45, 55), 1)
 
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, -8, 0, 14)
-	label.Position = UDim2.new(0, 4, 0, 3)
+	label.Size = UDim2.new(1, -6, 0, 14)
+	label.Position = UDim2.new(0, 3, 0, 3)
 	label.BackgroundTransparency = 1
 	label.Text = name
 	label.Font = Enum.Font.GothamSemibold
-	label.TextSize = 9
+	label.TextSize = 8
 	label.TextColor3 = Color3.fromRGB(150, 150, 170)
 	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextTruncate = Enum.TextTruncate.AtEnd
 	label.Parent = card
 
 	local value = Instance.new("TextLabel")
-	value.Size = UDim2.new(1, -8, 0, 18)
-	value.Position = UDim2.new(0, 4, 0, 19)
+	value.Size = UDim2.new(1, -6, 0, 18)
+	value.Position = UDim2.new(0, 3, 0, 19)
 	value.BackgroundTransparency = 1
 	value.Text = "..."
 	value.Font = Enum.Font.GothamBold
-	value.TextSize = 12
+	value.TextSize = 11
 	value.TextColor3 = Color3.fromRGB(230, 230, 240)
 	value.TextXAlignment = Enum.TextXAlignment.Left
 	value.TextTruncate = Enum.TextTruncate.AtEnd
@@ -801,6 +802,7 @@ end
 
 -- WRAP: encapsule la création des stats serveur + update loop dans une fonction
 -- pour limiter les 200 registers au top-level.
+-- "Créateur" retiré du bar de Joueurs (était trop large) → déplacé vers Extra via _serverStatsForExtra()
 local function _initServerStats()
 	local statPlayers = addServerStat("Joueurs")
 	local statFPS = addServerStat("FPS")
@@ -808,7 +810,6 @@ local function _initServerStats()
 	local statTime = addServerStat("Heure")
 	local statJobId = addServerStat("Job ID")
 	local statPlaceId = addServerStat("Place ID")
-	local statCreator = addServerStat("Créateur")
 
 	local _fps = 60
 	local _lastFrame = tick()
@@ -832,8 +833,7 @@ local function _initServerStats()
 				statJobId.Text = (ok and jobId and jobId ~= "") and jobId:sub(1, 20) .. "..." or "N/A"
 				local ok2, placeId = pcall(function() return game.PlaceId end)
 				statPlaceId.Text = ok2 and tostring(placeId) or "N/A"
-				local ok3, creator = pcall(function() return game.CreatorId end)
-				statCreator.Text = ok3 and tostring(creator) or "N/A"
+				-- Créateur déplacé vers onglet Extra (voir _serverStatsForExtra)
 			end)
 		end
 	end)
@@ -4211,6 +4211,84 @@ task.defer(function()
 	extraScroll.CanvasSize = UDim2.new(0, 0, 0, extraLayout.AbsoluteContentSize.Y + 10)
 end)
 
+-- === Carte "Infos serveur" (Créateur du jeu) — déplacée depuis Joueurs (était trop large) ===
+-- WRAP dans local function + appel pour isoler les locals (réduit les 200 registres)
+local function _initServerInfoCard()
+	local serverInfoCard = Instance.new("Frame")
+	serverInfoCard.Name = "ServerInfoCard"
+	serverInfoCard.Size = UDim2.new(1, -10, 0, 0)
+	serverInfoCard.AutomaticSize = Enum.AutomaticSize.Y
+	serverInfoCard.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	serverInfoCard.BorderSizePixel = 0
+	serverInfoCard.LayoutOrder = 0
+	serverInfoCard.Parent = extraScroll
+	createCorner(serverInfoCard, 8)
+	createStroke(serverInfoCard, Color3.fromRGB(80, 80, 120), 1)
+
+	local serverInfoPadding = Instance.new("UIPadding")
+	serverInfoPadding.PaddingTop = UDim.new(0, 8)
+	serverInfoPadding.PaddingBottom = UDim.new(0, 8)
+	serverInfoPadding.PaddingLeft = UDim.new(0, 12)
+	serverInfoPadding.PaddingRight = UDim.new(0, 12)
+	serverInfoPadding.Parent = serverInfoCard
+
+	local serverInfoTitle = Instance.new("TextLabel")
+	serverInfoTitle.Size = UDim2.new(1, 0, 0, 16)
+	serverInfoTitle.BackgroundTransparency = 1
+	serverInfoTitle.Text = "🖥️ Infos serveur"
+	serverInfoTitle.Font = Enum.Font.GothamBold
+	serverInfoTitle.TextSize = 12
+	serverInfoTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
+	serverInfoTitle.TextXAlignment = Enum.TextXAlignment.Left
+	serverInfoTitle.Parent = serverInfoCard
+
+	local serverInfoText = Instance.new("TextLabel")
+	serverInfoText.Size = UDim2.new(1, 0, 0, 0)
+	serverInfoText.AutomaticSize = Enum.AutomaticSize.Y
+	serverInfoText.BackgroundTransparency = 1
+	serverInfoText.Text = "Chargement..."
+	serverInfoText.Font = Enum.Font.Gotham
+	serverInfoText.TextSize = 10
+	serverInfoText.TextColor3 = Color3.fromRGB(180, 180, 200)
+	serverInfoText.TextXAlignment = Enum.TextXAlignment.Left
+	serverInfoText.TextYAlignment = Enum.TextYAlignment.Top
+	serverInfoText.TextWrapped = true
+	serverInfoText.Parent = serverInfoCard
+
+	-- Update loop pour la carte "Infos serveur" dans Extra
+	task.spawn(function()
+		while task.wait(2) do
+			pcall(function()
+				local lines = {}
+				local okCreator, creatorId = pcall(function() return game.CreatorId end)
+				if okCreator and creatorId and creatorId ~= 0 then
+					table.insert(lines, "  🎮 Créateur du jeu (CreatorId) : " .. tostring(creatorId))
+					local okCreatorType, creatorType = pcall(function() return game.CreatorType end)
+					if okCreatorType then
+						table.insert(lines, "  📌 Type créateur    : " .. tostring(creatorType))
+					end
+					local okName, gameName = pcall(function() return game.Name end)
+					if okName then
+						table.insert(lines, "  🎯 Nom du jeu       : " .. tostring(gameName))
+					end
+					local okVIP, vipOwnerId = pcall(function() return game.VIPServerOwnerId end)
+					if okVIP and vipOwnerId and vipOwnerId ~= 0 then
+						table.insert(lines, "  👑 Proprio VIP     : " .. tostring(vipOwnerId))
+					end
+					local okVIPId, vipId = pcall(function() return game.VIPServerId end)
+					if okVIPId and vipId and vipId ~= "" then
+						table.insert(lines, "  🔑 VIP Server ID    : " .. tostring(vipId):sub(1, 24))
+					end
+				else
+					table.insert(lines, "  🎮 Créateur : Indisponible")
+				end
+				serverInfoText.Text = table.concat(lines, "\n")
+			end)
+		end
+	end)
+end
+_initServerInfoCard()
+
 local fullbrightSwitch = createSwitch(extraScroll, "Fullbright", 0, function(on)
 	fullbrightState.enabled = on
 	if on then
@@ -5076,20 +5154,62 @@ local function renderResult(data, parent)
 	padding.PaddingRight = UDim.new(0, 12)
 	padding.Parent = card
 
-	-- GROS TextLabel unique (couleur uniforme, pas de RichText)
+	-- Layout horizontal : à gauche le texte (TextLabel), à droite le ViewportFrame avatar
+	local contentLayout = Instance.new("UIListLayout")
+	contentLayout.FillDirection = Enum.FillDirection.Horizontal
+	contentLayout.Padding = UDim.new(0, 10)
+	contentLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+	contentLayout.Parent = card
+
+	-- === Colonne gauche : TextLabel avec toutes les infos ===
 	local big = Instance.new("TextLabel")
-	big.Size = UDim2.new(1, -24, 0, 0)
+	big.Name = "InfoLabel"
+	big.Size = UDim2.new(1, -180, 0, 0) -- largeur réduite pour laisser place à l'avatar à droite
 	big.AutomaticSize = Enum.AutomaticSize.Y
 	big.BackgroundTransparency = 1
-	big.Text = "" -- sera rempli progressivement
+	big.Text = ""
 	big.Font = Enum.Font.GothamSemibold
 	big.TextSize = 11
-	big.TextColor3 = Color3.fromRGB(220, 220, 235) -- blanc cassé uniforme
+	big.TextColor3 = Color3.fromRGB(220, 220, 235)
 	big.TextXAlignment = Enum.TextXAlignment.Left
 	big.TextYAlignment = Enum.TextYAlignment.Top
 	big.TextWrapped = true
-	big.RichText = false -- IMPORTANT: pas de HTML
+	big.RichText = false
+	big.LayoutOrder = 1
 	big.Parent = card
+
+	-- === Colonne droite : ViewportFrame avec l'avatar 3D ===
+	local avatarHolder = Instance.new("Frame")
+	avatarHolder.Name = "AvatarHolder"
+	avatarHolder.Size = UDim2.new(0, 160, 0, 200) -- FIXE pour contenir l'avatar
+	avatarHolder.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+	avatarHolder.BorderSizePixel = 0
+	avatarHolder.LayoutOrder = 2
+	avatarHolder.Parent = card
+	createCorner(avatarHolder, 8)
+	createStroke(avatarHolder, Color3.fromRGB(120, 80, 255), 1.5)
+
+	-- Label "Chargement..." par-dessus tant que l'avatar n'est pas prêt
+	local avatarLoading = Instance.new("TextLabel")
+	avatarLoading.Size = UDim2.new(1, 0, 1, 0)
+	avatarLoading.BackgroundTransparency = 1
+	avatarLoading.Text = "🧍\nChargement\navatar 3D..."
+	avatarLoading.Font = Enum.Font.GothamSemibold
+	avatarLoading.TextSize = 11
+	avatarLoading.TextColor3 = Color3.fromRGB(150, 150, 180)
+	avatarLoading.TextWrapped = true
+	avatarLoading.ZIndex = 5
+	avatarLoading.Parent = avatarHolder
+
+	-- ViewportFrame
+	local viewport = Instance.new("ViewportFrame")
+	viewport.Size = UDim2.new(1, -8, 1, -8)
+	viewport.Position = UDim2.new(0, 4, 0, 4)
+	viewport.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+	viewport.BorderSizePixel = 0
+	viewport.ZIndex = 2
+	viewport.Parent = avatarHolder
+	createCorner(viewport, 6)
 
 	-- Construire la liste des lignes (une par champ)
 	local friendsText = joinOrIndi(data.friendsList, ", ", 5)
@@ -5176,8 +5296,94 @@ local function renderResult(data, parent)
 			task.wait(animDelay)
 		end
 		-- Final resize
-		pcall(function() big.Size = UDim2.new(1, -24, 0, big.TextBounds.Y + 4) end)
+		pcall(function() big.Size = UDim2.new(1, -180, 0, big.TextBounds.Y + 4) end)
 	end)
+
+	-- === Charger l'avatar 3D dans le ViewportFrame ===
+	-- Approche : Players:GetHumanoidDescriptionFromUserId → InsertService:LoadAsset(dummy R15) → ApplyDescription
+	if data.userId then
+		task.spawn(function()
+			local userId = data.userId
+			local success = false
+			pcall(function()
+				-- 1) Récupérer la description humaine
+				local humanoidDesc = Players:GetHumanoidDescriptionFromUserId(userId)
+				if not humanoidDesc then error("no desc") end
+
+				-- 2) Charger un dummy R15 manequin
+				local InsertService = game:GetService("InsertService")
+				local dummyModel = InsertService:LoadAsset(7365808303) -- Mannequin R15
+				if not dummyModel then error("no dummy") end
+
+				local char = dummyModel:FindFirstChildWhichIsA("Model")
+				if not char then
+					for _, c in ipairs(dummyModel:GetChildren()) do
+						if c:IsA("Model") then char = c break end
+					end
+				end
+				if not char then
+					dummyModel:Destroy()
+					error("no char in dummy")
+				end
+
+				-- 3) Appliquer la description (habille le mannequin)
+				local humanoid = char:FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					humanoid:ApplyDescription(humanoidDesc)
+				end
+
+				-- 4) Mettre le modèle dans le ViewportFrame
+				char.Parent = viewport
+
+				-- 5) Camera qui cadre le perso
+				local cam = Instance.new("Camera")
+				cam.Parent = viewport
+				viewport.CurrentCamera = cam
+
+				-- Position de la camera : on cadre le perso (hauteur ~5 unités pour R15)
+				pcall(function()
+					local cf, size = char:GetBoundingBox()
+					local center = cf.Position
+					local maxSize = math.max(size.X, size.Y, size.Z)
+					local distance = maxSize * 2.2
+					cam.CFrame = CFrame.new(center + Vector3.new(0, 0.5, 0) + Vector3.new(0, 0, distance), center)
+				end)
+
+				-- 6) Animation lente (rotation continue)
+				task.spawn(function()
+					local angle = 0
+					while char and char.Parent do
+						angle = angle + 0.5
+						pcall(function()
+							local cf, size = char:GetBoundingBox()
+							local center = cf.Position
+							local maxSize = math.max(size.X, size.Y, size.Z)
+							local distance = maxSize * 2.2
+							cam.CFrame = CFrame.new(
+								center + Vector3.new(math.cos(angle) * distance, 0.5, math.sin(angle) * distance),
+								center
+							)
+						end)
+						task.wait(0.03)
+					end
+				end)
+
+				-- 7) Enlever le label "Chargement..."
+				if avatarLoading and avatarLoading.Parent then
+					avatarLoading:Destroy()
+				end
+
+				success = true
+			end)
+
+			if not success then
+				if avatarLoading and avatarLoading.Parent then
+					avatarLoading.Text = "❌ Avatar\nindisponible\n(api bloquée?)"
+					avatarLoading.TextColor3 = Color3.fromRGB(220, 100, 100)
+				end
+			end
+		end)
+	end
 
 	return card
 end
