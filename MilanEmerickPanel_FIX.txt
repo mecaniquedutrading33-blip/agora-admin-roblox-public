@@ -4765,22 +4765,51 @@ local function renderResult(data, parent)
 	end
 
 	-- Header : nom + display + badges
-	local header = Instance.new("TextLabel")
-	header.Size = UDim2.new(1, -80, 0, 56)
-	header.Position = UDim2.new(0, 72, 0, 6)
-	header.BackgroundTransparency = 1
-	header.TextXAlignment = Enum.TextXAlignment.Left
-	header.TextYAlignment = Enum.TextYAlignment.Top
-	header.Font = Enum.Font.GothamBold
-	header.TextSize = 13
-	header.TextColor3 = Color3.fromRGB(230, 230, 255)
-	header.TextWrapped = true
-	header.Parent = card
-	local headerLines = { (data.displayName or "?") }
-	if data.hasVerifiedBadge then table.insert(headerLines, "✓ Vérifié Roblox") end
-	if data.isPremium then table.insert(headerLines, "⭐ Premium") end
-	if data.isBanned then table.insert(headerLines, "🚫 Banni") end
-	header.Text = table.concat(headerLines, "  ")
+		local header = Instance.new("TextLabel")
+		header.Size = UDim2.new(1, -80, 0, 56)
+		header.Position = UDim2.new(0, 72, 0, 6)
+		header.BackgroundTransparency = 1
+		header.TextXAlignment = Enum.TextXAlignment.Left
+		header.TextYAlignment = Enum.TextYAlignment.Top
+		header.Font = Enum.Font.GothamBold
+		header.TextSize = 13
+		header.TextColor3 = Color3.fromRGB(230, 230, 255)
+		header.TextWrapped = true
+		header.Parent = card
+		local headerLines = { (data.displayName or "?") }
+		if data.hasVerifiedBadge then table.insert(headerLines, "✓ Vérifié Roblox") end
+		if data.isPremium then table.insert(headerLines, "⭐ Premium") end
+		if data.isBanned then table.insert(headerLines, "🚫 Banni") end
+		header.Text = table.concat(headerLines, "  ")
+
+		-- Encadré d'alerte si APIs externes bloquées
+		if data.apiOk == false then
+			local warn = Instance.new("Frame")
+			warn.Size = UDim2.new(1, -16, 0, 80)
+			warn.Position = UDim2.new(0, 8, 0, 68)
+			warn.BackgroundColor3 = Color3.fromRGB(80, 50, 20)
+			warn.BorderSizePixel = 0
+			warn.Parent = card
+			createCorner(warn, 6)
+			createStroke(warn, Color3.fromRGB(255, 180, 90), 2)
+
+			local warnText = Instance.new("TextLabel")
+			warnText.Size = UDim2.new(1, -10, 1, 0)
+			warnText.Position = UDim2.new(0, 5, 0, 0)
+			warnText.BackgroundTransparency = 1
+			warnText.TextXAlignment = Enum.TextXAlignment.Left
+			warnText.TextYAlignment = Enum.TextYAlignment.Top
+			warnText.Font = Enum.Font.GothamBold
+			warnText.TextSize = 11
+			warnText.TextColor3 = Color3.fromRGB(255, 220, 160)
+			warnText.TextWrapped = true
+			warnText.Parent = warn
+			warnText.Text = "⚠ APIs externes bloquées par l'exécuteur\n\n" ..
+				"UserId : " .. (data.userId or "?") .. "\n" ..
+				"Username : @" .. (data.username or "?") .. "\n" ..
+				"Ouvre ce lien dans ton browser pour voir le profil :\n" ..
+				(data.profileUrl or "https://www.roblox.com")
+		end
 
 	-- Bloc "infos profil"
 	local info = Instance.new("TextLabel")
@@ -5431,8 +5460,26 @@ function runRegistrySearch(query)
 				end)
 
 		-- 7) Afficher
-				statusLbl.Text = "Détails de @" .. username .. " :"
-				statusLbl.TextColor3 = Color3.fromRGB(180, 220, 180)
+				-- Compteur d'APIs qui ont répondu (au moins 1 = l'exécuteur autorise HttpGet externe)
+				local apiSuccessCount = 0
+				if data.created then apiSuccessCount = apiSuccessCount + 1 end
+				if data.friendCount or data.followerCount then apiSuccessCount = apiSuccessCount + 1 end
+				if data.games or data.favGames then apiSuccessCount = apiSuccessCount + 1 end
+				if data.wearingCount or data.outfits then apiSuccessCount = apiSuccessCount + 1 end
+				if data.groupsWithRole then apiSuccessCount = apiSuccessCount + 1 end
+				if data.friendsList then apiSuccessCount = apiSuccessCount + 1 end
+				if data.usernameHistory then apiSuccessCount = apiSuccessCount + 1 end
+				if data.lastOnlineText then apiSuccessCount = apiSuccessCount + 1 end
+				data.apiOk = apiSuccessCount >= 2
+				data.profileUrl = "https://www.roblox.com/users/" .. tostring(userId) .. "/profile"
+
+				if data.apiOk then
+					statusLbl.Text = "✅ " .. apiSuccessCount .. " APIs OK pour @" .. username
+					statusLbl.TextColor3 = Color3.fromRGB(120, 220, 140)
+				else
+					statusLbl.Text = "⚠ @" .. username .. " (ID:" .. userId .. ") — APIs externes bloquées par l'exécuteur. Lien : " .. data.profileUrl
+					statusLbl.TextColor3 = Color3.fromRGB(255, 180, 90)
+				end
 				renderResult(data, resultScroll)
 
 				-- 8) Ajouter à la liste "Mes users consultés" (refreshAll met à jour la présence)
