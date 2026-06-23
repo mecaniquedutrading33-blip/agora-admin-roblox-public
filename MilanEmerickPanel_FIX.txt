@@ -4379,10 +4379,10 @@ resultLayout.Parent = resultScroll
 local statusLbl = Instance.new("TextLabel")
 statusLbl.Size = UDim2.new(1, -12, 0, 30)
 statusLbl.BackgroundTransparency = 1
-statusLbl.Text = "⚠ Recherche Roblox indisponible : les APIs externes (users.roblox.com) sont bloquées par ton exécuteur. Le headshot/avatar utilise GetUserThumbnailAsync (natif)."
+statusLbl.Text = "Tape un username (ex: Builderman) ou un UserId (ex: 1) puis clique Rechercher."
 statusLbl.Font = Enum.Font.Gotham
 statusLbl.TextSize = 11
-statusLbl.TextColor3 = Color3.fromRGB(220, 200, 100)
+statusLbl.TextColor3 = Color3.fromRGB(180, 180, 200)
 statusLbl.TextWrapped = true
 statusLbl.LayoutOrder = -1
 statusLbl.Parent = resultScroll
@@ -4509,77 +4509,32 @@ function runRegistrySearch(query)
 	end
 
 	task.spawn(function()
-		-- Test rapide : est-ce que l'API marche ?
-		local apiOk = pcall(function()
-			local test = game:HttpGet("https://www.roblox.com/")
-			if not test or test == "" then error("no response") end
-		end)
-		if not apiOk then
-			statusLbl.Text = "⚠ API Roblox bloquée par l'exécuteur. Recherche impossible. Le headshot/avatar utilise GetUserThumbnailAsync (natif) → ça marche."
-			statusLbl.TextColor3 = Color3.fromRGB(220, 100, 100)
-			return
-		end
-
-		-- 1) Résoudre username -> userId via API publique
+		-- 1) Résoudre username -> userId via Players:GetUserIdFromNameAsync (NATUREL Roblox, pas d'API externe)
 		local userId, displayName, username
-		local ok, resp = pcall(function()
-			return game:HttpPostAsync(
-				"https://users.roblox.com/v1/usernames/users",
-				HttpService:JSONEncode({usernames = {query}, excludeBannedUsers = false}),
-				Enum.HttpContentType.ApplicationJson,
-				false
-			)
+		local ok, uid = pcall(function()
+			return Players:GetUserIdFromNameAsync(query)
 		end)
-		if not ok or not resp or resp == "" then
-			statusLbl.Text = "Échec API username (réseau ?). Essaie un autre nom."
-			statusLbl.TextColor3 = Color3.fromRGB(220, 100, 100)
-			return
-		end
-		local d = HttpService:JSONDecode(resp)
-		if d and d.data and #d.data > 0 then
-			userId = d.data[1].id
-			displayName = d.data[1].displayName
-			username = d.data[1].name
+		if not ok or not uid or uid == 0 then
+			-- Pas trouvé : on peut quand même afficher le userId si l'user tape un nombre
+			local asNumber = tonumber(query)
+			if asNumber and asNumber > 0 then
+				userId = asNumber
+				username = "UserId:" .. asNumber
+				displayName = "?"
+			else
+				statusLbl.Text = "✗ Username introuvable : @" .. query
+				statusLbl.TextColor3 = Color3.fromRGB(220, 100, 100)
+				return
+			end
+		else
+			userId = uid
+			username = query
+			-- Display name : on l'a pas via GetUserIdFromNameAsync, fallback
+			displayName = query
 		end
 
+		-- Si on a toujours pas de userId, abandonner
 		if not userId then
-			-- Fallback : recherche approximative
-			pcall(function()
-				local sresp = game:HttpGet("https://users.roblox.com/v1/user/search-users?keyword=" .. query .. "&limit=10")
-				if sresp and sresp ~= "" then
-					local sd = HttpService:JSONDecode(sresp)
-					if sd and sd.data and #sd.data > 0 then
-						statusLbl.Text = "Aucun résultat exact. Comptes similaires :"
-						statusLbl.TextColor3 = Color3.fromRGB(255, 200, 100)
-						for i, u in ipairs(sd.data) do
-							local sCard = Instance.new("TextButton")
-							sCard.Size = UDim2.new(1, -10, 0, 36)
-							sCard.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
-							sCard.BorderSizePixel = 0
-							sCard.LayoutOrder = u.id or i
-							sCard.Text = ""
-							sCard.Parent = resultScroll
-							createCorner(sCard, 6)
-							local sInfo = Instance.new("TextLabel")
-							sInfo.Size = UDim2.new(1, -10, 1, 0)
-							sInfo.Position = UDim2.new(0, 8, 0, 0)
-							sInfo.BackgroundTransparency = 1
-							sInfo.TextXAlignment = Enum.TextXAlignment.Left
-							sInfo.Font = Enum.Font.Gotham
-							sInfo.TextSize = 11
-							sInfo.TextColor3 = Color3.fromRGB(200, 200, 220)
-							sInfo.Text = "@" .. (u.name or "?") .. " (" .. (u.displayName or "?") .. ") - ID " .. tostring(u.id or "?")
-							sInfo.Parent = sCard
-							sCard.MouseButton1Click:Connect(function()
-								searchBox.Text = u.name
-								runRegistrySearch(u.name)
-							end)
-						end
-						return
-					end
-				end
-			end)
-			if statusLbl.Text:find("Aucun") then return end
 			statusLbl.Text = "Aucun résultat pour \"" .. query .. "\""
 			statusLbl.TextColor3 = Color3.fromRGB(220, 100, 100)
 			return
