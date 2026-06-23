@@ -365,7 +365,7 @@ end
 
 local function createTab(name)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0.158, -2, 1, 0)
+	btn.Size = UDim2.new(0.142, -2, 1, 0)
 	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 	btn.Text = name
 	btn.Font = Enum.Font.GothamSemibold
@@ -4695,6 +4695,23 @@ local function _wrapRemotes()
 	refreshRemotesBtn.Parent = remoteHeader
 	createCorner(refreshRemotesBtn, 4)
 
+	-- Barre de recherche pour filtrer les remotes par nom
+	local remotesSearchBox = Instance.new("TextBox")
+	remotesSearchBox.Size = UDim2.new(1, -8, 0, 28)
+	remotesSearchBox.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+	remotesSearchBox.BorderSizePixel = 0
+	remotesSearchBox.Text = ""
+	remotesSearchBox.PlaceholderText = "🔍 Filtrer les remotes par nom..."
+	remotesSearchBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
+	remotesSearchBox.Font = Enum.Font.Gotham
+	remotesSearchBox.TextSize = 12
+	remotesSearchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
+	remotesSearchBox.ClearTextOnFocus = false
+	remotesSearchBox.LayoutOrder = -40
+	remotesSearchBox.Parent = serverScroll
+	createCorner(remotesSearchBox, 6)
+	createStroke(remotesSearchBox, Color3.fromRGB(60, 60, 80), 1)
+
 	-- Container des cartes de remotes
 	local remoteListFrame = Instance.new("Frame")
 	remoteListFrame.Size = UDim2.new(1, 0, 0, 0)
@@ -4712,16 +4729,21 @@ local function _wrapRemotes()
 	local function makeRemoteCard(remote)
 		local isFunction = remote:IsA("RemoteFunction")
 		local card = Instance.new("Frame")
-		card.Size = UDim2.new(1, -8, 0, 110)
+		card.Size = UDim2.new(1, -8, 0, 0)
+		card.AutomaticSize = Enum.AutomaticSize.Y
 		card.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 		card.BorderSizePixel = 0
 		card.LayoutOrder = 1
 		card.Parent = remoteListFrame
 		createCorner(card, 6)
 		createStroke(card, isFunction and Color3.fromRGB(255, 180, 80) or Color3.fromRGB(80, 180, 255), 1)
+		local cardPadding = Instance.new("UIPadding")
+		cardPadding.PaddingBottom = UDim.new(0, 8)
+		cardPadding.Parent = card
 
 		local header = Instance.new("TextLabel")
-		header.Size = UDim2.new(1, -16, 0, 20)
+		header.Size = UDim2.new(1, -16, 0, 0)
+		header.AutomaticSize = Enum.AutomaticSize.Y
 		header.Position = UDim2.new(0, 8, 0, 4)
 		header.BackgroundTransparency = 1
 		header.Text = (isFunction and "[FN] " or "[EV] ") .. remote:GetFullName()
@@ -4729,7 +4751,7 @@ local function _wrapRemotes()
 		header.TextSize = 11
 		header.Font = Enum.Font.GothamBold
 		header.TextXAlignment = Enum.TextXAlignment.Left
-		header.TextTruncate = Enum.TextTruncate.AtEnd
+		header.TextWrapped = true
 		header.Parent = card
 
 		local argsBox = Instance.new("TextBox")
@@ -4761,7 +4783,8 @@ local function _wrapRemotes()
 		createCorner(fireBtn, 4)
 
 		local resultLbl = Instance.new("TextLabel")
-		resultLbl.Size = UDim2.new(1, -16, 0, 50)
+		resultLbl.Size = UDim2.new(1, -16, 0, 0)
+		resultLbl.AutomaticSize = Enum.AutomaticSize.Y
 		resultLbl.Position = UDim2.new(0, 8, 0, 58)
 		resultLbl.BackgroundTransparency = 1
 		resultLbl.Text = ""
@@ -4870,6 +4893,24 @@ local function _wrapRemotes()
 
 	refreshRemotesBtn.MouseButton1Click:Connect(refreshRemotesList)
 	task.defer(refreshRemotesList)
+
+	-- Filtre de recherche: affiche/masque les cartes selon le texte
+	local function applyRemotesFilter()
+		local query = remotesSearchBox.Text:lower()
+		for _, child in ipairs(remoteListFrame:GetChildren()) do
+			if child:IsA("Frame") then
+				if query == "" then
+					child.Visible = true
+				else
+					-- Récupère le nom du remote depuis le header (1er enfant TextLabel)
+					local headerLabel = child:FindFirstChildWhichIsA("TextLabel")
+					local name = headerLabel and headerLabel.Text or ""
+					child.Visible = name:lower():find(query, 1, true) ~= nil
+				end
+			end
+		end
+	end
+	remotesSearchBox:GetPropertyChangedSignal("Text"):Connect(applyRemotesFilter)
 end
 _wrapRemotes() -- Exécute le wrap (IIFE pattern pour limiter les 200 registers)
 
@@ -4880,7 +4921,8 @@ local function buildRegistrySection(parentPage)
 	-- Utilise le registryScroll global pour contenir tout le contenu du Registry.
 	local scroll = registryScroll
 local registryCard = Instance.new("Frame")
-registryCard.Size = UDim2.new(1, -8, 0, 480)
+registryCard.Size = UDim2.new(1, -8, 0, 0)
+registryCard.AutomaticSize = Enum.AutomaticSize.Y
 registryCard.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 registryCard.BorderSizePixel = 0
 registryCard.LayoutOrder = 999
@@ -4940,7 +4982,34 @@ searchBtn.AutoButtonColor = false
 searchBtn.Parent = registryCard
 createCorner(searchBtn, 6)
 
--- Affiche un résultat (un compte) — TOUTES les infos dans une seule grande case, sans balises HTML
+-- Label de statut (pour messages de recherche)
+local statusLbl = Instance.new("TextLabel")
+statusLbl.Size = UDim2.new(1, -16, 0, 18)
+statusLbl.Position = UDim2.new(0, 8, 0, 80)
+statusLbl.BackgroundTransparency = 1
+statusLbl.Text = "Tape un username et clique Rechercher."
+statusLbl.Font = Enum.Font.Gotham
+statusLbl.TextSize = 10
+statusLbl.TextColor3 = Color3.fromRGB(180, 180, 200)
+statusLbl.TextXAlignment = Enum.TextXAlignment.Left
+statusLbl.TextWrapped = true
+statusLbl.Parent = registryCard
+
+-- Scroll pour les résultats de recherche
+local resultScroll = Instance.new("ScrollingFrame")
+resultScroll.Size = UDim2.new(1, -16, 1, -110)
+resultScroll.Position = UDim2.new(0, 8, 0, 102)
+resultScroll.BackgroundTransparency = 1
+resultScroll.ScrollBarThickness = 4
+resultScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
+resultScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+resultScroll.Parent = registryCard
+createCorner(resultScroll, 4)
+
+local resultLayout = Instance.new("UIListLayout")
+resultLayout.Padding = UDim.new(0, 6)
+resultLayout.Parent = resultScroll
+
 -- Helper: join a list into a string with separator, or "Indisponible" if empty
 local function joinOrIndi(list, sep, max)
 	if not list or type(list) ~= "table" or #list == 0 then
