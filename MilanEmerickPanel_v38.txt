@@ -625,9 +625,16 @@ registryScroll.Parent = registryPage
 createCorner(registryScroll, 4)
 
 local registryLayout = Instance.new("UIListLayout")
-registryLayout.Padding = UDim.new(0, 4)
+registryLayout.Padding = UDim.new(0, 6)
 registryLayout.SortOrder = Enum.SortOrder.LayoutOrder
 registryLayout.Parent = registryScroll
+
+local registryPadding = Instance.new("UIPadding")
+registryPadding.PaddingTop = UDim.new(0, 4)
+registryPadding.PaddingBottom = UDim.new(0, 4)
+registryPadding.PaddingLeft = UDim.new(0, 6)
+registryPadding.PaddingRight = UDim.new(0, 6)
+registryPadding.Parent = registryScroll
 
 local localScroll = Instance.new("ScrollingFrame")
 localScroll.Size = UDim2.new(1, 0, 1, 0)
@@ -5196,71 +5203,66 @@ _wrapRemotes() -- Exécute le wrap (IIFE pattern pour limiter les 200 registers)
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
 local function buildRegistrySection(parentPage)
-	-- Utilise le registryScroll global pour contenir tout le contenu du Registry.
-	local scroll = registryScroll
-local registryCard = Instance.new("Frame")
-registryCard.Size = UDim2.new(1, -8, 0, 0)
-registryCard.AutomaticSize = Enum.AutomaticSize.Y
-registryCard.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-registryCard.BorderSizePixel = 0
-registryCard.LayoutOrder = 999
-registryCard.Parent = scroll -- registryScroll via le local scroll = registryScroll en début de fonction
-createCorner(registryCard, 10)
-createStroke(registryCard, Color3.fromRGB(120, 80, 255), 1.2)
+	-- Refonte v38.14 : PAS de wrapper registryCard.
+	-- Tous les enfants (titre, subtitle, status, resultScroll) sont dans registryScroll DIRECTEMENT.
+	-- Chaque enfant a un LayoutOrder pour empiler verticalement via registryLayout (UIListLayout parent).
+	-- ResultScroll a une TAILLE FIXE (pas de scroll imbriqué foireux).
 
 local registryTitle = Instance.new("TextLabel")
-registryTitle.Size = UDim2.new(1, -12, 0, 22)
-registryTitle.Position = UDim2.new(0, 8, 0, 6)
+registryTitle.Name = "RegistryTitle"
+registryTitle.Size = UDim2.new(1, -16, 0, 22)
 registryTitle.BackgroundTransparency = 1
-registryTitle.Text = "Registre des comptes Roblox"
+registryTitle.Text = "📜 Registre des comptes Roblox"
 registryTitle.Font = Enum.Font.GothamBold
-registryTitle.TextSize = 13
+registryTitle.TextSize = 14
 registryTitle.TextColor3 = Color3.fromRGB(230, 230, 255)
 registryTitle.TextXAlignment = Enum.TextXAlignment.Left
-registryTitle.Parent = registryCard
+registryTitle.LayoutOrder = 1
+registryTitle.Parent = registryScroll
 
 local registrySubtitle = Instance.new("TextLabel")
-registrySubtitle.Size = UDim2.new(1, -12, 0, 14)
-registrySubtitle.Position = UDim2.new(0, 8, 0, 32)
+registrySubtitle.Name = "RegistrySubtitle"
+registrySubtitle.Size = UDim2.new(1, -16, 0, 14)
 registrySubtitle.BackgroundTransparency = 1
 registrySubtitle.Text = "Recherche un compte Roblox hors-jeu (par username)"
 registrySubtitle.Font = Enum.Font.Gotham
 registrySubtitle.TextSize = 10
 registrySubtitle.TextColor3 = Color3.fromRGB(160, 160, 180)
 registrySubtitle.TextXAlignment = Enum.TextXAlignment.Left
-registrySubtitle.Parent = registryCard
+registrySubtitle.LayoutOrder = 2
+registrySubtitle.Parent = registryScroll
 
--- Search box SUPPRIMÉE (doublon avec registrySearchBox en haut du Registry)
--- Plus qu'une seule barre de recherche dans tout le panel (en haut du Registry)
-
--- Label de statut (pour messages de recherche) — GLOBAL pour que runRegistrySearch (top-level) puisse y accéder
+-- Label de statut (GLOBAL pour runRegistrySearch top-level)
 statusLbl = Instance.new("TextLabel")
-statusLbl.Size = UDim2.new(1, -16, 0, 18)
-statusLbl.Position = UDim2.new(0, 8, 0, 52)
+statusLbl.Name = "RegistryStatus"
+statusLbl.Size = UDim2.new(1, -16, 0, 16)
 statusLbl.BackgroundTransparency = 1
-statusLbl.Text = "Tape un username ci-dessus et appuie sur Enter."
+statusLbl.Text = "💡 Tape un pseudo ci-dessus et appuie sur Enter"
 statusLbl.Font = Enum.Font.Gotham
 statusLbl.TextSize = 10
 statusLbl.TextColor3 = Color3.fromRGB(180, 180, 200)
 statusLbl.TextXAlignment = Enum.TextXAlignment.Left
 statusLbl.TextWrapped = true
-statusLbl.Parent = registryCard
+statusLbl.LayoutOrder = 3
+statusLbl.Parent = registryScroll
 
--- Scroll pour les résultats de recherche — GLOBAL aussi pour runRegistrySearch
+-- Scroll pour les résultats de recherche (taille FIXE, pas de scroll imbriqué)
 resultScroll = Instance.new("ScrollingFrame")
-resultScroll.Size = UDim2.new(1, -16, 0, 600) -- Hauteur FIXE confortable pour voir les gros blocs d'infos
-resultScroll.Position = UDim2.new(0, 8, 0, 76)
+resultScroll.Name = "RegistryResults"
+resultScroll.Size = UDim2.new(1, -10, 1, -70) -- prend tout l'espace restant sous titre+subtitle+status
 resultScroll.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 resultScroll.BorderSizePixel = 0
 resultScroll.ScrollBarThickness = 6
 resultScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 resultScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-resultScroll.Parent = registryCard
+resultScroll.LayoutOrder = 4
+resultScroll.Parent = registryScroll
 createCorner(resultScroll, 6)
 createStroke(resultScroll, Color3.fromRGB(60, 60, 80), 1)
 
 local resultLayout = Instance.new("UIListLayout")
 resultLayout.Padding = UDim.new(0, 6)
+resultLayout.SortOrder = Enum.SortOrder.LayoutOrder
 resultLayout.Parent = resultScroll
 
 -- Helper: join a list into a string with separator, or "Indisponible" if empty
