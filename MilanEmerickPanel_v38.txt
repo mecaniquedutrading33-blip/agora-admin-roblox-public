@@ -740,108 +740,15 @@ createStroke(searchBox, Color3.fromRGB(80, 80, 100), 1)
 -- ============= JOUEURS =============
 -- Layout : searchBox en haut, puis serverStatsBar (stats toujours visibles), puis playersScroll
 local playersScroll = Instance.new("ScrollingFrame")
-playersScroll.Size = UDim2.new(1, -10, 1, -110)
-playersScroll.Position = UDim2.new(0, 5, 0, 100)
+playersScroll.Size = UDim2.new(1, -10, 1, -52)
+playersScroll.Position = UDim2.new(0, 5, 0, 42)
 playersScroll.BackgroundTransparency = 1
 playersScroll.ScrollBarThickness = 4
 playersScroll.BorderSizePixel = 0
 playersScroll.Parent = playersPage
 
--- ============= STATS SERVEUR (intégré en haut de Joueurs, TOUJOURS VISIBLE) =============
-local serverStatsBar = Instance.new("Frame")
-serverStatsBar.Size = UDim2.new(1, -10, 0, 50)
-serverStatsBar.Position = UDim2.new(0, 5, 0, 42)
-serverStatsBar.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-serverStatsBar.BorderSizePixel = 0
-serverStatsBar.Visible = true
-serverStatsBar.Parent = playersPage
-createCorner(serverStatsBar, 6)
-createStroke(serverStatsBar, Color3.fromRGB(60, 60, 80), 1)
-
-local serverStatsLayout = Instance.new("UIListLayout")
-serverStatsLayout.Padding = UDim.new(0, 4)
-serverStatsLayout.FillDirection = Enum.FillDirection.Horizontal
-serverStatsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-serverStatsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-serverStatsLayout.Parent = serverStatsBar
-
-local function addServerStat(name)
-	local card = Instance.new("Frame")
-	card.Size = UDim2.new(0, 62, 0, 42) -- 62px au lieu de 78, pour que 7 cartes rentrent (7×62+6×4=458 < 460)
-	card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-	card.BorderSizePixel = 0
-	card.Parent = serverStatsBar
-	createCorner(card, 6)
-	createStroke(card, Color3.fromRGB(45, 45, 55), 1)
-
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, -6, 0, 14)
-	label.Position = UDim2.new(0, 3, 0, 3)
-	label.BackgroundTransparency = 1
-	label.Text = name
-	label.Font = Enum.Font.GothamSemibold
-	label.TextSize = 8
-	label.TextColor3 = Color3.fromRGB(150, 150, 170)
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.TextTruncate = Enum.TextTruncate.AtEnd
-	label.Parent = card
-
-	local value = Instance.new("TextLabel")
-	value.Size = UDim2.new(1, -6, 0, 18)
-	value.Position = UDim2.new(0, 3, 0, 19)
-	value.BackgroundTransparency = 1
-	value.Text = "..."
-	value.Font = Enum.Font.GothamBold
-	value.TextSize = 11
-	value.TextColor3 = Color3.fromRGB(230, 230, 240)
-	value.TextXAlignment = Enum.TextXAlignment.Left
-	value.TextTruncate = Enum.TextTruncate.AtEnd
-	value.Parent = card
-	return value
-end
-
--- WRAP: encapsule la création des stats serveur + update loop dans une fonction
--- pour limiter les 200 registers au top-level.
--- "Créateur" retiré du bar de Joueurs (était trop large) → déplacé vers Extra via _serverStatsForExtra()
-local function _initServerStats()
-	local statPlayers = addServerStat("Joueurs")
-	local statFPS = addServerStat("FPS")
-	local statPing = addServerStat("Ping")
-	local statTime = addServerStat("Heure")
-	local statJobId = addServerStat("Job ID")
-	local statPlaceId = addServerStat("Place ID")
-
-	local _fps = 60
-	local _lastFrame = tick()
-	pcall(function()
-		RunService.RenderStepped:Connect(function()
-			local now = tick()
-			local dt = now - _lastFrame
-			_lastFrame = now
-			if dt > 0 then _fps = math.clamp(1 / dt, 1, 240) end
-		end)
-	end)
-	task.spawn(function()
-		while task.wait(1) do
-			pcall(function()
-				statPlayers.Text = tostring(#Players:GetPlayers()) .. "/" .. tostring(Players.MaxPlayers)
-				statFPS.Text = tostring(math.floor(_fps))
-				local ping = LocalPlayer:GetNetworkPing() * 1000
-				statPing.Text = string.format("%.0f ms", ping)
-				statTime.Text = os.date("%H:%M:%S")
-				local ok, jobId = pcall(function() return game.JobId end)
-				statJobId.Text = (ok and jobId and jobId ~= "") and jobId:sub(1, 20) .. "..." or "N/A"
-				local ok2, placeId = pcall(function() return game.PlaceId end)
-				statPlaceId.Text = ok2 and tostring(placeId) or "N/A"
-				-- Créateur déplacé vers onglet Extra (voir _serverStatsForExtra)
-			end)
-		end
-	end)
-end
-_initServerStats()
-
--- Bouton toggle retiré : la barre de stats est maintenant TOUJOURS visible en haut de Joueurs.
--- Le playersScroll commence en dessous de la barre de stats (Position = 92, Height = 1 - 110).
+-- Stats serveur déplacées vers l'onglet Extra (card "Stats serveur")
+-- playersScroll prend maintenant toute la place disponible sous la searchBox
 local playersLayout = Instance.new("UIListLayout")
 playersLayout.Padding = UDim.new(0, 6)
 playersLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -4211,6 +4118,125 @@ task.defer(function()
 	extraScroll.CanvasSize = UDim2.new(0, 0, 0, extraLayout.AbsoluteContentSize.Y + 10)
 end)
 
+-- === Carte "Stats serveur" (6 stats en grille) — déplacée depuis Joueurs (trop large) ===
+-- WRAP dans local function + appel pour isoler les locals
+local function _initServerStatsCard()
+	local statsCard = Instance.new("Frame")
+	statsCard.Name = "StatsCard"
+	statsCard.Size = UDim2.new(1, -10, 0, 0)
+	statsCard.AutomaticSize = Enum.AutomaticSize.Y
+	statsCard.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	statsCard.BorderSizePixel = 0
+	statsCard.LayoutOrder = 1 -- AVANT serverInfoCard (LayoutOrder 0 sera mis à 0 après)
+	statsCard.Parent = extraScroll
+	createCorner(statsCard, 8)
+	createStroke(statsCard, Color3.fromRGB(80, 80, 120), 1)
+
+	local statsPadding = Instance.new("UIPadding")
+	statsPadding.PaddingTop = UDim.new(0, 8)
+	statsPadding.PaddingBottom = UDim.new(0, 8)
+	statsPadding.PaddingLeft = UDim.new(0, 12)
+	statsPadding.PaddingRight = UDim.new(0, 12)
+	statsPadding.Parent = statsCard
+
+	local statsTitle = Instance.new("TextLabel")
+	statsTitle.Size = UDim2.new(1, 0, 0, 16)
+	statsTitle.BackgroundTransparency = 1
+	statsTitle.Text = "📊 Stats serveur"
+	statsTitle.Font = Enum.Font.GothamBold
+	statsTitle.TextSize = 12
+	statsTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
+	statsTitle.TextXAlignment = Enum.TextXAlignment.Left
+	statsTitle.LayoutOrder = 1
+	statsTitle.Parent = statsCard
+
+	-- Container pour la grille de stats (2 lignes × 3 colonnes)
+	local statsGrid = Instance.new("Frame")
+	statsGrid.Size = UDim2.new(1, 0, 0, 90) -- 2 lignes × 42 + gap 6 = 90
+	statsGrid.BackgroundTransparency = 1
+	statsGrid.LayoutOrder = 2
+	statsGrid.Parent = statsCard
+
+	local statsGridLayout = Instance.new("UIGridLayout")
+	statsGridLayout.CellSize = UDim2.new(0, 100, 0, 38)
+	statsGridLayout.CellPadding = UDim2.new(0, 6, 0, 6)
+	statsGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	statsGridLayout.Parent = statsGrid
+
+	-- Helper local pour créer une stat cell dans la grille
+	local function addGridStat(parent, name, layoutOrder)
+		local cell = Instance.new("Frame")
+		cell.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+		cell.BorderSizePixel = 0
+		cell.LayoutOrder = layoutOrder
+		cell.Parent = parent
+		createCorner(cell, 6)
+
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(1, -8, 0, 12)
+		label.Position = UDim2.new(0, 4, 0, 2)
+		label.BackgroundTransparency = 1
+		label.Text = name
+		label.Font = Enum.Font.GothamSemibold
+		label.TextSize = 8
+		label.TextColor3 = Color3.fromRGB(150, 150, 170)
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.TextTruncate = Enum.TextTruncate.AtEnd
+		label.Parent = cell
+
+		local value = Instance.new("TextLabel")
+		value.Size = UDim2.new(1, -8, 0, 18)
+		value.Position = UDim2.new(0, 4, 0, 16)
+		value.BackgroundTransparency = 1
+		value.Text = "..."
+		value.Font = Enum.Font.GothamBold
+		value.TextSize = 11
+		value.TextColor3 = Color3.fromRGB(230, 230, 240)
+		value.TextXAlignment = Enum.TextXAlignment.Left
+		value.TextTruncate = Enum.TextTruncate.AtEnd
+		value.Parent = cell
+		return value
+	end
+
+	-- Créer les 6 stats dans la grille (LayoutOrder 1-6)
+	local statPlayers = addGridStat(statsGrid, "Joueurs", 1)
+	local statFPS = addGridStat(statsGrid, "FPS", 2)
+	local statPing = addGridStat(statsGrid, "Ping", 3)
+	local statTime = addGridStat(statsGrid, "Heure", 4)
+	local statJobId = addGridStat(statsGrid, "Job ID", 5)
+	local statPlaceId = addGridStat(statsGrid, "Place ID", 6)
+
+	-- FPS counter
+	local _fps = 60
+	local _lastFrame = tick()
+	pcall(function()
+		RunService.RenderStepped:Connect(function()
+			local now = tick()
+			local dt = now - _lastFrame
+			_lastFrame = now
+			if dt > 0 then _fps = math.clamp(1 / dt, 1, 240) end
+		end)
+	end)
+
+	-- Update loop pour les 6 stats
+	task.spawn(function()
+		while task.wait(1) do
+			pcall(function()
+				statPlayers.Text = tostring(#Players:GetPlayers()) .. "/" .. tostring(Players.MaxPlayers)
+				statFPS.Text = tostring(math.floor(_fps))
+				local ping = LocalPlayer:GetNetworkPing() * 1000
+				statPing.Text = string.format("%.0f ms", ping)
+				statTime.Text = os.date("%H:%M:%S")
+				local okJ, jobId = pcall(function() return game.JobId end)
+				statJobId.Text = (okJ and jobId and jobId ~= "") and jobId:sub(1, 12) .. "..." or "N/A"
+				local okP, placeId = pcall(function() return game.PlaceId end)
+				statPlaceId.Text = okP and tostring(placeId) or "N/A"
+			end)
+		end
+	end)
+end
+_initServerStatsCard()
+
 -- === Carte "Infos serveur" (Créateur du jeu) — déplacée depuis Joueurs (était trop large) ===
 -- WRAP dans local function + appel pour isoler les locals (réduit les 200 registres)
 local function _initServerInfoCard()
@@ -4220,7 +4246,7 @@ local function _initServerInfoCard()
 	serverInfoCard.AutomaticSize = Enum.AutomaticSize.Y
 	serverInfoCard.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 	serverInfoCard.BorderSizePixel = 0
-	serverInfoCard.LayoutOrder = 0
+	serverInfoCard.LayoutOrder = 2 -- sous la carte "Stats serveur" (LayoutOrder 1)
 	serverInfoCard.Parent = extraScroll
 	createCorner(serverInfoCard, 8)
 	createStroke(serverInfoCard, Color3.fromRGB(80, 80, 120), 1)
@@ -4240,6 +4266,7 @@ local function _initServerInfoCard()
 	serverInfoTitle.TextSize = 12
 	serverInfoTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
 	serverInfoTitle.TextXAlignment = Enum.TextXAlignment.Left
+	serverInfoTitle.LayoutOrder = 1
 	serverInfoTitle.Parent = serverInfoCard
 
 	local serverInfoText = Instance.new("TextLabel")
@@ -4253,7 +4280,14 @@ local function _initServerInfoCard()
 	serverInfoText.TextXAlignment = Enum.TextXAlignment.Left
 	serverInfoText.TextYAlignment = Enum.TextYAlignment.Top
 	serverInfoText.TextWrapped = true
+	serverInfoText.LayoutOrder = 2
 	serverInfoText.Parent = serverInfoCard
+
+	-- UIListLayout pour empiler verticalement les enfants
+	local serverInfoLayout = Instance.new("UIListLayout")
+	serverInfoLayout.Padding = UDim.new(0, 4)
+	serverInfoLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	serverInfoLayout.Parent = serverInfoCard
 
 	-- Update loop pour la carte "Infos serveur" dans Extra
 	task.spawn(function()
