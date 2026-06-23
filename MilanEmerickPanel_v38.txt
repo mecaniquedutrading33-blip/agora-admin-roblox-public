@@ -4967,6 +4967,9 @@ searchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
 searchBox.ClearTextOnFocus = false
 searchBox.Parent = registryCard
 createCorner(searchBox, 6)
+searchBox.FocusLost:Connect(function(enterPressed)
+	if enterPressed then runRegistrySearch(searchBox.Text) end
+end)
 createStroke(searchBox, Color3.fromRGB(60, 60, 80), 1)
 
 local searchBtn = Instance.new("TextButton")
@@ -4996,11 +4999,12 @@ statusLbl.TextXAlignment = Enum.TextXAlignment.Left
 statusLbl.TextWrapped = true
 statusLbl.Parent = registryCard
 
--- Scroll pour les résultats de recherche — GLOBAL aussi
+-- Scroll pour les résultats de recherche — GLOBAL aussi pour runRegistrySearch
 resultScroll = Instance.new("ScrollingFrame")
-resultScroll.Size = UDim2.new(1, -16, 1, -110)
+resultScroll.Size = UDim2.new(1, -16, 0, 380) -- taille FIXE pour ne pas casser AutoSize Y du parent
 resultScroll.Position = UDim2.new(0, 8, 0, 102)
-resultScroll.BackgroundTransparency = 1
+resultScroll.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+resultScroll.BorderSizePixel = 0
 resultScroll.ScrollBarThickness = 4
 resultScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
 resultScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
