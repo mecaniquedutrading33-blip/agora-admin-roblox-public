@@ -481,6 +481,17 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
+-- Drag manuel du mini panel autoclick (clickControl) — déclenché par controlHeader
+local ccInputConn = UserInputService.InputChanged:Connect(function(input)
+	if ccDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - ccDragStart
+		local absSize = clickControl.AbsoluteSize
+		local newX = math.clamp(ccStartPos.X.Offset + delta.X, 0, screenGui.AbsoluteSize.X - absSize.X)
+		local newY = math.clamp(ccStartPos.Y.Offset + delta.Y, 0, screenGui.AbsoluteSize.Y - absSize.Y)
+		clickControl.Position = UDim2.new(0, newX, 0, newY)
+	end
+end)
+
 local minimized = false
 minimizeBtn.MouseButton1Click:Connect(function()
 	minimized = not minimized
@@ -3761,15 +3772,31 @@ clickControl.Draggable = true
 createCorner(clickControl, 12)
 createStroke(clickControl, Color3.fromRGB(80, 80, 100), 1)
 
-local controlHeader = Instance.new("TextLabel")
+local controlHeader = Instance.new("TextButton")
+controlHeader.AutoButtonColor = false
 controlHeader.Size = UDim2.new(1, 0, 0, 24)
 controlHeader.BackgroundTransparency = 1
-controlHeader.Text = "AutoClick"
+controlHeader.Text = ":: AutoClick ::"
 controlHeader.Font = Enum.Font.GothamBold
 controlHeader.TextSize = 12
 controlHeader.TextColor3 = Color3.fromRGB(230, 230, 230)
 controlHeader.ZIndex = 122
 controlHeader.Parent = clickControl
+
+-- Drag manuel du clickControl depuis le header (TextButton avec AutoButtonColor=false)
+local ccDragging, ccDragStart, ccStartPos
+controlHeader.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		ccDragging = true
+		ccDragStart = input.Position
+		ccStartPos = clickControl.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				ccDragging = false
+			end
+		end)
+	end
+end)
 
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(0.9, 0, 0, 16)
@@ -5001,15 +5028,16 @@ statusLbl.Parent = registryCard
 
 -- Scroll pour les résultats de recherche — GLOBAL aussi pour runRegistrySearch
 resultScroll = Instance.new("ScrollingFrame")
-resultScroll.Size = UDim2.new(1, -16, 0, 380) -- taille FIXE pour ne pas casser AutoSize Y du parent
+resultScroll.Size = UDim2.new(1, -16, 0, 600) -- Hauteur FIXE confortable pour voir les gros blocs d'infos
 resultScroll.Position = UDim2.new(0, 8, 0, 102)
 resultScroll.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 resultScroll.BorderSizePixel = 0
-resultScroll.ScrollBarThickness = 4
-resultScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
+resultScroll.ScrollBarThickness = 6
+resultScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 resultScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 resultScroll.Parent = registryCard
-createCorner(resultScroll, 4)
+createCorner(resultScroll, 6)
+createStroke(resultScroll, Color3.fromRGB(60, 60, 80), 1)
 
 local resultLayout = Instance.new("UIListLayout")
 resultLayout.Padding = UDim.new(0, 6)
