@@ -1414,22 +1414,22 @@ local function createPlayerEntry(plr)
 			createCorner(closeX, 6)
 			closeX.MouseButton1Click:Connect(function() win:Destroy() end)
 
-			-- Avatar (téléchargement async via thread Roblox)
+			-- Avatar via Players:GetUserThumbnailAsync (NATIVE Roblox, pas besoin de HttpGet)
 			pcall(function()
-				local thumbUrl = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" .. plr.UserId .. "&size=150x150&format=Png&isCircular=false"
-				local ok, resp = pcall(function() return game:HttpGet(thumbUrl) end)
-				if ok and resp then
-					local data = HttpService:JSONDecode(resp)
-					if data and data.data and data.data[1] and data.data[1].imageUrl then
-						local img = Instance.new("ImageLabel")
-						img.Size = UDim2.new(0, 64, 0, 64)
-						img.Position = UDim2.new(0, 10, 0, 36)
-						img.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-						img.BorderSizePixel = 0
-						img.Image = data.data[1].imageUrl
-						img.Parent = win
-						createCorner(img, 32)
-					end
+				local img = Instance.new("ImageLabel")
+				img.Size = UDim2.new(0, 64, 0, 64)
+				img.Position = UDim2.new(0, 10, 0, 36)
+				img.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+				img.BorderSizePixel = 0
+				img.Parent = win
+				createCorner(img, 32)
+				local ok, content, ready = pcall(function()
+					return Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+				end)
+				if ok and content then
+					img.Image = content
+				else
+					img.Image = "rbxassetid://0"
 				end
 			end)
 
@@ -4379,10 +4379,10 @@ resultLayout.Parent = resultScroll
 local statusLbl = Instance.new("TextLabel")
 statusLbl.Size = UDim2.new(1, -12, 0, 30)
 statusLbl.BackgroundTransparency = 1
-statusLbl.Text = "Tape un username et clique Rechercher."
+statusLbl.Text = "⚠ Recherche Roblox indisponible : les APIs externes (users.roblox.com) sont bloquées par ton exécuteur. Le headshot/avatar utilise GetUserThumbnailAsync (natif)."
 statusLbl.Font = Enum.Font.Gotham
 statusLbl.TextSize = 11
-statusLbl.TextColor3 = Color3.fromRGB(140, 140, 160)
+statusLbl.TextColor3 = Color3.fromRGB(220, 200, 100)
 statusLbl.TextWrapped = true
 statusLbl.LayoutOrder = -1
 statusLbl.Parent = resultScroll
@@ -4497,9 +4497,10 @@ end
 function runRegistrySearch(query)
 	if not query or query == "" then
 		statusLbl.Text = "Tape un username d'abord."
+		statusLbl.TextColor3 = Color3.fromRGB(140, 140, 160)
 		return
 	end
-	statusLbl.Text = "Recherche de @" .. query .. "..."
+	statusLbl.Text = "Test API Roblox..."
 	statusLbl.TextColor3 = Color3.fromRGB(120, 200, 255)
 
 	-- Vider les anciens résultats
@@ -4508,6 +4509,17 @@ function runRegistrySearch(query)
 	end
 
 	task.spawn(function()
+		-- Test rapide : est-ce que l'API marche ?
+		local apiOk = pcall(function()
+			local test = game:HttpGet("https://www.roblox.com/")
+			if not test or test == "" then error("no response") end
+		end)
+		if not apiOk then
+			statusLbl.Text = "⚠ API Roblox bloquée par l'exécuteur. Recherche impossible. Le headshot/avatar utilise GetUserThumbnailAsync (natif) → ça marche."
+			statusLbl.TextColor3 = Color3.fromRGB(220, 100, 100)
+			return
+		end
+
 		-- 1) Résoudre username -> userId via API publique
 		local userId, displayName, username
 		local ok, resp = pcall(function()
@@ -4601,15 +4613,9 @@ function runRegistrySearch(query)
 			end
 		end)
 
-		-- 3) Avatar
+		-- 3) Avatar (via Players:GetUserThumbnailAsync, NATIF Roblox, pas besoin de HttpGet)
 		pcall(function()
-			local r = game:HttpGet("https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" .. userId .. "&size=150x150&format=Png&isCircular=false")
-			if r and r ~= "" then
-				local d2 = HttpService:JSONDecode(r)
-				if d2 and d2.data and d2.data[1] then
-					data.avatarUrl = d2.data[1].imageUrl
-				end
-			end
+			data.avatarUrl = Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
 		end)
 
 		-- 4) Friends count
