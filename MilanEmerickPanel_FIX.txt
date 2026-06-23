@@ -1294,6 +1294,239 @@ local function createPlayerEntry(plr)
 		end
 	end)
 
+	-- === ENRICHISSEMENT v37.1 : temps de connexion + badge ordre d'arrivée ===
+	-- Ligne du bas : "Connecté depuis 12m 34s" + badge "Arrivé avant toi" / "Arrivé il y a Xs"
+	local connTimeLbl = Instance.new("TextLabel")
+	connTimeLbl.Size = UDim2.new(0.55, -6, 0, 14)
+	connTimeLbl.Position = UDim2.new(0, 6, 0, 100)
+	connTimeLbl.BackgroundTransparency = 1
+	connTimeLbl.Text = "Connecté: ?"
+	connTimeLbl.Font = Enum.Font.Gotham
+	connTimeLbl.TextSize = 10
+	connTimeLbl.TextColor3 = Color3.fromRGB(160, 200, 240)
+	connTimeLbl.TextXAlignment = Enum.TextXAlignment.Left
+	connTimeLbl.Parent = card
+
+	local arrivalBadge = Instance.new("TextLabel")
+	arrivalBadge.Size = UDim2.new(0.55, -6, 0, 14)
+	arrivalBadge.Position = UDim2.new(0, 6, 0, 114)
+	arrivalBadge.BackgroundTransparency = 1
+	arrivalBadge.Text = ""
+	arrivalBadge.Font = Enum.Font.GothamSemibold
+	arrivalBadge.TextSize = 10
+	arrivalBadge.TextColor3 = Color3.fromRGB(255, 200, 80)
+	arrivalBadge.TextXAlignment = Enum.TextXAlignment.Left
+	arrivalBadge.Parent = card
+
+	-- Bouton "i" : ouvre un popup détail avec toutes les infos Roblox du joueur
+	local infoBtn = Instance.new("TextButton")
+	infoBtn.Size = UDim2.new(0, 24, 0, 24)
+	infoBtn.Position = UDim2.new(1, -32, 0, 4)
+	infoBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 100)
+	infoBtn.Text = "i"
+	infoBtn.Font = Enum.Font.GothamBold
+	infoBtn.TextSize = 13
+	infoBtn.TextColor3 = Color3.fromRGB(180, 200, 255)
+	infoBtn.BorderSizePixel = 0
+	infoBtn.AutoButtonColor = false
+	infoBtn.Parent = card
+	createCorner(infoBtn, 12)
+
+	-- Boucle live : met à jour le timer et le badge toutes les secondes
+	local myJoinTick = LocalPlayer and tick() or 0
+	task.spawn(function()
+		while card and card.Parent and plr and plr.Parent do
+			pcall(function()
+				local now = tick()
+				local plrJoin = workspace:FindFirstChild(plr.Name) and workspace[plr.Name]:GetAttribute("JoinTick")
+				-- Si pas d'attribut, on se base sur Joined Roblox property
+				local since = now - (plrJoin or myJoinTick)
+				local secs = math.floor(since % 60)
+				local mins = math.floor(since / 60) % 60
+				local hrs = math.floor(since / 3600)
+				if hrs > 0 then
+					connTimeLbl.Text = string.format("Connecté: %dh %dm %ds", hrs, mins, secs)
+				elseif mins > 0 then
+					connTimeLbl.Text = string.format("Connecté: %dm %ds", mins, secs)
+				else
+					connTimeLbl.Text = string.format("Connecté: %ds", secs)
+				end
+
+				-- Badge : avant ou après le local player
+				if plrJoin then
+					if plrJoin < myJoinTick then
+						arrivalBadge.Text = "● Joueur arrivé avant toi"
+						arrivalBadge.TextColor3 = Color3.fromRGB(120, 200, 255)
+					else
+						local late = math.floor(now - plrJoin)
+						arrivalBadge.Text = string.format("● Arrivé il y a %ds", late)
+						arrivalBadge.TextColor3 = Color3.fromRGB(180, 220, 140)
+					end
+				else
+					arrivalBadge.Text = ""
+				end
+			end)
+			task.wait(1)
+		end
+	end)
+
+	-- Popup de détails complet sur clic "i"
+	infoBtn.MouseButton1Click:Connect(function()
+		pcall(function()
+			local existing = screenGui:FindFirstChild("_InfoPanel_" .. plr.Name)
+			if existing then existing:Destroy() return end
+
+			local win = Instance.new("Frame")
+			win.Name = "_InfoPanel_" .. plr.Name
+			win.Size = UDim2.new(0, 320, 0, 380)
+			win.Position = UDim2.new(0.5, -160, 0.5, -190)
+			win.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+			win.BackgroundTransparency = 0.05
+			win.BorderSizePixel = 0
+			win.Active = true
+			win.Draggable = true
+			win.Parent = screenGui
+			createCorner(win, 10)
+			createStroke(win, Color3.fromRGB(120, 80, 255), 1.2)
+
+			local title = Instance.new("TextLabel")
+			title.Size = UDim2.new(1, -40, 0, 28)
+			title.Position = UDim2.new(0, 10, 0, 0)
+			title.BackgroundTransparency = 1
+			title.Text = "Détails : @" .. plr.Name
+			title.Font = Enum.Font.GothamBold
+			title.TextSize = 13
+			title.TextColor3 = Color3.fromRGB(230, 230, 255)
+			title.TextXAlignment = Enum.TextXAlignment.Left
+			title.Parent = win
+
+			local closeX = Instance.new("TextButton")
+			closeX.Size = UDim2.new(0, 26, 0, 26)
+			closeX.Position = UDim2.new(1, -32, 0, 4)
+			closeX.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+			closeX.Text = "X"
+			closeX.Font = Enum.Font.GothamBold
+			closeX.TextSize = 13
+			closeX.TextColor3 = Color3.fromRGB(255, 255, 255)
+			closeX.BorderSizePixel = 0
+			closeX.Parent = win
+			createCorner(closeX, 6)
+			closeX.MouseButton1Click:Connect(function() win:Destroy() end)
+
+			-- Avatar (téléchargement async via thread Roblox)
+			pcall(function()
+				local thumbUrl = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" .. plr.UserId .. "&size=150x150&format=Png&isCircular=false"
+				local ok, resp = pcall(function() return game:HttpGet(thumbUrl) end)
+				if ok and resp then
+					local data = HttpService:JSONDecode(resp)
+					if data and data.data and data.data[1] and data.data[1].imageUrl then
+						local img = Instance.new("ImageLabel")
+						img.Size = UDim2.new(0, 64, 0, 64)
+						img.Position = UDim2.new(0, 10, 0, 36)
+						img.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+						img.BorderSizePixel = 0
+						img.Image = data.data[1].imageUrl
+						img.Parent = win
+						createCorner(img, 32)
+					end
+				end
+			end)
+
+			-- Bloc d'infos texte
+			local infoText = Instance.new("TextLabel")
+			infoText.Size = UDim2.new(1, -90, 0, 320)
+			infoText.Position = UDim2.new(0, 84, 0, 36)
+			infoText.BackgroundTransparency = 1
+			infoText.TextXAlignment = Enum.TextXAlignment.Left
+			infoText.TextYAlignment = Enum.TextYAlignment.Top
+			infoText.Font = Enum.Font.Gotham
+			infoText.TextSize = 11
+			infoText.TextColor3 = Color3.fromRGB(220, 220, 230)
+			infoText.TextWrapped = true
+			infoText.Parent = win
+
+			-- Construction du contenu (synchrone pour les data locales + 1 appel API pour la blurb)
+			local function setText(lines)
+				infoText.Text = table.concat(lines, "\n")
+			end
+
+			local days = plr.AccountAge
+			local years = math.floor(days / 365)
+			local rem = days - years * 365
+			local myUserId = LocalPlayer and LocalPlayer.UserId or 0
+			local isFriend = false
+			pcall(function()
+				if LocalPlayer and LocalPlayer:IsFriendsWith(plr.UserId) then isFriend = true end
+			end)
+
+			setText({
+				"Display : " .. plr.DisplayName,
+				"Username : @" .. plr.Name,
+				"UserId : " .. plr.UserId,
+				"Compte : " .. years .. (years <= 1 and " an " or " ans ") .. rem .. "j (" .. days .. " jours)",
+				"Team : " .. tostring(plr.Team and plr.Team.Name or "Aucune"),
+				"Neutral : " .. tostring(plr.Neutral),
+				"PlaceId : " .. tostring(game.PlaceId),
+				"JobId : " .. (game.JobId ~= "" and game.JobId or "(même serveur)"),
+				"Ami avec toi : " .. (isFriend and "OUI" or "non"),
+				"--- Chargement Roblox API... ---"
+			})
+
+			-- Fetch détails Roblox (async, pcall, timeout 5s)
+			task.spawn(function()
+				local extra = {}
+				pcall(function()
+					local resp = game:HttpGet("https://users.roblox.com/v1/users/" .. plr.UserId, true)
+					if resp and resp ~= "" then
+						local d = HttpService:JSONDecode(resp)
+						if d then
+							table.insert(extra, "Créé le : " .. tostring(d.created or "?"))
+							table.insert(extra, "Banni : " .. tostring(d.isBanned and "OUI" or "non"))
+							if d.description and d.description ~= "" then
+								local blurb = d.description:sub(1, 200)
+								table.insert(extra, "Bio : " .. blurb .. (d.description:len() > 200 and "..." or ""))
+							else
+								table.insert(extra, "Bio : (vide)")
+							end
+						end
+					end
+				end)
+				pcall(function()
+					local resp = game:HttpGet("https://friends.roblox.com/v1/users/" .. plr.UserId .. "/friends/count")
+					if resp and resp ~= "" then
+						local d = HttpService:JSONDecode(resp)
+						if d and d.count then
+							table.insert(extra, "Amis : " .. tostring(d.count))
+						end
+					end
+				end)
+				pcall(function()
+					local resp = game:HttpGet("https://users.roblox.com/v1/users/" .. plr.UserId .. "/groups")
+					if resp and resp ~= "" then
+						local d = HttpService:JSONDecode(resp)
+						if d and d.data and #d.data > 0 then
+							local n = math.min(3, #d.data)
+							for i = 1, n do
+								table.insert(extra, "Groupe : " .. (d.data[i].group and d.data[i].group.name or "?"))
+							end
+						end
+					end
+				end)
+				-- Concat avec contenu initial
+				if #extra > 0 then
+					local base = {
+						"Display : " .. plr.DisplayName,
+						"Username : @" .. plr.Name,
+						"UserId : " .. plr.UserId,
+						"Compte : " .. years .. (years <= 1 and " an " or " ans ") .. rem .. "j (" .. days .. " jours)",
+						"Ami avec toi : " .. (isFriend and "OUI" or "non")
+					}
+					setText(table.concat(base, "\n") .. "\n" .. table.concat(extra, "\n"))
+				end
+			end)
+		end)
+	end)
+
 	playerCards[plr] = card
 	return card
 end
@@ -3963,6 +4196,419 @@ local statTime = addServerStat("Heure serveur")
 local statJobId = addServerStat("Job ID")
 local statPlaceId = addServerStat("Place ID")
 local statCreator = addServerStat("Créateur")
+
+-- ============= REGISTRE DES COMPTES ROBLOX =============
+-- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
+local registryCard = Instance.new("Frame")
+registryCard.Size = UDim2.new(1, -8, 0, 480)
+registryCard.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+registryCard.BorderSizePixel = 0
+registryCard.LayoutOrder = 999
+registryCard.Parent = serverScroll
+createCorner(registryCard, 10)
+createStroke(registryCard, Color3.fromRGB(120, 80, 255), 1.2)
+
+local registryTitle = Instance.new("TextLabel")
+registryTitle.Size = UDim2.new(1, -12, 0, 22)
+registryTitle.Position = UDim2.new(0, 8, 0, 6)
+registryTitle.BackgroundTransparency = 1
+registryTitle.Text = "Registre des comptes Roblox"
+registryTitle.Font = Enum.Font.GothamBold
+registryTitle.TextSize = 13
+registryTitle.TextColor3 = Color3.fromRGB(230, 230, 255)
+registryTitle.TextXAlignment = Enum.TextXAlignment.Left
+registryTitle.Parent = registryCard
+
+local registrySubtitle = Instance.new("TextLabel")
+registrySubtitle.Size = UDim2.new(1, -12, 0, 14)
+registrySubtitle.Position = UDim2.new(0, 8, 0, 26)
+registrySubtitle.BackgroundTransparency = 1
+registrySubtitle.Text = "Recherche un compte Roblox hors-jeu (par username)"
+registrySubtitle.Font = Enum.Font.Gotham
+registrySubtitle.TextSize = 10
+registrySubtitle.TextColor3 = Color3.fromRGB(160, 160, 180)
+registrySubtitle.TextXAlignment = Enum.TextXAlignment.Left
+registrySubtitle.Parent = registryCard
+
+-- Champ de recherche
+local searchBox = Instance.new("TextBox")
+searchBox.Size = UDim2.new(1, -100, 0, 28)
+searchBox.Position = UDim2.new(0, 8, 0, 46)
+searchBox.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+searchBox.BorderSizePixel = 0
+searchBox.Text = ""
+searchBox.PlaceholderText = "Tape un username Roblox..."
+searchBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
+searchBox.Font = Enum.Font.Gotham
+searchBox.TextSize = 12
+searchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
+searchBox.ClearTextOnFocus = false
+searchBox.Parent = registryCard
+createCorner(searchBox, 6)
+createStroke(searchBox, Color3.fromRGB(60, 60, 80), 1)
+
+local searchBtn = Instance.new("TextButton")
+searchBtn.Size = UDim2.new(0, 80, 0, 28)
+searchBtn.Position = UDim2.new(1, -88, 0, 46)
+searchBtn.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
+searchBtn.Text = "Rechercher"
+searchBtn.Font = Enum.Font.GothamBold
+searchBtn.TextSize = 11
+searchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+searchBtn.BorderSizePixel = 0
+searchBtn.AutoButtonColor = false
+searchBtn.Parent = registryCard
+createCorner(searchBtn, 6)
+
+-- Dropdown historique
+local historyFrame = Instance.new("Frame")
+historyFrame.Size = UDim2.new(1, -16, 0, 22)
+historyFrame.Position = UDim2.new(0, 8, 0, 80)
+historyFrame.BackgroundTransparency = 1
+historyFrame.Parent = registryCard
+
+local historyLabel = Instance.new("TextLabel")
+historyLabel.Size = UDim2.new(0, 60, 1, 0)
+historyLabel.BackgroundTransparency = 1
+historyLabel.Text = "Récent :"
+historyLabel.Font = Enum.Font.Gotham
+historyLabel.TextSize = 10
+historyLabel.TextColor3 = Color3.fromRGB(140, 140, 160)
+historyLabel.TextXAlignment = Enum.TextXAlignment.Left
+historyLabel.Parent = historyFrame
+
+local historyList = Instance.new("Frame")
+historyList.Size = UDim2.new(1, -120, 1, 0)
+historyList.Position = UDim2.new(0, 60, 0, 0)
+historyList.BackgroundTransparency = 1
+historyList.Parent = historyFrame
+
+local clearHistBtn = Instance.new("TextButton")
+clearHistBtn.Size = UDim2.new(0, 50, 0, 18)
+clearHistBtn.Position = UDim2.new(1, -50, 0, 2)
+clearHistBtn.BackgroundColor3 = Color3.fromRGB(120, 60, 60)
+clearHistBtn.Text = "Vider"
+clearHistBtn.Font = Enum.Font.Gotham
+clearHistBtn.TextSize = 9
+clearHistBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+clearHistBtn.BorderSizePixel = 0
+clearHistBtn.AutoButtonColor = false
+clearHistBtn.Parent = historyFrame
+createCorner(clearHistBtn, 4)
+
+-- Zone de résultats (scrollable)
+local resultScroll = Instance.new("ScrollingFrame")
+resultScroll.Size = UDim2.new(1, -16, 0, 350)
+resultScroll.Position = UDim2.new(0, 8, 0, 110)
+resultScroll.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+resultScroll.BorderSizePixel = 0
+resultScroll.ScrollBarThickness = 4
+resultScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+resultScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
+resultScroll.Parent = registryCard
+createCorner(resultScroll, 6)
+createStroke(resultScroll, Color3.fromRGB(45, 45, 55), 1)
+
+local resultLayout = Instance.new("UIListLayout")
+resultLayout.Padding = UDim.new(0, 6)
+resultLayout.SortOrder = Enum.SortOrder.LayoutOrder
+resultLayout.Parent = resultScroll
+
+local statusLbl = Instance.new("TextLabel")
+statusLbl.Size = UDim2.new(1, -12, 0, 30)
+statusLbl.BackgroundTransparency = 1
+statusLbl.Text = "Tape un username et clique Rechercher."
+statusLbl.Font = Enum.Font.Gotham
+statusLbl.TextSize = 11
+statusLbl.TextColor3 = Color3.fromRGB(140, 140, 160)
+statusLbl.TextWrapped = true
+statusLbl.LayoutOrder = -1
+statusLbl.Parent = resultScroll
+
+-- Historique (persisté dans panelMemory)
+panelMemory.registryHistory = panelMemory.registryHistory or {}
+
+local function refreshHistoryUI()
+	-- Vider les chips d'historique existants
+	for _, c in ipairs(historyList:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+	local hist = panelMemory.registryHistory or {}
+	for i, name in ipairs(hist) do
+		if i > 5 then break end
+		local chip = Instance.new("TextButton")
+		chip.Size = UDim2.new(0, 70, 0, 18)
+		chip.Position = UDim2.new(0, (i - 1) * 75, 0, 2)
+		chip.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+		chip.Text = name:sub(1, 10)
+		chip.Font = Enum.Font.Gotham
+		chip.TextSize = 9
+		chip.TextColor3 = Color3.fromRGB(200, 200, 220)
+		chip.BorderSizePixel = 0
+		chip.AutoButtonColor = false
+		chip.Parent = historyList
+		createCorner(chip, 4)
+		chip.MouseButton1Click:Connect(function()
+			searchBox.Text = name
+			runRegistrySearch(name)
+		end)
+	end
+end
+
+local function pushHistory(name)
+	local hist = panelMemory.registryHistory or {}
+	-- Retire si déjà présent
+	for i, h in ipairs(hist) do
+		if h:lower() == name:lower() then table.remove(hist, i) break end
+	end
+	table.insert(hist, 1, name)
+	-- Cap à 10
+	while #hist > 10 do table.remove(hist) end
+	panelMemory.registryHistory = hist
+	refreshHistoryUI()
+end
+
+-- Affiche un résultat (un compte)
+local function renderResult(data, parent)
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(1, -10, 0, 180)
+	card.BackgroundColor3 = Color3.fromRGB(32, 32, 40)
+	card.BorderSizePixel = 0
+	card.LayoutOrder = data.userId or 0
+	card.Parent = parent
+	createCorner(card, 8)
+	createStroke(card, Color3.fromRGB(80, 80, 110), 1)
+
+	-- Avatar
+	if data.avatarUrl and data.avatarUrl ~= "" then
+		pcall(function()
+			local img = Instance.new("ImageLabel")
+			img.Size = UDim2.new(0, 56, 0, 56)
+			img.Position = UDim2.new(0, 8, 0, 8)
+			img.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+			img.BorderSizePixel = 0
+			img.Image = data.avatarUrl
+			img.Parent = card
+			createCorner(img, 28)
+		end)
+	end
+
+	-- Texte principal
+	local info = Instance.new("TextLabel")
+	info.Size = UDim2.new(1, -80, 0, 160)
+	info.Position = UDim2.new(0, 72, 0, 8)
+	info.BackgroundTransparency = 1
+	info.TextXAlignment = Enum.TextXAlignment.Left
+	info.TextYAlignment = Enum.TextYAlignment.Top
+	info.Font = Enum.Font.Gotham
+	info.TextSize = 11
+	info.TextColor3 = Color3.fromRGB(220, 220, 230)
+	info.TextWrapped = true
+	info.Parent = card
+
+	local lines = {
+		"Display : " .. (data.displayName or "?"),
+		"@" .. (data.username or "?"),
+		"UserId : " .. (data.userId or "?"),
+		"Créé : " .. (data.created or "?"),
+		"Âge : " .. (data.accountAge or "?"),
+		"Banni : " .. (data.isBanned and "OUI" or "non"),
+		"Amis : " .. (data.friendCount or "?"),
+	}
+	if data.blurb and data.blurb ~= "" then
+		table.insert(lines, "Bio : " .. data.blurb:sub(1, 120) .. (data.blurb:len() > 120 and "..." or ""))
+	end
+	if data.groups then
+		for i, g in ipairs(data.groups) do
+			if i > 3 then break end
+			table.insert(lines, "Groupe : " .. g)
+		end
+	end
+	if data.games then
+		for i, g in ipairs(data.games) do
+			if i > 3 then break end
+			table.insert(lines, "Jeu : " .. g)
+		end
+	end
+	info.Text = table.concat(lines, "\n")
+end
+
+-- Effectue la recherche
+function runRegistrySearch(query)
+	if not query or query == "" then
+		statusLbl.Text = "Tape un username d'abord."
+		return
+	end
+	statusLbl.Text = "Recherche de @" .. query .. "..."
+	statusLbl.TextColor3 = Color3.fromRGB(120, 200, 255)
+
+	-- Vider les anciens résultats
+	for _, c in ipairs(resultScroll:GetChildren()) do
+		if c:IsA("Frame") and c ~= statusLbl then c:Destroy() end
+	end
+
+	task.spawn(function()
+		-- 1) Résoudre username -> userId via API publique
+		local userId, displayName, username
+		local ok, resp = pcall(function()
+			return game:HttpPostAsync(
+				"https://users.roblox.com/v1/usernames/users",
+				HttpService:JSONEncode({usernames = {query}, excludeBannedUsers = false}),
+				Enum.HttpContentType.ApplicationJson,
+				false
+			)
+		end)
+		if not ok or not resp or resp == "" then
+			statusLbl.Text = "Échec API username (réseau ?). Essaie un autre nom."
+			statusLbl.TextColor3 = Color3.fromRGB(220, 100, 100)
+			return
+		end
+		local d = HttpService:JSONDecode(resp)
+		if d and d.data and #d.data > 0 then
+			userId = d.data[1].id
+			displayName = d.data[1].displayName
+			username = d.data[1].name
+		end
+
+		if not userId then
+			-- Fallback : recherche approximative
+			pcall(function()
+				local sresp = game:HttpGet("https://users.roblox.com/v1/user/search-users?keyword=" .. query .. "&limit=10")
+				if sresp and sresp ~= "" then
+					local sd = HttpService:JSONDecode(sresp)
+					if sd and sd.data and #sd.data > 0 then
+						statusLbl.Text = "Aucun résultat exact. Comptes similaires :"
+						statusLbl.TextColor3 = Color3.fromRGB(255, 200, 100)
+						for i, u in ipairs(sd.data) do
+							local sCard = Instance.new("TextButton")
+							sCard.Size = UDim2.new(1, -10, 0, 36)
+							sCard.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+							sCard.BorderSizePixel = 0
+							sCard.LayoutOrder = u.id or i
+							sCard.Text = ""
+							sCard.Parent = resultScroll
+							createCorner(sCard, 6)
+							local sInfo = Instance.new("TextLabel")
+							sInfo.Size = UDim2.new(1, -10, 1, 0)
+							sInfo.Position = UDim2.new(0, 8, 0, 0)
+							sInfo.BackgroundTransparency = 1
+							sInfo.TextXAlignment = Enum.TextXAlignment.Left
+							sInfo.Font = Enum.Font.Gotham
+							sInfo.TextSize = 11
+							sInfo.TextColor3 = Color3.fromRGB(200, 200, 220)
+							sInfo.Text = "@" .. (u.name or "?") .. " (" .. (u.displayName or "?") .. ") - ID " .. tostring(u.id or "?")
+							sInfo.Parent = sCard
+							sCard.MouseButton1Click:Connect(function()
+								searchBox.Text = u.name
+								runRegistrySearch(u.name)
+							end)
+						end
+						return
+					end
+				end
+			end)
+			if statusLbl.Text:find("Aucun") then return end
+			statusLbl.Text = "Aucun résultat pour \"" .. query .. "\""
+			statusLbl.TextColor3 = Color3.fromRGB(220, 100, 100)
+			return
+		end
+
+		pushHistory(username)
+		statusLbl.Text = "Trouvé : @" .. username .. " — chargement détails..."
+		statusLbl.TextColor3 = Color3.fromRGB(120, 220, 160)
+
+		-- 2) Récupérer détails profil
+		local data = {
+			userId = userId,
+			displayName = displayName,
+			username = username
+		}
+		pcall(function()
+			local r = game:HttpGet("https://users.roblox.com/v1/users/" .. userId)
+			if r and r ~= "" then
+				local d2 = HttpService:JSONDecode(r)
+				if d2 then
+					data.created = d2.created
+					data.isBanned = d2.isBanned
+					data.blurb = d2.description
+					if d2.created then
+						local epochDiff = os.time() - (tonumber(d2.created:match("(%d+)-%d+-%d+")) or os.time())
+						local years = math.floor(epochDiff / 31536000)
+						local days = math.floor((epochDiff % 31536000) / 86400)
+						data.accountAge = years .. " an(s) " .. days .. "j"
+					end
+				end
+			end
+		end)
+
+		-- 3) Avatar
+		pcall(function()
+			local r = game:HttpGet("https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" .. userId .. "&size=150x150&format=Png&isCircular=false")
+			if r and r ~= "" then
+				local d2 = HttpService:JSONDecode(r)
+				if d2 and d2.data and d2.data[1] then
+					data.avatarUrl = d2.data[1].imageUrl
+				end
+			end
+		end)
+
+		-- 4) Friends count
+		pcall(function()
+			local r = game:HttpGet("https://friends.roblox.com/v1/users/" .. userId .. "/friends/count")
+			if r and r ~= "" then
+				local d2 = HttpService:JSONDecode(r)
+				if d2 and d2.count then data.friendCount = d2.count end
+			end
+		end)
+
+		-- 5) Groupes
+		pcall(function()
+			local r = game:HttpGet("https://users.roblox.com/v1/users/" .. userId .. "/groups")
+			if r and r ~= "" then
+				local d2 = HttpService:JSONDecode(r)
+				if d2 and d2.data and #d2.data > 0 then
+					data.groups = {}
+					for i, g in ipairs(d2.data) do
+						if i > 5 then break end
+						if g.group and g.group.name then
+							table.insert(data.groups, g.group.name)
+						end
+					end
+				end
+			end
+		end)
+
+		-- 6) Jeux
+		pcall(function()
+			local r = game:HttpGet("https://games.roblox.com/v2/users/" .. userId .. "/games?sortOrder=Desc&limit=5")
+			if r and r ~= "" then
+				local d2 = HttpService:JSONDecode(r)
+				if d2 and d2.data and #d2.data > 0 then
+					data.games = {}
+					for i, g in ipairs(d2.data) do
+						if i > 5 then break end
+						if g.name then table.insert(data.games, g.name) end
+					end
+				end
+			end
+		end)
+
+		-- 7) Afficher
+		statusLbl.Text = "Détails de @" .. username .. " :"
+		statusLbl.TextColor3 = Color3.fromRGB(180, 220, 180)
+		renderResult(data, resultScroll)
+	end)
+end
+
+searchBtn.MouseButton1Click:Connect(function()
+	runRegistrySearch(searchBox.Text)
+end)
+searchBox.FocusLost:Connect(function(enterPressed)
+	if enterPressed then runRegistrySearch(searchBox.Text) end
+end)
+clearHistBtn.MouseButton1Click:Connect(function()
+	panelMemory.registryHistory = {}
+	refreshHistoryUI()
+end)
+refreshHistoryUI()
 
 serverScroll.CanvasSize = UDim2.new(0, 0, 0, serverLayout.AbsoluteContentSize.Y + 10)
 serverLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
