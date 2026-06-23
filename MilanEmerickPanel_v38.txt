@@ -456,6 +456,8 @@ local function _initRegistrySearch()
 		"Samuel", "Sara", "Savannah", "Sean", "Sophie",
 		"Stephen", "Taylor", "Thomas", "Tyler", "Victoria",
 		"William", "Zoe", "Xx_Shadow_xX", "Dark_Mage", "ProGamer123",
+		-- Pseudos spécifiques (connus / populaires)
+		"Vzlom_Emk", "MilanAC", "Eme_Giroux", "RobloxDev", "TestAccount",
 	}
 
 	-- Helper : calcule un score de match entre query et name
@@ -538,6 +540,8 @@ local function _initRegistrySearch()
 		end
 
 		-- Créer les 3 boutons de suggestion
+		-- Pour les connectés : "NomComplet (ID: 12345678)"
+		-- Pour les hardcodés : "NomComplet" (pas d'ID connu)
 		for i, name in ipairs(top3) do
 			local btn = Instance.new("TextButton")
 			btn.Size = UDim2.new(1, 0, 0, 22)
@@ -567,6 +571,20 @@ local function _initRegistrySearch()
 				btn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
 			end)
 		end
+
+		-- Label d'aide : ID du joueur quand on tape un nom connu
+		local helpLabel = Instance.new("TextLabel")
+		helpLabel.Name = "HelpLabel"
+		helpLabel.Size = UDim2.new(1, -10, 0, 16)
+		helpLabel.Position = UDim2.new(0, 5, 0, 0)
+		helpLabel.BackgroundTransparency = 1
+		helpLabel.Text = ""
+		helpLabel.Font = Enum.Font.Gotham
+		helpLabel.TextSize = 9
+		helpLabel.TextColor3 = Color3.fromRGB(120, 180, 140)
+		helpLabel.TextXAlignment = Enum.TextXAlignment.Left
+		helpLabel.LayoutOrder = 100
+		helpLabel.Parent = suggestionsFrame
 
 		suggestionsFrame.Visible = true
 	end
@@ -917,24 +935,10 @@ end
 
 -- ============= JOUEURS =============
 local playerCards = {}
-local searchBox = Instance.new("TextBox")
-searchBox.Size = UDim2.new(1, -10, 0, 28)
-searchBox.Position = UDim2.new(0, 5, 0, 5)
-searchBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-searchBox.BackgroundTransparency = 0.2
-searchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
-searchBox.PlaceholderText = "Rechercher un joueur..."
-searchBox.Text = ""
-searchBox.Font = Enum.Font.Gotham
-searchBox.TextSize = 12
-searchBox.TextXAlignment = Enum.TextXAlignment.Center
-searchBox.ClearTextOnFocus = false
-searchBox.Parent = playersPage
-createCorner(searchBox, 8)
-createStroke(searchBox, Color3.fromRGB(80, 80, 100), 1)
+-- searchBox de Joueurs SUPPRIMÉE (doublon avec Registry, le user veut une seule search box)
 
 -- ============= JOUEURS =============
--- Layout : searchBox en haut, puis serverStatsBar (stats toujours visibles), puis playersScroll
+-- playersScroll prend toute la place disponible sous le tab bar
 local playersScroll = Instance.new("ScrollingFrame")
 playersScroll.Size = UDim2.new(1, -10, 1, -52)
 playersScroll.Position = UDim2.new(0, 5, 0, 42)
@@ -2058,78 +2062,14 @@ if panelMemory.lastEchoPlayerName and not panelMemory.dontAskRestore then
 	end)
 end
 
-searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-	local q = searchBox.Text:lower():gsub("%s+", "")
-	local matches = {}
-	local exactMatch, startsWithMatches, containsMatches = nil, {}, {}
-	for plr, card in pairs(playerCards) do
-		if not plr or not card then continue end
-		local name = plr.Name:lower()
-		local dname = plr.DisplayName:lower()
-		-- 1) Match exact (username == query)
-		if q ~= "" and (name == q or dname == q) then
-			exactMatch = plr
-		-- 2) Commence par (le plus pertinent)
-		elseif q ~= "" and (name:sub(1, #q) == q or dname:sub(1, #q) == q) then
-			table.insert(startsWithMatches, plr)
-		-- 3) Contient (moins pertinent)
-		elseif q ~= "" and (name:find(q, 1, true) ~= nil or dname:find(q, 1, true) ~= nil) then
-			table.insert(containsMatches, plr)
-		-- 4) Pas de query ou pas de match
-		end
-		-- Visibilité : tout ce qui matche est visible
-		local match = q == "" or name:find(q, 1, true) ~= nil or dname:find(q, 1, true) ~= nil
-		card.Visible = match
-		if match and q ~= "" then table.insert(matches, plr) end
+-- searchBox de Joueurs supprimée (doublon avec Registry)
+-- Plus de filtre local ici, le filtrage se fait dans Registry
+-- Toutes les cartes sont toujours visibles par défaut
+for plr, card in pairs(playerCards) do
+	if card then
+		card.Visible = true
 	end
-	-- Tri : les cartes qui matchent sont déplacées en haut, exact en premier, puis startsWith, puis contains
-	-- (en réordonnant le LayoutOrder)
-	local order = 0
-	local function bumpCard(plr)
-		local card = playerCards[plr]
-		if card then
-			card.LayoutOrder = order
-			order = order + 1
-		end
-	end
-	-- D'abord le exact
-	if exactMatch then bumpCard(exactMatch) end
-	-- Puis les startsWith (triés alphabétiquement)
-	table.sort(startsWithMatches, function(a, b) return a.Name:lower() < b.Name:lower() end)
-	for _, p in ipairs(startsWithMatches) do bumpCard(p) end
-	-- Puis les contains (triés)
-	table.sort(containsMatches, function(a, b) return a.Name:lower() < b.Name:lower() end)
-	for _, p in ipairs(containsMatches) do bumpCard(p) end
-	-- Les non-matches en queue (gardent leur ordre relatif)
-	for plr, card in pairs(playerCards) do
-		if not plr or not card then continue end
-		if q ~= "" then
-			local name = plr.Name:lower()
-			local dname = plr.DisplayName:lower()
-			if name:find(q, 1, true) == nil and dname:find(q, 1, true) == nil then
-				card.LayoutOrder = order
-				order = order + 1
-			end
-		else
-			-- Pas de query : ordre par nom
-			card.LayoutOrder = order
-			order = order + 1
-		end
-	end
-	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
-	-- Highlight du match exact (anim 0.5s)
-	if exactMatch and exactMatch.Parent and playerCards[exactMatch] then
-		local card = playerCards[exactMatch]
-		if card and card.Parent then
-			tween(card, {BackgroundColor3 = Color3.fromRGB(70, 50, 100)}, 0.2)
-			task.delay(1.2, function()
-				if card and card.Parent then
-					tween(card, {BackgroundColor3 = Color3.fromRGB(28, 28, 35)}, 0.3)
-				end
-			end)
-		end
-	end
-end)
+end
 
 -- ECHO CHAT
 local function sendEchoMessage(text)
