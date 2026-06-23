@@ -4199,6 +4199,8 @@ local statCreator = addServerStat("Créateur")
 
 -- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
+-- Wrapper do/end pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
+do
 local registryCard = Instance.new("Frame")
 registryCard.Size = UDim2.new(1, -8, 0, 480)
 registryCard.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
@@ -4609,6 +4611,7 @@ clearHistBtn.MouseButton1Click:Connect(function()
 	refreshHistoryUI()
 end)
 refreshHistoryUI()
+end -- fin do/end REGISTRE
 
 serverScroll.CanvasSize = UDim2.new(0, 0, 0, serverLayout.AbsoluteContentSize.Y + 10)
 serverLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
