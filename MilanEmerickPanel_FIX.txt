@@ -2831,6 +2831,49 @@ local function fireClickFixed(useNative)
 		end
 	end
 
+	-- 2b) ProximityPrompt dans le monde au point fixe (clic souris direct)
+	if not clicked and (mode == "any" or mode == "world") then
+		local cam = workspace.CurrentCamera
+		if cam then
+			local ray = cam:ScreenPointToRay(pt.X, pt.Y)
+			local pp = nil
+			-- Cherche un ProximityPrompt dont l'ObjectText chevauche le curseur
+			for _, desc in ipairs(workspace:GetDescendants()) do
+				if desc:IsA("ProximityPrompt") and desc.Enabled and desc.Parent then
+					local att = desc.Parent
+					if att:IsA("Attachment") and att.Parent then
+						local p3 = att.WorldPosition
+						-- Projection du point curseur sur le rayon, distance au point 3D
+						local toPoint = p3 - ray.Origin
+						local t = toPoint:Dot(ray.Direction)
+						if t > 0 then
+							local closest = ray.Origin + ray.Direction * t
+							if (closest - p3).Magnitude <= math.max(2, desc.MaxActivationDistance) then
+								pp = desc
+								break
+							end
+						end
+					end
+				end
+			end
+			if pp then
+				pcall(function() fireproximityprompt(pp) end)
+				clicked = true
+			end
+		end
+	end
+
+	-- 2c) Fallback : clic souris NATIF en mode world/any quand aucune cible API ne répond
+	-- (VIM one-shot, pas en loop : contourne les GuiObject custom qui n'écoutent pas :Fire())
+	if not clicked and (mode == "any" or mode == "world") and VirtualInputManager then
+		pcall(function()
+			VirtualInputManager:SendMouseButtonEvent(pt.X, pt.Y, 0, true, game, 0)
+			task.wait(0.01)
+			VirtualInputManager:SendMouseButtonEvent(pt.X, pt.Y, 0, false, game, 0)
+		end)
+		clicked = true
+	end
+
 	-- 3) Vrai clic souris natif au point FIXE (manuel uniquement)
 	if useNative and VirtualInputManager then
 		pcall(function()
@@ -2846,6 +2889,7 @@ end
 
 local function startAutoClickEngine()
 	stopAutoClickEngine()
+	-- Auto-capture : si rien n'est capturé, on prend la position du curseur maintenant
 	if not acTarget.captured then
 		if not captureTargetFromCursor() then return end
 	end
@@ -2855,9 +2899,12 @@ local function startAutoClickEngine()
 	local threadId = {}
 	autoClickState.activeThread = threadId
 	local interval = math.max(0.001, autoClickState.speed)
+	-- Boucle : utilise VIM fallback (force=true) pour attraper les clics souris natifs du jeu
+	-- En mode "gui" seul, on n'utilise PAS le VIM (risque de cliquer dans le jeu derrière les menus)
+	local useNative = (acTarget.targetType ~= "gui")
 	task.spawn(function()
 		while autoClickState.clickEnabled and autoClickState.activeThread == threadId do
-			fireClickFixed(false)  -- boucle : PAS de VirtualInputManager (évite téléport)
+			fireClickFixed(useNative)
 			task.wait(interval)
 		end
 	end)
