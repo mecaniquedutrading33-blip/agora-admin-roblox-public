@@ -4740,9 +4740,10 @@ local function pushHistory(name)
 end
 
 -- Affiche un résultat (un compte)
+-- Affiche un résultat (un compte) — TOUTES les infos dans une seule grande case
 local function renderResult(data, parent)
 	local card = Instance.new("Frame")
-	card.Size = UDim2.new(1, -10, 0, 820)
+	card.Size = UDim2.new(1, -10, 0, 500)
 	card.BackgroundColor3 = Color3.fromRGB(32, 32, 40)
 	card.BorderSizePixel = 0
 	card.LayoutOrder = data.userId or 0
@@ -4750,305 +4751,221 @@ local function renderResult(data, parent)
 	createCorner(card, 8)
 	createStroke(card, Color3.fromRGB(80, 80, 110), 1)
 
+	-- Helper : valeur ou "Indisponible" en gris
+	local function V(val)
+		if val == nil then return "Indisponible" end
+		if type(val) == "string" and val == "" then return "Indisponible" end
+		if type(val) == "table" and #val == 0 then return "Indisponible" end
+		return tostring(val)
+	end
+	local INDI = Color3.fromRGB(120, 120, 130)  -- couleur "Indisponible"
+
+	-- Couleurs de label
+	local COLOR_LABEL = Color3.fromRGB(150, 180, 255)
+	local COLOR_VALUE = Color3.fromRGB(230, 230, 240)
+	local COLOR_BAD = Color3.fromRGB(255, 100, 100)
+	local COLOR_GOOD = Color3.fromRGB(120, 230, 160)
+
 	-- Avatar
 	if data.avatarUrl and data.avatarUrl ~= "" then
 		pcall(function()
 			local img = Instance.new("ImageLabel")
-			img.Size = UDim2.new(0, 56, 0, 56)
+			img.Size = UDim2.new(0, 60, 0, 60)
 			img.Position = UDim2.new(0, 8, 0, 8)
 			img.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 			img.BorderSizePixel = 0
-			img.Image = data.avatarUrl
 			img.Parent = card
-			createCorner(img, 28)
+			img.Image = data.avatarUrl
+			createCorner(img, 6)
 		end)
 	end
 
-	-- Header : nom + display + badges
-		local header = Instance.new("TextLabel")
-		header.Size = UDim2.new(1, -80, 0, 56)
-		header.Position = UDim2.new(0, 72, 0, 6)
-		header.BackgroundTransparency = 1
-		header.TextXAlignment = Enum.TextXAlignment.Left
-		header.TextYAlignment = Enum.TextYAlignment.Top
-		header.Font = Enum.Font.GothamBold
-		header.TextSize = 13
-		header.TextColor3 = Color3.fromRGB(230, 230, 255)
-		header.TextWrapped = true
-		header.Parent = card
-		local headerLines = { (data.displayName or "?") }
-		if data.hasVerifiedBadge then table.insert(headerLines, "✓ Vérifié Roblox") end
-		if data.isPremium then table.insert(headerLines, "⭐ Premium") end
-		if data.isBanned then table.insert(headerLines, "🚫 Banni") end
-		header.Text = table.concat(headerLines, "  ")
+	-- Header (display + badges)
+	local header = Instance.new("TextLabel")
+	header.Size = UDim2.new(1, -80, 0, 60)
+	header.Position = UDim2.new(0, 76, 0, 6)
+	header.BackgroundTransparency = 1
+	header.TextXAlignment = Enum.TextXAlignment.Left
+	header.TextYAlignment = Enum.TextYAlignment.Top
+	header.Font = Enum.Font.GothamBold
+	header.TextSize = 13
+	header.TextColor3 = Color3.fromRGB(240, 240, 255)
+	header.TextWrapped = true
+	header.Parent = card
+	local hLines = { (data.displayName or "Indisponible") }
+	if data.hasVerifiedBadge then table.insert(hLines, "✓ Vérifié") end
+	if data.isPremium then table.insert(hLines, "⭐ Premium") end
+	if data.isBanned then table.insert(hLines, "🚫 Banni") end
+	header.Text = table.concat(hLines, "   ")
 
-		-- Encadré d'alerte si APIs externes bloquées
-		if data.apiOk == false then
-			local warn = Instance.new("Frame")
-			warn.Size = UDim2.new(1, -16, 0, 80)
-			warn.Position = UDim2.new(0, 8, 0, 68)
-			warn.BackgroundColor3 = Color3.fromRGB(80, 50, 20)
-			warn.BorderSizePixel = 0
-			warn.Parent = card
-			createCorner(warn, 6)
-			createStroke(warn, Color3.fromRGB(255, 180, 90), 2)
+	-- === GROS BLOC UNIQUE : TOUTES les infos ===
+	-- Construit la liste de lignes au format "Label : Valeur" avec couleurs
+	local function addLine(lines, label, val, color)
+		local line = { label .. " : " .. V(val) }
+		table.insert(lines, { text = line[1], val = V(val), color = color or COLOR_VALUE })
+	end
 
-			local warnText = Instance.new("TextLabel")
-			warnText.Size = UDim2.new(1, -10, 1, 0)
-			warnText.Position = UDim2.new(0, 5, 0, 0)
-			warnText.BackgroundTransparency = 1
-			warnText.TextXAlignment = Enum.TextXAlignment.Left
-			warnText.TextYAlignment = Enum.TextYAlignment.Top
-			warnText.Font = Enum.Font.GothamBold
-			warnText.TextSize = 11
-			warnText.TextColor3 = Color3.fromRGB(255, 220, 160)
-			warnText.TextWrapped = true
-			warnText.Parent = warn
-			warnText.Text = "⚠ APIs externes bloquées par l'exécuteur\n\n" ..
-				"UserId : " .. (data.userId or "?") .. "\n" ..
-				"Username : @" .. (data.username or "?") .. "\n" ..
-				"Ouvre ce lien dans ton browser pour voir le profil :\n" ..
-				(data.profileUrl or "https://www.roblox.com")
+	local lines = {}
+	addLine(lines, "👤 Username", data.username)
+	addLine(lines, "🆔 UserId", data.userId)
+	addLine(lines, "📛 Display", data.displayName)
+	addLine(lines, "📅 Créé le", data.created and data.created:sub(1, 10) or nil)
+	addLine(lines, "⏳ Âge du compte", data.accountAge)
+	addLine(lines, "🌐 Langue", data.langName)
+	addLine(lines, "📝 Bio", data.blurb and (data.blurb:len() > 200 and data.blurb:sub(1, 200) .. "..." or data.blurb) or nil)
+	addLine(lines, "⭐ Vérifié Roblox", data.hasVerifiedBadge and "OUI" or (data.hasVerifiedBadge == false and "non" or nil), data.hasVerifiedBadge and COLOR_GOOD or nil)
+	addLine(lines, "💎 Premium", data.isPremium and "OUI" or (data.isPremium == false and "non" or nil), data.isPremium and COLOR_GOOD or nil)
+	addLine(lines, "📧 Email lié", data.hasEmail and "oui" or (data.hasEmail == false and "non" or nil))
+	addLine(lines, "✓ Email vérifié", data.emailVerified and "oui" or (data.emailVerified == false and "non" or nil), data.emailVerified and COLOR_GOOD or (data.emailVerified == false and COLOR_BAD or nil))
+	addLine(lines, "🚫 Statut compte", data.isBanned and "Banni" or (data.isBanned == false and "Actif" or nil), data.isBanned and COLOR_BAD or (data.isBanned == false and COLOR_GOOD or nil))
+	addLine(lines, "🟢 Présence actuelle",
+		data.presenceType == 0 and "En ligne (site web)" or
+		data.presenceType == 1 and "En jeu : " .. (data.presenceLastLocation or "?") or
+		data.presenceType == 2 and "Au Studio (Roblox Studio)" or
+		data.presenceType == 3 and "Hors ligne" or
+		nil)
+	addLine(lines, "🎮 En jeu (placeId)", data.presencePlaceId)
+	addLine(lines, "⏰ Dernière connexion", data.lastOnlineText)
+	addLine(lines, "💱 Trade privacy", data.tradePrivacy)
+	addLine(lines, "💱 Trades entrants", data.tradesInbound)
+	addLine(lines, "💱 Trades sortants", data.tradesOutbound)
+	addLine(lines, "💱 Trades actifs", data.tradesActive)
+	addLine(lines, "👥 Amis", data.friendCount)
+	addLine(lines, "👥 Followers", data.followerCount)
+	addLine(lines, "👥 Following", data.followingCount)
+	addLine(lines, "🏅 Badges", data.badgeCount)
+	addLine(lines, "👕 Hats équipés", data.wearingCount)
+	addLine(lines, "👕 Total hats", data.avatarHatCount)
+	addLine(lines, "👕 Body colors", data.avatarBody)
+	addLine(lines, "⭐ Premium jusqu'au", data.premiumUntil and tostring(data.premiumUntil):sub(1, 10) or nil)
+
+	-- Groupes (max 5)
+	if data.groupsWithRole and #data.groupsWithRole > 0 then
+		local gtext = {}
+		for i, g in ipairs(data.groupsWithRole) do
+			if i > 5 then break end
+			table.insert(gtext, g.name .. " — " .. (g.role or "?"))
 		end
-
-	-- Bloc "infos profil"
-	local info = Instance.new("TextLabel")
-	info.Size = UDim2.new(1, -16, 0, 220)
-	info.Position = UDim2.new(0, 8, 0, 68)
-	info.BackgroundTransparency = 1
-	info.TextXAlignment = Enum.TextXAlignment.Left
-	info.TextYAlignment = Enum.TextYAlignment.Top
-	info.Font = Enum.Font.Gotham
-	info.TextSize = 11
-	info.TextColor3 = Color3.fromRGB(220, 220, 230)
-	info.TextWrapped = true
-	info.Parent = card
-
-	local lines = {
-		"👤 @ " .. (data.username or "?") .. "  (ID: " .. (data.userId or "?") .. ")",
-		"🌐 Langue : " .. (data.langName or "?"),
-		"📅 Créé : " .. (data.created and data.created:sub(1, 10) or "?") .. "  •  " .. (data.accountAge or "?"),
-	}
-	if data.blurb and data.blurb ~= "" then
-		local blurb = data.blurb:gsub("\n", " ")
-		if blurb:len() > 90 then blurb = blurb:sub(1, 90) .. "..." end
-		table.insert(lines, "📝 Bio : " .. blurb)
+		addLine(lines, "📂 Groupes (rôle)", table.concat(gtext, " | "))
+	else
+		addLine(lines, "📂 Groupes (rôle)", nil)
 	end
-	if data.presenceType ~= nil then
-		local t = data.presenceType
-		if t == 0 then table.insert(lines, "🟢 Statut : En ligne (site web)")
-		elseif t == 1 then table.insert(lines, "▶ Statut : En jeu (" .. (data.presenceLastLocation or "?") .. ")")
-		elseif t == 2 then table.insert(lines, "🛠 Statut : Au Studio")
-		elseif t == 3 then table.insert(lines, "○ Statut : Hors ligne")
+
+	-- Amis (max 5)
+	if data.friendsList and #data.friendsList > 0 then
+		local ftext = {}
+		for i, f in ipairs(data.friendsList) do
+			if i > 5 then break end
+			table.insert(ftext, tostring(f))
 		end
-		if data.presencePlaceId then
-			table.insert(lines, "🎮 PlaceId : " .. data.presencePlaceId)
-		end
-	end
-	if data.friendCount or data.followerCount or data.followingCount then
-		table.insert(lines, "👥 Amis : " .. (data.friendCount or "?") ..
-			"  • Followers : " .. (data.followerCount or "?") ..
-			"  • Following : " .. (data.followingCount or "?"))
-	end
-	if data.badgeCount then
-		table.insert(lines, "🏅 Badges : " .. data.badgeCount)
-	end
-	if data.avatarHatCount or data.avatarBody then
-		table.insert(lines, "👕 Avatar : " .. (data.avatarBody or "?") .. " (" .. (data.avatarHatCount or 0) .. " hats)")
-	end
-	info.Text = table.concat(lines, "\n")
-
-	-- Bloc "Groupes"
-	if data.groups and #data.groups > 0 then
-		local gBlock = Instance.new("TextLabel")
-		gBlock.Size = UDim2.new(1, -16, 0, 50)
-		gBlock.Position = UDim2.new(0, 8, 0, 290)
-		gBlock.BackgroundTransparency = 1
-		gBlock.TextXAlignment = Enum.TextXAlignment.Left
-		gBlock.TextYAlignment = Enum.TextYAlignment.Top
-		gBlock.Font = Enum.Font.Gotham
-		gBlock.TextSize = 10
-		gBlock.TextColor3 = Color3.fromRGB(180, 200, 255)
-		gBlock.TextWrapped = true
-		gBlock.Parent = card
-		local gLines = {"📂 Groupes :"}
-		for i, g in ipairs(data.groups) do
-			if i > 3 then break end
-			table.insert(gLines, "  • " .. g)
-		end
-		gBlock.Text = table.concat(gLines, "\n")
+		addLine(lines, "👥 Top 5 amis", table.concat(ftext, ", "))
+	else
+		addLine(lines, "👥 Top 5 amis", nil)
 	end
 
-	-- Bloc "Jeux créés"
+	-- Jeux créés (max 5)
 	if data.games and #data.games > 0 then
-		local gBlock = Instance.new("TextLabel")
-		gBlock.Size = UDim2.new(1, -16, 0, 50)
-		gBlock.Position = UDim2.new(0, 8, 0, 350)
-		gBlock.BackgroundTransparency = 1
-		gBlock.TextXAlignment = Enum.TextXAlignment.Left
-		gBlock.TextYAlignment = Enum.TextYAlignment.Top
-		gBlock.Font = Enum.Font.Gotham
-		gBlock.TextSize = 10
-		gBlock.TextColor3 = Color3.fromRGB(150, 220, 180)
-		gBlock.TextWrapped = true
-		gBlock.Parent = card
-		local gLines = {"🎮 Jeux créés :"}
+		local gtext = {}
 		for i, g in ipairs(data.games) do
-			if i > 3 then break end
-			table.insert(gLines, "  • " .. g)
+			if i > 5 then break end
+			table.insert(gtext, tostring(g))
 		end
-		gBlock.Text = table.concat(gLines, "\n")
+		addLine(lines, "🎮 Jeux créés", table.concat(gtext, " | "))
+	else
+		addLine(lines, "🎮 Jeux créés", nil)
 	end
 
-	-- Bloc "Jeux favoris"
+	-- Jeux favoris (max 5)
 	if data.favGames and #data.favGames > 0 then
-		local gBlock = Instance.new("TextLabel")
-		gBlock.Size = UDim2.new(1, -16, 0, 50)
-		gBlock.Position = UDim2.new(0, 8, 0, 410)
-		gBlock.BackgroundTransparency = 1
-		gBlock.TextXAlignment = Enum.TextXAlignment.Left
-		gBlock.TextYAlignment = Enum.TextYAlignment.Top
-		gBlock.Font = Enum.Font.Gotham
-		gBlock.TextSize = 10
-		gBlock.TextColor3 = Color3.fromRGB(255, 200, 150)
-		gBlock.TextWrapped = true
-		gBlock.Parent = card
-		local gLines = {"⭐ Jeux favoris :"}
-				for i, g in ipairs(data.favGames) do
-					if i > 3 then break end
-					table.insert(gLines, "  • " .. g)
-				end
-				gBlock.Text = table.concat(gLines, "\n")
-			end
-
-			-- Bloc "Groupes + Rôle"
-			if data.groupsWithRole and #data.groupsWithRole > 0 then
-				local gBlock = Instance.new("TextLabel")
-				gBlock.Size = UDim2.new(1, -16, 0, 50)
-				gBlock.Position = UDim2.new(0, 8, 0, 470)
-				gBlock.BackgroundTransparency = 1
-				gBlock.TextXAlignment = Enum.TextXAlignment.Left
-				gBlock.TextYAlignment = Enum.TextYAlignment.Top
-				gBlock.Font = Enum.Font.Gotham
-				gBlock.TextSize = 10
-				gBlock.TextColor3 = Color3.fromRGB(200, 180, 255)
-				gBlock.TextWrapped = true
-				gBlock.Parent = card
-				local gLines = {"📂 Groupes + Rôle :"}
-				for i, g in ipairs(data.groupsWithRole) do
-					if i > 3 then break end
-					table.insert(gLines, "  • " .. g.name .. " — " .. g.role)
-				end
-				gBlock.Text = table.concat(gLines, "\n")
-			end
-
-			-- Bloc "Amis"
-			if data.friendsList and #data.friendsList > 0 then
-				local gBlock = Instance.new("TextLabel")
-				gBlock.Size = UDim2.new(1, -16, 0, 50)
-				gBlock.Position = UDim2.new(0, 8, 0, 530)
-				gBlock.BackgroundTransparency = 1
-				gBlock.TextXAlignment = Enum.TextXAlignment.Left
-				gBlock.TextYAlignment = Enum.TextYAlignment.Top
-				gBlock.Font = Enum.Font.Gotham
-				gBlock.TextSize = 10
-				gBlock.TextColor3 = Color3.fromRGB(255, 180, 220)
-				gBlock.TextWrapped = true
-				gBlock.Parent = card
-				local gLines = {"👥 Top 5 amis :"}
-				for i, f in ipairs(data.friendsList) do
-					if i > 5 then break end
-					table.insert(gLines, "  • " .. f)
-				end
-				gBlock.Text = table.concat(gLines, "\n")
-			end
-
-			-- Bloc "Historique usernames"
-			if data.usernameHistory and #data.usernameHistory > 0 then
-				local gBlock = Instance.new("TextLabel")
-				gBlock.Size = UDim2.new(1, -16, 0, 60)
-				gBlock.Position = UDim2.new(0, 8, 0, 590)
-				gBlock.BackgroundTransparency = 1
-				gBlock.TextXAlignment = Enum.TextXAlignment.Left
-				gBlock.TextYAlignment = Enum.TextYAlignment.Top
-				gBlock.Font = Enum.Font.Gotham
-				gBlock.TextSize = 10
-				gBlock.TextColor3 = Color3.fromRGB(255, 220, 130)
-				gBlock.TextWrapped = true
-				gBlock.Parent = card
-				local gLines = {"🔄 Anciens usernames :"}
-				for i, h in ipairs(data.usernameHistory) do
-					if i > 4 then break end
-					table.insert(gLines, "  • " .. h)
-				end
-				gBlock.Text = table.concat(gLines, "\n")
-			end
-
-			-- Bloc "Outfits / Tenues"
-			if data.outfits and #data.outfits > 0 then
-				local gBlock = Instance.new("TextLabel")
-				gBlock.Size = UDim2.new(1, -16, 0, 50)
-				gBlock.Position = UDim2.new(0, 8, 0, 660)
-				gBlock.BackgroundTransparency = 1
-				gBlock.TextXAlignment = Enum.TextXAlignment.Left
-				gBlock.TextYAlignment = Enum.TextYAlignment.Top
-				gBlock.Font = Enum.Font.Gotham
-				gBlock.TextSize = 10
-				gBlock.TextColor3 = Color3.fromRGB(180, 230, 230)
-				gBlock.TextWrapped = true
-				gBlock.Parent = card
-				local gLines = {"👗 Tenues (" .. (data.wearingCount or 0) .. " équipés) :"}
-				for i, o in ipairs(data.outfits) do
-					if i > 3 then break end
-					table.insert(gLines, "  • " .. o)
-				end
-				gBlock.Text = table.concat(gLines, "\n")
-			end
-
-			-- Bloc "Inventaire / Trades / Email"
-			local extraLines = {}
-			if data.inventory and next(data.inventory) then
-				local totalItems = 0
-				local breakdown = {}
-				for atype, count in pairs(data.inventory) do
-					totalItems = totalItems + count
-					table.insert(breakdown, atype .. ":" .. count)
-				end
-				if totalItems > 0 then
-					table.insert(extraLines, "🎒 Inventaire : " .. totalItems .. " items (" .. table.concat(breakdown, ", ") .. ")")
-				end
-			end
-			if data.hasEmail ~= nil then
-				table.insert(extraLines, "📧 Email : " .. (data.hasEmail and "oui" or "non") ..
-					(data.emailVerified and " (vérifié)" or " (non vérifié)"))
-			end
-			if data.lastOnlineText then
-				table.insert(extraLines, "⏰ Dernière connexion : " .. data.lastOnlineText)
-			end
-			if data.premiumUntil then
-				table.insert(extraLines, "⭐ Premium jusqu'à : " .. tostring(data.premiumUntil):sub(1, 10))
-			end
-			if data.tradePrivacy then
-				table.insert(extraLines, "💱 Trades : " .. data.tradePrivacy ..
-					" (in:" .. (data.tradesInbound or 0) ..
-					" out:" .. (data.tradesOutbound or 0) ..
-					" actifs:" .. (data.tradesActive or 0) .. ")")
-			end
-			if #extraLines > 0 then
-				local gBlock = Instance.new("TextLabel")
-				gBlock.Size = UDim2.new(1, -16, 0, 110)
-				gBlock.Position = UDim2.new(0, 8, 0, 700)
-				gBlock.BackgroundTransparency = 1
-				gBlock.TextXAlignment = Enum.TextXAlignment.Left
-				gBlock.TextYAlignment = Enum.TextYAlignment.Top
-				gBlock.Font = Enum.Font.Gotham
-				gBlock.TextSize = 10
-				gBlock.TextColor3 = Color3.fromRGB(200, 200, 200)
-				gBlock.TextWrapped = true
-				gBlock.Parent = card
-				gBlock.Text = table.concat(extraLines, "\n")
-			end
+		local gtext = {}
+		for i, g in ipairs(data.favGames) do
+			if i > 5 then break end
+			table.insert(gtext, tostring(g))
 		end
+		addLine(lines, "⭐ Jeux favoris", table.concat(gtext, " | "))
+	else
+		addLine(lines, "⭐ Jeux favoris", nil)
+	end
+
+	-- Outfits (max 3)
+	if data.outfits and #data.outfits > 0 then
+		local otext = {}
+		for i, o in ipairs(data.outfits) do
+			if i > 3 then break end
+			table.insert(otext, tostring(o))
+		end
+		addLine(lines, "👗 Tenues sauvegardées", table.concat(otext, " | "))
+	else
+		addLine(lines, "👗 Tenues sauvegardées", nil)
+	end
+
+	-- Historique usernames (max 4)
+	if data.usernameHistory and #data.usernameHistory > 0 then
+		local htext = {}
+		for i, h in ipairs(data.usernameHistory) do
+			if i > 4 then break end
+			table.insert(htext, tostring(h))
+		end
+		addLine(lines, "🔄 Anciens usernames", table.concat(htext, " → "))
+	else
+		addLine(lines, "🔄 Anciens usernames", nil)
+	end
+
+	-- Inventaire breakdown
+	if data.inventory and next(data.inventory) then
+		local total = 0
+		local parts = {}
+		for atype, count in pairs(data.inventory) do
+			total = total + count
+			table.insert(parts, atype .. ":" .. count)
+		end
+		addLine(lines, "🎒 Inventaire (total)", total .. " items (" .. table.concat(parts, ", ") .. ")")
+	else
+		addLine(lines, "🎒 Inventaire (total)", nil)
+	end
+
+	-- Convertir en RichText avec couleurs (label bleu + valeur normale, "Indisponible" en gris)
+	local function colorize(line)
+		-- "Label : Valeur"
+		local sep = " : "
+		local idx = string.find(line.text, sep, 1, true)
+		if not idx then return line.text end
+		local label = string.sub(line.text, 1, idx + #sep - 1)
+		local val = string.sub(line.text, idx + #sep)
+		local valColor
+		if val == "Indisponible" then
+			valColor = "{120,120,130}"  -- gris
+		elseif line.color then
+			local r = math.floor(line.color.R * 255)
+			local g = math.floor(line.color.G * 255)
+			local b = math.floor(line.color.B * 255)
+			valColor = "{" .. r .. "," .. g .. "," .. b .. "}"
+		else
+			valColor = "{230,230,240}"
+		end
+		return '<font color="{150,180,255}">' .. label .. '</font><font color=' .. valColor .. '>' .. val .. '</font>'
+	end
+
+	local big = Instance.new("TextLabel")
+	big.Size = UDim2.new(1, -16, 1, -76)
+	big.Position = UDim2.new(0, 8, 0, 70)
+	big.BackgroundTransparency = 1
+	big.TextXAlignment = Enum.TextXAlignment.Left
+	big.TextYAlignment = Enum.TextYAlignment.Top
+	big.Font = Enum.Font.Gotham
+	big.TextSize = 10
+	big.TextColor3 = COLOR_VALUE
+	big.TextWrapped = true
+	big.RichText = true
+	big.Parent = card
+	big.Text = table.concat((function()
+		local out = {}
+		for _, l in ipairs(lines) do
+			table.insert(out, colorize(l))
+		end
+		return out
+	end)(), "\n")
+end
 
 -- Effectue la recherche
 function runRegistrySearch(query)
