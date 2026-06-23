@@ -4742,7 +4742,7 @@ end
 -- Affiche un résultat (un compte)
 local function renderResult(data, parent)
 	local card = Instance.new("Frame")
-	card.Size = UDim2.new(1, -10, 0, 460)
+	card.Size = UDim2.new(1, -10, 0, 820)
 	card.BackgroundColor3 = Color3.fromRGB(32, 32, 40)
 	card.BorderSizePixel = 0
 	card.LayoutOrder = data.userId or 0
@@ -4885,13 +4885,141 @@ local function renderResult(data, parent)
 		gBlock.TextWrapped = true
 		gBlock.Parent = card
 		local gLines = {"⭐ Jeux favoris :"}
-		for i, g in ipairs(data.favGames) do
-			if i > 3 then break end
-			table.insert(gLines, "  • " .. g)
+				for i, g in ipairs(data.favGames) do
+					if i > 3 then break end
+					table.insert(gLines, "  • " .. g)
+				end
+				gBlock.Text = table.concat(gLines, "\n")
+			end
+
+			-- Bloc "Groupes + Rôle"
+			if data.groupsWithRole and #data.groupsWithRole > 0 then
+				local gBlock = Instance.new("TextLabel")
+				gBlock.Size = UDim2.new(1, -16, 0, 50)
+				gBlock.Position = UDim2.new(0, 8, 0, 470)
+				gBlock.BackgroundTransparency = 1
+				gBlock.TextXAlignment = Enum.TextXAlignment.Left
+				gBlock.TextYAlignment = Enum.TextYAlignment.Top
+				gBlock.Font = Enum.Font.Gotham
+				gBlock.TextSize = 10
+				gBlock.TextColor3 = Color3.fromRGB(200, 180, 255)
+				gBlock.TextWrapped = true
+				gBlock.Parent = card
+				local gLines = {"📂 Groupes + Rôle :"}
+				for i, g in ipairs(data.groupsWithRole) do
+					if i > 3 then break end
+					table.insert(gLines, "  • " .. g.name .. " — " .. g.role)
+				end
+				gBlock.Text = table.concat(gLines, "\n")
+			end
+
+			-- Bloc "Amis"
+			if data.friendsList and #data.friendsList > 0 then
+				local gBlock = Instance.new("TextLabel")
+				gBlock.Size = UDim2.new(1, -16, 0, 50)
+				gBlock.Position = UDim2.new(0, 8, 0, 530)
+				gBlock.BackgroundTransparency = 1
+				gBlock.TextXAlignment = Enum.TextXAlignment.Left
+				gBlock.TextYAlignment = Enum.TextYAlignment.Top
+				gBlock.Font = Enum.Font.Gotham
+				gBlock.TextSize = 10
+				gBlock.TextColor3 = Color3.fromRGB(255, 180, 220)
+				gBlock.TextWrapped = true
+				gBlock.Parent = card
+				local gLines = {"👥 Top 5 amis :"}
+				for i, f in ipairs(data.friendsList) do
+					if i > 5 then break end
+					table.insert(gLines, "  • " .. f)
+				end
+				gBlock.Text = table.concat(gLines, "\n")
+			end
+
+			-- Bloc "Historique usernames"
+			if data.usernameHistory and #data.usernameHistory > 0 then
+				local gBlock = Instance.new("TextLabel")
+				gBlock.Size = UDim2.new(1, -16, 0, 60)
+				gBlock.Position = UDim2.new(0, 8, 0, 590)
+				gBlock.BackgroundTransparency = 1
+				gBlock.TextXAlignment = Enum.TextXAlignment.Left
+				gBlock.TextYAlignment = Enum.TextYAlignment.Top
+				gBlock.Font = Enum.Font.Gotham
+				gBlock.TextSize = 10
+				gBlock.TextColor3 = Color3.fromRGB(255, 220, 130)
+				gBlock.TextWrapped = true
+				gBlock.Parent = card
+				local gLines = {"🔄 Anciens usernames :"}
+				for i, h in ipairs(data.usernameHistory) do
+					if i > 4 then break end
+					table.insert(gLines, "  • " .. h)
+				end
+				gBlock.Text = table.concat(gLines, "\n")
+			end
+
+			-- Bloc "Outfits / Tenues"
+			if data.outfits and #data.outfits > 0 then
+				local gBlock = Instance.new("TextLabel")
+				gBlock.Size = UDim2.new(1, -16, 0, 50)
+				gBlock.Position = UDim2.new(0, 8, 0, 660)
+				gBlock.BackgroundTransparency = 1
+				gBlock.TextXAlignment = Enum.TextXAlignment.Left
+				gBlock.TextYAlignment = Enum.TextYAlignment.Top
+				gBlock.Font = Enum.Font.Gotham
+				gBlock.TextSize = 10
+				gBlock.TextColor3 = Color3.fromRGB(180, 230, 230)
+				gBlock.TextWrapped = true
+				gBlock.Parent = card
+				local gLines = {"👗 Tenues (" .. (data.wearingCount or 0) .. " équipés) :"}
+				for i, o in ipairs(data.outfits) do
+					if i > 3 then break end
+					table.insert(gLines, "  • " .. o)
+				end
+				gBlock.Text = table.concat(gLines, "\n")
+			end
+
+			-- Bloc "Inventaire / Trades / Email"
+			local extraLines = {}
+			if data.inventory and next(data.inventory) then
+				local totalItems = 0
+				local breakdown = {}
+				for atype, count in pairs(data.inventory) do
+					totalItems = totalItems + count
+					table.insert(breakdown, atype .. ":" .. count)
+				end
+				if totalItems > 0 then
+					table.insert(extraLines, "🎒 Inventaire : " .. totalItems .. " items (" .. table.concat(breakdown, ", ") .. ")")
+				end
+			end
+			if data.hasEmail ~= nil then
+				table.insert(extraLines, "📧 Email : " .. (data.hasEmail and "oui" or "non") ..
+					(data.emailVerified and " (vérifié)" or " (non vérifié)"))
+			end
+			if data.lastOnlineText then
+				table.insert(extraLines, "⏰ Dernière connexion : " .. data.lastOnlineText)
+			end
+			if data.premiumUntil then
+				table.insert(extraLines, "⭐ Premium jusqu'à : " .. tostring(data.premiumUntil):sub(1, 10))
+			end
+			if data.tradePrivacy then
+				table.insert(extraLines, "💱 Trades : " .. data.tradePrivacy ..
+					" (in:" .. (data.tradesInbound or 0) ..
+					" out:" .. (data.tradesOutbound or 0) ..
+					" actifs:" .. (data.tradesActive or 0) .. ")")
+			end
+			if #extraLines > 0 then
+				local gBlock = Instance.new("TextLabel")
+				gBlock.Size = UDim2.new(1, -16, 0, 110)
+				gBlock.Position = UDim2.new(0, 8, 0, 700)
+				gBlock.BackgroundTransparency = 1
+				gBlock.TextXAlignment = Enum.TextXAlignment.Left
+				gBlock.TextYAlignment = Enum.TextYAlignment.Top
+				gBlock.Font = Enum.Font.Gotham
+				gBlock.TextSize = 10
+				gBlock.TextColor3 = Color3.fromRGB(200, 200, 200)
+				gBlock.TextWrapped = true
+				gBlock.Parent = card
+				gBlock.Text = table.concat(extraLines, "\n")
+			end
 		end
-		gBlock.Text = table.concat(gLines, "\n")
-	end
-end
 
 -- Effectue la recherche
 function runRegistrySearch(query)
@@ -5110,16 +5238,197 @@ function runRegistrySearch(query)
 			end)
 
 			-- 6g) Avatar items (ce qu'il porte)
-			pcall(function()
-				local r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/avatar")
-				if r and r ~= "" then
-					local d2 = HttpService:JSONDecode(r)
-					if d2 then
-						data.avatarHatCount = d2.numHats or 0
-						data.avatarBody = d2.bodyColors and "Personnalisé" or "Classique"
+				pcall(function()
+					local r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/avatar")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 then
+							data.avatarHatCount = d2.numHats or 0
+							data.avatarBody = d2.bodyColors and "Personnalisé" or "Classique"
+						end
 					end
-				end
-			end)
+				end)
+
+				-- 6h) Currently wearing (accessoires actuellement équipés)
+				pcall(function()
+					local r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/currently-wearing")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 and d2.assetIds then
+							data.wearingCount = #d2.assetIds
+						end
+					end
+				end)
+
+				-- 6i) Tenues (outfits)
+				pcall(function()
+					local r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/outfits?page=1&itemsPerPage=10&isEditable=false")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 and d2.data and #d2.data > 0 then
+							data.outfits = {}
+							for i, o in ipairs(d2.data) do
+								if i > 5 then break end
+								if o.name then table.insert(data.outfits, o.name) end
+							end
+						end
+					end
+				end)
+
+				-- 6j) Historique des usernames (avec dates)
+				pcall(function()
+					local r = httpGet("https://users.roblox.com/v1/users/" .. userId .. "/username-history?limit=10&sortOrder=Desc")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 and d2.data and #d2.data > 0 then
+							data.usernameHistory = {}
+							for i, h in ipairs(d2.data) do
+								if i > 5 then break end
+								if h.name then
+									local entry = h.name
+									if h.created then
+										entry = entry .. " (" .. tostring(h.created):sub(1, 10) .. ")"
+									end
+									table.insert(data.usernameHistory, entry)
+								end
+							end
+						end
+					end
+				end)
+
+				-- 6k) Groupes avec RÔLE (top 5)
+				pcall(function()
+					local r = httpGet("https://groups.roblox.com/v2/users/" .. userId .. "/groups/roles?includeLocked=true")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 and d2.data and #d2.data > 0 then
+							data.groupsWithRole = {}
+							for i, g in ipairs(d2.data) do
+								if i > 5 then break end
+								local entry = {name=g.group.name or "?", role=(g.role and g.role.name) or "Membre"}
+								table.insert(data.groupsWithRole, entry)
+							end
+						end
+					end
+				end)
+
+				-- 6l) Amis (top 5)
+				pcall(function()
+					local r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/friends?page=1&itemsPerPage=5")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 and d2.data and #d2.data > 0 then
+							data.friendsList = {}
+							for i, f in ipairs(d2.data) do
+								if i > 5 then break end
+								if f.name then table.insert(data.friendsList, f.name) end
+							end
+						end
+					end
+				end)
+
+				-- 6m) Inventaire détaillé (counts par type d'asset)
+				pcall(function()
+					local assetTypes = {
+						"Hat", "HairAccessory", "FaceAccessory", "NeckAccessory",
+						"ShoulderAccessory", "FrontAccessory", "BackAccessory", "WaistAccessory",
+						"Audio", "Badge"
+					}
+					data.inventory = {}
+					for _, atype in ipairs(assetTypes) do
+						local ok, r = pcall(function()
+							return httpGet("https://inventory.roblox.com/v2/users/" .. userId .. "/inventory/" .. atype .. "?page=1&itemsPerPage=1&sortOrder=Desc")
+						end)
+						if ok and r and r ~= "" then
+							local d2 = HttpService:JSONDecode(r)
+							if d2 and d2.totalCount then
+								data.inventory[atype] = d2.totalCount
+							end
+						end
+					end
+				end)
+
+				-- 6n) Last online timestamp
+				pcall(function()
+					local r = httpGet("https://presence.roblox.com/v1/presence/last-online?userId=" .. tostring(userId))
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 and d2.lastOnline then
+							data.lastOnline = d2.lastOnline
+							-- Format epoch ISO
+							local now = os.time()
+							local diff = now - d2.lastOnline
+							if diff < 60 then data.lastOnlineText = "À l'instant"
+							elseif diff < 3600 then data.lastOnlineText = math.floor(diff/60) .. " min"
+							elseif diff < 86400 then data.lastOnlineText = math.floor(diff/3600) .. "h"
+							elseif diff < 604800 then data.lastOnlineText = math.floor(diff/86400) .. "j"
+							else data.lastOnlineText = math.floor(diff/2592000) .. " mois"
+							end
+						end
+					end
+				end)
+
+				-- 6o) Email vérifié / statut 2FA
+				pcall(function()
+					local r = httpGet("https://accountinformation.roblox.com/v1/users/" .. userId .. "/email")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 then
+							data.hasEmail = d2.emailAddress and d2.emailAddress ~= "" or false
+							data.emailVerified = d2.verified or false
+						end
+					end
+				end)
+
+				-- 6p) Premium subscription details (date d'expiration)
+				pcall(function()
+					local r = httpGet("https://billing.roblox.com/v1/users/" .. userId .. "/subscription")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 and d2.expirationDate then
+							data.premiumUntil = d2.expirationDate
+						end
+					end
+				end)
+
+				-- 6q) Stats de jeux créés (visites, favoris, etc.) via placeIds
+				pcall(function()
+					if data.games and #data.games > 0 then
+						-- data.games est une liste de NOMS. On a besoin des universeIds. Skip pour cette version.
+					end
+				end)
+
+				-- 6r) Trade activity (counts)
+				pcall(function()
+					local r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trade-privacy")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 then
+							data.tradePrivacy = d2.tradePrivacy
+						end
+					end
+				end)
+				pcall(function()
+					local r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/inbound/count")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 and d2.count then data.tradesInbound = d2.count end
+					end
+				end)
+				pcall(function()
+					local r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/outbound/count")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 and d2.count then data.tradesOutbound = d2.count end
+					end
+				end)
+				pcall(function()
+					local r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/active/count")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 and d2.count then data.tradesActive = d2.count end
+					end
+				end)
 
 		-- 7) Afficher
 				statusLbl.Text = "Détails de @" .. username .. " :"
