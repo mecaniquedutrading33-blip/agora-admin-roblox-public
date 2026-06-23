@@ -793,6 +793,21 @@ local function createPlayerEntry(plr)
 	infoLeft.TextXAlignment = Enum.TextXAlignment.Left
 	infoLeft.Parent = card
 
+	-- === Colonne droite : statut Roblox + jeu actuel + dernière connexion ===
+	local statusCol = Instance.new("TextLabel")
+	statusCol.Name = "StatusCol"
+	statusCol.Size = UDim2.new(0.42, -6, 0, 60)
+	statusCol.Position = UDim2.new(0.55, 0, 0, 24)
+	statusCol.BackgroundTransparency = 1
+	statusCol.Text = "Statut: ?"
+	statusCol.Font = Enum.Font.GothamSemibold
+	statusCol.TextSize = 10
+	statusCol.TextColor3 = Color3.fromRGB(180, 200, 230)
+	statusCol.TextXAlignment = Enum.TextXAlignment.Right
+	statusCol.TextYAlignment = Enum.TextYAlignment.Top
+	statusCol.TextWrapped = true
+	statusCol.Parent = card
+
 	local distLbl = Instance.new("TextLabel")
 	distLbl.Size = UDim2.new(0.55, -6, 0, 14)
 	distLbl.Position = UDim2.new(0, 6, 0, 38)
@@ -2736,6 +2751,18 @@ local function createSlider(parent, labelText, yPos, min, max, default, callback
 	track.Parent = container
 	createCorner(track, 3)
 
+	-- Bouton invisible par-dessus le track pour capter TOUS les clics (sinon certains
+	-- clics sur le container parent sont perdus → le slider "marche mal")
+	local hitButton = Instance.new("TextButton")
+	hitButton.Size = UDim2.new(1, 0, 0, 24)
+	hitButton.Position = UDim2.new(0, 0, 0, 21)
+	hitButton.BackgroundTransparency = 1
+	hitButton.Text = ""
+	hitButton.BorderSizePixel = 0
+	hitButton.AutoButtonColor = false
+	hitButton.ZIndex = 10
+	hitButton.Parent = container
+
 	local fill = Instance.new("Frame")
 	fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
 	fill.BackgroundColor3 = color or Color3.fromRGB(80, 150, 255)
@@ -2758,6 +2785,13 @@ local function createSlider(parent, labelText, yPos, min, max, default, callback
 	end
 
 	track.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			draggingSlider = true
+			setFromInput(input.Position.X)
+		end
+	end)
+	-- Hit invisible capte les clics n'importe où sur la zone (Y=21..45), pas seulement le track (6px)
+	hitButton.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			draggingSlider = true
 			setFromInput(input.Position.X)
