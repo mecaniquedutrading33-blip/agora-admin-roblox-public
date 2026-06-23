@@ -5178,10 +5178,11 @@ local function renderResult(data, parent)
 	big.LayoutOrder = 1
 	big.Parent = card
 
-	-- === Colonne droite : ViewportFrame avec l'avatar 3D ===
+	-- === Colonne droite : ImageLabel avec la photo 2D du joueur (thumbnail) ===
+	-- Fallback: InsertService (avatar 3D manequin) est bloqué par certains exécuteurs → on affiche la photo thumbnail
 	local avatarHolder = Instance.new("Frame")
 	avatarHolder.Name = "AvatarHolder"
-	avatarHolder.Size = UDim2.new(0, 160, 0, 200) -- FIXE pour contenir l'avatar
+	avatarHolder.Size = UDim2.new(0, 160, 0, 200)
 	avatarHolder.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
 	avatarHolder.BorderSizePixel = 0
 	avatarHolder.LayoutOrder = 2
@@ -5189,11 +5190,11 @@ local function renderResult(data, parent)
 	createCorner(avatarHolder, 8)
 	createStroke(avatarHolder, Color3.fromRGB(120, 80, 255), 1.5)
 
-	-- Label "Chargement..." par-dessus tant que l'avatar n'est pas prêt
+	-- Label "Chargement..." par-dessus tant que la photo n'est pas prête
 	local avatarLoading = Instance.new("TextLabel")
 	avatarLoading.Size = UDim2.new(1, 0, 1, 0)
 	avatarLoading.BackgroundTransparency = 1
-	avatarLoading.Text = "🧍\nChargement\navatar 3D..."
+	avatarLoading.Text = "🖼️\nChargement\nphoto..."
 	avatarLoading.Font = Enum.Font.GothamSemibold
 	avatarLoading.TextSize = 11
 	avatarLoading.TextColor3 = Color3.fromRGB(150, 150, 180)
@@ -5201,15 +5202,19 @@ local function renderResult(data, parent)
 	avatarLoading.ZIndex = 5
 	avatarLoading.Parent = avatarHolder
 
-	-- ViewportFrame
-	local viewport = Instance.new("ViewportFrame")
-	viewport.Size = UDim2.new(1, -8, 1, -8)
-	viewport.Position = UDim2.new(0, 4, 0, 4)
-	viewport.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
-	viewport.BorderSizePixel = 0
-	viewport.ZIndex = 2
-	viewport.Parent = avatarHolder
-	createCorner(viewport, 6)
+	-- ImageLabel (photo 2D du joueur, thumbnail 150x150)
+	local avatarImg = Instance.new("ImageLabel")
+	avatarImg.Name = "AvatarImg"
+	avatarImg.Size = UDim2.new(1, -8, 1, -8)
+	avatarImg.Position = UDim2.new(0, 4, 0, 4)
+	avatarImg.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+	avatarImg.BackgroundTransparency = 1
+	avatarImg.BorderSizePixel = 0
+	avatarImg.ScaleType = Enum.ScaleType.Fit
+	avatarImg.Image = "" -- sera rempli après chargement
+	avatarImg.ZIndex = 2
+	avatarImg.Parent = avatarHolder
+	createCorner(avatarImg, 6)
 
 	-- Construire la liste des lignes (une par champ)
 	local friendsText = joinOrIndi(data.friendsList, ", ", 5)
@@ -5299,90 +5304,32 @@ local function renderResult(data, parent)
 		pcall(function() big.Size = UDim2.new(1, -180, 0, big.TextBounds.Y + 4) end)
 	end)
 
-	-- === Charger l'avatar 3D dans le ViewportFrame ===
-	-- Approche : Players:GetHumanoidDescriptionFromUserId → InsertService:LoadAsset(dummy R15) → ApplyDescription
+	-- === Charger la photo thumbnail dans l'ImageLabel ===
+	-- Approche : URL Roblox directe (marche même quand Players:GetUserThumbnailAsync bloque)
+	-- Format: http://www.roblox.com/Thumbs/Avatar.ashx?x=150&y=150&userId={userId}
 	if data.userId then
+		local userId = data.userId
+		-- URL directe thumbnail Roblox (image PNG, marche via ContentProvider)
+		local directUrl = "http://www.roblox.com/Thumbs/Avatar.ashx?x=150&y=150&userId=" .. tostring(userId)
 		task.spawn(function()
-			local userId = data.userId
-			local success = false
 			pcall(function()
-				-- 1) Récupérer la description humaine
-				local humanoidDesc = Players:GetHumanoidDescriptionFromUserId(userId)
-				if not humanoidDesc then error("no desc") end
-
-				-- 2) Charger un dummy R15 manequin
-				local InsertService = game:GetService("InsertService")
-				local dummyModel = InsertService:LoadAsset(7365808303) -- Mannequin R15
-				if not dummyModel then error("no dummy") end
-
-				local char = dummyModel:FindFirstChildWhichIsA("Model")
-				if not char then
-					for _, c in ipairs(dummyModel:GetChildren()) do
-						if c:IsA("Model") then char = c break end
-					end
-				end
-				if not char then
-					dummyModel:Destroy()
-					error("no char in dummy")
-				end
-
-				-- 3) Appliquer la description (habille le mannequin)
-				local humanoid = char:FindFirstChildOfClass("Humanoid")
-				if humanoid then
-					humanoid:ApplyDescription(humanoidDesc)
-				end
-
-				-- 4) Mettre le modèle dans le ViewportFrame
-				char.Parent = viewport
-
-				-- 5) Camera qui cadre le perso
-				local cam = Instance.new("Camera")
-				cam.Parent = viewport
-				viewport.CurrentCamera = cam
-
-				-- Position de la camera : on cadre le perso (hauteur ~5 unités pour R15)
-				pcall(function()
-					local cf, size = char:GetBoundingBox()
-					local center = cf.Position
-					local maxSize = math.max(size.X, size.Y, size.Z)
-					local distance = maxSize * 2.2
-					cam.CFrame = CFrame.new(center + Vector3.new(0, 0.5, 0) + Vector3.new(0, 0, distance), center)
-				end)
-
-				-- 6) Animation lente (rotation continue)
-				task.spawn(function()
-					local angle = 0
-					while char and char.Parent do
-						angle = angle + 0.5
-						pcall(function()
-							local cf, size = char:GetBoundingBox()
-							local center = cf.Position
-							local maxSize = math.max(size.X, size.Y, size.Z)
-							local distance = maxSize * 2.2
-							cam.CFrame = CFrame.new(
-								center + Vector3.new(math.cos(angle) * distance, 0.5, math.sin(angle) * distance),
-								center
-							)
-						end)
-						task.wait(0.03)
+				avatarImg.Image = directUrl
+				-- Attendre un peu que l'image charge, puis enlever le label
+				task.delay(1.5, function()
+					if avatarLoading and avatarLoading.Parent then
+						avatarLoading:Destroy()
 					end
 				end)
-
-				-- 7) Enlever le label "Chargement..."
-				if avatarLoading and avatarLoading.Parent then
-					avatarLoading:Destroy()
-				end
-
-				success = true
 			end)
-
-			if not success then
-				if avatarLoading and avatarLoading.Parent then
-					avatarLoading.Text = "❌ Avatar\nindisponible\n(api bloquée?)"
-					avatarLoading.TextColor3 = Color3.fromRGB(220, 100, 100)
-				end
-			end
 		end)
+		-- Fallback optionnel via data.avatarUrl (ThumbnailAsync déjà chargé)
+		if data.avatarUrl and data.avatarUrl ~= "" then
+			task.delay(0.5, function()
+				pcall(function()
+					avatarImg.Image = data.avatarUrl
+				end)
+			end)
+		end
 	end
 
 	return card
