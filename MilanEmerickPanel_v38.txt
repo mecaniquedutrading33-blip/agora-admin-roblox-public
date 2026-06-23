@@ -4596,8 +4596,8 @@ serverLayout.Padding = UDim.new(0, 6)
 serverLayout.SortOrder = Enum.SortOrder.LayoutOrder
 serverLayout.Parent = serverScroll
 
--- Wrap du contenu Remotes dans un do...end pour limiter les 200 registers
-do
+-- Wrap du contenu Remotes dans une fonction locale pour limiter les 200 registers
+local function _wrapRemotes()
 	-- Avertissement en haut
 	local remoteWarn = Instance.new("Frame")
 	remoteWarn.Size = UDim2.new(1, -8, 0, 60)
@@ -4632,7 +4632,7 @@ do
 	warnDesc.TextYAlignment = Enum.TextYAlignment.Top
 	warnDesc.Parent = remoteWarn
 
-	-- Helpers: scanne tous les remotes du jeu (ReplicatedStorage + descendants)
+	-- Helpers: scanne tous les remotes du jeu
 	local function collectRemotes()
 		local remotes = {}
 		pcall(function()
@@ -4866,22 +4866,21 @@ do
 
 	refreshRemotesBtn.MouseButton1Click:Connect(refreshRemotesList)
 	task.defer(refreshRemotesList)
-end -- fin du bloc Remotes
+end
+_wrapRemotes() -- Exécute le wrap (IIFE pattern pour limiter les 200 registers)
 
 -- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
 local function buildRegistrySection(parentPage)
 	-- Utilise le registryScroll global pour contenir tout le contenu du Registry.
-	-- Les enfants directs de parentPage (searchBox, searchBtn, registryCard) seront reparentés
-	-- vers registryScroll à la fin de la fonction (pattern localPage).
 	local scroll = registryScroll
 local registryCard = Instance.new("Frame")
 registryCard.Size = UDim2.new(1, -8, 0, 480)
 registryCard.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 registryCard.BorderSizePixel = 0
 registryCard.LayoutOrder = 999
-registryCard.Parent = scroll -- sera registryScroll via le local scroll = registryScroll en début de fonction
+registryCard.Parent = scroll -- registryScroll via le local scroll = registryScroll en début de fonction
 createCorner(registryCard, 10)
 createStroke(registryCard, Color3.fromRGB(120, 80, 255), 1.2)
 
@@ -5514,7 +5513,7 @@ end
 -- Tout le contenu (searchBox, searchBtn, registryCard) est reparenté vers registryScroll à la fin
 buildRegistrySection(registryPage)
 
--- Reparent automatique: tous les enfants directs de registryPage (sauf registryScroll) vont dans registryScroll
+-- Reparent: tous les enfants directs de registryPage (sauf registryScroll) vont dans registryScroll
 for _, child in ipairs(registryPage:GetChildren()) do
 	if child ~= registryScroll then
 		child.Parent = registryScroll
