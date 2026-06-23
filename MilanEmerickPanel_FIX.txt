@@ -1512,6 +1512,51 @@ local function createPlayerEntry(plr)
 						end
 					end
 				end)
+				-- Présence actuelle : est-ce qu'il joue EN CE MOMENT à ce jeu précis ?
+				pcall(function()
+					local resp = game:HttpGet("https://presence.roblox.com/v1/presence/users", true, HttpService:JSONEncode({userIds = {plr.UserId}}))
+					if resp and resp ~= "" then
+						local d = HttpService:JSONDecode(resp)
+						if d and d.userPresences and d.userPresences[1] then
+							local p = d.userPresences[1]
+							local status = p.userPresenceType == 0 and "En ligne" or (p.userPresenceType == 1 and "En jeu" or (p.userPresenceType == 2 and "Au studio" or "Hors ligne"))
+							table.insert(extra, "Présence : " .. status)
+							if p.lastLocation and p.lastLocation ~= "" then
+								table.insert(extra, "Dernier lieu : " .. tostring(p.lastLocation))
+							end
+							if p.universeId and tostring(p.universeId) == tostring(game.GameId) then
+								table.insert(extra, "★ JOUE ACTUELLEMENT À CE JEU")
+							end
+							if p.lastOnline then
+								table.insert(extra, "Vu la dernière fois : " .. tostring(p.lastOnline))
+							end
+						end
+					end
+				end)
+				-- Jeux favoris (jusqu'à 5)
+				pcall(function()
+					local resp = game:HttpGet("https://games.roblox.com/v1/users/" .. plr.UserId .. "/favorite/games?sortOrder=Desc&limit=5")
+					if resp and resp ~= "" then
+						local d = HttpService:JSONDecode(resp)
+						if d and d.data and #d.data > 0 then
+							table.insert(extra, "--- Jeux favoris (" .. #d.data .. ") ---")
+							for i, g in ipairs(d.data) do
+								if i > 5 then break end
+								if g.name then
+									local favName = g.name:sub(1, 40) .. (g.name:len() > 40 and "..." or "")
+									local favNote = ""
+									if g.universeId and tostring(g.universeId) == tostring(game.GameId) then
+										favNote = " ★ (CE JEU)"
+									end
+									table.insert(extra, "• " .. favName .. favNote)
+								end
+							end
+						end
+					end
+				end)
+				-- Note API : Roblox n'expose pas publiquement le nombre exact de fois qu'un user a visité un jeu
+				table.insert(extra, "---")
+				table.insert(extra, "Note : Roblox ne donne pas le nombre exact de visites par user/jeu publiquement.")
 				-- Concat avec contenu initial
 				if #extra > 0 then
 					local base = {
@@ -1523,7 +1568,7 @@ local function createPlayerEntry(plr)
 					}
 					setText(table.concat(base, "\n") .. "\n" .. table.concat(extra, "\n"))
 				end
-			end)
+				end)
 		end)
 	end)
 
