@@ -392,8 +392,25 @@ local playersPage = createTab("Joueurs")
 local movePage = createTab("Move")
 local extraPage = createTab("Extra")
 local remotesPage = createTab("Remotes")
+local registryPage = createTab("Registry")
 local localPage = createTab("Local")
 local protectionsPage = createTab("Protections")
+
+-- ============= REGISTRY SCROLL =============
+local registryScroll = Instance.new("ScrollingFrame")
+registryScroll.Size = UDim2.new(1, 0, 1, 0)
+registryScroll.BackgroundTransparency = 1
+registryScroll.ScrollBarThickness = 4
+registryScroll.BorderSizePixel = 0
+registryScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+registryScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
+registryScroll.Parent = registryPage
+createCorner(registryScroll, 4)
+
+local registryLayout = Instance.new("UIListLayout")
+registryLayout.Padding = UDim.new(0, 4)
+registryLayout.SortOrder = Enum.SortOrder.LayoutOrder
+registryLayout.Parent = registryScroll
 
 local localScroll = Instance.new("ScrollingFrame")
 localScroll.Size = UDim2.new(1, 0, 1, 0)
@@ -709,21 +726,23 @@ searchBox.Parent = playersPage
 createCorner(searchBox, 8)
 createStroke(searchBox, Color3.fromRGB(80, 80, 100), 1)
 
+-- ============= JOUEURS =============
+-- Layout : searchBox en haut, puis serverStatsBar (stats toujours visibles), puis playersScroll
 local playersScroll = Instance.new("ScrollingFrame")
-playersScroll.Size = UDim2.new(1, -10, 1, -55)
-playersScroll.Position = UDim2.new(0, 5, 0, 38)
+playersScroll.Size = UDim2.new(1, -10, 1, -110)
+playersScroll.Position = UDim2.new(0, 5, 0, 100)
 playersScroll.BackgroundTransparency = 1
 playersScroll.ScrollBarThickness = 4
 playersScroll.BorderSizePixel = 0
 playersScroll.Parent = playersPage
 
--- ============= STATS SERVEUR (intégré en haut de Joueurs, masqué par défaut) =============
+-- ============= STATS SERVEUR (intégré en haut de Joueurs, TOUJOURS VISIBLE) =============
 local serverStatsBar = Instance.new("Frame")
 serverStatsBar.Size = UDim2.new(1, -10, 0, 50)
-serverStatsBar.Position = UDim2.new(0, 5, 0, 36)
+serverStatsBar.Position = UDim2.new(0, 5, 0, 42)
 serverStatsBar.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 serverStatsBar.BorderSizePixel = 0
-serverStatsBar.Visible = false
+serverStatsBar.Visible = true
 serverStatsBar.Parent = playersPage
 createCorner(serverStatsBar, 6)
 createStroke(serverStatsBar, Color3.fromRGB(60, 60, 80), 1)
@@ -806,28 +825,8 @@ task.spawn(function()
 	end
 end)
 
-local toggleStatsBtn = Instance.new("TextButton")
-toggleStatsBtn.Size = UDim2.new(0, 22, 0, 22)
-toggleStatsBtn.Position = UDim2.new(1, -27, 0, 38)
-toggleStatsBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
-toggleStatsBtn.Text = "📊"
-toggleStatsBtn.Font = Enum.Font.Gotham
-toggleStatsBtn.TextSize = 12
-toggleStatsBtn.TextColor3 = Color3.fromRGB(230, 230, 240)
-toggleStatsBtn.BorderSizePixel = 0
-toggleStatsBtn.Parent = playersPage
-createCorner(toggleStatsBtn, 4)
-toggleStatsBtn.MouseButton1Click:Connect(function()
-	serverStatsBar.Visible = not serverStatsBar.Visible
-	if serverStatsBar.Visible then
-		playersScroll.Position = UDim2.new(0, 5, 0, 92)
-		playersScroll.Size = UDim2.new(1, -10, 1, -110)
-	else
-		playersScroll.Position = UDim2.new(0, 5, 0, 38)
-		playersScroll.Size = UDim2.new(1, -10, 1, -55)
-	end
-end)
-
+-- Bouton toggle retiré : la barre de stats est maintenant TOUJOURS visible en haut de Joueurs.
+-- Le playersScroll commence en dessous de la barre de stats (Position = 92, Height = 1 - 110).
 local playersLayout = Instance.new("UIListLayout")
 playersLayout.Padding = UDim.new(0, 6)
 playersLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -4580,29 +4579,309 @@ end)
 
 
 -- ============= REMOTES (anciennement SERVEUR) =============
--- Les stats serveur sont dans la page Joueurs (voir plus haut). Cet onglet ne contient que le Registry.
+-- Cet onglet liste tous les RemoteEvents/RemoteFunctions du jeu et permet de les Fire
+-- avec nos propres arguments. ATTENTION : ça touche au serveur.
 local serverScroll = Instance.new("ScrollingFrame")
 serverScroll.Size = UDim2.new(1, -10, 1, -10)
 serverScroll.Position = UDim2.new(0, 5, 0, 5)
 serverScroll.BackgroundTransparency = 1
 serverScroll.ScrollBarThickness = 4
+serverScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+serverScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
 serverScroll.Parent = remotesPage
+createCorner(serverScroll, 4)
 
 local serverLayout = Instance.new("UIListLayout")
 serverLayout.Padding = UDim.new(0, 6)
 serverLayout.SortOrder = Enum.SortOrder.LayoutOrder
 serverLayout.Parent = serverScroll
 
+-- Wrap du contenu Remotes dans un do...end pour limiter les 200 registers
+do
+	-- Avertissement en haut
+	local remoteWarn = Instance.new("Frame")
+	remoteWarn.Size = UDim2.new(1, -8, 0, 60)
+	remoteWarn.BackgroundColor3 = Color3.fromRGB(80, 30, 30)
+	remoteWarn.BorderSizePixel = 0
+	remoteWarn.LayoutOrder = -100
+	remoteWarn.Parent = serverScroll
+	createCorner(remoteWarn, 6)
+	createStroke(remoteWarn, Color3.fromRGB(220, 80, 80), 1.5)
+
+	local warnTitle = Instance.new("TextLabel")
+	warnTitle.Size = UDim2.new(1, -16, 0, 22)
+	warnTitle.Position = UDim2.new(0, 8, 0, 6)
+	warnTitle.BackgroundTransparency = 1
+	warnTitle.Text = "⚠ ATTENTION — REMOTES DU JEU"
+	warnTitle.TextColor3 = Color3.fromRGB(255, 100, 100)
+	warnTitle.TextSize = 14
+	warnTitle.Font = Enum.Font.GothamBold
+	warnTitle.TextXAlignment = Enum.TextXAlignment.Left
+	warnTitle.Parent = remoteWarn
+
+	local warnDesc = Instance.new("TextLabel")
+	warnDesc.Size = UDim2.new(1, -16, 0, 30)
+	warnDesc.Position = UDim2.new(0, 8, 0, 28)
+	warnDesc.BackgroundTransparency = 1
+	warnDesc.Text = "Tu peux Fire n'importe quel RemoteEvent/Function du jeu avec tes propres arguments. Ça touche directement au serveur — utilise avec précaution."
+	warnDesc.TextColor3 = Color3.fromRGB(220, 200, 200)
+	warnDesc.TextSize = 11
+	warnDesc.Font = Enum.Font.Gotham
+	warnDesc.TextWrapped = true
+	warnDesc.TextXAlignment = Enum.TextXAlignment.Left
+	warnDesc.TextYAlignment = Enum.TextYAlignment.Top
+	warnDesc.Parent = remoteWarn
+
+	-- Helpers: scanne tous les remotes du jeu (ReplicatedStorage + descendants)
+	local function collectRemotes()
+		local remotes = {}
+		pcall(function()
+			for _, obj in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+					table.insert(remotes, obj)
+				end
+			end
+		end)
+		pcall(function()
+			for _, obj in ipairs(workspace:GetDescendants()) do
+				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+					table.insert(remotes, obj)
+				end
+			end
+		end)
+		pcall(function()
+			for _, obj in ipairs(game.Players.LocalPlayer:GetDescendants()) do
+				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+					table.insert(remotes, obj)
+				end
+			end
+		end)
+		return remotes
+	end
+
+	-- Header "Remotes détectés (N)" + bouton refresh
+	local remoteHeader = Instance.new("Frame")
+	remoteHeader.Size = UDim2.new(1, -8, 0, 32)
+	remoteHeader.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+	remoteHeader.BorderSizePixel = 0
+	remoteHeader.LayoutOrder = -50
+	remoteHeader.Parent = serverScroll
+	createCorner(remoteHeader, 4)
+
+	local remoteCount = Instance.new("TextLabel")
+	remoteCount.Size = UDim2.new(1, -50, 1, 0)
+	remoteCount.Position = UDim2.new(0, 8, 0, 0)
+	remoteCount.BackgroundTransparency = 1
+	remoteCount.Text = "Remotes détectés : 0"
+	remoteCount.TextColor3 = Color3.fromRGB(200, 200, 220)
+	remoteCount.TextSize = 12
+	remoteCount.Font = Enum.Font.GothamBold
+	remoteCount.TextXAlignment = Enum.TextXAlignment.Left
+	remoteCount.Parent = remoteHeader
+
+	local refreshRemotesBtn = Instance.new("TextButton")
+	refreshRemotesBtn.Size = UDim2.new(0, 28, 0, 22)
+	refreshRemotesBtn.Position = UDim2.new(1, -36, 0, 5)
+	refreshRemotesBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
+	refreshRemotesBtn.BorderSizePixel = 0
+	refreshRemotesBtn.Text = "↻"
+	refreshRemotesBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
+	refreshRemotesBtn.TextSize = 16
+	refreshRemotesBtn.Font = Enum.Font.GothamBold
+	refreshRemotesBtn.Parent = remoteHeader
+	createCorner(refreshRemotesBtn, 4)
+
+	-- Container des cartes de remotes
+	local remoteListFrame = Instance.new("Frame")
+	remoteListFrame.Size = UDim2.new(1, 0, 0, 0)
+	remoteListFrame.BackgroundTransparency = 1
+	remoteListFrame.AutomaticSize = Enum.AutomaticSize.Y
+	remoteListFrame.LayoutOrder = 0
+	remoteListFrame.Parent = serverScroll
+
+	local remoteListLayout = Instance.new("UIListLayout")
+	remoteListLayout.Padding = UDim.new(0, 4)
+	remoteListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	remoteListLayout.Parent = remoteListFrame
+
+	-- Fonction: crée une carte pour un remote
+	local function makeRemoteCard(remote)
+		local isFunction = remote:IsA("RemoteFunction")
+		local card = Instance.new("Frame")
+		card.Size = UDim2.new(1, -8, 0, 110)
+		card.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+		card.BorderSizePixel = 0
+		card.LayoutOrder = 1
+		card.Parent = remoteListFrame
+		createCorner(card, 6)
+		createStroke(card, isFunction and Color3.fromRGB(255, 180, 80) or Color3.fromRGB(80, 180, 255), 1)
+
+		local header = Instance.new("TextLabel")
+		header.Size = UDim2.new(1, -16, 0, 20)
+		header.Position = UDim2.new(0, 8, 0, 4)
+		header.BackgroundTransparency = 1
+		header.Text = (isFunction and "[FN] " or "[EV] ") .. remote:GetFullName()
+		header.TextColor3 = isFunction and Color3.fromRGB(255, 200, 120) or Color3.fromRGB(140, 200, 255)
+		header.TextSize = 11
+		header.Font = Enum.Font.GothamBold
+		header.TextXAlignment = Enum.TextXAlignment.Left
+		header.TextTruncate = Enum.TextTruncate.AtEnd
+		header.Parent = card
+
+		local argsBox = Instance.new("TextBox")
+		argsBox.Size = UDim2.new(1, -90, 0, 24)
+		argsBox.Position = UDim2.new(0, 8, 0, 28)
+		argsBox.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+		argsBox.BorderSizePixel = 0
+		argsBox.Text = ""
+		argsBox.PlaceholderText = "args (ex: \"hello\", 42, true)"
+		argsBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
+		argsBox.TextColor3 = Color3.fromRGB(220, 220, 240)
+		argsBox.TextSize = 11
+		argsBox.Font = Enum.Font.Code
+		argsBox.TextXAlignment = Enum.TextXAlignment.Left
+		argsBox.ClearTextOnFocus = false
+		argsBox.Parent = card
+		createCorner(argsBox, 4)
+
+		local fireBtn = Instance.new("TextButton")
+		fireBtn.Size = UDim2.new(0, 64, 0, 24)
+		fireBtn.Position = UDim2.new(1, -72, 0, 28)
+		fireBtn.BackgroundColor3 = isFunction and Color3.fromRGB(180, 100, 30) or Color3.fromRGB(40, 120, 200)
+		fireBtn.BorderSizePixel = 0
+		fireBtn.Text = isFunction and "Invoke" or "Fire"
+		fireBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		fireBtn.TextSize = 12
+		fireBtn.Font = Enum.Font.GothamBold
+		fireBtn.Parent = card
+		createCorner(fireBtn, 4)
+
+		local resultLbl = Instance.new("TextLabel")
+		resultLbl.Size = UDim2.new(1, -16, 0, 50)
+		resultLbl.Position = UDim2.new(0, 8, 0, 58)
+		resultLbl.BackgroundTransparency = 1
+		resultLbl.Text = ""
+		resultLbl.TextColor3 = Color3.fromRGB(180, 220, 180)
+		resultLbl.TextSize = 10
+		resultLbl.Font = Enum.Font.Code
+		resultLbl.TextWrapped = true
+		resultLbl.TextXAlignment = Enum.TextXAlignment.Left
+		resultLbl.TextYAlignment = Enum.TextYAlignment.Top
+		resultLbl.Parent = card
+
+		-- Parseur d'arguments simples
+		local function parseArgs(str)
+			if not str or str == "" then return {} end
+			local args = {}
+			local i = 1
+			while i <= #str do
+				while i <= #str and str:sub(i, i):match("%s") do i = i + 1 end
+				if i > #str then break end
+				local c = str:sub(i, i)
+				if c == '"' then
+					local j = i + 1
+					local s = ""
+					while j <= #str and str:sub(j, j) ~= '"' do
+						s = s .. str:sub(j, j)
+						j = j + 1
+					end
+					table.insert(args, s)
+					i = j + 1
+				elseif c == "t" and str:sub(i, i+3) == "true" then
+					table.insert(args, true)
+					i = i + 4
+				elseif c == "f" and str:sub(i, i+4) == "false" then
+					table.insert(args, false)
+					i = i + 5
+				elseif c == "n" and str:sub(i, i+2) == "nil" then
+					table.insert(args, nil)
+					i = i + 3
+				elseif c:match("%d") or c == "-" then
+					local j = i
+					while j <= #str and (str:sub(j, j):match("[%d%.%-eE+]")) do
+						j = j + 1
+					end
+					local numStr = str:sub(i, j - 1)
+					local num = tonumber(numStr)
+					if num then
+						table.insert(args, num)
+					else
+						table.insert(args, numStr)
+					end
+					i = j
+				else
+					local j = i
+					while j <= #str and str:sub(j, j) ~= "," do
+						j = j + 1
+					end
+					local tok = str:sub(i, j - 1):match("^%s*(.-)%s*$")
+					if tok ~= "" then
+						local num = tonumber(tok)
+						if num then
+							table.insert(args, num)
+						else
+							table.insert(args, tok)
+						end
+					end
+					i = j
+				end
+				while i <= #str and str:sub(i, i) == "," do i = i + 1 end
+			end
+			return args
+		end
+
+		fireBtn.MouseButton1Click:Connect(function()
+			local args = parseArgs(argsBox.Text)
+			resultLbl.Text = "→ Envoi en cours..."
+			resultLbl.TextColor3 = Color3.fromRGB(180, 180, 220)
+			local ok, err = pcall(function()
+				if isFunction then
+					local result = remote:InvokeServer(unpack(args))
+					resultLbl.Text = "✓ Réponse : " .. tostring(result)
+				else
+					remote:FireServer(unpack(args))
+					resultLbl.Text = "✓ Fire envoyé (" .. #args .. " args)"
+				end
+			end)
+			if not ok then
+				resultLbl.Text = "✗ Erreur : " .. tostring(err)
+				resultLbl.TextColor3 = Color3.fromRGB(255, 100, 100)
+			else
+				resultLbl.TextColor3 = Color3.fromRGB(120, 220, 160)
+			end
+		end)
+	end
+
+	-- Remplit la liste
+	local function refreshRemotesList()
+		for _, child in ipairs(remoteListFrame:GetChildren()) do
+			if child:IsA("Frame") then child:Destroy() end
+		end
+		local remotes = collectRemotes()
+		remoteCount.Text = "Remotes détectés : " .. #remotes
+		for _, remote in ipairs(remotes) do
+			makeRemoteCard(remote)
+		end
+	end
+
+	refreshRemotesBtn.MouseButton1Click:Connect(refreshRemotesList)
+	task.defer(refreshRemotesList)
+end -- fin du bloc Remotes
+
 -- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
-local function buildRegistrySection(serverScroll)
+local function buildRegistrySection(parentPage)
+	-- Utilise le registryScroll global pour contenir tout le contenu du Registry.
+	-- Les enfants directs de parentPage (searchBox, searchBtn, registryCard) seront reparentés
+	-- vers registryScroll à la fin de la fonction (pattern localPage).
+	local scroll = registryScroll
 local registryCard = Instance.new("Frame")
 registryCard.Size = UDim2.new(1, -8, 0, 480)
 registryCard.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 registryCard.BorderSizePixel = 0
 registryCard.LayoutOrder = 999
-registryCard.Parent = serverScroll
+registryCard.Parent = scroll -- sera registryScroll via le local scroll = registryScroll en début de fonction
 createCorner(registryCard, 10)
 createStroke(registryCard, Color3.fromRGB(120, 80, 255), 1.2)
 
@@ -4657,158 +4936,6 @@ searchBtn.BorderSizePixel = 0
 searchBtn.AutoButtonColor = false
 searchBtn.Parent = registryCard
 createCorner(searchBtn, 6)
-
--- Dropdown historique
-local historyFrame = Instance.new("Frame")
-historyFrame.Size = UDim2.new(1, -16, 0, 22)
-historyFrame.Position = UDim2.new(0, 8, 0, 80)
-historyFrame.BackgroundTransparency = 1
-historyFrame.Parent = registryCard
-
--- Section "Mes users consultés" — liste tous les users déjà cherchés avec leur statut live
-local consultedUsers = {} -- userId -> {username, displayName, presence, lastSeen, ...}
-
--- Titre + bouton actualiser
-local consultedTitle = Instance.new("TextLabel")
-consultedTitle.Size = UDim2.new(1, -100, 0, 22)
-consultedTitle.Position = UDim2.new(0, 8, 0, 108)
-consultedTitle.BackgroundTransparency = 1
-consultedTitle.Text = "👥 Mes users consultés (statut + jeu actuel)"
-consultedTitle.Font = Enum.Font.GothamBold
-consultedTitle.TextSize = 11
-consultedTitle.TextColor3 = Color3.fromRGB(180, 200, 255)
-consultedTitle.TextXAlignment = Enum.TextXAlignment.Left
-consultedTitle.Parent = registryCard
-
-local refreshAllBtn = Instance.new("TextButton")
-refreshAllBtn.Size = UDim2.new(0, 90, 0, 22)
-refreshAllBtn.Position = UDim2.new(1, -98, 0, 108)
-refreshAllBtn.BackgroundColor3 = Color3.fromRGB(80, 140, 200)
-refreshAllBtn.Text = "🔄 Actualiser"
-refreshAllBtn.Font = Enum.Font.GothamBold
-refreshAllBtn.TextSize = 10
-refreshAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-refreshAllBtn.BorderSizePixel = 0
-refreshAllBtn.AutoButtonColor = false
-refreshAllBtn.Parent = registryCard
-createCorner(refreshAllBtn, 4)
-
--- Container scrollable des users consultés
-local consultedScroll = Instance.new("ScrollingFrame")
-consultedScroll.Name = "ConsultedScroll"
-consultedScroll.Size = UDim2.new(1, -16, 0, 130)
-consultedScroll.Position = UDim2.new(0, 8, 0, 134)
-consultedScroll.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-consultedScroll.BorderSizePixel = 0
-consultedScroll.ScrollBarThickness = 4
-consultedScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-consultedScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-consultedScroll.Parent = registryCard
-createCorner(consultedScroll, 6)
-
-local consultedLayout = Instance.new("UIListLayout")
-consultedLayout.Padding = UDim.new(0, 4)
-consultedLayout.SortOrder = Enum.SortOrder.LayoutOrder
-consultedLayout.Parent = consultedScroll
-
-local historyLabel = Instance.new("TextLabel")
-historyLabel.Size = UDim2.new(0, 60, 1, 0)
-historyLabel.BackgroundTransparency = 1
-historyLabel.Text = "Récent :"
-historyLabel.Font = Enum.Font.Gotham
-historyLabel.TextSize = 10
-historyLabel.TextColor3 = Color3.fromRGB(140, 140, 160)
-historyLabel.TextXAlignment = Enum.TextXAlignment.Left
-historyLabel.Parent = historyFrame
-
-local historyList = Instance.new("Frame")
-historyList.Size = UDim2.new(1, -120, 1, 0)
-historyList.Position = UDim2.new(0, 60, 0, 0)
-historyList.BackgroundTransparency = 1
-historyList.Parent = historyFrame
-
-local clearHistBtn = Instance.new("TextButton")
-clearHistBtn.Size = UDim2.new(0, 50, 0, 18)
-clearHistBtn.Position = UDim2.new(1, -50, 0, 2)
-clearHistBtn.BackgroundColor3 = Color3.fromRGB(120, 60, 60)
-clearHistBtn.Text = "Vider"
-clearHistBtn.Font = Enum.Font.Gotham
-clearHistBtn.TextSize = 9
-clearHistBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearHistBtn.BorderSizePixel = 0
-clearHistBtn.AutoButtonColor = false
-clearHistBtn.Parent = historyFrame
-createCorner(clearHistBtn, 4)
-
--- Zone de résultats (scrollable)
-local resultScroll = Instance.new("ScrollingFrame")
-resultScroll.Size = UDim2.new(1, -16, 0, 200)
-resultScroll.Position = UDim2.new(0, 8, 0, 270)
-resultScroll.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-resultScroll.BorderSizePixel = 0
-resultScroll.ScrollBarThickness = 4
-resultScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-resultScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
-resultScroll.Parent = registryCard
-createCorner(resultScroll, 6)
-createStroke(resultScroll, Color3.fromRGB(45, 45, 55), 1)
-
-local resultLayout = Instance.new("UIListLayout")
-resultLayout.Padding = UDim.new(0, 6)
-resultLayout.SortOrder = Enum.SortOrder.LayoutOrder
-resultLayout.Parent = resultScroll
-
-local statusLbl = Instance.new("TextLabel")
-statusLbl.Size = UDim2.new(1, -12, 0, 30)
-statusLbl.BackgroundTransparency = 1
-statusLbl.Text = "Tape un username (ex: Builderman) ou un UserId (ex: 1) puis clique Rechercher."
-statusLbl.Font = Enum.Font.Gotham
-statusLbl.TextSize = 11
-statusLbl.TextColor3 = Color3.fromRGB(180, 180, 200)
-statusLbl.TextWrapped = true
-statusLbl.LayoutOrder = -1
-statusLbl.Parent = resultScroll
-
--- Historique (persisté dans panelMemory)
-panelMemory.registryHistory = panelMemory.registryHistory or {}
-
-local function refreshHistoryUI()
-	-- Vider les chips d'historique existants
-	for _, c in ipairs(historyList:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
-	local hist = panelMemory.registryHistory or {}
-	for i, name in ipairs(hist) do
-		if i > 5 then break end
-		local chip = Instance.new("TextButton")
-		chip.Size = UDim2.new(0, 70, 0, 18)
-		chip.Position = UDim2.new(0, (i - 1) * 75, 0, 2)
-		chip.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
-		chip.Text = name:sub(1, 10)
-		chip.Font = Enum.Font.Gotham
-		chip.TextSize = 9
-		chip.TextColor3 = Color3.fromRGB(200, 200, 220)
-		chip.BorderSizePixel = 0
-		chip.AutoButtonColor = false
-		chip.Parent = historyList
-		createCorner(chip, 4)
-		chip.MouseButton1Click:Connect(function()
-			searchBox.Text = name
-			runRegistrySearch(name)
-		end)
-	end
-end
-
-local function pushHistory(name)
-	local hist = panelMemory.registryHistory or {}
-	-- Retire si déjà présent
-	for i, h in ipairs(hist) do
-		if h:lower() == name:lower() then table.remove(hist, i) break end
-	end
-	table.insert(hist, 1, name)
-	-- Cap à 10
-	while #hist > 10 do table.remove(hist) end
-	panelMemory.registryHistory = hist
-	refreshHistoryUI()
-end
 
 -- Affiche un résultat (un compte) — TOUTES les infos dans une seule grande case, sans balises HTML
 -- Helper: join a list into a string with separator, or "Indisponible" if empty
@@ -4995,7 +5122,6 @@ function runRegistrySearch(query)
 			return
 		end
 
-		pushHistory(username)
 		statusLbl.Text = "Trouvé : @" .. username .. " — chargement détails..."
 		statusLbl.TextColor3 = Color3.fromRGB(120, 220, 160)
 
@@ -5380,152 +5506,26 @@ function runRegistrySearch(query)
 				end
 				renderResult(data, resultScroll)
 
-				-- 8) Ajouter à la liste "Mes users consultés" (refreshAll met à jour la présence)
-				addConsultedUser(userId, username, displayName, data.accountAge)
 			end)
 		end
 
--- === Section "Mes users consultés" ===
-local consultedCards = {} -- userId -> Frame (la carte dans consultedScroll)
-
-local function refreshConsultedScrollSize()
-	-- AutomaticCanvasSize gère déjà ça, on force juste le repaint
-	task.defer(function()
-		consultedScroll.CanvasSize = UDim2.new(0, 0, 0, consultedLayout.AbsoluteContentSize.Y + 10)
-	end)
 end
+-- Construit la section Registry dans l'onglet Registry (parentPage = registryPage)
+-- Tout le contenu (searchBox, searchBtn, registryCard) est reparenté vers registryScroll à la fin
+buildRegistrySection(registryPage)
 
-local function addConsultedUser(userId, username, displayName, accountAge)
-	if consultedCards[userId] then
-		-- User déjà dans la liste : on refresh son nom/age si changé
-		local card = consultedCards[userId]
-		local nameLbl = card:FindFirstChild("NameLbl")
-		if nameLbl then nameLbl.Text = "@" .. username end
-		return
+-- Reparent automatique: tous les enfants directs de registryPage (sauf registryScroll) vont dans registryScroll
+for _, child in ipairs(registryPage:GetChildren()) do
+	if child ~= registryScroll then
+		child.Parent = registryScroll
 	end
-	local card = Instance.new("Frame")
-	card.Size = UDim2.new(1, -8, 0, 38)
-	card.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
-	card.BorderSizePixel = 0
-	card.Parent = consultedScroll
-	createCorner(card, 4)
-	consultedCards[userId] = card
-
-	local dot = Instance.new("Frame")
-	dot.Size = UDim2.new(0, 8, 0, 8)
-	dot.Position = UDim2.new(0, 6, 0, 6)
-	dot.BackgroundColor3 = Color3.fromRGB(120, 120, 120) -- gris = inconnu
-	dot.BorderSizePixel = 0
-	dot.Parent = card
-	createCorner(dot, 4)
-
-	local nameLbl = Instance.new("TextLabel")
-	nameLbl.Name = "NameLbl"
-	nameLbl.Size = UDim2.new(0.45, -8, 1, 0)
-	nameLbl.Position = UDim2.new(0, 20, 0, 0)
-	nameLbl.BackgroundTransparency = 1
-	nameLbl.Text = "@" .. username
-	nameLbl.Font = Enum.Font.GothamBold
-	nameLbl.TextSize = 11
-	nameLbl.TextColor3 = Color3.fromRGB(230, 230, 250)
-	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-	nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
-	nameLbl.Parent = card
-
-	local statusLbl = Instance.new("TextLabel")
-	statusLbl.Name = "StatusLbl"
-	statusLbl.Size = UDim2.new(0.55, -8, 1, 0)
-	statusLbl.Position = UDim2.new(0.45, 8, 0, 0)
-	statusLbl.BackgroundTransparency = 1
-	statusLbl.Text = "Compte: " .. (accountAge or "?") .. " • …"
-	statusLbl.Font = Enum.Font.Gotham
-	statusLbl.TextSize = 9
-	statusLbl.TextColor3 = Color3.fromRGB(180, 200, 220)
-	statusLbl.TextXAlignment = Enum.TextXAlignment.Left
-	statusLbl.TextXAlignment = Enum.TextXAlignment.Right
-	statusLbl.Parent = card
-
-	-- Click = re-fetch
-	card.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			runRegistrySearch(username)
-		end
-	end)
-	refreshConsultedScrollSize()
 end
-
-local function refreshAllConsultedUsers()
-	local uids = {}
-	for uid, _ in pairs(consultedCards) do table.insert(uids, uid) end
-	if #uids == 0 then return end
-	-- API presence accepte un batch : POST avec {userIds: [...]}
-	pcall(function()
-		local body = HttpService:JSONEncode({userIds = uids})
-		-- API présence en GET : on peut faire une URL avec ?userIds=X,Y,Z
-			local uidsStr = table.concat(uids, ",")
-			local r = httpGet("https://presence.roblox.com/v1/presence/users?userIds=" .. uidsStr)
-		if r and r ~= "" then
-			local d = HttpService:JSONDecode(r)
-			if d and d.userPresences then
-				for _, p in ipairs(d.userPresences) do
-					local card = consultedCards[p.userId]
-					if card then
-						local dot = card:FindFirstChild("Frame") or card:FindFirstChild("Dot")
-						-- On retrouve le dot par couleur (hack simple)
-						local statusLbl = card:FindFirstChild("StatusLbl")
-						if statusLbl then
-							local t = p.userPresenceType
-							local txt, color
-							if t == 0 then
-								txt = "● En ligne (site web)"
-								color = Color3.fromRGB(120, 220, 160)
-							elseif t == 1 then
-								txt = "▶ En jeu : " .. (p.lastLocation or "?")
-								color = Color3.fromRGB(100, 180, 255)
-							elseif t == 2 then
-								txt = "🛠 Au Studio"
-								color = Color3.fromRGB(200, 150, 100)
-							elseif t == 3 then
-								txt = "○ Hors ligne"
-								color = Color3.fromRGB(140, 140, 160)
-							else
-								txt = "? Statut inconnu"
-								color = Color3.fromRGB(180, 180, 180)
-							end
-							statusLbl.Text = txt
-							statusLbl.TextColor3 = color
-						end
-					end
-				end
-			end
-		end
-	end)
-end
-
-refreshAllBtn.MouseButton1Click:Connect(function()
-	refreshAllConsultedUsers()
-end)
-
-searchBtn.MouseButton1Click:Connect(function()
-	runRegistrySearch(searchBox.Text)
-end)
-searchBox.FocusLost:Connect(function(enterPressed)
-	if enterPressed then runRegistrySearch(searchBox.Text) end
-end)
-clearHistBtn.MouseButton1Click:Connect(function()
-	panelMemory.registryHistory = {}
-	refreshHistoryUI()
-end)
-refreshHistoryUI()
-end
-buildRegistrySection(serverScroll)
-
-serverScroll.CanvasSize = UDim2.new(0, 0, 0, serverLayout.AbsoluteContentSize.Y + 10)
-serverLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	serverScroll.CanvasSize = UDim2.new(0, 0, 0, serverLayout.AbsoluteContentSize.Y + 10)
+registryScroll.CanvasSize = UDim2.new(0, 0, 0, registryLayout.AbsoluteContentSize.Y + 10)
+registryLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	registryScroll.CanvasSize = UDim2.new(0, 0, 0, registryLayout.AbsoluteContentSize.Y + 10)
 end)
 task.defer(function()
-	serverScroll.CanvasSize = UDim2.new(0, 0, 0, serverLayout.AbsoluteContentSize.Y + 10)
+	registryScroll.CanvasSize = UDim2.new(0, 0, 0, registryLayout.AbsoluteContentSize.Y + 10)
 end)
 
 -- (L'update des stats FPS/ping est maintenant dans la page Joueurs)
