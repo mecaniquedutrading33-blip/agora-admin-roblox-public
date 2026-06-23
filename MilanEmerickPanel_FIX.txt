@@ -1587,16 +1587,68 @@ local function createPlayerEntry(plr)
 							local d = HttpService:JSONDecode(resp)
 							if d and d.userPresences and d.userPresences[1] then
 								local p = d.userPresences[1]
-								local status = p.userPresenceType == 0 and "En ligne" or (p.userPresenceType == 1 and "En jeu" or (p.userPresenceType == 2 and "Au studio" or "Hors ligne"))
-								table.insert(extra, "Présence : " .. status)
-								if p.lastLocation and p.lastLocation ~= "" then
-									table.insert(extra, "Dernier lieu : " .. tostring(p.lastLocation))
+								-- userPresenceType: 0=Online, 1=InGame, 2=InStudio, 3=Offline
+								-- userPresenceType+1: 1=Online, 2=InGame, 3=InStudio, 4=Offline (selon versions API)
+								local t = tonumber(p.userPresenceType) or 0
+								-- Détection plus fine du statut
+								local status = "Inconnu"
+								local statusIcon = "○"
+								if t == 3 then
+									status = "Hors ligne"
+									statusIcon = "○"
+								elseif t == 2 then
+									status = "Au Studio (développeur)"
+									statusIcon = "🛠"
+								elseif t == 1 then
+									-- Il joue à un jeu
+									if p.lastLocation and p.lastLocation ~= "" then
+										status = "En jeu : " .. tostring(p.lastLocation)
+									else
+										status = "En jeu"
+									end
+									statusIcon = "▶"
+									if p.universeId and tostring(p.universeId) == tostring(game.GameId) then
+										status = "★ JOUE À CE JEU : " .. tostring(p.lastLocation or "")
+										statusIcon = "★"
+									end
+								elseif t == 0 then
+									-- Online : peut être sur le site web / chat / pas dans un jeu
+									if p.lastLocation and p.lastLocation ~= "" then
+										-- Last location = dernier JEU où il a joué
+										status = "En ligne (dernier jeu : " .. tostring(p.lastLocation) .. ")"
+										statusIcon = "●"
+									else
+										status = "En ligne (sur le site Roblox, pas dans un jeu)"
+										statusIcon = "●"
+									end
 								end
-								if p.universeId and tostring(p.universeId) == tostring(game.GameId) then
-									table.insert(extra, "★ JOUE ACTUELLEMENT À CE JEU")
+								table.insert(extra, statusIcon .. " Statut : " .. status)
+								if p.lastLocation and p.lastLocation ~= "" then
+									table.insert(extra, "  • Dernier jeu : " .. tostring(p.lastLocation))
+								end
+								if p.universeId then
+									table.insert(extra, "  • UniverseId : " .. tostring(p.universeId) .. (tostring(p.universeId) == tostring(game.GameId) and " (= CE JEU)" or ""))
 								end
 								if p.lastOnline then
-									table.insert(extra, "Vu la dernière fois : " .. tostring(p.lastOnline))
+									-- Parser lastOnline ISO -> délai relatif
+									local y, mo, da, h, mi, s = p.lastOnline:match("^(%d+)%-(%d+)%-(%d+)T(%d+):(%d+):(%d+)")
+									if y then
+										local epochThen = os.time({year=tonumber(y), month=tonumber(mo), day=tonumber(da), hour=tonumber(h), min=tonumber(mi), sec=tonumber(s)})
+										local diff = os.time() - epochThen
+										if diff < 60 then
+											table.insert(extra, "  • Vu il y a : à l'instant")
+										elseif diff < 3600 then
+											table.insert(extra, "  • Vu il y a : " .. math.floor(diff/60) .. " min")
+										elseif diff < 86400 then
+											table.insert(extra, "  • Vu il y a : " .. math.floor(diff/3600) .. "h " .. math.floor((diff%3600)/60) .. "min")
+										elseif diff < 2592000 then
+											table.insert(extra, "  • Vu il y a : " .. math.floor(diff/86400) .. "j " .. math.floor((diff%86400)/3600) .. "h")
+										else
+											table.insert(extra, "  • Vu le : " .. tostring(p.lastOnline))
+										end
+									else
+										table.insert(extra, "  • Vu la dernière fois : " .. tostring(p.lastOnline))
+									end
 								end
 							end
 						end
