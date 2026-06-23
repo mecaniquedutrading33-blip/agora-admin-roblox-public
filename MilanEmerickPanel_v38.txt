@@ -788,42 +788,46 @@ local function addServerStat(name)
 	return value
 end
 
-local statPlayers = addServerStat("Joueurs")
-local statFPS = addServerStat("FPS")
-local statPing = addServerStat("Ping")
-local statTime = addServerStat("Heure")
-local statJobId = addServerStat("Job ID")
-local statPlaceId = addServerStat("Place ID")
-local statCreator = addServerStat("Créateur")
+-- WRAP: encapsule la création des stats serveur + update loop dans une fonction
+-- pour limiter les 200 registers au top-level.
+local function _initServerStats()
+	local statPlayers = addServerStat("Joueurs")
+	local statFPS = addServerStat("FPS")
+	local statPing = addServerStat("Ping")
+	local statTime = addServerStat("Heure")
+	local statJobId = addServerStat("Job ID")
+	local statPlaceId = addServerStat("Place ID")
+	local statCreator = addServerStat("Créateur")
 
--- Logique d'update des stats
-local _fps = 60
-local _lastFrame = tick()
-pcall(function()
-	RunService.RenderStepped:Connect(function()
-		local now = tick()
-		local dt = now - _lastFrame
-		_lastFrame = now
-		if dt > 0 then _fps = math.clamp(1 / dt, 1, 240) end
-	end)
-end)
-task.spawn(function()
-	while task.wait(1) do
-		pcall(function()
-			statPlayers.Text = tostring(#Players:GetPlayers()) .. "/" .. tostring(Players.MaxPlayers)
-			statFPS.Text = tostring(math.floor(_fps))
-			local ping = LocalPlayer:GetNetworkPing() * 1000
-			statPing.Text = string.format("%.0f ms", ping)
-			statTime.Text = os.date("%H:%M:%S")
-			local ok, jobId = pcall(function() return game.JobId end)
-			statJobId.Text = (ok and jobId and jobId ~= "") and jobId:sub(1, 20) .. "..." or "N/A"
-			local ok2, placeId = pcall(function() return game.PlaceId end)
-			statPlaceId.Text = ok2 and tostring(placeId) or "N/A"
-			local ok3, creator = pcall(function() return game.CreatorId end)
-			statCreator.Text = ok3 and tostring(creator) or "N/A"
+	local _fps = 60
+	local _lastFrame = tick()
+	pcall(function()
+		RunService.RenderStepped:Connect(function()
+			local now = tick()
+			local dt = now - _lastFrame
+			_lastFrame = now
+			if dt > 0 then _fps = math.clamp(1 / dt, 1, 240) end
 		end)
-	end
-end)
+	end)
+	task.spawn(function()
+		while task.wait(1) do
+			pcall(function()
+				statPlayers.Text = tostring(#Players:GetPlayers()) .. "/" .. tostring(Players.MaxPlayers)
+				statFPS.Text = tostring(math.floor(_fps))
+				local ping = LocalPlayer:GetNetworkPing() * 1000
+				statPing.Text = string.format("%.0f ms", ping)
+				statTime.Text = os.date("%H:%M:%S")
+				local ok, jobId = pcall(function() return game.JobId end)
+				statJobId.Text = (ok and jobId and jobId ~= "") and jobId:sub(1, 20) .. "..." or "N/A"
+				local ok2, placeId = pcall(function() return game.PlaceId end)
+				statPlaceId.Text = ok2 and tostring(placeId) or "N/A"
+				local ok3, creator = pcall(function() return game.CreatorId end)
+				statCreator.Text = ok3 and tostring(creator) or "N/A"
+			end)
+		end
+	end)
+end
+_initServerStats()
 
 -- Bouton toggle retiré : la barre de stats est maintenant TOUJOURS visible en haut de Joueurs.
 -- Le playersScroll commence en dessous de la barre de stats (Position = 92, Height = 1 - 110).
