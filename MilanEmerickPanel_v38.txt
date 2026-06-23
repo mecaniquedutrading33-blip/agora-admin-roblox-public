@@ -365,7 +365,7 @@ end
 
 local function createTab(name)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0.142, -2, 1, 0)
+	btn.Size = UDim2.new(0.135, -2, 1, 0)
 	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 	btn.Text = name
 	btn.Font = Enum.Font.GothamSemibold
@@ -756,7 +756,7 @@ serverStatsLayout.Parent = serverStatsBar
 
 local function addServerStat(name)
 	local card = Instance.new("Frame")
-	card.Size = UDim2.new(0, 110, 0, 42)
+	card.Size = UDim2.new(0, 78, 0, 42)
 	card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 	card.BorderSizePixel = 0
 	card.Parent = serverStatsBar
@@ -4981,9 +4981,10 @@ searchBtn.BorderSizePixel = 0
 searchBtn.AutoButtonColor = false
 searchBtn.Parent = registryCard
 createCorner(searchBtn, 6)
+searchBtn.MouseButton1Click:Connect(function() runRegistrySearch(searchBox.Text) end)
 
--- Label de statut (pour messages de recherche)
-local statusLbl = Instance.new("TextLabel")
+-- Label de statut (pour messages de recherche) — GLOBAL pour que runRegistrySearch (top-level) puisse y accéder
+statusLbl = Instance.new("TextLabel")
 statusLbl.Size = UDim2.new(1, -16, 0, 18)
 statusLbl.Position = UDim2.new(0, 8, 0, 80)
 statusLbl.BackgroundTransparency = 1
@@ -4995,8 +4996,8 @@ statusLbl.TextXAlignment = Enum.TextXAlignment.Left
 statusLbl.TextWrapped = true
 statusLbl.Parent = registryCard
 
--- Scroll pour les résultats de recherche
-local resultScroll = Instance.new("ScrollingFrame")
+-- Scroll pour les résultats de recherche — GLOBAL aussi
+resultScroll = Instance.new("ScrollingFrame")
 resultScroll.Size = UDim2.new(1, -16, 1, -110)
 resultScroll.Position = UDim2.new(0, 8, 0, 102)
 resultScroll.BackgroundTransparency = 1
