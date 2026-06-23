@@ -1333,14 +1333,18 @@ local function createPlayerEntry(plr)
 	createCorner(infoBtn, 12)
 
 	-- Boucle live : met à jour le timer et le badge toutes les secondes
-	local myJoinTick = LocalPlayer and tick() or 0
+	-- Timestamp = moment où le panel a vu ce player pour la 1ère fois
+	-- Pour les players déjà là au boot, c'est approximatif (= temps depuis l'ouverture du panel)
+	local firstSeenTick = tick()
+	_JOIN_TIMESTAMPS = _JOIN_TIMESTAMPS or {}
+	_JOIN_TIMESTAMPS[plr] = firstSeenTick
+	_JOIN_TIMESTAMPS["__panelBoot__"] = _JOIN_TIMESTAMPS["__panelBoot__"] or firstSeenTick
 	task.spawn(function()
 		while card and card.Parent and plr and plr.Parent do
 			pcall(function()
 				local now = tick()
-				local plrJoin = workspace:FindFirstChild(plr.Name) and workspace[plr.Name]:GetAttribute("JoinTick")
-				-- Si pas d'attribut, on se base sur Joined Roblox property
-				local since = now - (plrJoin or myJoinTick)
+				local seen = _JOIN_TIMESTAMPS[plr] or firstSeenTick
+				local since = now - seen
 				local secs = math.floor(since % 60)
 				local mins = math.floor(since / 60) % 60
 				local hrs = math.floor(since / 3600)
@@ -1352,25 +1356,22 @@ local function createPlayerEntry(plr)
 					connTimeLbl.Text = string.format("Connecté: %ds", secs)
 				end
 
-				-- Badge : avant ou après le local player
-				if plrJoin then
-					if plrJoin < myJoinTick then
-						arrivalBadge.Text = "● Joueur arrivé avant toi"
-						arrivalBadge.TextColor3 = Color3.fromRGB(120, 200, 255)
-					else
-						local late = math.floor(now - plrJoin)
-						arrivalBadge.Text = string.format("● Arrivé il y a %ds", late)
-						arrivalBadge.TextColor3 = Color3.fromRGB(180, 220, 140)
-					end
+				-- Badge "arrivée" : compare au 1er player tracké
+				local bootRef = _JOIN_TIMESTAMPS["__panelBoot__"] or firstSeenTick
+				if seen <= bootRef + 0.5 then
+					arrivalBadge.Text = "● Là depuis l'ouverture du panel"
+					arrivalBadge.TextColor3 = Color3.fromRGB(120, 200, 255)
 				else
-					arrivalBadge.Text = ""
+					local late = math.floor(now - seen)
+					arrivalBadge.Text = string.format("● Arrivé il y a %ds", late)
+					arrivalBadge.TextColor3 = Color3.fromRGB(180, 220, 140)
 				end
-			end)
-			task.wait(1)
-		end
-	end)
+				end) -- ferme pcall
+				task.wait(1)
+				end -- ferme while
+				end) -- ferme task.spawn
 
-	-- Popup de détails complet sur clic "i"
+				-- Popup de détails complet sur clic "i"
 	infoBtn.MouseButton1Click:Connect(function()
 		pcall(function()
 			local existing = screenGui:FindFirstChild("_InfoPanel_" .. plr.Name)
@@ -1512,51 +1513,65 @@ local function createPlayerEntry(plr)
 						end
 					end
 				end)
-				-- Présence actuelle : est-ce qu'il joue EN CE MOMENT à ce jeu précis ?
+				-- Test rapide des APIs Roblox (peuvent être bloquées par l'exécuteur)
+				local apiOk = false
 				pcall(function()
-					local resp = game:HttpGet("https://presence.roblox.com/v1/presence/users", true, HttpService:JSONEncode({userIds = {plr.UserId}}))
-					if resp and resp ~= "" then
-						local d = HttpService:JSONDecode(resp)
-						if d and d.userPresences and d.userPresences[1] then
-							local p = d.userPresences[1]
-							local status = p.userPresenceType == 0 and "En ligne" or (p.userPresenceType == 1 and "En jeu" or (p.userPresenceType == 2 and "Au studio" or "Hors ligne"))
-							table.insert(extra, "Présence : " .. status)
-							if p.lastLocation and p.lastLocation ~= "" then
-								table.insert(extra, "Dernier lieu : " .. tostring(p.lastLocation))
-							end
-							if p.universeId and tostring(p.universeId) == tostring(game.GameId) then
-								table.insert(extra, "★ JOUE ACTUELLEMENT À CE JEU")
-							end
-							if p.lastOnline then
-								table.insert(extra, "Vu la dernière fois : " .. tostring(p.lastOnline))
-							end
-						end
+					if game and game.HttpGet then
+						-- Test court : la 1ère API Roblox accessible
+						local test = game:HttpGet("https://users.roblox.com/v1/users/" .. plr.UserId)
+						if test and test ~= "" then apiOk = true end
 					end
 				end)
-				-- Jeux favoris (jusqu'à 5)
-				pcall(function()
-					local resp = game:HttpGet("https://games.roblox.com/v1/users/" .. plr.UserId .. "/favorite/games?sortOrder=Desc&limit=5")
-					if resp and resp ~= "" then
-						local d = HttpService:JSONDecode(resp)
-						if d and d.data and #d.data > 0 then
-							table.insert(extra, "--- Jeux favoris (" .. #d.data .. ") ---")
-							for i, g in ipairs(d.data) do
-								if i > 5 then break end
-								if g.name then
-									local favName = g.name:sub(1, 40) .. (g.name:len() > 40 and "..." or "")
-									local favNote = ""
-									if g.universeId and tostring(g.universeId) == tostring(game.GameId) then
-										favNote = " ★ (CE JEU)"
-									end
-									table.insert(extra, "• " .. favName .. favNote)
+				if not apiOk then
+					table.insert(extra, "---")
+					table.insert(extra, "⚠ APIs Roblox bloquées par l'exécuteur")
+					table.insert(extra, "(présence, favoris, profil détaillés indisponibles)")
+				else
+					-- Présence actuelle : est-ce qu'il joue EN CE MOMENT à ce jeu précis ?
+					pcall(function()
+						local resp = game:HttpGet("https://presence.roblox.com/v1/presence/users", true, HttpService:JSONEncode({userIds = {plr.UserId}}))
+						if resp and resp ~= "" then
+							local d = HttpService:JSONDecode(resp)
+							if d and d.userPresences and d.userPresences[1] then
+								local p = d.userPresences[1]
+								local status = p.userPresenceType == 0 and "En ligne" or (p.userPresenceType == 1 and "En jeu" or (p.userPresenceType == 2 and "Au studio" or "Hors ligne"))
+								table.insert(extra, "Présence : " .. status)
+								if p.lastLocation and p.lastLocation ~= "" then
+									table.insert(extra, "Dernier lieu : " .. tostring(p.lastLocation))
+								end
+								if p.universeId and tostring(p.universeId) == tostring(game.GameId) then
+									table.insert(extra, "★ JOUE ACTUELLEMENT À CE JEU")
+								end
+								if p.lastOnline then
+									table.insert(extra, "Vu la dernière fois : " .. tostring(p.lastOnline))
 								end
 							end
 						end
-					end
-				end)
-				-- Note API : Roblox n'expose pas publiquement le nombre exact de fois qu'un user a visité un jeu
-				table.insert(extra, "---")
-				table.insert(extra, "Note : Roblox ne donne pas le nombre exact de visites par user/jeu publiquement.")
+					end)
+					-- Jeux favoris (jusqu'à 5)
+					pcall(function()
+						local resp = game:HttpGet("https://games.roblox.com/v1/users/" .. plr.UserId .. "/favorite/games?sortOrder=Desc&limit=5")
+						if resp and resp ~= "" then
+							local d = HttpService:JSONDecode(resp)
+							if d and d.data and #d.data > 0 then
+								table.insert(extra, "--- Jeux favoris (" .. #d.data .. ") ---")
+								for i, g in ipairs(d.data) do
+									if i > 5 then break end
+									if g.name then
+										local favName = g.name:sub(1, 40) .. (g.name:len() > 40 and "..." or "")
+										local favNote = ""
+										if g.universeId and tostring(g.universeId) == tostring(game.GameId) then
+											favNote = " ★ (CE JEU)"
+										end
+										table.insert(extra, "• " .. favName .. favNote)
+									end
+								end
+							end
+						end
+					end)
+					table.insert(extra, "---")
+					table.insert(extra, "Note : Roblox ne donne pas le nombre exact de visites par user/jeu publiquement.")
+				end
 				-- Concat avec contenu initial
 				if #extra > 0 then
 					local base = {
