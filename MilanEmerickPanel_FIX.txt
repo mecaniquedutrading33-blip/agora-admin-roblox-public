@@ -1379,8 +1379,8 @@ local function createPlayerEntry(plr)
 
 			local win = Instance.new("Frame")
 			win.Name = "_InfoPanel_" .. plr.Name
-			win.Size = UDim2.new(0, 320, 0, 380)
-			win.Position = UDim2.new(0.5, -160, 0.5, -190)
+			win.Size = UDim2.new(0, 380, 0, 500)
+			win.Position = UDim2.new(0.5, -190, 0.5, -250)
 			win.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
 			win.BackgroundTransparency = 0.05
 			win.BorderSizePixel = 0
@@ -1391,15 +1391,28 @@ local function createPlayerEntry(plr)
 			createStroke(win, Color3.fromRGB(120, 80, 255), 1.2)
 
 			local title = Instance.new("TextLabel")
-			title.Size = UDim2.new(1, -40, 0, 28)
+			title.Size = UDim2.new(1, -100, 0, 28)
 			title.Position = UDim2.new(0, 10, 0, 0)
 			title.BackgroundTransparency = 1
 			title.Text = "Détails : @" .. plr.Name
 			title.Font = Enum.Font.GothamBold
-			title.TextSize = 13
-			title.TextColor3 = Color3.fromRGB(230, 230, 255)
+			title.TextSize = 14
+			title.TextColor3 = Color3.fromRGB(255, 255, 255)
 			title.TextXAlignment = Enum.TextXAlignment.Left
 			title.Parent = win
+
+			-- Bouton Copier (à gauche du X)
+			local copyBtn = Instance.new("TextButton")
+			copyBtn.Size = UDim2.new(0, 60, 0, 22)
+			copyBtn.Position = UDim2.new(1, -100, 0, 6)
+			copyBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
+			copyBtn.Text = "📋 Copier"
+			copyBtn.Font = Enum.Font.GothamBold
+			copyBtn.TextSize = 11
+			copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			copyBtn.BorderSizePixel = 0
+			copyBtn.Parent = win
+			createCorner(copyBtn, 4)
 
 			local closeX = Instance.new("TextButton")
 			closeX.Size = UDim2.new(0, 26, 0, 26)
@@ -1414,16 +1427,31 @@ local function createPlayerEntry(plr)
 			createCorner(closeX, 6)
 			closeX.MouseButton1Click:Connect(function() win:Destroy() end)
 
+			-- Contenu scrollable (permet beaucoup plus d'infos que le TextLabel fixe)
+			local scrollFrame = Instance.new("ScrollingFrame")
+			scrollFrame.Name = "InfoScroll"
+			scrollFrame.Size = UDim2.new(1, -20, 1, -40)
+			scrollFrame.Position = UDim2.new(0, 10, 0, 32)
+			scrollFrame.BackgroundTransparency = 1
+			scrollFrame.BorderSizePixel = 0
+			scrollFrame.ScrollBarThickness = 6
+			scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(120, 80, 255)
+			scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 1500)
+			scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+			scrollFrame.Parent = win
+			createCorner(scrollFrame, 4)
+
 			-- Avatar via Players:GetUserThumbnailAsync (NATIVE Roblox, pas besoin de HttpGet)
 			pcall(function()
 				local img = Instance.new("ImageLabel")
-				img.Size = UDim2.new(0, 64, 0, 64)
-				img.Position = UDim2.new(0, 10, 0, 36)
+				img.Name = "AvatarImg"
+				img.Size = UDim2.new(0, 72, 0, 72)
+				img.Position = UDim2.new(0, 8, 0, 4)
 				img.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 				img.BorderSizePixel = 0
-				img.Parent = win
-				createCorner(img, 32)
-				local ok, content, ready = pcall(function()
+				img.Parent = scrollFrame
+				createCorner(img, 36)
+				local ok, content = pcall(function()
 					return Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
 				end)
 				if ok and content then
@@ -1433,23 +1461,48 @@ local function createPlayerEntry(plr)
 				end
 			end)
 
-			-- Bloc d'infos texte
 			local infoText = Instance.new("TextLabel")
-			infoText.Size = UDim2.new(1, -90, 0, 320)
-			infoText.Position = UDim2.new(0, 84, 0, 36)
+			infoText.Name = "InfoText"
+			infoText.Size = UDim2.new(1, -100, 0, 1500)
+			infoText.Position = UDim2.new(0, 88, 0, 4)
 			infoText.BackgroundTransparency = 1
 			infoText.TextXAlignment = Enum.TextXAlignment.Left
 			infoText.TextYAlignment = Enum.TextYAlignment.Top
 			infoText.Font = Enum.Font.Gotham
-			infoText.TextSize = 11
-			infoText.TextColor3 = Color3.fromRGB(220, 220, 230)
+			infoText.TextSize = 13
+			infoText.TextColor3 = Color3.fromRGB(240, 240, 255)
 			infoText.TextWrapped = true
-			infoText.Parent = win
+			infoText.Parent = scrollFrame
 
-			-- Construction du contenu (synchrone pour les data locales + 1 appel API pour la blurb)
+			-- Construction du contenu
+			local allLines = {}
 			local function setText(lines)
-				infoText.Text = table.concat(lines, "\n")
+				if type(lines) == "table" then
+					allLines = lines
+				else
+					allLines = {tostring(lines)}
+				end
+				infoText.Text = table.concat(allLines, "\n")
 			end
+			-- Bouton Copier : copie tout le texte actuel dans le presse-papier
+			copyBtn.MouseButton1Click:Connect(function()
+				local txt = table.concat(allLines, "\n")
+				pcall(function()
+					if setclipboard then
+						setclipboard(txt)
+					elseif toclipboard then
+						toclipboard(txt)
+					end
+				end)
+				copyBtn.Text = "✓ Copié"
+				copyBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 100)
+				task.delay(1.5, function()
+					if copyBtn and copyBtn.Parent then
+						copyBtn.Text = "📋 Copier"
+						copyBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
+					end
+				end)
+			end)
 
 			local days = plr.AccountAge
 			local years = math.floor(days / 365)
@@ -1651,25 +1704,72 @@ end
 searchBox:GetPropertyChangedSignal("Text"):Connect(function()
 	local q = searchBox.Text:lower():gsub("%s+", "")
 	local matches = {}
+	local exactMatch, startsWithMatches, containsMatches = nil, {}, {}
 	for plr, card in pairs(playerCards) do
 		if not plr or not card then continue end
-		local match = q == "" or plr.Name:lower():find(q, 1, true) ~= nil or plr.DisplayName:lower():find(q, 1, true) ~= nil
+		local name = plr.Name:lower()
+		local dname = plr.DisplayName:lower()
+		-- 1) Match exact (username == query)
+		if q ~= "" and (name == q or dname == q) then
+			exactMatch = plr
+		-- 2) Commence par (le plus pertinent)
+		elseif q ~= "" and (name:sub(1, #q) == q or dname:sub(1, #q) == q) then
+			table.insert(startsWithMatches, plr)
+		-- 3) Contient (moins pertinent)
+		elseif q ~= "" and (name:find(q, 1, true) ~= nil or dname:find(q, 1, true) ~= nil) then
+			table.insert(containsMatches, plr)
+		-- 4) Pas de query ou pas de match
+		end
+		-- Visibilité : tout ce qui matche est visible
+		local match = q == "" or name:find(q, 1, true) ~= nil or dname:find(q, 1, true) ~= nil
 		card.Visible = match
 		if match and q ~= "" then table.insert(matches, plr) end
 	end
-	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
-	if #matches == 1 then
-		local singlePlr = matches[1]
-		if singlePlr and singlePlr.Character then
-			local card = playerCards[singlePlr]
-			if card and card.Parent then
-				tween(card, {BackgroundColor3 = Color3.fromRGB(70, 50, 100)}, 0.2)
-				task.delay(1.2, function()
-					if card and card.Parent then
-						tween(card, {BackgroundColor3 = Color3.fromRGB(28, 28, 35)}, 0.3)
-					end
-				end)
+	-- Tri : les cartes qui matchent sont déplacées en haut, exact en premier, puis startsWith, puis contains
+	-- (en réordonnant le LayoutOrder)
+	local order = 0
+	local function bumpCard(plr)
+		local card = playerCards[plr]
+		if card then
+			card.LayoutOrder = order
+			order = order + 1
+		end
+	end
+	-- D'abord le exact
+	if exactMatch then bumpCard(exactMatch) end
+	-- Puis les startsWith (triés alphabétiquement)
+	table.sort(startsWithMatches, function(a, b) return a.Name:lower() < b.Name:lower() end)
+	for _, p in ipairs(startsWithMatches) do bumpCard(p) end
+	-- Puis les contains (triés)
+	table.sort(containsMatches, function(a, b) return a.Name:lower() < b.Name:lower() end)
+	for _, p in ipairs(containsMatches) do bumpCard(p) end
+	-- Les non-matches en queue (gardent leur ordre relatif)
+	for plr, card in pairs(playerCards) do
+		if not plr or not card then continue end
+		if q ~= "" then
+			local name = plr.Name:lower()
+			local dname = plr.DisplayName:lower()
+			if name:find(q, 1, true) == nil and dname:find(q, 1, true) == nil then
+				card.LayoutOrder = order
+				order = order + 1
 			end
+		else
+			-- Pas de query : ordre par nom
+			card.LayoutOrder = order
+			order = order + 1
+		end
+	end
+	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
+	-- Highlight du match exact (anim 0.5s)
+	if exactMatch and exactMatch.Parent and playerCards[exactMatch] then
+		local card = playerCards[exactMatch]
+		if card and card.Parent then
+			tween(card, {BackgroundColor3 = Color3.fromRGB(70, 50, 100)}, 0.2)
+			task.delay(1.2, function()
+				if card and card.Parent then
+					tween(card, {BackgroundColor3 = Color3.fromRGB(28, 28, 35)}, 0.3)
+				end
+			end)
 		end
 	end
 end)
@@ -4559,10 +4659,22 @@ function runRegistrySearch(query)
 					data.isBanned = d2.isBanned
 					data.blurb = d2.description
 					if d2.created then
-						local epochDiff = os.time() - (tonumber(d2.created:match("(%d+)-%d+-%d+")) or os.time())
-						local years = math.floor(epochDiff / 31536000)
-						local days = math.floor((epochDiff % 31536000) / 86400)
-						data.accountAge = years .. " an(s) " .. days .. "j"
+						-- Format ISO 8601: "2021-04-08T15:32:19.847Z" -> parser en epoch
+						local y, mo, da = d2.created:match("^(%d+)%-(%d+)%-(%d+)")
+						if y and mo and da then
+							local epochThen = os.time({year=tonumber(y), month=tonumber(mo), day=tonumber(da), hour=0, min=0, sec=0})
+							local epochDiff = os.time() - epochThen
+							local years = math.floor(epochDiff / 31536000)
+							local days = math.floor((epochDiff % 31536000) / 86400)
+							local hours = math.floor((epochDiff % 86400) / 3600)
+							if years > 0 then
+								data.accountAge = years .. " an(s) " .. days .. "j"
+							elseif days > 0 then
+								data.accountAge = days .. " jour(s) " .. hours .. "h"
+							else
+								data.accountAge = hours .. " heure(s)"
+							end
+						end
 					end
 				end
 			end
