@@ -3985,10 +3985,27 @@ RunService.Stepped:Connect(function(_, dt)
 		end
 	end
 	
-	if humanoid and math.abs(humanoid.WalkSpeed - walkSpeedState.value) > 1 and not flyState.flying then
-		humanoid.WalkSpeed = walkSpeedState.value
-	end
-end)
+	if humanoid and math.abs(humanoid.WalkSpeed - walkSpeedState.value) > 0.5 and not flyState.flying then
+			humanoid.WalkSpeed = walkSpeedState.value
+		end
+	end)
+
+
+	-- ===== Boucle ISOLÉE pour maintenir WalkSpeed (ne dépend pas de platform/gotoWalk) =====
+	-- Si la grosse boucle au-dessus crash (ex: gotoWalk avec humanoid nil), WalkSpeed est quand
+	-- même appliqué. Cette boucle est pcall-wrapped donc JAMAIS elle ne s'arrête.
+	RunService.RenderStepped:Connect(function()
+		pcall(function()
+			local char = LocalPlayer.Character
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
+			if hum and not flyState.flying then
+				local target = walkSpeedState.value
+				if math.abs(hum.WalkSpeed - target) > 0.5 then
+					hum.WalkSpeed = target
+				end
+			end
+		end)
+	end)
 
 
 -- ============= EXTRA =============
@@ -4544,6 +4561,52 @@ historyFrame.Position = UDim2.new(0, 8, 0, 80)
 historyFrame.BackgroundTransparency = 1
 historyFrame.Parent = registryCard
 
+-- Section "Mes users consultés" — liste tous les users déjà cherchés avec leur statut live
+local consultedUsers = {} -- userId -> {username, displayName, presence, lastSeen, ...}
+
+-- Titre + bouton actualiser
+local consultedTitle = Instance.new("TextLabel")
+consultedTitle.Size = UDim2.new(1, -100, 0, 22)
+consultedTitle.Position = UDim2.new(0, 8, 0, 108)
+consultedTitle.BackgroundTransparency = 1
+consultedTitle.Text = "👥 Mes users consultés (statut + jeu actuel)"
+consultedTitle.Font = Enum.Font.GothamBold
+consultedTitle.TextSize = 11
+consultedTitle.TextColor3 = Color3.fromRGB(180, 200, 255)
+consultedTitle.TextXAlignment = Enum.TextXAlignment.Left
+consultedTitle.Parent = registryCard
+
+local refreshAllBtn = Instance.new("TextButton")
+refreshAllBtn.Size = UDim2.new(0, 90, 0, 22)
+refreshAllBtn.Position = UDim2.new(1, -98, 0, 108)
+refreshAllBtn.BackgroundColor3 = Color3.fromRGB(80, 140, 200)
+refreshAllBtn.Text = "🔄 Actualiser"
+refreshAllBtn.Font = Enum.Font.GothamBold
+refreshAllBtn.TextSize = 10
+refreshAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+refreshAllBtn.BorderSizePixel = 0
+refreshAllBtn.AutoButtonColor = false
+refreshAllBtn.Parent = registryCard
+createCorner(refreshAllBtn, 4)
+
+-- Container scrollable des users consultés
+local consultedScroll = Instance.new("ScrollingFrame")
+consultedScroll.Name = "ConsultedScroll"
+consultedScroll.Size = UDim2.new(1, -16, 0, 130)
+consultedScroll.Position = UDim2.new(0, 8, 0, 134)
+consultedScroll.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+consultedScroll.BorderSizePixel = 0
+consultedScroll.ScrollBarThickness = 4
+consultedScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+consultedScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+consultedScroll.Parent = registryCard
+createCorner(consultedScroll, 6)
+
+local consultedLayout = Instance.new("UIListLayout")
+consultedLayout.Padding = UDim.new(0, 4)
+consultedLayout.SortOrder = Enum.SortOrder.LayoutOrder
+consultedLayout.Parent = consultedScroll
+
 local historyLabel = Instance.new("TextLabel")
 historyLabel.Size = UDim2.new(0, 60, 1, 0)
 historyLabel.BackgroundTransparency = 1
@@ -4575,8 +4638,8 @@ createCorner(clearHistBtn, 4)
 
 -- Zone de résultats (scrollable)
 local resultScroll = Instance.new("ScrollingFrame")
-resultScroll.Size = UDim2.new(1, -16, 0, 350)
-resultScroll.Position = UDim2.new(0, 8, 0, 110)
+resultScroll.Size = UDim2.new(1, -16, 0, 200)
+resultScroll.Position = UDim2.new(0, 8, 0, 270)
 resultScroll.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 resultScroll.BorderSizePixel = 0
 resultScroll.ScrollBarThickness = 4
@@ -4842,11 +4905,135 @@ function runRegistrySearch(query)
 		end)
 
 		-- 7) Afficher
-		statusLbl.Text = "Détails de @" .. username .. " :"
-		statusLbl.TextColor3 = Color3.fromRGB(180, 220, 180)
-		renderResult(data, resultScroll)
+				statusLbl.Text = "Détails de @" .. username .. " :"
+				statusLbl.TextColor3 = Color3.fromRGB(180, 220, 180)
+				renderResult(data, resultScroll)
+
+				-- 8) Ajouter à la liste "Mes users consultés" (refreshAll met à jour la présence)
+				addConsultedUser(userId, username, displayName, data.accountAge)
+			end)
+		end
+
+-- === Section "Mes users consultés" ===
+local consultedCards = {} -- userId -> Frame (la carte dans consultedScroll)
+
+local function refreshConsultedScrollSize()
+	-- AutomaticCanvasSize gère déjà ça, on force juste le repaint
+	task.defer(function()
+		consultedScroll.CanvasSize = UDim2.new(0, 0, 0, consultedLayout.AbsoluteContentSize.Y + 10)
 	end)
 end
+
+local function addConsultedUser(userId, username, displayName, accountAge)
+	if consultedCards[userId] then
+		-- User déjà dans la liste : on refresh son nom/age si changé
+		local card = consultedCards[userId]
+		local nameLbl = card:FindFirstChild("NameLbl")
+		if nameLbl then nameLbl.Text = "@" .. username end
+		return
+	end
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(1, -8, 0, 38)
+	card.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+	card.BorderSizePixel = 0
+	card.Parent = consultedScroll
+	createCorner(card, 4)
+	consultedCards[userId] = card
+
+	local dot = Instance.new("Frame")
+	dot.Size = UDim2.new(0, 8, 0, 8)
+	dot.Position = UDim2.new(0, 6, 0, 6)
+	dot.BackgroundColor3 = Color3.fromRGB(120, 120, 120) -- gris = inconnu
+	dot.BorderSizePixel = 0
+	dot.Parent = card
+	createCorner(dot, 4)
+
+	local nameLbl = Instance.new("TextLabel")
+	nameLbl.Name = "NameLbl"
+	nameLbl.Size = UDim2.new(0.45, -8, 1, 0)
+	nameLbl.Position = UDim2.new(0, 20, 0, 0)
+	nameLbl.BackgroundTransparency = 1
+	nameLbl.Text = "@" .. username
+	nameLbl.Font = Enum.Font.GothamBold
+	nameLbl.TextSize = 11
+	nameLbl.TextColor3 = Color3.fromRGB(230, 230, 250)
+	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+	nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+	nameLbl.Parent = card
+
+	local statusLbl = Instance.new("TextLabel")
+	statusLbl.Name = "StatusLbl"
+	statusLbl.Size = UDim2.new(0.55, -8, 1, 0)
+	statusLbl.Position = UDim2.new(0.45, 8, 0, 0)
+	statusLbl.BackgroundTransparency = 1
+	statusLbl.Text = "Compte: " .. (accountAge or "?") .. " • …"
+	statusLbl.Font = Enum.Font.Gotham
+	statusLbl.TextSize = 9
+	statusLbl.TextColor3 = Color3.fromRGB(180, 200, 220)
+	statusLbl.TextXAlignment = Enum.TextXAlignment.Left
+	statusLbl.TextXAlignment = Enum.TextXAlignment.Right
+	statusLbl.Parent = card
+
+	-- Click = re-fetch
+	card.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			runRegistrySearch(username)
+		end
+	end)
+	refreshConsultedScrollSize()
+end
+
+local function refreshAllConsultedUsers()
+	local uids = {}
+	for uid, _ in pairs(consultedCards) do table.insert(uids, uid) end
+	if #uids == 0 then return end
+	-- API presence accepte un batch : POST avec {userIds: [...]}
+	pcall(function()
+		local body = HttpService:JSONEncode({userIds = uids})
+		-- API présence en GET : on peut faire une URL avec ?userIds=X,Y,Z
+		local uidsStr = table.concat(uids, ",")
+		local r = game:HttpGet("https://presence.roblox.com/v1/presence/users?userIds=" .. uidsStr)
+		if r and r ~= "" then
+			local d = HttpService:JSONDecode(r)
+			if d and d.userPresences then
+				for _, p in ipairs(d.userPresences) do
+					local card = consultedCards[p.userId]
+					if card then
+						local dot = card:FindFirstChild("Frame") or card:FindFirstChild("Dot")
+						-- On retrouve le dot par couleur (hack simple)
+						local statusLbl = card:FindFirstChild("StatusLbl")
+						if statusLbl then
+							local t = p.userPresenceType
+							local txt, color
+							if t == 0 then
+								txt = "● En ligne (site web)"
+								color = Color3.fromRGB(120, 220, 160)
+							elseif t == 1 then
+								txt = "▶ En jeu : " .. (p.lastLocation or "?")
+								color = Color3.fromRGB(100, 180, 255)
+							elseif t == 2 then
+								txt = "🛠 Au Studio"
+								color = Color3.fromRGB(200, 150, 100)
+							elseif t == 3 then
+								txt = "○ Hors ligne"
+								color = Color3.fromRGB(140, 140, 160)
+							else
+								txt = "? Statut inconnu"
+								color = Color3.fromRGB(180, 180, 180)
+							end
+							statusLbl.Text = txt
+							statusLbl.TextColor3 = color
+						end
+					end
+				end
+			end
+		end
+	end)
+end
+
+refreshAllBtn.MouseButton1Click:Connect(function()
+	refreshAllConsultedUsers()
+end)
 
 searchBtn.MouseButton1Click:Connect(function()
 	runRegistrySearch(searchBox.Text)
