@@ -612,10 +612,10 @@ end
 _initRegistrySearch()
 
 -- ============= REGISTRY SCROLL =============
--- registryScroll commence en dessous de la search box + suggestions
+-- registryScroll commence juste après la search box + un peu de gap pour les suggestions
 local registryScroll = Instance.new("ScrollingFrame")
-registryScroll.Size = UDim2.new(1, 0, 1, -45) -- 45px = search box (38) + gap (7)
-registryScroll.Position = UDim2.new(0, 0, 0, 45)
+registryScroll.Size = UDim2.new(1, 0, 1, -40) -- 40px = search box (33) + gap (7)
+registryScroll.Position = UDim2.new(0, 0, 0, 40)
 registryScroll.BackgroundTransparency = 1
 registryScroll.ScrollBarThickness = 4
 registryScroll.BorderSizePixel = 0
@@ -941,10 +941,10 @@ local playerCards = {}
 -- searchBox de Joueurs SUPPRIMÉE (doublon avec Registry, le user veut une seule search box)
 
 -- ============= JOUEURS =============
--- playersScroll prend toute la place disponible sous le tab bar
+-- playersScroll commence tout en haut (searchBox supprimée)
 local playersScroll = Instance.new("ScrollingFrame")
-playersScroll.Size = UDim2.new(1, -10, 1, -52)
-playersScroll.Position = UDim2.new(0, 5, 0, 42)
+playersScroll.Size = UDim2.new(1, -10, 1, -10)
+playersScroll.Position = UDim2.new(0, 5, 0, 5)
 playersScroll.BackgroundTransparency = 1
 playersScroll.ScrollBarThickness = 4
 playersScroll.BorderSizePixel = 0
@@ -5221,7 +5221,7 @@ registryTitle.Parent = registryCard
 
 local registrySubtitle = Instance.new("TextLabel")
 registrySubtitle.Size = UDim2.new(1, -12, 0, 14)
-registrySubtitle.Position = UDim2.new(0, 8, 0, 26)
+registrySubtitle.Position = UDim2.new(0, 8, 0, 32)
 registrySubtitle.BackgroundTransparency = 1
 registrySubtitle.Text = "Recherche un compte Roblox hors-jeu (par username)"
 registrySubtitle.Font = Enum.Font.Gotham
@@ -5232,12 +5232,11 @@ registrySubtitle.Parent = registryCard
 
 -- Search box SUPPRIMÉE (doublon avec registrySearchBox en haut du Registry)
 -- Plus qu'une seule barre de recherche dans tout le panel (en haut du Registry)
--- Le label de statut et le resultScroll remontent pour combler l'espace
 
 -- Label de statut (pour messages de recherche) — GLOBAL pour que runRegistrySearch (top-level) puisse y accéder
 statusLbl = Instance.new("TextLabel")
 statusLbl.Size = UDim2.new(1, -16, 0, 18)
-statusLbl.Position = UDim2.new(0, 8, 0, 8)
+statusLbl.Position = UDim2.new(0, 8, 0, 52)
 statusLbl.BackgroundTransparency = 1
 statusLbl.Text = "Tape un username ci-dessus et appuie sur Enter."
 statusLbl.Font = Enum.Font.Gotham
@@ -5250,7 +5249,7 @@ statusLbl.Parent = registryCard
 -- Scroll pour les résultats de recherche — GLOBAL aussi pour runRegistrySearch
 resultScroll = Instance.new("ScrollingFrame")
 resultScroll.Size = UDim2.new(1, -16, 0, 600) -- Hauteur FIXE confortable pour voir les gros blocs d'infos
-resultScroll.Position = UDim2.new(0, 8, 0, 30)
+resultScroll.Position = UDim2.new(0, 8, 0, 76)
 resultScroll.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 resultScroll.BorderSizePixel = 0
 resultScroll.ScrollBarThickness = 6
