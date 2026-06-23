@@ -1,0 +1,14 @@
+// MilanEmerickPanel v38 — 2026-06-23
+// Changements v37 → v38 :
+// - Stats serveur (FPS, ping, JobId, etc.) déplacées dans la page Joueurs (bouton 📊 pour afficher/masquer)
+// - Onglet "Serveur" renommé en "Remotes" (contient le Registry des comptes Roblox)
+// - Registry (grosse bulle d'infos) : UN SEUL TextLabel uniforme (couleur unique, sans balises HTML/RichText)
+// - Apparition des infos ligne par ligne (typewriter 25ms/ligne) pour faciliter la lecture
+// - Nettoyage : plus de doublons entre Joueurs et Serveur
+// 
+// IMPORTANT : Ferme Studio complètement et attends 30 secondes avant de relancer
+// pour forcer le rechargement du code (cache HTTP Studio).
+// 
+// Usage : loadstring sur ce fichier via ton exécuteur (ou via Loader du projet Agora Admin)
+
+print("MilanEmerickPanel v38 chargé — Stats dans Joueurs, Remotes pour la recherche de comptes")
