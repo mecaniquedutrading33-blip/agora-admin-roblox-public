@@ -396,9 +396,205 @@ local registryPage = createTab("Registry")
 local localPage = createTab("Local")
 local protectionsPage = createTab("Protections")
 
+-- ============= REGISTRY SEARCH + AUTOCOMPLETE =============
+-- WRAP dans local function + appel pour isoler les locals
+local function _initRegistrySearch()
+	local registrySearchBox = Instance.new("TextBox")
+	registrySearchBox.Size = UDim2.new(1, -10, 0, 28)
+	registrySearchBox.Position = UDim2.new(0, 5, 0, 5)
+	registrySearchBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+	registrySearchBox.BackgroundTransparency = 0.2
+	registrySearchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
+	registrySearchBox.PlaceholderText = "🔍 Rechercher un pseudo Roblox..."
+	registrySearchBox.Text = ""
+	registrySearchBox.Font = Enum.Font.Gotham
+	registrySearchBox.TextSize = 12
+	registrySearchBox.TextXAlignment = Enum.TextXAlignment.Center
+	registrySearchBox.ClearTextOnFocus = false
+	registrySearchBox.Parent = registryPage
+	createCorner(registrySearchBox, 8)
+	createStroke(registrySearchBox, Color3.fromRGB(80, 80, 100), 1)
+
+	-- Frame pour les 3 suggestions (sous la search box)
+	local suggestionsFrame = Instance.new("Frame")
+	suggestionsFrame.Size = UDim2.new(1, -10, 0, 0) -- hauteur auto
+	suggestionsFrame.AutomaticSize = Enum.AutomaticSize.Y
+	suggestionsFrame.Position = UDim2.new(0, 5, 0, 38)
+	suggestionsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	suggestionsFrame.BorderSizePixel = 0
+	suggestionsFrame.Visible = false -- caché par défaut
+	suggestionsFrame.Parent = registryPage
+	createCorner(suggestionsFrame, 6)
+	createStroke(suggestionsFrame, Color3.fromRGB(70, 70, 100), 1)
+
+	local suggestionsLayout = Instance.new("UIListLayout")
+	suggestionsLayout.Padding = UDim.new(0, 2)
+	suggestionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	suggestionsLayout.Parent = suggestionsFrame
+
+	local suggestionsPadding = Instance.new("UIPadding")
+	suggestionsPadding.PaddingTop = UDim.new(0, 4)
+	suggestionsPadding.PaddingBottom = UDim.new(0, 4)
+	suggestionsPadding.PaddingLeft = UDim.new(0, 4)
+	suggestionsPadding.PaddingRight = UDim.new(0, 4)
+	suggestionsPadding.Parent = suggestionsFrame
+
+	-- Liste de pseudos Roblox populaires (pour aider la recherche fuzzy)
+	local popularNames = {
+		"Builderman", "Roblox", "Stickmasterluke", "Shedletsky", "Telamon",
+		"Gigaplex", "FaZe_Sway", "DenisDaily", "KreekCraft", "Flamingo",
+		"Peppa Pig", "Pinky", "Tanqr", "The Bacon Hair", "Alex Banzi",
+		"Benjamin", "Bloxy News", "Brittany", "Caleb", "Chip",
+		"Connor", "Daisy", "Dakota", "Emma", "Ethan",
+		"Faith", "Gabriel", "Grace", "Henry", "Ian",
+		"Isaac", "Jack", "Jacob", "James", "Jasmine",
+		"Jennifer", "Jessica", "John", "Joshua", "Julia",
+		"Karen", "Kate", "Kevin", "Kyle", "Laura",
+		"Liam", "Lily", "Logan", "Lucas", "Lucy",
+		"Mason", "Megan", "Mia", "Nathan", "Noah",
+		"Olivia", "Owen", "Patrick", "Rachel", "Riley",
+		"Samuel", "Sara", "Savannah", "Sean", "Sophie",
+		"Stephen", "Taylor", "Thomas", "Tyler", "Victoria",
+		"William", "Zoe", "Xx_Shadow_xX", "Dark_Mage", "ProGamer123",
+	}
+
+	-- Helper : calcule un score de match entre query et name
+	-- Retourne nil si pas de match, sinon un score (plus haut = meilleur)
+	local function fuzzyScore(query, name)
+		if not query or query == "" then return nil end
+		query = string.lower(query)
+		name = string.lower(name)
+
+		-- Préfixe exact = meilleur score
+		if string.sub(name, 1, #query) == query then
+			return 1000 - #name -- plus court = mieux
+		end
+
+		-- Sous-string match = bon score
+		local sPos = string.find(name, query, 1, true)
+		if sPos then
+			return 500 - sPos
+		end
+
+		-- Match flou : tous les caractères de query présents dans name dans l'ordre
+		local qi = 1
+		local lastPos = 0
+		local matches = 0
+		for i = 1, #name do
+			if qi > #query then break end
+			if string.sub(name, i, i) == string.sub(query, qi, qi) then
+				matches = matches + 1
+				qi = qi + 1
+				lastPos = i
+			end
+		end
+		if matches == #query then
+			return 100 - lastPos -- sous-séquence trouve, mais plus loin dans le nom
+		end
+
+		return nil -- pas de match
+	end
+
+	-- Met à jour la liste de suggestions en fonction de queryText
+	local function updateSuggestions(queryText)
+		-- Nettoyer les anciennes suggestions
+		for _, child in ipairs(suggestionsFrame:GetChildren()) do
+			if child:IsA("TextButton") then child:Destroy() end
+		end
+
+		if not queryText or queryText == "" or #queryText < 1 then
+			suggestionsFrame.Visible = false
+			return
+		end
+
+		-- Collecter tous les candidats (connectés + populaires)
+		local candidates = {}
+		for _, plr in ipairs(Players:GetPlayers()) do
+			table.insert(candidates, plr.Name)
+		end
+		for _, name in ipairs(popularNames) do
+			table.insert(candidates, name)
+		end
+
+		-- Calculer les scores et trier
+		local scored = {}
+		for _, name in ipairs(candidates) do
+			local score = fuzzyScore(queryText, name)
+			if score then
+				table.insert(scored, {name = name, score = score})
+			end
+		end
+		table.sort(scored, function(a, b) return a.score > b.score end)
+
+		-- Prendre top 3
+		local top3 = {}
+		for i = 1, math.min(3, #scored) do
+			table.insert(top3, scored[i].name)
+		end
+
+		if #top3 == 0 then
+			suggestionsFrame.Visible = false
+			return
+		end
+
+		-- Créer les 3 boutons de suggestion
+		for i, name in ipairs(top3) do
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(1, 0, 0, 22)
+			btn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+			btn.BorderSizePixel = 0
+			btn.Text = "  " .. i .. ". " .. name
+			btn.Font = Enum.Font.Gotham
+			btn.TextSize = 11
+			btn.TextColor3 = Color3.fromRGB(220, 220, 240)
+			btn.TextXAlignment = Enum.TextXAlignment.Left
+			btn.LayoutOrder = i
+			btn.Parent = suggestionsFrame
+			createCorner(btn, 4)
+
+			-- Cliquer = remplir la search box
+			btn.MouseButton1Click:Connect(function()
+				registrySearchBox.Text = name
+				registrySearchBox:CaptureFocus()
+				updateSuggestions(name)
+			end)
+
+			-- Hover effects
+			btn.MouseEnter:Connect(function()
+				btn.BackgroundColor3 = Color3.fromRGB(60, 60, 100)
+			end)
+			btn.MouseLeave:Connect(function()
+				btn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+			end)
+		end
+
+		suggestionsFrame.Visible = true
+	end
+
+	-- Listener sur changement de texte
+	registrySearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+		updateSuggestions(registrySearchBox.Text)
+	end)
+
+	-- Quand la search box perd le focus, cacher les suggestions après un délai
+	registrySearchBox.FocusLost:Connect(function()
+		task.delay(3, function()
+			if not registrySearchBox:IsFocused() then
+				suggestionsFrame.Visible = false
+			end
+		end)
+	end)
+
+	-- Cliquer sur le frame parent (registryPage) en dehors de la search box
+	-- cache les suggestions (pour pas qu'elles restent flottantes)
+end
+_initRegistrySearch()
+
 -- ============= REGISTRY SCROLL =============
+-- registryScroll commence en dessous de la search box + suggestions
 local registryScroll = Instance.new("ScrollingFrame")
-registryScroll.Size = UDim2.new(1, 0, 1, 0)
+registryScroll.Size = UDim2.new(1, 0, 1, -45) -- 45px = search box (38) + gap (7)
+registryScroll.Position = UDim2.new(0, 0, 0, 45)
 registryScroll.BackgroundTransparency = 1
 registryScroll.ScrollBarThickness = 4
 registryScroll.BorderSizePixel = 0
