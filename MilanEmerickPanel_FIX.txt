@@ -20,6 +20,39 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 
+-- Helper HTTP multi-exécuteur (essaie game:HttpGet, GetAsync, request/syn.request)
+local function httpGet(url)
+	-- 1) game:HttpGet (Solara, etc.)
+	local ok, r = pcall(function() return game:HttpGet(url) end)
+	if ok and r and r ~= "" then return r end
+	-- 2) HttpService:GetAsync (Studio-like)
+	ok, r = pcall(function() return HttpService:GetAsync(url) end)
+	if ok and r and r ~= "" then return r end
+	-- 3) request / syn.request (Synapse, Fluxus, etc.)
+	local req = (syn and syn.request) or (http and http.request) or http_request or request
+	if req then
+		ok, r = pcall(function() return req({Url=url, Method="GET"}).Body end)
+		if ok and r and r ~= "" then return r end
+	end
+	return nil
+end
+
+local function httpPost(url, body)
+	-- 1) game:HttpPostJSON / HttpGet avec body
+	local ok, r = pcall(function() return game:HttpGet(url, true, body) end)
+	if ok and r and r ~= "" then return r end
+	-- 2) HttpService:PostAsync
+	ok, r = pcall(function() return HttpService:PostAsync(url, body) end)
+	if ok and r and r ~= "" then return r end
+	-- 3) request POST
+	local req = (syn and syn.request) or (http and http.request) or http_request or request
+	if req then
+		ok, r = pcall(function() return req({Url=url, Method="POST", Body=body, Headers={["Content-Type"]="application/json"}}).Body end)
+		if ok and r and r ~= "" then return r end
+	end
+	return nil
+end
+
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
@@ -4709,7 +4742,7 @@ end
 -- Affiche un résultat (un compte)
 local function renderResult(data, parent)
 	local card = Instance.new("Frame")
-	card.Size = UDim2.new(1, -10, 0, 180)
+	card.Size = UDim2.new(1, -10, 0, 460)
 	card.BackgroundColor3 = Color3.fromRGB(32, 32, 40)
 	card.BorderSizePixel = 0
 	card.LayoutOrder = data.userId or 0
@@ -4731,10 +4764,28 @@ local function renderResult(data, parent)
 		end)
 	end
 
-	-- Texte principal
+	-- Header : nom + display + badges
+	local header = Instance.new("TextLabel")
+	header.Size = UDim2.new(1, -80, 0, 56)
+	header.Position = UDim2.new(0, 72, 0, 6)
+	header.BackgroundTransparency = 1
+	header.TextXAlignment = Enum.TextXAlignment.Left
+	header.TextYAlignment = Enum.TextYAlignment.Top
+	header.Font = Enum.Font.GothamBold
+	header.TextSize = 13
+	header.TextColor3 = Color3.fromRGB(230, 230, 255)
+	header.TextWrapped = true
+	header.Parent = card
+	local headerLines = { (data.displayName or "?") }
+	if data.hasVerifiedBadge then table.insert(headerLines, "✓ Vérifié Roblox") end
+	if data.isPremium then table.insert(headerLines, "⭐ Premium") end
+	if data.isBanned then table.insert(headerLines, "🚫 Banni") end
+	header.Text = table.concat(headerLines, "  ")
+
+	-- Bloc "infos profil"
 	local info = Instance.new("TextLabel")
-	info.Size = UDim2.new(1, -80, 0, 160)
-	info.Position = UDim2.new(0, 72, 0, 8)
+	info.Size = UDim2.new(1, -16, 0, 220)
+	info.Position = UDim2.new(0, 8, 0, 68)
 	info.BackgroundTransparency = 1
 	info.TextXAlignment = Enum.TextXAlignment.Left
 	info.TextYAlignment = Enum.TextYAlignment.Top
@@ -4745,30 +4796,101 @@ local function renderResult(data, parent)
 	info.Parent = card
 
 	local lines = {
-		"Display : " .. (data.displayName or "?"),
-		"@" .. (data.username or "?"),
-		"UserId : " .. (data.userId or "?"),
-		"Créé : " .. (data.created or "?"),
-		"Âge : " .. (data.accountAge or "?"),
-		"Banni : " .. (data.isBanned and "OUI" or "non"),
-		"Amis : " .. (data.friendCount or "?"),
+		"👤 @ " .. (data.username or "?") .. "  (ID: " .. (data.userId or "?") .. ")",
+		"🌐 Langue : " .. (data.langName or "?"),
+		"📅 Créé : " .. (data.created and data.created:sub(1, 10) or "?") .. "  •  " .. (data.accountAge or "?"),
 	}
 	if data.blurb and data.blurb ~= "" then
-		table.insert(lines, "Bio : " .. data.blurb:sub(1, 120) .. (data.blurb:len() > 120 and "..." or ""))
+		local blurb = data.blurb:gsub("\n", " ")
+		if blurb:len() > 90 then blurb = blurb:sub(1, 90) .. "..." end
+		table.insert(lines, "📝 Bio : " .. blurb)
 	end
-	if data.groups then
-		for i, g in ipairs(data.groups) do
-			if i > 3 then break end
-			table.insert(lines, "Groupe : " .. g)
+	if data.presenceType ~= nil then
+		local t = data.presenceType
+		if t == 0 then table.insert(lines, "🟢 Statut : En ligne (site web)")
+		elseif t == 1 then table.insert(lines, "▶ Statut : En jeu (" .. (data.presenceLastLocation or "?") .. ")")
+		elseif t == 2 then table.insert(lines, "🛠 Statut : Au Studio")
+		elseif t == 3 then table.insert(lines, "○ Statut : Hors ligne")
+		end
+		if data.presencePlaceId then
+			table.insert(lines, "🎮 PlaceId : " .. data.presencePlaceId)
 		end
 	end
-	if data.games then
-		for i, g in ipairs(data.games) do
-			if i > 3 then break end
-			table.insert(lines, "Jeu : " .. g)
-		end
+	if data.friendCount or data.followerCount or data.followingCount then
+		table.insert(lines, "👥 Amis : " .. (data.friendCount or "?") ..
+			"  • Followers : " .. (data.followerCount or "?") ..
+			"  • Following : " .. (data.followingCount or "?"))
+	end
+	if data.badgeCount then
+		table.insert(lines, "🏅 Badges : " .. data.badgeCount)
+	end
+	if data.avatarHatCount or data.avatarBody then
+		table.insert(lines, "👕 Avatar : " .. (data.avatarBody or "?") .. " (" .. (data.avatarHatCount or 0) .. " hats)")
 	end
 	info.Text = table.concat(lines, "\n")
+
+	-- Bloc "Groupes"
+	if data.groups and #data.groups > 0 then
+		local gBlock = Instance.new("TextLabel")
+		gBlock.Size = UDim2.new(1, -16, 0, 50)
+		gBlock.Position = UDim2.new(0, 8, 0, 290)
+		gBlock.BackgroundTransparency = 1
+		gBlock.TextXAlignment = Enum.TextXAlignment.Left
+		gBlock.TextYAlignment = Enum.TextYAlignment.Top
+		gBlock.Font = Enum.Font.Gotham
+		gBlock.TextSize = 10
+		gBlock.TextColor3 = Color3.fromRGB(180, 200, 255)
+		gBlock.TextWrapped = true
+		gBlock.Parent = card
+		local gLines = {"📂 Groupes :"}
+		for i, g in ipairs(data.groups) do
+			if i > 3 then break end
+			table.insert(gLines, "  • " .. g)
+		end
+		gBlock.Text = table.concat(gLines, "\n")
+	end
+
+	-- Bloc "Jeux créés"
+	if data.games and #data.games > 0 then
+		local gBlock = Instance.new("TextLabel")
+		gBlock.Size = UDim2.new(1, -16, 0, 50)
+		gBlock.Position = UDim2.new(0, 8, 0, 350)
+		gBlock.BackgroundTransparency = 1
+		gBlock.TextXAlignment = Enum.TextXAlignment.Left
+		gBlock.TextYAlignment = Enum.TextYAlignment.Top
+		gBlock.Font = Enum.Font.Gotham
+		gBlock.TextSize = 10
+		gBlock.TextColor3 = Color3.fromRGB(150, 220, 180)
+		gBlock.TextWrapped = true
+		gBlock.Parent = card
+		local gLines = {"🎮 Jeux créés :"}
+		for i, g in ipairs(data.games) do
+			if i > 3 then break end
+			table.insert(gLines, "  • " .. g)
+		end
+		gBlock.Text = table.concat(gLines, "\n")
+	end
+
+	-- Bloc "Jeux favoris"
+	if data.favGames and #data.favGames > 0 then
+		local gBlock = Instance.new("TextLabel")
+		gBlock.Size = UDim2.new(1, -16, 0, 50)
+		gBlock.Position = UDim2.new(0, 8, 0, 410)
+		gBlock.BackgroundTransparency = 1
+		gBlock.TextXAlignment = Enum.TextXAlignment.Left
+		gBlock.TextYAlignment = Enum.TextYAlignment.Top
+		gBlock.Font = Enum.Font.Gotham
+		gBlock.TextSize = 10
+		gBlock.TextColor3 = Color3.fromRGB(255, 200, 150)
+		gBlock.TextWrapped = true
+		gBlock.Parent = card
+		local gLines = {"⭐ Jeux favoris :"}
+		for i, g in ipairs(data.favGames) do
+			if i > 3 then break end
+			table.insert(gLines, "  • " .. g)
+		end
+		gBlock.Text = table.concat(gLines, "\n")
+	end
 end
 
 -- Effectue la recherche
@@ -4828,15 +4950,32 @@ function runRegistrySearch(query)
 			displayName = displayName,
 			username = username
 		}
+		-- 2) Profil détaillé (helper multi-exécuteur : HttpGet, GetAsync, syn.request)
 		pcall(function()
-			local r = game:HttpGet("https://users.roblox.com/v1/users/" .. userId)
+			local r = httpGet("https://users.roblox.com/v1/users/" .. userId)
 			if r and r ~= "" then
 				local d2 = HttpService:JSONDecode(r)
 				if d2 then
-					data.created = d2.created
-					data.isBanned = d2.isBanned
-					data.blurb = d2.description
-					if d2.created then
+									data.created = d2.created
+									data.isBanned = d2.isBanned
+									data.blurb = d2.description
+									data.locale = d2.locale or nil
+									data.hasVerifiedBadge = d2.hasVerifiedBadge or false
+									-- Noms de langue courants : en_US, fr_FR, es_ES, de_DE, etc.
+									if data.locale then
+										local langMap = {
+											en_US = "Anglais (US)", en_GB = "Anglais (UK)",
+											fr_FR = "Français", es_ES = "Espagnol", es_MX = "Espagnol (Mexique)",
+											de_DE = "Allemand", it_IT = "Italien", pt_BR = "Portugais (BR)",
+											pt_PT = "Portugais (PT)", ru_RU = "Russe", zh_CN = "Chinois (Simplifié)",
+											zh_TW = "Chinois (Traditionnel)", ja_JP = "Japonais", ko_KR = "Coréen",
+											pl_PL = "Polonais", nl_NL = "Néerlandais", tr_TR = "Turc",
+											ar_EG = "Arabe", vi_VN = "Vietnamien", th_TH = "Thaïlandais",
+											id_ID = "Indonésien", ms_MY = "Malais", fil_PH = "Filipino",
+										}
+										data.langName = langMap[data.locale] or data.locale
+									end
+									if d2.created then
 						-- Format ISO 8601: "2021-04-08T15:32:19.847Z" -> parser en epoch
 						local y, mo, da = d2.created:match("^(%d+)%-(%d+)%-(%d+)")
 						if y and mo and da then
@@ -4865,7 +5004,7 @@ function runRegistrySearch(query)
 
 		-- 4) Friends count
 		pcall(function()
-			local r = game:HttpGet("https://friends.roblox.com/v1/users/" .. userId .. "/friends/count")
+			local r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/friends/count")
 			if r and r ~= "" then
 				local d2 = HttpService:JSONDecode(r)
 				if d2 and d2.count then data.friendCount = d2.count end
@@ -4874,7 +5013,7 @@ function runRegistrySearch(query)
 
 		-- 5) Groupes
 		pcall(function()
-			local r = game:HttpGet("https://users.roblox.com/v1/users/" .. userId .. "/groups")
+			local r = httpGet("https://users.roblox.com/v1/users/" .. userId .. "/groups")
 			if r and r ~= "" then
 				local d2 = HttpService:JSONDecode(r)
 				if d2 and d2.data and #d2.data > 0 then
@@ -4890,19 +5029,97 @@ function runRegistrySearch(query)
 		end)
 
 		-- 6) Jeux
-		pcall(function()
-			local r = game:HttpGet("https://games.roblox.com/v2/users/" .. userId .. "/games?sortOrder=Desc&limit=5")
-			if r and r ~= "" then
-				local d2 = HttpService:JSONDecode(r)
-				if d2 and d2.data and #d2.data > 0 then
-					data.games = {}
-					for i, g in ipairs(d2.data) do
-						if i > 5 then break end
-						if g.name then table.insert(data.games, g.name) end
+			pcall(function()
+				local r = httpGet("https://games.roblox.com/v2/users/" .. userId .. "/games?sortOrder=Desc&limit=5")
+				if r and r ~= "" then
+					local d2 = HttpService:JSONDecode(r)
+					if d2 and d2.data and #d2.data > 0 then
+						data.games = {}
+						for i, g in ipairs(d2.data) do
+							if i > 5 then break end
+							if g.name then table.insert(data.games, g.name) end
+						end
 					end
 				end
-			end
-		end)
+			end)
+
+			-- 6b) Jeux favoris
+			pcall(function()
+				local r = httpGet("https://games.roblox.com/v1/users/" .. userId .. "/favorite/games?sortOrder=Desc&limit=5")
+				if r and r ~= "" then
+					local d2 = HttpService:JSONDecode(r)
+					if d2 and d2.data and #d2.data > 0 then
+						data.favGames = {}
+						for i, g in ipairs(d2.data) do
+							if i > 5 then break end
+							if g.name then table.insert(data.favGames, g.name) end
+						end
+					end
+				end
+			end)
+
+			-- 6c) Premium (via API Roblox)
+			pcall(function()
+				local r = httpGet("https://premiumfeatures.roblox.com/v1/users/" .. userId .. "/validate-membership")
+				if r and r ~= "" then
+					local isPremium = (r == "true")
+					data.isPremium = isPremium
+				end
+			end)
+
+			-- 6d) Badges count
+			pcall(function()
+				local r = httpGet("https://badges.roblox.com/v1/users/" .. userId .. "/badges?limit=1&sortOrder=Desc")
+				if r and r ~= "" then
+					local d2 = HttpService:JSONDecode(r)
+					if d2 and d2.data then data.badgeCount = #d2.data end
+				end
+			end)
+
+			-- 6e) Followers / Following count
+			pcall(function()
+				local r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/followings/count")
+				if r and r ~= "" then
+					local d2 = HttpService:JSONDecode(r)
+					if d2 and d2.count then data.followingCount = d2.count end
+				end
+			end)
+			pcall(function()
+				local r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/followers/count")
+				if r and r ~= "" then
+					local d2 = HttpService:JSONDecode(r)
+					if d2 and d2.count then data.followerCount = d2.count end
+				end
+			end)
+
+			-- 6f) Présence en temps réel (en ligne / en jeu / au studio)
+			pcall(function()
+				local body = HttpService:JSONEncode({userIds = {userId}})
+				local r = httpGet("https://presence.roblox.com/v1/presence/users?userIds=" .. tostring(userId))
+				if r and r ~= "" then
+					local d = HttpService:JSONDecode(r)
+					if d and d.userPresences and d.userPresences[1] then
+						local p = d.userPresences[1]
+						data.presenceType = p.userPresenceType
+						data.presenceLastLocation = p.lastLocation
+						data.presenceLastOnline = p.lastOnline
+						data.presencePlaceId = p.placeId
+						data.presenceUniverseId = p.universeId
+					end
+				end
+			end)
+
+			-- 6g) Avatar items (ce qu'il porte)
+			pcall(function()
+				local r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/avatar")
+				if r and r ~= "" then
+					local d2 = HttpService:JSONDecode(r)
+					if d2 then
+						data.avatarHatCount = d2.numHats or 0
+						data.avatarBody = d2.bodyColors and "Personnalisé" or "Classique"
+					end
+				end
+			end)
 
 		-- 7) Afficher
 				statusLbl.Text = "Détails de @" .. username .. " :"
@@ -4991,8 +5208,8 @@ local function refreshAllConsultedUsers()
 	pcall(function()
 		local body = HttpService:JSONEncode({userIds = uids})
 		-- API présence en GET : on peut faire une URL avec ?userIds=X,Y,Z
-		local uidsStr = table.concat(uids, ",")
-		local r = game:HttpGet("https://presence.roblox.com/v1/presence/users?userIds=" .. uidsStr)
+			local uidsStr = table.concat(uids, ",")
+			local r = httpGet("https://presence.roblox.com/v1/presence/users?userIds=" .. uidsStr)
 		if r and r ~= "" then
 			local d = HttpService:JSONDecode(r)
 			if d and d.userPresences then
