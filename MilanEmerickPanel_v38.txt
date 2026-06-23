@@ -945,13 +945,33 @@ end
 
 -- ============= JOUEURS =============
 local playerCards = {}
--- searchBox de Joueurs SUPPRIMÉE (doublon avec Registry, le user veut une seule search box)
+local playerSearchQuery = "" -- query actuelle (vide = pas de filtre)
 
--- ============= JOUEURS =============
--- playersScroll commence tout en haut (searchBox supprimée)
+-- searchBox de Joueurs = FILTRE LOCAL de la liste des joueurs connectés
+-- (la recherche officielle par username Roblox reste dans Registry)
+local playerSearchBox = Instance.new("TextBox")
+playerSearchBox.Size = UDim2.new(1, -10, 0, 26)
+playerSearchBox.Position = UDim2.new(0, 5, 0, 8)
+playerSearchBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+playerSearchBox.BackgroundTransparency = 0.4 -- plus discret que la search box Registry
+playerSearchBox.TextColor3 = Color3.fromRGB(200, 200, 200)
+playerSearchBox.PlaceholderText = "🔎 Filtrer la liste des joueurs..."
+playerSearchBox.Text = ""
+playerSearchBox.Font = Enum.Font.Gotham
+playerSearchBox.TextSize = 11
+playerSearchBox.TextXAlignment = Enum.TextXAlignment.Left
+playerSearchBox.ClearTextOnFocus = false
+playerSearchBox.Parent = playersPage
+createCorner(playerSearchBox, 6)
+createStroke(playerSearchBox, Color3.fromRGB(60, 60, 80), 1)
+local psbPad = Instance.new("UIPadding")
+psbPad.PaddingLeft = UDim.new(0, 8)
+psbPad.Parent = playerSearchBox
+
+-- playersScroll commence sous la searchBox de Joueurs
 local playersScroll = Instance.new("ScrollingFrame")
-playersScroll.Size = UDim2.new(1, -10, 1, -10)
-playersScroll.Position = UDim2.new(0, 5, 0, 5)
+playersScroll.Size = UDim2.new(1, -10, 1, -48)
+playersScroll.Position = UDim2.new(0, 5, 0, 40)
 playersScroll.BackgroundTransparency = 1
 playersScroll.ScrollBarThickness = 4
 playersScroll.BorderSizePixel = 0
@@ -963,6 +983,17 @@ local playersLayout = Instance.new("UIListLayout")
 playersLayout.Padding = UDim.new(0, 6)
 playersLayout.SortOrder = Enum.SortOrder.LayoutOrder
 playersLayout.Parent = playersScroll
+
+-- Listener filtre de la searchBox de Joueurs
+playerSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+	local q = playerSearchBox.Text:lower():gsub("%s+", "")
+	for plr, card in pairs(playerCards) do
+		local n = plr.Name:lower()
+		local d = plr.DisplayName:lower()
+		local match = (q == "") or (n:find(q, 1, true) ~= nil) or (d:find(q, 1, true) ~= nil)
+		card.Visible = match
+	end
+end)
 
 local echoStatusLabel = Instance.new("TextLabel")
 echoStatusLabel.Size = UDim2.new(1, -20, 0, 18)
