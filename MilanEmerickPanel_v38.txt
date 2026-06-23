@@ -594,8 +594,11 @@ local function _initRegistrySearch()
 		updateSuggestions(registrySearchBox.Text)
 	end)
 
-	-- Quand la search box perd le focus, cacher les suggestions après un délai
-	registrySearchBox.FocusLost:Connect(function()
+	-- Enter = lancer la recherche Roblox officielle (relie à runRegistrySearch)
+	registrySearchBox.FocusLost:Connect(function(enterPressed)
+		if enterPressed then
+			pcall(function() runRegistrySearch(registrySearchBox.Text) end)
+		end
 		task.delay(3, function()
 			if not registrySearchBox:IsFocused() then
 				suggestionsFrame.Visible = false
@@ -5227,46 +5230,16 @@ registrySubtitle.TextColor3 = Color3.fromRGB(160, 160, 180)
 registrySubtitle.TextXAlignment = Enum.TextXAlignment.Left
 registrySubtitle.Parent = registryCard
 
--- Champ de recherche
-local searchBox = Instance.new("TextBox")
-searchBox.Size = UDim2.new(1, -100, 0, 28)
-searchBox.Position = UDim2.new(0, 8, 0, 46)
-searchBox.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-searchBox.BorderSizePixel = 0
-searchBox.Text = ""
-searchBox.PlaceholderText = "Tape un username Roblox..."
-searchBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
-searchBox.Font = Enum.Font.Gotham
-searchBox.TextSize = 12
-searchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
-searchBox.ClearTextOnFocus = false
-searchBox.Parent = registryCard
-createCorner(searchBox, 6)
-searchBox.FocusLost:Connect(function(enterPressed)
-	if enterPressed then runRegistrySearch(searchBox.Text) end
-end)
-createStroke(searchBox, Color3.fromRGB(60, 60, 80), 1)
-
-local searchBtn = Instance.new("TextButton")
-searchBtn.Size = UDim2.new(0, 80, 0, 28)
-searchBtn.Position = UDim2.new(1, -88, 0, 46)
-searchBtn.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
-searchBtn.Text = "Rechercher"
-searchBtn.Font = Enum.Font.GothamBold
-searchBtn.TextSize = 11
-searchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-searchBtn.BorderSizePixel = 0
-searchBtn.AutoButtonColor = false
-searchBtn.Parent = registryCard
-createCorner(searchBtn, 6)
-searchBtn.MouseButton1Click:Connect(function() runRegistrySearch(searchBox.Text) end)
+-- Search box SUPPRIMÉE (doublon avec registrySearchBox en haut du Registry)
+-- Plus qu'une seule barre de recherche dans tout le panel (en haut du Registry)
+-- Le label de statut et le resultScroll remontent pour combler l'espace
 
 -- Label de statut (pour messages de recherche) — GLOBAL pour que runRegistrySearch (top-level) puisse y accéder
 statusLbl = Instance.new("TextLabel")
 statusLbl.Size = UDim2.new(1, -16, 0, 18)
-statusLbl.Position = UDim2.new(0, 8, 0, 80)
+statusLbl.Position = UDim2.new(0, 8, 0, 8)
 statusLbl.BackgroundTransparency = 1
-statusLbl.Text = "Tape un username et clique Rechercher."
+statusLbl.Text = "Tape un username ci-dessus et appuie sur Enter."
 statusLbl.Font = Enum.Font.Gotham
 statusLbl.TextSize = 10
 statusLbl.TextColor3 = Color3.fromRGB(180, 180, 200)
@@ -5277,7 +5250,7 @@ statusLbl.Parent = registryCard
 -- Scroll pour les résultats de recherche — GLOBAL aussi pour runRegistrySearch
 resultScroll = Instance.new("ScrollingFrame")
 resultScroll.Size = UDim2.new(1, -16, 0, 600) -- Hauteur FIXE confortable pour voir les gros blocs d'infos
-resultScroll.Position = UDim2.new(0, 8, 0, 102)
+resultScroll.Position = UDim2.new(0, 8, 0, 30)
 resultScroll.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 resultScroll.BorderSizePixel = 0
 resultScroll.ScrollBarThickness = 6
