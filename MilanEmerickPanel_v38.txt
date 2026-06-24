@@ -7523,18 +7523,30 @@ end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlay
 	credits.Parent = _mainFrame
 end)(mainFrame)
 
--- BOOT SAFE: switchTab après l'intro cinéma. Le bootSequence détaillé
--- (avec backdrop noir, vignettes, logs, particules) est conservé dans le code
--- mais n'est plus appelé pour éviter la double animation.
+-- BOOT SAFE 3 LAYERS:
+-- Layer 1: reveal immédiat à 0.5s (filet de sécurité absolu)
+-- Layer 2: reveal à 3s si pas encore visible (fallback)
+-- Layer 3: switchTab après reveal
 ;(function(_pages, _switchTab)
-	-- Fallback absolu 3s : si l'intro cinéma n'a pas révélé le panel pour X raison
+	-- LAYER 1: reveal immédiat à 0.5s
+	task.delay(0.5, function()
+		pcall(function()
+			if mainFrame and not mainFrame.Visible then
+				mainFrame.Visible = true
+			end
+		end)
+	end)
+	-- LAYER 2: switchTab Joueurs
 	pcall(function() _switchTab("Joueurs") end)
+	-- LAYER 3: fallback à 3s (au cas où)
 	task.delay(3, function()
 		pcall(function()
-			if _pages and _pages["Joueurs"] and not _pages["Joueurs"].Visible then
-				_switchTab("Joueurs")
+			if mainFrame and not mainFrame.Visible then
+				mainFrame.Visible = true
 			end
-			pcall(function() if mainFrame and not mainFrame.Visible then mainFrame.Visible = true end end)
+			if _pages and _pages["Joueurs"] and not _pages["Joueurs"].Visible then
+				pcall(function() _switchTab("Joueurs") end)
+			end
 		end)
 	end)
 end)(pages, switchTab)
