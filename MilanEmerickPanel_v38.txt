@@ -415,6 +415,31 @@ local function _initRegistrySearch()
 	createCorner(registrySearchBox, 8)
 	createStroke(registrySearchBox, Color3.fromRGB(80, 80, 100), 1)
 
+	-- Bouton X pour effacer la saisie (à droite de la searchBox)
+	local registryClearBtn = Instance.new("TextButton")
+	registryClearBtn.Size = UDim2.new(0, 22, 0, 22)
+	registryClearBtn.Position = UDim2.new(1, -28, 0, 8)
+	registryClearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+	registryClearBtn.Text = "✕"
+	registryClearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	registryClearBtn.Font = Enum.Font.GothamBold
+	registryClearBtn.TextSize = 11
+	registryClearBtn.BorderSizePixel = 0
+	registryClearBtn.Visible = false -- caché quand la searchBox est vide
+	registryClearBtn.ZIndex = registrySearchBox.ZIndex + 1
+	registryClearBtn.AutoButtonColor = true
+	registryClearBtn.Parent = registryPage
+	createCorner(registryClearBtn, 11) -- rond
+	registryClearBtn.MouseButton1Click:Connect(function()
+		registrySearchBox.Text = ""
+		registryClearBtn.Visible = false
+		suggestionsFrame.Visible = false
+	end)
+	-- Afficher/cacher le X selon le contenu
+	registrySearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+		registryClearBtn.Visible = (registrySearchBox.Text ~= "")
+	end)
+
 	-- Frame pour les 3 suggestions (sous la search box)
 	local suggestionsFrame = Instance.new("Frame")
 	suggestionsFrame.Size = UDim2.new(1, -10, 0, 0) -- hauteur auto
@@ -964,6 +989,27 @@ playerSearchBox.ClearTextOnFocus = false
 playerSearchBox.Parent = playersPage
 createCorner(playerSearchBox, 6)
 createStroke(playerSearchBox, Color3.fromRGB(60, 60, 80), 1)
+
+-- Bouton X pour effacer le filtre Joueurs
+local playerClearBtn = Instance.new("TextButton")
+playerClearBtn.Size = UDim2.new(0, 20, 0, 20)
+playerClearBtn.Position = UDim2.new(1, -25, 0, 11)
+playerClearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+playerClearBtn.Text = "✕"
+playerClearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+playerClearBtn.Font = Enum.Font.GothamBold
+playerClearBtn.TextSize = 10
+playerClearBtn.BorderSizePixel = 0
+playerClearBtn.Visible = false
+playerClearBtn.ZIndex = playerSearchBox.ZIndex + 1
+playerClearBtn.AutoButtonColor = true
+playerClearBtn.Parent = playersPage
+createCorner(playerClearBtn, 10)
+playerClearBtn.MouseButton1Click:Connect(function()
+	playerSearchBox.Text = ""
+	playerClearBtn.Visible = false
+end)
+
 local psbPad = Instance.new("UIPadding")
 psbPad.PaddingLeft = UDim.new(0, 8)
 psbPad.Parent = playerSearchBox
@@ -987,6 +1033,7 @@ playersLayout.Parent = playersScroll
 -- Listener filtre de la searchBox de Joueurs
 playerSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
 	local q = playerSearchBox.Text:lower():gsub("%s+", "")
+	playerClearBtn.Visible = (playerSearchBox.Text ~= "")
 	for plr, card in pairs(playerCards) do
 		local n = plr.Name:lower()
 		local d = plr.DisplayName:lower()
@@ -4499,6 +4546,219 @@ local function _initServerInfoCard()
 	end)
 end
 _initServerInfoCard()
+
+-- ============= AIMBOT =============
+-- Verrouille la souris sur la TÊTE du joueur le plus proche du CENTRE de l'écran
+-- - Filtre "pas à travers les murs" : raycast camera → head, vérifie qu'on touche le character
+-- - Filtre "à l'écran" : WorldToScreenPoint.Z > 0 et X/Y dans les bornes
+-- - Pas de visée amis (seulement les joueurs, pas le local player)
+-- - Option clic auto : mouse1click à chaque frame sur la cible
+-- Wrap dans local function + appel pour isoler les locals (limite 200 registers)
+local function _initAimbot()
+	local aimbotCard = Instance.new("Frame")
+	aimbotCard.Name = "AimbotCard"
+	aimbotCard.Size = UDim2.new(1, -10, 0, 0)
+	aimbotCard.AutomaticSize = Enum.AutomaticSize.Y
+	aimbotCard.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	aimbotCard.BorderSizePixel = 0
+	aimbotCard.LayoutOrder = 4 -- après serverInfoCard
+	aimbotCard.Parent = extraScroll
+	createCorner(aimbotCard, 8)
+	createStroke(aimbotCard, Color3.fromRGB(180, 80, 80), 1)
+
+	local aimbotPad = Instance.new("UIPadding")
+	aimbotPad.PaddingTop = UDim.new(0, 8)
+	aimbotPad.PaddingBottom = UDim.new(0, 8)
+	aimbotPad.PaddingLeft = UDim.new(0, 12)
+	aimbotPad.PaddingRight = UDim.new(0, 12)
+	aimbotPad.Parent = aimbotCard
+
+	local aimbotTitle = Instance.new("TextLabel")
+	aimbotTitle.Size = UDim2.new(1, 0, 0, 16)
+	aimbotTitle.BackgroundTransparency = 1
+	aimbotTitle.Text = "🎯 Aimbot (verrouille le centre écran sur la cible)"
+	aimbotTitle.Font = Enum.Font.GothamBold
+	aimbotTitle.TextSize = 12
+	aimbotTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
+	aimbotTitle.TextXAlignment = Enum.TextXAlignment.Left
+	aimbotTitle.LayoutOrder = 1
+	aimbotTitle.Parent = aimbotCard
+
+	-- Toggle principal (aim ON/OFF)
+	local aimbotEnabled = false
+	local aimbotAutoClick = false
+	local aimbotMaxDist = 300 -- studs (par défaut)
+
+	local mainSwitchRow = Instance.new("Frame")
+	mainSwitchRow.Size = UDim2.new(1, 0, 0, 26)
+	mainSwitchRow.BackgroundTransparency = 1
+	mainSwitchRow.LayoutOrder = 2
+	mainSwitchRow.Parent = aimbotCard
+	local mainSwitchLabel = Instance.new("TextLabel")
+	mainSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
+	mainSwitchLabel.BackgroundTransparency = 1
+	mainSwitchLabel.Text = "Aim ON / OFF"
+	mainSwitchLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+	mainSwitchLabel.Font = Enum.Font.Gotham
+	mainSwitchLabel.TextSize = 11
+	mainSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
+	mainSwitchLabel.Parent = mainSwitchRow
+	local mainSwitch = createSwitch(mainSwitchRow, "", 1, function(on)
+		aimbotEnabled = on
+	end)
+	mainSwitch.Size = UDim2.new(0.3, -4, 1, 0)
+	mainSwitch.Position = UDim2.new(0.7, 4, 0, 0)
+
+	-- Toggle auto-clic
+	local clickSwitchRow = Instance.new("Frame")
+	clickSwitchRow.Size = UDim2.new(1, 0, 0, 26)
+	clickSwitchRow.BackgroundTransparency = 1
+	clickSwitchRow.LayoutOrder = 3
+	clickSwitchRow.Parent = aimbotCard
+	local clickSwitchLabel = Instance.new("TextLabel")
+	clickSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
+	clickSwitchLabel.BackgroundTransparency = 1
+	clickSwitchLabel.Text = "🎯 Clic auto sur cible"
+	clickSwitchLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+	clickSwitchLabel.Font = Enum.Font.Gotham
+	clickSwitchLabel.TextSize = 11
+	clickSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
+	clickSwitchLabel.Parent = clickSwitchRow
+	local clickSwitch = createSwitch(clickSwitchRow, "", 1, function(on)
+		aimbotAutoClick = on
+	end)
+	clickSwitch.Size = UDim2.new(0.3, -4, 1, 0)
+	clickSwitch.Position = UDim2.new(0.7, 4, 0, 0)
+
+	-- Slider de distance max (clic gauche = -25, clic droit = +25)
+	local distRow = Instance.new("Frame")
+	distRow.Size = UDim2.new(1, 0, 0, 26)
+	distRow.BackgroundTransparency = 1
+	distRow.LayoutOrder = 4
+	distRow.Parent = aimbotCard
+	local distLabel = Instance.new("TextLabel")
+	distLabel.Size = UDim2.new(0.5, 0, 1, 0)
+	distLabel.BackgroundTransparency = 1
+	distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
+	distLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+	distLabel.Font = Enum.Font.Gotham
+	distLabel.TextSize = 11
+	distLabel.TextXAlignment = Enum.TextXAlignment.Left
+	distLabel.Parent = distRow
+	local distSlider = Instance.new("TextButton")
+	distSlider.Size = UDim2.new(0.5, -4, 1, 0)
+	distSlider.Position = UDim2.new(0.5, 4, 0, 0)
+	distSlider.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+	distSlider.BorderSizePixel = 0
+	distSlider.Text = "—   +"
+	distSlider.TextColor3 = Color3.fromRGB(180, 180, 220)
+	distSlider.Font = Enum.Font.Gotham
+	distSlider.TextSize = 10
+	distSlider.Parent = distRow
+	createCorner(distSlider, 4)
+	distSlider.MouseButton1Click:Connect(function()
+		aimbotMaxDist = math.max(50, aimbotMaxDist - 25)
+		distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
+	end)
+	distSlider.MouseButton2Click:Connect(function()
+		aimbotMaxDist = math.min(1000, aimbotMaxDist + 25)
+		distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
+	end)
+
+	-- Indicateur visuel : cercle rouge qui apparaît sur la cible actuelle
+	local aimCircle = Instance.new("Frame")
+	aimCircle.Size = UDim2.new(0, 60, 0, 60)
+	aimCircle.BackgroundTransparency = 1
+	aimCircle.BorderSizePixel = 0
+	aimCircle.Visible = false
+	aimCircle.ZIndex = 999
+	aimCircle.Parent = screenGui
+	local aimCircleCorner = Instance.new("UICorner")
+	aimCircleCorner.CornerRadius = UDim.new(1, 0)
+	aimCircleCorner.Parent = aimCircle
+	local aimCircleStroke = Instance.new("UIStroke")
+	aimCircleStroke.Color = Color3.fromRGB(255, 60, 60)
+	aimCircleStroke.Thickness = 3
+	aimCircleStroke.Transparency = 0.3
+	aimCircleStroke.Parent = aimCircle
+
+	-- Status label
+	local aimStatusLabel = Instance.new("TextLabel")
+	aimStatusLabel.Size = UDim2.new(1, 0, 0, 16)
+	aimStatusLabel.BackgroundTransparency = 1
+	aimStatusLabel.Text = "⏸ Aim inactif"
+	aimStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
+	aimStatusLabel.Font = Enum.Font.Gotham
+	aimStatusLabel.TextSize = 10
+	aimStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+	aimStatusLabel.LayoutOrder = 5
+	aimStatusLabel.Parent = aimbotCard
+
+	-- Boucle aimbot sur RenderStepped
+	local cam = workspace.CurrentCamera
+	local localPlayer = Players.LocalPlayer
+	local lastClickTick = 0
+	local renderConn = RunService.RenderStepped:Connect(function()
+		if not aimbotEnabled then
+			if aimCircle.Visible then aimCircle.Visible = false end
+			return
+		end
+		if not localPlayer or not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			return
+		end
+		local bestTarget = nil
+		local bestDistFromCenter = math.huge
+		local screenCenter = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
+		local myChar = localPlayer.Character
+		local myPos = myChar.HumanoidRootPart.Position
+		for _, plr in ipairs(Players:GetPlayers()) do
+			if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
+				local targetHead = plr.Character.Head
+				local targetPos = targetHead.Position
+				if (targetPos - myPos).Magnitude <= aimbotMaxDist then
+					local screenPos, onScreen = cam:WorldToScreenPoint(targetPos)
+					if onScreen and screenPos.Z > 0 then
+						local origin = cam.CFrame.Position
+						local direction = (targetPos - origin)
+						local rayParams = RaycastParams.new()
+						rayParams.FilterDescendantsInstances = {myChar, plr.Character}
+						rayParams.FilterType = Enum.RaycastFilterType.Exclude
+						local result = workspace:Raycast(origin, direction, rayParams)
+						if result == nil then
+							local dx = screenPos.X - screenCenter.X
+							local dy = screenPos.Y - screenCenter.Y
+							local distFromCenter = math.sqrt(dx * dx + dy * dy)
+							if distFromCenter < bestDistFromCenter then
+								bestDistFromCenter = distFromCenter
+								bestTarget = {player = plr, head = targetHead, screen = Vector2.new(screenPos.X, screenPos.Y)}
+							end
+						end
+					end
+				end
+			end
+		end
+		if bestTarget then
+			local dx = bestTarget.screen.X - screenCenter.X
+			local dy = bestTarget.screen.Y - screenCenter.Y
+			local smoothX = dx * 0.33
+			local smoothY = dy * 0.33
+			pcall(function() mousemoverel(smoothX, smoothY) end)
+			aimCircle.Position = UDim2.new(0, bestTarget.screen.X - 30, 0, bestTarget.screen.Y - 30)
+			if not aimCircle.Visible then aimCircle.Visible = true end
+			aimStatusLabel.Text = "🎯 Verrouillé : " .. bestTarget.player.DisplayName .. " (dist: " .. math.floor(bestDistFromCenter) .. "px)"
+			aimStatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+			if aimbotAutoClick and tick() - lastClickTick > 0.1 then
+				pcall(function() mouse1click() end)
+				lastClickTick = tick()
+			end
+		else
+			if aimCircle.Visible then aimCircle.Visible = false end
+			aimStatusLabel.Text = "🔍 Aucune cible visible (hors portée ou derrière un mur)"
+			aimStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
+		end
+	end)
+end
+_initAimbot()
 
 local fullbrightSwitch = createSwitch(extraScroll, "Fullbright", 0, function(on)
 	fullbrightState.enabled = on
