@@ -4566,6 +4566,14 @@ local function _initAimbot()
 	createCorner(aimbotCard, 8)
 	createStroke(aimbotCard, Color3.fromRGB(180, 80, 80), 1)
 
+	-- UIListLayout OBLIGATOIRE pour que les enfants se positionnent en colonne
+	-- Sans ça, les enfants s'empilent tous à (0,0) et se chevauchent
+	local aimbotLayout = Instance.new("UIListLayout")
+	aimbotLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	aimbotLayout.Padding = UDim.new(0, 4)
+	aimbotLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	aimbotLayout.Parent = aimbotCard
+
 	local aimbotPad = Instance.new("UIPadding")
 	aimbotPad.PaddingTop = UDim.new(0, 8)
 	aimbotPad.PaddingBottom = UDim.new(0, 8)
