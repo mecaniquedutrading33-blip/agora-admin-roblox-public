@@ -183,7 +183,68 @@ end)
 
 local flying = false
 local flySpeed = 60
-local flyBody, flyGyro, flyForce, flyConn
+local flyBody, flyGyro, flyConn
+local currentVel = Vector3.new(0, 0, 0)
+local currentLookDir = Vector3.new(0, 0, -1)
+
+-- ============= ROBLOX NATIVE JOYSTICK (PlayerModule) =============
+local moveVector = Vector2.new(0, 0)
+local joystickActive = false
+
+local function hookRobloxJoystick()
+	-- Sur mobile, Roblox PlayerModule fournit un joystick virtuel
+	-- On intercepte les inputs de mouvement via UserInputService (Touch + Thumbstick)
+	-- et on convertit en Vector2 normalisé pour la direction
+	local thumbstickConn = UserInputService:GetPropertyChangedSignal("TouchEnabled"):Connect(function()
+		joystickActive = UserInputService.TouchEnabled
+	end)
+	joystickActive = UserInputService.TouchEnabled
+end
+hookRobloxJoystick()
+
+-- Listener touch multi-touch : chaque doigt tracke un position
+-- 1er doigt = joystick directionnel (calcul par rapport à la position initiale)
+-- Roblox utilise son propre ThumbstickFrame pour le mouvement du personnage,
+-- mais on peut intercepter les touch events globaux pour le fly
+local touchPoints = {}
+local joystickTouchId = nil
+local joystickStartPos = nil
+local joystickCurrentPos = nil
+local joystickRadius = 80
+
+UserInputService.TouchStarted:Connect(function(input, gpe)
+	if gpe then return end
+	if joystickTouchId == nil then
+		joystickTouchId = input
+		joystickStartPos = input.Position
+		joystickCurrentPos = input.Position
+	end
+end)
+
+UserInputService.TouchMoved:Connect(function(input, gpe)
+	if gpe then return end
+	if input == joystickTouchId then
+		joystickCurrentPos = input.Position
+	end
+end)
+
+UserInputService.TouchEnded:Connect(function(input, gpe)
+	if gpe then return end
+	if input == joystickTouchId then
+		joystickTouchId = nil
+		joystickStartPos = nil
+		joystickCurrentPos = nil
+		moveVector = Vector2.new(0, 0)
+	end
+end)
+
+local function getJoystickVector()
+	if not joystickStartPos or not joystickCurrentPos then return Vector2.new(0, 0) end
+	local delta = joystickCurrentPos - joystickStartPos
+	local magnitude = math.min(delta.Magnitude, joystickRadius)
+	if delta.Magnitude < 5 then return Vector2.new(0, 0) end
+	return Vector2.new(delta.X / joystickRadius, -delta.Y / joystickRadius)
+end
 
 local function startFly()
 	if flying then return end
@@ -196,39 +257,109 @@ local function startFly()
 	flyBody = Instance.new("BodyVelocity")
 	flyBody.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
 	flyBody.Velocity = Vector3.new(0, 0, 0)
+	flyBody.P = 5000
 	flyBody.Parent = hrp
 
 	flyGyro = Instance.new("BodyGyro")
 	flyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
 	flyGyro.D = 100
 	flyGyro.P = 10000
+	flyGyro.CFrame = Camera.CFrame
 	flyGyro.Parent = hrp
 
-	flyForce = Instance.new("BodyPosition")
-	flyForce.MaxForce = Vector3.new(0, math.huge, 0)
-	flyForce.Position = hrp.Position
-	flyForce.D = 50
-	flyForce.P = 4000
-	flyForce.Parent = hrp
-
 	hum.PlatformStand = true
+	currentVel = Vector3.new(0, 0, 0)
 
 	flyConn = RunService.RenderStepped:Connect(function()
 		if not flying or not hrp or not hrp.Parent then return end
+		if flyBody and flyBody.Parent ~= hrp then flyBody.Parent = hrp end
+		if flyGyro and flyGyro.Parent ~= hrp then flyGyro.Parent = hrp end
+
 		local camCF = Camera.CFrame
-		local moveDir = Vector3.new(0, 0, 0)
-		if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camCF.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camCF.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camCF.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camCF.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-		if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
-		if moveDir.Magnitude > 0 then
-			moveDir = moveDir.Unit * flySpeed
+		local lookDir = camCF.LookVector
+		local rightDir = camCF.RightVector
+		local upDir = Vector3.new(0, 1, 0)
+
+		-- Direction cible (target velocity)
+		local targetDir = Vector3.new(0, 0, 0)
+		local inputMag = 0
+
+		-- PC : WASD + Space/Shift
+		if UserInputService.KeyboardEnabled then
+			if UserInputService:IsKeyDown(Enum.KeyCode.W) then targetDir = targetDir + lookDir end
+			if UserInputService:IsKeyDown(Enum.KeyCode.S) then targetDir = targetDir - lookDir end
+			if UserInputService:IsKeyDown(Enum.KeyCode.A) then targetDir = targetDir - rightDir end
+			if UserInputService:IsKeyDown(Enum.KeyCode.D) then targetDir = targetDir + rightDir end
+			if UserInputService:IsKeyDown(Enum.KeyCode.Space) then targetDir = targetDir + upDir end
+			if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then targetDir = targetDir - upDir end
+			if targetDir.Magnitude > 0 then
+				targetDir = targetDir.Unit
+				inputMag = 1
+			end
 		end
-		flyBody.Velocity = moveDir
+
+		-- Mobile : joystick tactile custom OU Thumbstick Roblox natif
+		-- On combine les deux sources pour fluidité max
+		if UserInputService.TouchEnabled then
+			-- Source 1 : notre joystick custom (touch tracking)
+			local customJoy = getJoystickVector()
+			if customJoy.Magnitude > 0.05 then
+				-- X = strafe (gauche/droite), Y = forward/backward
+				-- Note: Y inversé car touch coords Y vers le bas
+				targetDir = targetDir + rightDir * customJoy.X + lookDir * customJoy.Y
+				inputMag = math.max(inputMag, customJoy.Magnitude)
+			end
+			-- Source 2 : thumbstick frame de Roblox (PlayerModule)
+			-- On lit via le Humanoid MoveDirection si dispo
+			if hum and hum.MoveDirection and hum.MoveDirection.Magnitude > 0.05 then
+				-- Convertir MoveDirection (world-space) en input normalisé
+				local mv = hum.MoveDirection
+				-- Projeter sur les axes caméra
+				local forwardComponent = mv:Dot(lookDir)
+				local rightComponent = mv:Dot(rightDir)
+				-- Ajouter seulement si pas déjà couvert par le joystick custom
+				if customJoy.Magnitude < 0.1 then
+					targetDir = rightDir * rightComponent + lookDir * forwardComponent
+					inputMag = math.max(inputMag, mv.Magnitude)
+				end
+			end
+			-- Monter/descendre = inclinaison caméra (sur mobile, le joueur incline l'écran avec 2 doigts)
+			-- On utilise la position Y du pouce par rapport à la position centrale
+			if joystickStartPos and joystickCurrentPos then
+				-- Pas de bouton up/down séparé : la caméra elle-même guide verticalement
+				-- Si la caméra pointe vers le haut (lookDir.Y > 0.3) = monte automatiquement
+				-- Sinon si elle pointe vers le bas (lookDir.Y < -0.3) = descend
+				if customJoy.Magnitude > 0.3 then
+					local verticalComponent = lookDir.Y
+					if math.abs(verticalComponent) > 0.3 then
+						targetDir = targetDir + upDir * verticalComponent
+					end
+				end
+			end
+			if targetDir.Magnitude > 0 then
+				targetDir = targetDir.Unit
+				inputMag = math.max(inputMag, 0.5)
+			end
+		end
+
+		-- Cible de vélocité
+		local targetVel = targetDir * (flySpeed * inputMag)
+
+		-- Lissage fluide (lerp factor basé sur dt pour cohérence framerate)
+		-- 0.18 = très fluide, pas saccadé ; 0.3 = plus réactif
+		local smoothFactor = 0.18
+		currentVel = currentVel:Lerp(targetVel, smoothFactor)
+
+		-- Si input ~0, on coupe net (pas de drift)
+		if inputMag < 0.05 then
+			currentVel = currentVel * 0.85
+			if currentVel.Magnitude < 0.5 then
+				currentVel = Vector3.new(0, 0, 0)
+			end
+		end
+
+		flyBody.Velocity = currentVel
 		flyGyro.CFrame = camCF
-		flyForce.Position = hrp.Position
 	end)
 
 	flying = true
@@ -242,10 +373,10 @@ end
 local function stopFly()
 	if not flying then return end
 	flying = false
+	currentVel = Vector3.new(0, 0, 0)
 	if flyConn then flyConn:Disconnect() flyConn = nil end
 	if flyBody then flyBody:Destroy() flyBody = nil end
 	if flyGyro then flyGyro:Destroy() flyGyro = nil end
-	if flyForce then flyForce:Destroy() flyForce = nil end
 	local char = LocalPlayer.Character
 	if char then
 		local hum = char:FindFirstChildOfClass("Humanoid")
