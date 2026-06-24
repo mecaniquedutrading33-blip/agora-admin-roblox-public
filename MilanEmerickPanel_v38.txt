@@ -6531,6 +6531,45 @@ local function renderResult(data, parent)
 	table.insert(lines, "  💱 Trades entrants  : " .. (data.tradesInbound or "Indisponible"))
 	table.insert(lines, "  💱 Trades sortants  : " .. (data.tradesOutbound or "Indisponible"))
 	table.insert(lines, "  💱 Trades actifs    : " .. (data.tradesActive or "Indisponible"))
+	-- === LIVE (serveur actuel) : check via natives Roblox ===
+	table.insert(lines, "  ━━━━━━━━━━ LIVE (ce serveur) ━━━━━━━━━━")
+	if data.userId and Players then
+		local liveFound = false
+		pcall(function()
+			local target = Players:GetPlayerByUserId(data.userId)
+			if target then
+				liveFound = true
+				local _ageDays = target.AccountAge or 0
+				local _ageYears = math.floor(_ageDays / 365)
+				local _ageRem = _ageDays - (_ageYears * 365)
+				local _mt = tostring(target.MembershipType or "None"):gsub("Enum.MembershipType.", "")
+				local _teamName = (target.Team and target.Team.Name) or "Aucune"
+				local _ping = "?"
+				pcall(function() _ping = tostring(math.floor((target.GetNetworkPing and target:GetNetworkPing() or 0) * 1000)) .. " ms" end)
+				local _loaded = (target.HasAppearanceLoaded and "Oui") or "Non"
+				local _isFriend = (target.IsFriendsWith and LocalPlayer and target:IsFriendsWith(LocalPlayer.UserId)) and "Oui" or "Non"
+				local _charOk = target.Character ~= nil
+				local _humOk = _charOk and target.Character:FindFirstChildOfClass("Humanoid") ~= nil
+				local _hp = "?"
+				local _maxHp = "?"
+				pcall(function() if _humOk then local h = target.Character:FindFirstChildOfClass("Humanoid"); _hp = tostring(math.floor(h.Health)); _maxHp = tostring(math.floor(h.MaxHealth)) end end)
+				table.insert(lines, "  🔴 Présent ici     : OUI (connecté à ce serveur)")
+				table.insert(lines, "  ├─ AccountAge      : " .. _ageYears .. " an(s) " .. _ageRem .. "j (" .. _ageDays .. " jours)")
+				table.insert(lines, "  ├─ Membership      : " .. _mt)
+				table.insert(lines, "  ├─ Team            : " .. _teamName)
+				table.insert(lines, "  ├─ GameId courant  : " .. tostring(game.GameId or "?") .. " / PlaceId " .. tostring(game.PlaceId or "?"))
+				table.insert(lines, "  ├─ NetworkPing     : " .. _ping)
+				table.insert(lines, "  ├─ Avatar chargé   : " .. _loaded)
+				table.insert(lines, "  ├─ Ami avec toi    : " .. _isFriend)
+				table.insert(lines, "  └─ HP / MaxHP      : " .. _hp .. " / " .. _maxHp)
+			end
+		end)
+		if not liveFound then
+			table.insert(lines, "  ⚠ Pas dans ce serveur (vérification impossible)")
+		end
+	else
+		table.insert(lines, "  ⚠ userId manquant")
+	end
 	table.insert(lines, "  👥 Amis (nb)        : " .. (data.friendCount or "Indisponible"))
 	table.insert(lines, "  👥 Top 5 amis       : " .. friendsText)
 	table.insert(lines, "  👥 Followers        : " .. (data.followerCount or "Indisponible"))
