@@ -141,14 +141,17 @@ local function createStroke(parent, color, thickness)
 end
 
 local function tween(obj, props, duration)
-	TweenService:Create(obj, TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
+	if not obj or not obj.Parent then return end
+	pcall(function()
+		TweenService:Create(obj, TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
+	end)
 end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MilanEmerickPanel"
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui", 10)
 
 -- Backdrop retiré : il recouvrait tout l'écran en noir semi-transparent.
 
