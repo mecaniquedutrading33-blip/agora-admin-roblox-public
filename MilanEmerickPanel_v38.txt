@@ -19,6 +19,29 @@ local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
+local SoundService = game:GetService("SoundService")
+
+-- Wrapper de son multi-exécuteur (Solara, etc.) - pcall silencieux
+local function playSound(id, vol)
+	if not id then return end
+	pcall(function()
+		local s = Instance.new("Sound")
+		s.SoundId = "rbxassetid://" .. tostring(id)
+		s.Volume = vol or 0.4
+		s.Parent = SoundService
+		if s.IsLoaded then
+			s:Play()
+		else
+			s.Loaded:Connect(function()
+				s:Play()
+			end)
+		end
+		local len = (s.TimeLength and s.TimeLength > 0) and s.TimeLength or 3
+		task.delay(len + 0.2, function()
+			pcall(function() s:Destroy() end)
+		end)
+	end)
+end
 
 -- Helper HTTP multi-exécuteur (essaie game:HttpGet, GetAsync, request/syn.request)
 local function httpGet(url)
@@ -277,18 +300,20 @@ createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 	-- === SÉQUENCE CINÉMA ===
 	task.spawn(function()
 		local ok, err = pcall(function()
-			-- Étape 1 : fade in du backdrop depuis noir
+			-- Étape 1 : fade in du backdrop depuis noir + whoosh grave
+			playSound(9114850423, 0.5)
 			backdrop.BackgroundTransparency = 0
 
-			-- Étape 2 : titre "Agora Admin" fade in (0.5s)
+			-- Étape 2 : titre "Agora Admin" fade in (0.5s) + ding doux
 			task.wait(0.3)
 			_tween(title, {TextTransparency = 0}, 0.5)
 			_tween(subtitle, {TextTransparency = 0}, 0.5)
+			playSound(6042053626, 0.25)
 
 			-- Étape 3 : pause 1s pour lire le titre
 			task.wait(1.0)
 
-			-- Étape 4 : BOUM - flash blanc brutal + tag scale 0→1.3→1 + rotation impact
+			-- Étape 4 : BOUM - flash blanc brutal + tag scale 0→1.3→1 + boom impact fort
 			flash.BackgroundTransparency = 0
 			uniTag.TextTransparency = 0
 			stampTop.BackgroundTransparency = 0
@@ -299,6 +324,7 @@ createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 			uniTag.Position = UDim2.new(0.5, 0, 0.5, 0)
 			uniTag.AnchorPoint = Vector2.new(0.5, 0.5)
 			uniTag.Rotation = 4  -- rotation d'entrée (corrigée à -8 à la fin)
+			playSound(4590662766, 0.85)  -- boom impact
 			_tween(uniTag, {Size = UDim2.new(1.2, 0, 0, 140), Rotation = -10}, 0.12, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			_tween(flash, {BackgroundTransparency = 1}, 0.25)
 			task.wait(0.12)
@@ -472,7 +498,10 @@ local function createButton(parent, text, yPos, color, callback)
 	createCorner(btn, 8)
 	btn.MouseEnter:Connect(function() tween(btn, {BackgroundColor3 = color and color * 1.15 or Color3.fromRGB(60, 95, 200)}, 0.1) end)
 	btn.MouseLeave:Connect(function() tween(btn, {BackgroundColor3 = color or Color3.fromRGB(45, 75, 160)}, 0.1) end)
-	btn.MouseButton1Click:Connect(callback)
+	btn.MouseButton1Click:Connect(function()
+		playSound(6042053626, 0.22)
+		if callback then callback() end
+	end)
 	return btn
 end
 
