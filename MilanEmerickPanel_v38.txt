@@ -1,4 +1,4 @@
--- Panel Roblox universel amélioré - by Milan & Emerick
+-- Agora Admin [UNIVERSELLE] - Panel Roblox universel par Milan & Emerick
 -- LocalScript dans StarterPlayerScripts ou exécuteur
 
 local SETTINGS = {
@@ -189,7 +189,7 @@ local entryText = Instance.new("TextLabel")
 entryText.Size = UDim2.new(0.8, 0, 0, 30)
 entryText.Position = UDim2.new(0.1, 0, 0.5, 20)
 entryText.BackgroundTransparency = 1
-entryText.Text = "Milan x Emerick"
+entryText.Text = "Agora Admin [UNIVERSELLE]"
 entryText.Font = Enum.Font.GothamBlack
 entryText.TextSize = 18
 entryText.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -229,7 +229,7 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -90, 1, 0)
 titleLabel.Position = UDim2.new(0, 14, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "Milan & Emerick Panel | " .. getDeviceType()
+titleLabel.Text = "Agora Admin | " .. getDeviceType()
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
@@ -7213,7 +7213,7 @@ end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlay
 	credits.Size = UDim2.new(1, 0, 0, 18)
 	credits.Position = UDim2.new(0, 0, 1, -20)
 	credits.BackgroundTransparency = 1
-	credits.Text = "Panel by Milan & Emerick"
+	credits.Text = "Agora Universelle — by Milan & Emerick"
 	credits.Font = Enum.Font.GothamBold
 	credits.TextSize = 11
 	credits.TextColor3 = Color3.fromRGB(140, 140, 180)
