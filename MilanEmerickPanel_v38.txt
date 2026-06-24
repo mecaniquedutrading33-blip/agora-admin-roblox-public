@@ -406,13 +406,15 @@ closeBtn.BorderSizePixel = 0
 closeBtn.Parent = topBar
 createCorner(closeBtn, 8)
 
-local minimizeBtn = Instance.new("ImageButton")
-minimizeBtn.Name = "LogoBtn"
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Name = "MinimizeBtn"
 minimizeBtn.Size = UDim2.new(0, 28, 0, 28)
 minimizeBtn.Position = UDim2.new(1, -68, 0, 5)
 minimizeBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
-minimizeBtn.Image = "rbxassetid://73314612607499"
-minimizeBtn.ScaleType = Enum.ScaleType.Fit
+minimizeBtn.Text = "—"
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.TextSize = 18
+minimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
 minimizeBtn.AutoButtonColor = false
 minimizeBtn.BorderSizePixel = 0
 minimizeBtn.Parent = topBar
@@ -882,14 +884,18 @@ local minimized = false
 	local _tabBar = tabBar
 	local _mainFrame = mainFrame
 	local _minimizeBtn = minimizeBtn
+	local _topBar = topBar
+	local _closeBtn = closeBtn
 
-	local btn = Instance.new("ImageButton")
-	btn.Name = "LogoFloat"
+	local btn = Instance.new("TextButton")
+	btn.Name = "RestoreBtn"
 	btn.Size = UDim2.new(0, 56, 0, 56)
 	btn.Position = UDim2.new(0, 12, 0.5, -28)
 	btn.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
-	btn.Image = "rbxassetid://73314612607499"
-	btn.ScaleType = Enum.ScaleType.Fit
+	btn.Text = "+"
+	btn.Font = Enum.Font.GothamBlack
+	btn.TextSize = 32
+	btn.TextColor3 = Color3.fromRGB(180, 130, 255)
 	btn.AutoButtonColor = false
 	btn.BorderSizePixel = 0
 	btn.Visible = false
@@ -901,6 +907,7 @@ local minimized = false
 	stroke.Thickness = 2
 	stroke.Parent = btn
 
+	-- Long-press 2s sur le bouton "+" = destroy all (escape hatch)
 	local longPressProgress = nil
 	local lpStartTime = 0
 
@@ -959,6 +966,7 @@ local minimized = false
 		end
 	end)
 
+	-- Clic court = restaurer le panel
 	btn.MouseButton1Click:Connect(function()
 		if lpStartTime > 0 and (tick() - lpStartTime) < 1.8 then
 			return
@@ -969,7 +977,7 @@ local minimized = false
 		_topBar.Visible = true
 		_minimizeBtn.Visible = true
 		_closeBtn.Visible = true
-		_tween(_mainFrame, {Size = UDim2.new(0, 460, 0, 520)}, 0.2)
+		_tween(_mainFrame, {Size = UDim2.new(0, 460, 0, 520), BackgroundTransparency = 0.35}, 0.25)
 		btn.Visible = false
 	end)
 
@@ -981,15 +989,14 @@ local minimized = false
 	end)
 
 	_minimizeBtn.MouseButton1Click:Connect(function()
-		minimized = not minimized
-		_contentFrame.Visible = not minimized
-		_tabBar.Visible = not minimized
-		-- Cache aussi le topBar quand minimisé : juste le logo flottant reste visible
-		_topBar.Visible = not minimized
-		_minimizeBtn.Visible = not minimized
-		_closeBtn.Visible = not minimized
-		_tween(_mainFrame, {Size = minimized and UDim2.new(0, 0, 0, 0) or UDim2.new(0, 460, 0, 520)}, 0.2)
-		btn.Visible = minimized
+		minimized = true
+		_contentFrame.Visible = false
+		_tabBar.Visible = false
+		_topBar.Visible = false
+		_minimizeBtn.Visible = false
+		_closeBtn.Visible = false
+		_tween(_mainFrame, {Size = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1}, 0.25)
+		btn.Visible = true
 	end)
 end)()
 
