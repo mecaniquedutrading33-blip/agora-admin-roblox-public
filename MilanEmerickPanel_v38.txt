@@ -1334,6 +1334,99 @@ playersLayout.Padding = UDim.new(0, 6)
 playersLayout.SortOrder = Enum.SortOrder.LayoutOrder
 playersLayout.Parent = playersScroll
 
+-- === CARTE "👑 MOI" (LocalPlayer) — auto-créée, toujours en haut ===
+;(function(_createCorner, _createStroke)
+	local myCard = Instance.new("Frame")
+	myCard.Name = "MyCard"
+	myCard.Size = UDim2.new(1, -8, 0, 0)
+	myCard.AutomaticSize = Enum.AutomaticSize.Y
+	myCard.BackgroundColor3 = Color3.fromRGB(45, 30, 70)
+	myCard.BorderSizePixel = 0
+	myCard.LayoutOrder = -100 -- toujours en premier
+	myCard.Parent = playersScroll
+	_createCorner(myCard, 8)
+	_createStroke(myCard, Color3.fromRGB(180, 130, 255), 1.5)
+
+	-- Titre "👑 TOI — @pseudo"
+	local myTitle = Instance.new("TextLabel")
+	myTitle.Size = UDim2.new(1, -16, 0, 22)
+	myTitle.Position = UDim2.new(0, 8, 0, 6)
+	myTitle.BackgroundTransparency = 1
+	myTitle.Font = Enum.Font.GothamBlack
+	myTitle.TextSize = 14
+	myTitle.TextColor3 = Color3.fromRGB(220, 180, 255)
+	myTitle.TextXAlignment = Enum.TextXAlignment.Left
+	myTitle.Parent = myCard
+
+	-- Contenu (lignes natives Roblox)
+	local myContent = Instance.new("TextLabel")
+	myContent.Name = "MyContent"
+	myContent.Size = UDim2.new(1, -16, 0, 0)
+	myContent.Position = UDim2.new(0, 8, 0, 30)
+	myContent.AutomaticSize = Enum.AutomaticSize.Y
+	myContent.BackgroundTransparency = 1
+	myContent.Font = Enum.Font.Gotham
+	myContent.TextSize = 11
+	myContent.TextColor3 = Color3.fromRGB(210, 210, 230)
+	myContent.TextXAlignment = Enum.TextXAlignment.Left
+	myContent.TextYAlignment = Enum.TextYAlignment.Top
+	myContent.TextWrapped = true
+	myContent.Parent = myCard
+
+	-- Update function (IIFE pour isoler les locals)
+	local function updateMyCard()
+		pcall(function()
+			local _lp = LocalPlayer
+			local myName = _lp.Name or "?"
+			local myDisp = _lp.DisplayName or "?"
+			local myUid = tostring(_lp.UserId or "?")
+			local myAgeDays = _lp.AccountAge or 0
+			local myYears = math.floor(myAgeDays / 365)
+			local myRem = myAgeDays - (myYears * 365)
+			local myMt = tostring(_lp.MembershipType or "None"):gsub("Enum.MembershipType.", "")
+			local myPing = "?"
+			pcall(function() myPing = tostring(math.floor((_lp.GetNetworkPing and _lp:GetNetworkPing() or 0) * 1000)) .. " ms" end)
+			local myTeam = (_lp.Team and _lp.Team.Name) or "Aucune"
+			local myChar = _lp.Character
+			local myHp = "?"
+			local myPos = "?"
+			pcall(function()
+				if myChar then
+					local h = myChar:FindFirstChildOfClass("Humanoid")
+					if h then myHp = tostring(math.floor(h.Health)) .. "/" .. tostring(math.floor(h.MaxHealth)) end
+					local hrp = myChar:FindFirstChild("HumanoidRootPart")
+					if hrp then
+						local p = hrp.Position
+						myPos = string.format("(%.0f, %.0f, %.0f)", p.X, p.Y, p.Z)
+					end
+				end
+			end)
+			local myGame = tostring(game.GameId or "?")
+			local myPlace = tostring(game.PlaceId or "?")
+
+			myTitle.Text = "👑 TOI — @" .. myName .. " (" .. myDisp .. ")"
+			myContent.Text = table.concat({
+				"UserId      : " .. myUid,
+				"Compte      : " .. myYears .. " an(s) " .. myRem .. "j (" .. myAgeDays .. " jours)",
+				"Membership  : " .. myMt,
+				"Team        : " .. myTeam,
+				"Ping        : " .. myPing,
+				"HP          : " .. myHp,
+				"Position    : " .. myPos,
+				"GameId      : " .. myGame .. " / PlaceId " .. myPlace,
+			}, "\n")
+		end)
+	end
+	updateMyCard()
+	-- Update chaque seconde
+	task.spawn(function()
+		while true do
+			task.wait(1)
+			updateMyCard()
+		end
+	end)
+end)(createCorner, createStroke)
+
 -- Listener filtre de la searchBox de Joueurs
 playerSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
 	local q = playerSearchBox.Text:lower():gsub("%s+", "")
