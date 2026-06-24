@@ -2947,7 +2947,7 @@ local function bootSequence(onComplete)
 end
 
 -- ============= MOVE =============
-local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil }
+local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
 local noclipState = { enabled = false }
 local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
@@ -2959,6 +2959,11 @@ local function stopFly()
 	if flyState.loop then flyState.loop:Disconnect() flyState.loop = nil end
 	if flyState.gyro then flyState.gyro:Destroy() flyState.gyro = nil end
 	if flyState.vel then flyState.vel:Destroy() flyState.vel = nil end
+	flyState.mobileInput = Vector3.zero
+	flyState.mobileUpHeld = false
+	flyState.mobileDownHeld = false
+	flyState.mobileStickId = nil
+	if flyState.showMobileUi then flyState.showMobileUi(false) end
 	updateCharacter()
 	if humanoid then humanoid.PlatformStand = false end
 	flySwitch.set(false)
@@ -2967,6 +2972,141 @@ local function stopFly()
 		protectionsState.antiTeleportGraceUntil = tick() + 0.4
 	end
 end
+
+-- ============= FLY MOBILE JOYSTICK (auto-show on touch devices) =============
+;(function(_fly, _screenGui)
+	local function isMobile()
+		return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+	end
+	local function ensureMobileUi()
+		if _fly.mobileUiCreated then return end
+		_fly.mobileUiCreated = true
+		local base = Instance.new("Frame")
+		base.Name = "FlyJoystickBase"
+		base.Size = UDim2.new(0, 110, 0, 110)
+		base.Position = UDim2.new(0, 30, 1, -240)
+		base.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
+		base.BackgroundTransparency = 0.35
+		base.BorderSizePixel = 0
+		base.Visible = false
+		base.ZIndex = 50
+		base.Parent = _screenGui
+		local bc = Instance.new("UICorner")
+		bc.CornerRadius = UDim.new(1, 0)
+		bc.Parent = base
+		local bs = Instance.new("UIStroke")
+		bs.Color = Color3.fromRGB(140, 100, 230)
+		bs.Thickness = 2
+		bs.Transparency = 0.4
+		bs.Parent = base
+		local knob = Instance.new("Frame")
+		knob.Name = "Knob"
+		knob.Size = UDim2.new(0, 50, 0, 50)
+		knob.Position = UDim2.new(0.5, -25, 0.5, -25)
+		knob.BackgroundColor3 = Color3.fromRGB(180, 140, 255)
+		knob.BorderSizePixel = 0
+		knob.ZIndex = 51
+		knob.Parent = base
+		local kc = Instance.new("UICorner")
+		kc.CornerRadius = UDim.new(1, 0)
+		kc.Parent = knob
+		local upBtn = Instance.new("TextButton")
+		upBtn.Name = "FlyUp"
+		upBtn.Size = UDim2.new(0, 60, 0, 60)
+		upBtn.Position = UDim2.new(0, 30, 1, -130)
+		upBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
+		upBtn.BackgroundTransparency = 0.35
+		upBtn.BorderSizePixel = 0
+		upBtn.Text = "▲"
+		upBtn.TextColor3 = Color3.fromRGB(140, 100, 230)
+		upBtn.Font = Enum.Font.GothamBold
+		upBtn.TextSize = 22
+		upBtn.Visible = false
+		upBtn.ZIndex = 50
+		upBtn.Parent = _screenGui
+		local uc = Instance.new("UICorner")
+		uc.CornerRadius = UDim.new(1, 0)
+		uc.Parent = upBtn
+		local us = Instance.new("UIStroke")
+		us.Color = Color3.fromRGB(140, 100, 230)
+		us.Thickness = 2
+		us.Transparency = 0.4
+		us.Parent = upBtn
+		local dnBtn = Instance.new("TextButton")
+		dnBtn.Name = "FlyDown"
+		dnBtn.Size = UDim2.new(0, 60, 0, 60)
+		dnBtn.Position = UDim2.new(0, 100, 1, -130)
+		dnBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
+		dnBtn.BackgroundTransparency = 0.35
+		dnBtn.BorderSizePixel = 0
+		dnBtn.Text = "▼"
+		dnBtn.TextColor3 = Color3.fromRGB(140, 100, 230)
+		dnBtn.Font = Enum.Font.GothamBold
+		dnBtn.TextSize = 22
+		dnBtn.Visible = false
+		dnBtn.ZIndex = 50
+		dnBtn.Parent = _screenGui
+		local dc = Instance.new("UICorner")
+		dc.CornerRadius = UDim.new(1, 0)
+		dc.Parent = dnBtn
+		local ds = Instance.new("UIStroke")
+		ds.Color = Color3.fromRGB(140, 100, 230)
+		ds.Thickness = 2
+		ds.Transparency = 0.4
+		ds.Parent = dnBtn
+		_fly.mobileBase = base
+		_fly.mobileKnob = knob
+		_fly.mobileUp = upBtn
+		_fly.mobileDown = dnBtn
+		-- Joystick drag handler
+		base.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.Touch then
+				_fly.mobileStickId = input
+			end
+		end)
+		upBtn.MouseButton1Down:Connect(function() _fly.mobileUpHeld = true end)
+		upBtn.MouseButton1Up:Connect(function() _fly.mobileUpHeld = false end)
+		dnBtn.MouseButton1Down:Connect(function() _fly.mobileDownHeld = true end)
+		dnBtn.MouseButton1Up:Connect(function() _fly.mobileDownHeld = false end)
+		-- Use direct touch state via .TouchEnded events
+		upBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then _fly.mobileUpHeld = true end end)
+		upBtn.InputEnded:Connect(function() _fly.mobileUpHeld = false end)
+		dnBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then _fly.mobileDownHeld = true end end)
+		dnBtn.InputEnded:Connect(function() _fly.mobileDownHeld = false end)
+	end
+	-- Track mobile joystick in RenderStepped via global InputChanged
+	UserInputService.InputChanged:Connect(function(input, gpe)
+		if not _fly.flying or not _fly.mobileStickId then return end
+		if gpe then return end
+		if input ~= _fly.mobileStickId then return end
+		if input.UserInputState == Enum.UserInputState.End then
+			_fly.mobileStickId = nil
+			_fly.mobileInput = Vector3.zero
+			if _fly.mobileKnob then _fly.mobileKnob.Position = UDim2.new(0.5, -25, 0.5, -25) end
+			return
+		end
+		-- Convert position relative to joystick base
+		local base = _fly.mobileBase
+		if not base or not _fly.mobileKnob then return end
+		local center = base.AbsolutePosition + base.AbsoluteSize / 2
+		local radius = base.AbsoluteSize.X / 2
+		local delta = input.Position - center
+		local dist = math.min(delta.Magnitude, radius)
+		local dir = delta.Magnitude > 0 and delta.Unit or Vector2.new(0, 0)
+		local knobOffset = dir * dist
+		_fly.mobileKnob.Position = UDim2.new(0.5, knobOffset.X - 25, 0.5, knobOffset.Y - 25)
+		-- Normalized input for camera-relative direction (-1..1)
+		_fly.mobileInput = Vector3.new(dir.X, 0, dir.Y)
+	end)
+	-- Public API used by startFly/stopFly
+	_fly.showMobileUi = function(visible)
+		ensureMobileUi()
+		if _fly.mobileBase then _fly.mobileBase.Visible = visible end
+		if _fly.mobileUp then _fly.mobileUp.Visible = visible end
+		if _fly.mobileDown then _fly.mobileDown.Visible = visible end
+	end
+	_fly.isMobile = isMobile
+end)(flyState, screenGui)
 
 local function startFly()
 	updateCharacter()
@@ -2986,18 +3126,33 @@ local function startFly()
 
 	if humanoid then humanoid.PlatformStand = true end
 
+	-- Show mobile UI on touch devices
+	if flyState.isMobile and flyState.isMobile() and flyState.showMobileUi then
+		flyState.showMobileUi(true)
+	end
+
 	flyState.loop = RunService.RenderStepped:Connect(function()
 		updateCharacter()
-		if not flyState.flying or not rootPart then return end
+		if not flyState.flying or not rootPart or not rootPart.Parent then return end
+		-- Re-attach body movers if rootPart changed (respawn)
+		if flyState.gyro and flyState.gyro.Parent ~= rootPart then flyState.gyro.Parent = rootPart end
+		if flyState.vel and flyState.vel.Parent ~= rootPart then flyState.vel.Parent = rootPart end
 		if flyState.gyro then flyState.gyro.CFrame = Camera.CFrame end
 
 		local move = Vector3.zero
+		-- PC controls (clavier)
 		if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move += Camera.CFrame.LookVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= Camera.CFrame.LookVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then move -= Camera.CFrame.RightVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += Camera.CFrame.RightVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
 		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0, 1, 0) end
+		-- Mobile controls (joystick + boutons)
+		if flyState.mobileInput and flyState.mobileInput.Magnitude > 0 then
+			move += Camera.CFrame.LookVector * flyState.mobileInput.Z + Camera.CFrame.RightVector * flyState.mobileInput.X
+		end
+		if flyState.mobileUpHeld then move += Vector3.new(0, 1, 0) end
+		if flyState.mobileDownHeld then move -= Vector3.new(0, 1, 0) end
 
 		if flyState.vel then
 			flyState.vel.Velocity = move.Magnitude > 0 and move.Unit * flyState.speed or Vector3.zero
