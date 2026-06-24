@@ -1,6 +1,14 @@
-if game.CoreGui:FindFirstChild("FlyGuiLou") then game.CoreGui.FlyGuiLou:Destroy() end
-if game.Players.LocalPlayer.PlayerGui:FindFirstChild("FlyGuiLou") then game.Players.LocalPlayer.PlayerGui.FlyGuiLou:Destroy() end
+-- ============= CLEANUP OLD =============
+pcall(function()
+	if game.CoreGui:FindFirstChild("FlyGuiLou") then game.CoreGui.FlyGuiLou:Destroy() end
+end)
+pcall(function()
+	if game.Players.LocalPlayer.PlayerGui:FindFirstChild("FlyGuiLou") then
+		game.Players.LocalPlayer.PlayerGui.FlyGuiLou:Destroy()
+	end
+end)
 
+-- ============= SERVICES =============
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -9,13 +17,57 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
+-- ============= STATE =============
+local flying = false
+local flySpeed = 60
+local flyBody, flyGyro, flyConn
+local currentVel = Vector3.new(0, 0, 0)
+local MIN_SPEED = 10
+local MAX_SPEED = 300
+
+local dragging = false
+local dragStart, startPos
+local dragConn, releaseConn
+
+local sliderDragging = false
+local controlsVisible = false
+
+local _flyConnections = {}
+
+-- Mobile touch tracking
+local joystickTouchId = nil
+local joystickStartPos = nil
+local joystickCurrentPos = nil
+local joystickRadius = 80
+local mobileUpHeld = false
+local mobileDownHeld = false
+
+-- ============= ROBLOX NATIVE JOYSTICK =============
+local function getJoystickVector()
+	if not joystickStartPos or not joystickCurrentPos then return Vector2.new(0, 0) end
+	local delta = joystickCurrentPos - joystickStartPos
+	local magnitude = math.min(delta.Magnitude, joystickRadius)
+	if delta.Magnitude < 5 then return Vector2.new(0, 0) end
+	return Vector2.new(delta.X / joystickRadius, -delta.Y / joystickRadius)
+end
+
+local function isMobile()
+	return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+end
+
+-- ============= GUI CONTAINER =============
 local FlyGui = Instance.new("ScreenGui")
 FlyGui.Name = "FlyGuiLou"
 FlyGui.ResetOnSpawn = false
 FlyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 FlyGui.DisplayOrder = 999
-FlyGui.Parent = game.CoreGui
+-- Try CoreGui first (plus safe pour executor), fallback PlayerGui
+local parentOk = pcall(function() FlyGui.Parent = game.CoreGui end)
+if not parentOk then
+	pcall(function() FlyGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui") end)
+end
 
+-- ============= INTRO =============
 local Intro = Instance.new("Frame")
 Intro.Size = UDim2.new(0, 360, 0, 140)
 Intro.Position = UDim2.new(0.5, -180, 0.5, -70)
@@ -98,9 +150,10 @@ task.delay(2.2, function()
 	TweenService:Create(IntroGlow, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {ImageTransparency = 1}):Play()
 	TweenService:Create(IntroStroke, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Transparency = 1}):Play()
 	task.wait(0.65)
-	Intro:Destroy()
+	pcall(function() Intro:Destroy() end)
 end)
 
+-- ============= TOGGLE BUTTON =============
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Name = "FlyToggle"
 ToggleBtn.Size = UDim2.new(0, 70, 0, 70)
@@ -155,10 +208,10 @@ ToggleLabel.TextSize = 11
 ToggleLabel.TextColor3 = Color3.fromRGB(120, 120, 150)
 ToggleLabel.Parent = ToggleBtn
 
--- ============= PANNEAU CONTROLES (slider vitesse + X pour fermer) =============
+-- ============= CONTROLS PANEL (slider + X) =============
 local ControlsPanel = Instance.new("Frame")
 ControlsPanel.Name = "ControlsPanel"
-ControlsPanel.Size = UDim2.new(0, 200, 0, 80)
+ControlsPanel.Size = UDim2.new(0, 220, 0, 80)
 ControlsPanel.Position = UDim2.new(0, 110, 0.5, -40)
 ControlsPanel.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
 ControlsPanel.BorderSizePixel = 0
@@ -174,7 +227,6 @@ PanelStroke.Color = Color3.fromRGB(80, 80, 110)
 PanelStroke.Thickness = 1.5
 PanelStroke.Parent = ControlsPanel
 
--- Titre "VITESSE"
 local SpeedTitle = Instance.new("TextLabel")
 SpeedTitle.Size = UDim2.new(0, 100, 0, 18)
 SpeedTitle.Position = UDim2.new(0, 12, 0, 8)
@@ -186,7 +238,6 @@ SpeedTitle.TextColor3 = Color3.fromRGB(160, 150, 200)
 SpeedTitle.TextXAlignment = Enum.TextXAlignment.Left
 SpeedTitle.Parent = ControlsPanel
 
--- Valeur vitesse affichée
 local SpeedValue = Instance.new("TextLabel")
 SpeedValue.Name = "SpeedValue"
 SpeedValue.Size = UDim2.new(0, 80, 0, 18)
@@ -200,7 +251,6 @@ SpeedValue.TextColor3 = Color3.fromRGB(180, 140, 255)
 SpeedValue.TextXAlignment = Enum.TextXAlignment.Right
 SpeedValue.Parent = ControlsPanel
 
--- Slider track
 local SliderTrack = Instance.new("Frame")
 SliderTrack.Name = "SliderTrack"
 SliderTrack.Size = UDim2.new(1, -24, 0, 6)
@@ -212,10 +262,9 @@ local SliderTrackCorner = Instance.new("UICorner")
 SliderTrackCorner.CornerRadius = UDim.new(1, 0)
 SliderTrackCorner.Parent = SliderTrack
 
--- Slider fill (partie remplie)
 local SliderFill = Instance.new("Frame")
 SliderFill.Name = "SliderFill"
-SliderFill.Size = UDim2.new(0.18, 0, 1, 0)  -- 60/300 = 0.2
+SliderFill.Size = UDim2.new(0.18, 0, 1, 0)
 SliderFill.BackgroundColor3 = Color3.fromRGB(120, 90, 220)
 SliderFill.BorderSizePixel = 0
 SliderFill.Parent = SliderTrack
@@ -223,7 +272,6 @@ local SliderFillCorner = Instance.new("UICorner")
 SliderFillCorner.CornerRadius = UDim.new(1, 0)
 SliderFillCorner.Parent = SliderFill
 
--- Slider knob (la boule qu'on drag)
 local SliderKnob = Instance.new("TextButton")
 SliderKnob.Name = "SliderKnob"
 SliderKnob.Size = UDim2.new(0, 18, 0, 18)
@@ -239,7 +287,6 @@ local SliderKnobCorner = Instance.new("UICorner")
 SliderKnobCorner.CornerRadius = UDim.new(1, 0)
 SliderKnobCorner.Parent = SliderKnob
 
--- Bouton X pour fermer/désactiver
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Name = "CloseBtn"
 CloseBtn.Size = UDim2.new(0, 24, 0, 24)
@@ -256,9 +303,8 @@ local CloseBtnCorner = Instance.new("UICorner")
 CloseBtnCorner.CornerRadius = UDim.new(0, 6)
 CloseBtnCorner.Parent = CloseBtn
 
--- Label "DÉSACTIVER"
 local CloseLabel = Instance.new("TextLabel")
-CloseLabel.Size = UDim2.new(0, 140, 0, 18)
+CloseLabel.Size = UDim2.new(0, 160, 0, 18)
 CloseLabel.Position = UDim2.new(0, 44, 0, 53)
 CloseLabel.BackgroundTransparency = 1
 CloseLabel.Text = "DÉSACTIVER LE SCRIPT"
@@ -268,177 +314,7 @@ CloseLabel.TextColor3 = Color3.fromRGB(200, 80, 80)
 CloseLabel.TextXAlignment = Enum.TextXAlignment.Left
 CloseLabel.Parent = ControlsPanel
 
--- ============= SLIDER DRAG =============
-local flySpeed = 60
-local MIN_SPEED = 10
-local MAX_SPEED = 300
-local sliderDragging = false
-
-local function updateSpeed(value)
-	flySpeed = math.clamp(math.floor(value), MIN_SPEED, MAX_SPEED)
-	SpeedValue.Text = tostring(flySpeed)
-	-- Mise à jour visuelle du fill + knob
-	local pct = (flySpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
-	SliderFill.Size = UDim2.new(pct, 0, 1, 0)
-	SliderKnob.Position = UDim2.new(pct, -9, 0.5, -9)
-end
-
-SliderKnob.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		sliderDragging = true
-		-- Empêcher le drag du bouton fly pendant qu'on drag le slider
-		dragging = false
-	end
-end)
-
-SliderKnob.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		sliderDragging = false
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if sliderDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local trackAbsPos = SliderTrack.AbsolutePosition
-		local trackAbsSize = SliderTrack.AbsoluteSize
-		local relX = (input.Position.X - trackAbsPos.X) / trackAbsSize.X
-		relX = math.clamp(relX, 0, 1)
-		local newSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * relX
-		updateSpeed(newSpeed)
-	end
-end)
-
--- ============= CLOSE BUTTON (désactive tout le script) =============
-local function destroyAll()
-	-- Stop fly si actif
-	if flying then stopFly() end
-	-- Cleanup connections
-	for _, c in ipairs(_flyConnections) do
-		pcall(function() c:Disconnect() end)
-	end
-	-- Destroy GUI
-	pcall(function() FlyGui:Destroy() end)
-	print("[FLY LOU] Script désactivé.")
-end
-
-CloseBtn.MouseButton1Click:Connect(destroyAll)
-
--- ============= TOGGLE BUTTON (montre/cache le panneau + drag) =============
-local controlsVisible = false
-local _flyConnections = {}
-
-local dragging = false
-local dragStart, startPos
-local dragConn, releaseConn
-
-ToggleBtn.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = ToggleBtn.Position
-		dragConn = input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-				if dragConn then dragConn:Disconnect() end
-				if releaseConn then releaseConn:Disconnect() end
-			end
-		end)
-	end
-end)
-
-local function toggleControls()
-	controlsVisible = not controlsVisible
-	ControlsPanel.Visible = controlsVisible
-end
-
--- Single-click vs drag detection: si le bouton est cliqué SANS drag, on toggle le panel
-local clickConn = ToggleBtn.MouseButton1Click:Connect(function()
-	if not sliderDragging then
-		toggleFly()
-		-- Affiche le panel de contrôles quand fly ON, cache quand OFF
-		if flying and not controlsVisible then
-			controlsVisible = true
-			ControlsPanel.Visible = true
-		elseif not flying and controlsVisible then
-			controlsVisible = false
-			ControlsPanel.Visible = false
-		end
-	end
-end)
-table.insert(_flyConnections, clickConn)
-
-UserInputService.InputChanged:Connect(function(input)
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStart
-		ToggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
-local flying = false
-local flySpeed = 60
-local flyBody, flyGyro, flyConn
-local currentVel = Vector3.new(0, 0, 0)
-local currentLookDir = Vector3.new(0, 0, -1)
-
--- ============= ROBLOX NATIVE JOYSTICK (PlayerModule) =============
-local moveVector = Vector2.new(0, 0)
-local joystickActive = false
-
-local function hookRobloxJoystick()
-	-- Sur mobile, Roblox PlayerModule fournit un joystick virtuel
-	-- On intercepte les inputs de mouvement via UserInputService (Touch + Thumbstick)
-	-- et on convertit en Vector2 normalisé pour la direction
-	local thumbstickConn = UserInputService:GetPropertyChangedSignal("TouchEnabled"):Connect(function()
-		joystickActive = UserInputService.TouchEnabled
-	end)
-	joystickActive = UserInputService.TouchEnabled
-end
-hookRobloxJoystick()
-
--- Listener touch multi-touch : chaque doigt tracke un position
--- 1er doigt = joystick directionnel (calcul par rapport à la position initiale)
--- Roblox utilise son propre ThumbstickFrame pour le mouvement du personnage,
--- mais on peut intercepter les touch events globaux pour le fly
-local touchPoints = {}
-local joystickTouchId = nil
-local joystickStartPos = nil
-local joystickCurrentPos = nil
-local joystickRadius = 80
-
-UserInputService.TouchStarted:Connect(function(input, gpe)
-	if gpe then return end
-	if joystickTouchId == nil then
-		joystickTouchId = input
-		joystickStartPos = input.Position
-		joystickCurrentPos = input.Position
-	end
-end)
-
-UserInputService.TouchMoved:Connect(function(input, gpe)
-	if gpe then return end
-	if input == joystickTouchId then
-		joystickCurrentPos = input.Position
-	end
-end)
-
-UserInputService.TouchEnded:Connect(function(input, gpe)
-	if gpe then return end
-	if input == joystickTouchId then
-		joystickTouchId = nil
-		joystickStartPos = nil
-		joystickCurrentPos = nil
-		moveVector = Vector2.new(0, 0)
-	end
-end)
-
-local function getJoystickVector()
-	if not joystickStartPos or not joystickCurrentPos then return Vector2.new(0, 0) end
-	local delta = joystickCurrentPos - joystickStartPos
-	local magnitude = math.min(delta.Magnitude, joystickRadius)
-	if delta.Magnitude < 5 then return Vector2.new(0, 0) end
-	return Vector2.new(delta.X / joystickRadius, -delta.Y / joystickRadius)
-end
-
+-- ============= FLY FUNCTIONS =============
 local function startFly()
 	if flying then return end
 	local char = LocalPlayer.Character
@@ -473,11 +349,9 @@ local function startFly()
 		local rightDir = camCF.RightVector
 		local upDir = Vector3.new(0, 1, 0)
 
-		-- Direction cible (target velocity)
 		local targetDir = Vector3.new(0, 0, 0)
 		local inputMag = 0
 
-		-- PC : WASD + Space/Shift
 		if UserInputService.KeyboardEnabled then
 			if UserInputService:IsKeyDown(Enum.KeyCode.W) then targetDir = targetDir + lookDir end
 			if UserInputService:IsKeyDown(Enum.KeyCode.S) then targetDir = targetDir - lookDir end
@@ -491,37 +365,22 @@ local function startFly()
 			end
 		end
 
-		-- Mobile : joystick tactile custom OU Thumbstick Roblox natif
-		-- On combine les deux sources pour fluidité max
 		if UserInputService.TouchEnabled then
-			-- Source 1 : notre joystick custom (touch tracking)
 			local customJoy = getJoystickVector()
 			if customJoy.Magnitude > 0.05 then
-				-- X = strafe (gauche/droite), Y = forward/backward
-				-- Note: Y inversé car touch coords Y vers le bas
 				targetDir = targetDir + rightDir * customJoy.X + lookDir * customJoy.Y
 				inputMag = math.max(inputMag, customJoy.Magnitude)
 			end
-			-- Source 2 : thumbstick frame de Roblox (PlayerModule)
-			-- On lit via le Humanoid MoveDirection si dispo
 			if hum and hum.MoveDirection and hum.MoveDirection.Magnitude > 0.05 then
-				-- Convertir MoveDirection (world-space) en input normalisé
 				local mv = hum.MoveDirection
-				-- Projeter sur les axes caméra
 				local forwardComponent = mv:Dot(lookDir)
 				local rightComponent = mv:Dot(rightDir)
-				-- Ajouter seulement si pas déjà couvert par le joystick custom
 				if customJoy.Magnitude < 0.1 then
 					targetDir = rightDir * rightComponent + lookDir * forwardComponent
 					inputMag = math.max(inputMag, mv.Magnitude)
 				end
 			end
-			-- Monter/descendre = inclinaison caméra (sur mobile, le joueur incline l'écran avec 2 doigts)
-			-- On utilise la position Y du pouce par rapport à la position centrale
 			if joystickStartPos and joystickCurrentPos then
-				-- Pas de bouton up/down séparé : la caméra elle-même guide verticalement
-				-- Si la caméra pointe vers le haut (lookDir.Y > 0.3) = monte automatiquement
-				-- Sinon si elle pointe vers le bas (lookDir.Y < -0.3) = descend
 				if customJoy.Magnitude > 0.3 then
 					local verticalComponent = lookDir.Y
 					if math.abs(verticalComponent) > 0.3 then
@@ -535,15 +394,10 @@ local function startFly()
 			end
 		end
 
-		-- Cible de vélocité
 		local targetVel = targetDir * (flySpeed * inputMag)
-
-		-- Lissage fluide (lerp factor basé sur dt pour cohérence framerate)
-		-- 0.18 = très fluide, pas saccadé ; 0.3 = plus réactif
 		local smoothFactor = 0.18
 		currentVel = currentVel:Lerp(targetVel, smoothFactor)
 
-		-- Si input ~0, on coupe net (pas de drift)
 		if inputMag < 0.05 then
 			currentVel = currentVel * 0.85
 			if currentVel.Magnitude < 0.5 then
@@ -586,20 +440,123 @@ local function toggleFly()
 	if flying then stopFly() else startFly() end
 end
 
-ToggleBtn.MouseEnter:Connect(function()
-	TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {Size = UDim2.new(0, 76, 0, 76)}):Play()
-end)
-ToggleBtn.MouseLeave:Connect(function()
-	TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {Size = UDim2.new(0, 70, 0, 70)}):Play()
-end)
+local function updateSpeed(value)
+	flySpeed = math.clamp(math.floor(value), MIN_SPEED, MAX_SPEED)
+	SpeedValue.Text = tostring(flySpeed)
+	local pct = (flySpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
+	SliderFill.Size = UDim2.new(pct, 0, 1, 0)
+	SliderKnob.Position = UDim2.new(pct, -9, 0.5, -9)
+end
 
-LocalPlayer.Chatted:Connect(function(msg)
+local function destroyAll()
+	if flying then stopFly() end
+	for _, c in ipairs(_flyConnections) do
+		pcall(function() c:Disconnect() end)
+	end
+	pcall(function() FlyGui:Destroy() end)
+	print("[FLY LOU] Script désactivé.")
+end
+
+-- ============= WIRE EVENTS (après que state + functions soient définis) =============
+table.insert(_flyConnections, ToggleBtn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = ToggleBtn.Position
+		dragConn = input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+				if dragConn then dragConn:Disconnect() end
+				if releaseConn then releaseConn:Disconnect() end
+			end
+		end)
+	end
+end))
+
+table.insert(_flyConnections, UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		ToggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+	if sliderDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local trackAbsPos = SliderTrack.AbsolutePosition
+		local trackAbsSize = SliderTrack.AbsoluteSize
+		local relX = (input.Position.X - trackAbsPos.X) / trackAbsSize.X
+		relX = math.clamp(relX, 0, 1)
+		local newSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * relX
+		updateSpeed(newSpeed)
+	end
+end))
+
+table.insert(_flyConnections, ToggleBtn.MouseButton1Click:Connect(function()
+	if not sliderDragging then
+		toggleFly()
+		if flying and not controlsVisible then
+			controlsVisible = true
+			ControlsPanel.Visible = true
+		elseif not flying and controlsVisible then
+			controlsVisible = false
+			ControlsPanel.Visible = false
+		end
+	end
+end))
+
+table.insert(_flyConnections, ToggleBtn.MouseEnter:Connect(function()
+	TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {Size = UDim2.new(0, 76, 0, 76)}):Play()
+end))
+
+table.insert(_flyConnections, ToggleBtn.MouseLeave:Connect(function()
+	TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {Size = UDim2.new(0, 70, 0, 70)}):Play()
+end))
+
+table.insert(_flyConnections, SliderKnob.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		sliderDragging = true
+		dragging = false
+	end
+end))
+
+table.insert(_flyConnections, SliderKnob.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		sliderDragging = false
+	end
+end))
+
+table.insert(_flyConnections, CloseBtn.MouseButton1Click:Connect(destroyAll))
+
+table.insert(_flyConnections, LocalPlayer.Chatted:Connect(function(msg)
 	local m = msg:lower()
 	if m == ";fly" then
 		if not flying then startFly() end
 	elseif m == ";unfly" then
 		if flying then stopFly() end
 	end
-end)
+end))
+
+-- Mobile touch tracking (joystick)
+table.insert(_flyConnections, UserInputService.TouchStarted:Connect(function(input, gpe)
+	if gpe then return end
+	if joystickTouchId == nil then
+		joystickTouchId = input
+		joystickStartPos = input.Position
+		joystickCurrentPos = input.Position
+	end
+end))
+
+table.insert(_flyConnections, UserInputService.TouchMoved:Connect(function(input, gpe)
+	if gpe then return end
+	if input == joystickTouchId then
+		joystickCurrentPos = input.Position
+	end
+end))
+
+table.insert(_flyConnections, UserInputService.TouchEnded:Connect(function(input, gpe)
+	if gpe then return end
+	if input == joystickTouchId then
+		joystickTouchId = nil
+		joystickStartPos = nil
+		joystickCurrentPos = nil
+	end
+end))
 
 print("[FLY LOU] Script chargé. Toggle à l'écran, ou tape ;fly / ;unfly dans le chat.")
