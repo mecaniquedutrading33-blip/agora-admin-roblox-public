@@ -343,9 +343,11 @@ topBar.ZIndex = 2
 createCorner(topBar, 14)
 createStroke(topBar, Color3.fromRGB(80, 80, 100), 0.8)
 
--- Logo à gauche du titre (le tag "UNIVERSELLE" est dans l'intro cinéma, pas dans le panel)
+-- Logo à gauche du titre + badge "UNIVERSELLE" penché (mini) à droite du titre
 ;(function()
 	local _topBar = topBar
+	local _createCorner = createCorner
+	local _createStroke = createStroke
 
 	local titleLogo = Instance.new("ImageLabel")
 	titleLogo.Name = "TitleLogo"
@@ -355,6 +357,28 @@ createStroke(topBar, Color3.fromRGB(80, 80, 100), 0.8)
 	titleLogo.BackgroundTransparency = 1
 	titleLogo.Image = "rbxassetid://73314612607499"
 	titleLogo.Parent = _topBar
+
+	-- Badge "UNIVERSELLE" petit et penché, à droite du titre
+	local uniBadge = Instance.new("TextLabel")
+	uniBadge.Name = "UniBadge"
+	uniBadge.Size = UDim2.new(0, 90, 0, 18)
+	uniBadge.Position = UDim2.new(0, 134, 0.5, 0)
+	uniBadge.AnchorPoint = Vector2.new(0, 0.5)
+	uniBadge.BackgroundColor3 = Color3.fromRGB(60, 30, 110)
+	uniBadge.BackgroundTransparency = 0.15
+	uniBadge.BorderSizePixel = 0
+	uniBadge.Font = Enum.Font.GothamBlack
+	uniBadge.Text = "UNIVERSELLE"
+	uniBadge.TextSize = 9
+	uniBadge.TextColor3 = Color3.fromRGB(220, 180, 255)
+	uniBadge.Rotation = -8
+	uniBadge.ZIndex = 5
+	uniBadge.Parent = _topBar
+	_createCorner(uniBadge, 4)
+	local badgeStroke = Instance.new("UIStroke")
+	badgeStroke.Color = Color3.fromRGB(150, 100, 220)
+	badgeStroke.Thickness = 1
+	badgeStroke.Parent = uniBadge
 end)()
 
 local titleLabel = Instance.new("TextLabel")
@@ -899,7 +923,7 @@ local minimized = false
 	btn.Visible = false
 	btn.ZIndex = 9999
 	btn.Parent = screenGui
-	_createCorner(btn, 1)
+	_createCorner(btn, 14)
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = Color3.fromRGB(120, 80, 220)
 	stroke.Thickness = 2
