@@ -5601,74 +5601,98 @@ local function _wrapRemotes()
 
 	-- Fonction: crée une carte pour un remote
 	local function makeRemoteCard(remote)
-		local isFunction = remote:IsA("RemoteFunction")
-		local card = Instance.new("Frame")
-		card.Size = UDim2.new(1, -8, 0, 0)
-		card.AutomaticSize = Enum.AutomaticSize.Y
-		card.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-		card.BorderSizePixel = 0
-		card.LayoutOrder = 1
-		card.Parent = remoteListFrame
-		createCorner(card, 6)
-		createStroke(card, isFunction and Color3.fromRGB(255, 180, 80) or Color3.fromRGB(80, 180, 255), 1)
-		local cardPadding = Instance.new("UIPadding")
-		cardPadding.PaddingBottom = UDim.new(0, 8)
-		cardPadding.Parent = card
+	local isFunction = remote:IsA("RemoteFunction")
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(1, -8, 0, 0)
+	card.AutomaticSize = Enum.AutomaticSize.Y
+	card.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+	card.BorderSizePixel = 0
+	card.LayoutOrder = 1
+	card.Parent = remoteListFrame
+	createCorner(card, 6)
+	createStroke(card, isFunction and Color3.fromRGB(255, 180, 80) or Color3.fromRGB(80, 180, 255), 1)
+	local cardPadding = Instance.new("UIPadding")
+	cardPadding.PaddingTop = UDim.new(0, 6)
+	cardPadding.PaddingBottom = UDim.new(0, 6)
+	cardPadding.PaddingLeft = UDim.new(0, 8)
+	cardPadding.PaddingRight = UDim.new(0, 8)
+	cardPadding.Parent = card
 
-		local header = Instance.new("TextLabel")
-		header.Size = UDim2.new(1, -16, 0, 0)
-		header.AutomaticSize = Enum.AutomaticSize.Y
-		header.Position = UDim2.new(0, 8, 0, 4)
-		header.BackgroundTransparency = 1
-		header.Text = (isFunction and "[FN] " or "[EV] ") .. remote:GetFullName()
-		header.TextColor3 = isFunction and Color3.fromRGB(255, 200, 120) or Color3.fromRGB(140, 200, 255)
-		header.TextSize = 11
-		header.Font = Enum.Font.GothamBold
-		header.TextXAlignment = Enum.TextXAlignment.Left
-		header.TextWrapped = true
-		header.Parent = card
+	-- UIListLayout pour empiler header / row / result proprement
+	local cardLayout = Instance.new("UIListLayout")
+	cardLayout.Padding = UDim.new(0, 6)
+	cardLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	cardLayout.FillDirection = Enum.FillDirection.Vertical
+	cardLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	cardLayout.Parent = card
 
-		local argsBox = Instance.new("TextBox")
-		argsBox.Size = UDim2.new(1, -90, 0, 24)
-		argsBox.Position = UDim2.new(0, 8, 0, 28)
-		argsBox.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
-		argsBox.BorderSizePixel = 0
-		argsBox.Text = ""
-		argsBox.PlaceholderText = "args (ex: \"hello\", 42, true)"
-		argsBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
-		argsBox.TextColor3 = Color3.fromRGB(220, 220, 240)
-		argsBox.TextSize = 11
-		argsBox.Font = Enum.Font.Code
-		argsBox.TextXAlignment = Enum.TextXAlignment.Left
-		argsBox.ClearTextOnFocus = false
-		argsBox.Parent = card
-		createCorner(argsBox, 4)
+	local header = Instance.new("TextLabel")
+	header.Name = "Header"
+	header.Size = UDim2.new(1, 0, 0, 0)
+	header.AutomaticSize = Enum.AutomaticSize.Y
+	header.BackgroundTransparency = 1
+	header.Text = (isFunction and "[FN] " or "[EV] ") .. remote:GetFullName()
+	header.TextColor3 = isFunction and Color3.fromRGB(255, 200, 120) or Color3.fromRGB(140, 200, 255)
+	header.TextSize = 11
+	header.Font = Enum.Font.GothamBold
+	header.TextXAlignment = Enum.TextXAlignment.Left
+	header.TextWrapped = true
+	header.LayoutOrder = 1
+	header.Parent = card
 
-		local fireBtn = Instance.new("TextButton")
-		fireBtn.Size = UDim2.new(0, 64, 0, 24)
-		fireBtn.Position = UDim2.new(1, -72, 0, 28)
-		fireBtn.BackgroundColor3 = isFunction and Color3.fromRGB(180, 100, 30) or Color3.fromRGB(40, 120, 200)
-		fireBtn.BorderSizePixel = 0
-		fireBtn.Text = isFunction and "Invoke" or "Fire"
-		fireBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-		fireBtn.TextSize = 12
-		fireBtn.Font = Enum.Font.GothamBold
-		fireBtn.Parent = card
-		createCorner(fireBtn, 4)
+	-- Row: argsBox + fireBtn côte à côte
+	local row = Instance.new("Frame")
+	row.Name = "Row"
+	row.Size = UDim2.new(1, 0, 0, 24)
+	row.BackgroundTransparency = 1
+	row.LayoutOrder = 2
+	row.Parent = card
 
-		local resultLbl = Instance.new("TextLabel")
-		resultLbl.Size = UDim2.new(1, -16, 0, 0)
-		resultLbl.AutomaticSize = Enum.AutomaticSize.Y
-		resultLbl.Position = UDim2.new(0, 8, 0, 58)
-		resultLbl.BackgroundTransparency = 1
-		resultLbl.Text = ""
-		resultLbl.TextColor3 = Color3.fromRGB(180, 220, 180)
-		resultLbl.TextSize = 10
-		resultLbl.Font = Enum.Font.Code
-		resultLbl.TextWrapped = true
-		resultLbl.TextXAlignment = Enum.TextXAlignment.Left
-		resultLbl.TextYAlignment = Enum.TextYAlignment.Top
-		resultLbl.Parent = card
+	local argsBox = Instance.new("TextBox")
+	argsBox.Name = "ArgsBox"
+	argsBox.Size = UDim2.new(1, -72, 1, 0)
+	argsBox.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+	argsBox.BorderSizePixel = 0
+	argsBox.Text = ""
+	argsBox.PlaceholderText = "args (ex: \"hello\", 42, true)"
+	argsBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
+	argsBox.TextColor3 = Color3.fromRGB(220, 220, 240)
+	argsBox.TextSize = 11
+	argsBox.Font = Enum.Font.Code
+	argsBox.TextXAlignment = Enum.TextXAlignment.Left
+	argsBox.ClearTextOnFocus = false
+	argsBox.Parent = row
+	createCorner(argsBox, 4)
+
+	local fireBtn = Instance.new("TextButton")
+	fireBtn.Name = "FireBtn"
+	fireBtn.Size = UDim2.new(0, 64, 1, 0)
+	fireBtn.Position = UDim2.new(1, -64, 0, 0)
+	fireBtn.AnchorPoint = Vector2.new(0, 0)
+	fireBtn.BackgroundColor3 = isFunction and Color3.fromRGB(180, 100, 30) or Color3.fromRGB(40, 120, 200)
+	fireBtn.BorderSizePixel = 0
+	fireBtn.Text = isFunction and "Invoke" or "Fire"
+	fireBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	fireBtn.TextSize = 12
+	fireBtn.Font = Enum.Font.GothamBold
+	fireBtn.Parent = row
+	createCorner(fireBtn, 4)
+
+	local resultLbl = Instance.new("TextLabel")
+	resultLbl.Name = "ResultLbl"
+	resultLbl.Size = UDim2.new(1, 0, 0, 0)
+	resultLbl.AutomaticSize = Enum.AutomaticSize.Y
+	resultLbl.BackgroundTransparency = 1
+	resultLbl.Text = ""
+	resultLbl.TextColor3 = Color3.fromRGB(180, 220, 180)
+	resultLbl.TextSize = 10
+	resultLbl.Font = Enum.Font.Code
+	resultLbl.TextWrapped = true
+	resultLbl.TextXAlignment = Enum.TextXAlignment.Left
+	resultLbl.TextYAlignment = Enum.TextYAlignment.Top
+	resultLbl.Visible = false
+	resultLbl.LayoutOrder = 3
+	resultLbl.Parent = card
 
 		-- Parseur d'arguments simples
 		local function parseArgs(str)
@@ -5732,8 +5756,9 @@ local function _wrapRemotes()
 		end
 
 		fireBtn.MouseButton1Click:Connect(function()
-			local args = parseArgs(argsBox.Text)
-			resultLbl.Text = "→ Envoi en cours..."
+		local args = parseArgs(argsBox.Text)
+		resultLbl.Visible = true
+		resultLbl.Text = "→ Envoi en cours..."
 			resultLbl.TextColor3 = Color3.fromRGB(180, 180, 220)
 			local ok, err = pcall(function()
 				if isFunction then
