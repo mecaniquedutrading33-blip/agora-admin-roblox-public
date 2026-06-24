@@ -1,4 +1,4 @@
--- Agora Admin [UNIVERSELLE] - Panel Roblox universel par Milan & Emerick
+-- Agora Admin [UNIVERSELLE] - Panel Roblox universel
 -- LocalScript dans StarterPlayerScripts ou exécuteur
 
 local SETTINGS = {
@@ -225,11 +225,61 @@ topBar.ZIndex = 2
 createCorner(topBar, 14)
 createStroke(topBar, Color3.fromRGB(80, 80, 100), 0.8)
 
+-- Logo à gauche du titre + gros tag "UNIVERSELLE" penché (wibe) à droite du titre
+;(function()
+	local _createCorner = createCorner
+	local _createStroke = createStroke
+	local _tween = tween
+	local _topBar = topBar
+
+	local titleLogo = Instance.new("ImageLabel")
+	titleLogo.Name = "TitleLogo"
+	titleLogo.Size = UDim2.new(0, 22, 0, 22)
+	titleLogo.Position = UDim2.new(0, 8, 0.5, 0)
+	titleLogo.AnchorPoint = Vector2.new(0, 0.5)
+	titleLogo.BackgroundTransparency = 1
+	titleLogo.Image = "rbxassetid://73314612607499"
+	titleLogo.Parent = _topBar
+
+	-- Tag "UNIVERSELLE" : TextLabel pivoté, Neon, glow
+	local uniTag = Instance.new("TextLabel")
+	uniTag.Name = "UniTag"
+	uniTag.Size = UDim2.new(0, 120, 0, 22)
+	uniTag.Position = UDim2.new(1, -150, 0.5, 0)
+	uniTag.AnchorPoint = Vector2.new(0, 0.5)
+	uniTag.BackgroundTransparency = 1
+	uniTag.Rotation = -8
+	uniTag.Text = "UNIVERSELLE"
+	uniTag.Font = Enum.Font.GothamBlack
+	uniTag.TextSize = 13
+	uniTag.TextColor3 = Color3.fromRGB(180, 130, 255)
+	uniTag.TextStrokeTransparency = 0.3
+	uniTag.TextStrokeColor3 = Color3.fromRGB(60, 20, 120)
+	uniTag.TextXAlignment = Enum.TextXAlignment.Right
+	uniTag.ZIndex = 5
+	uniTag.Parent = _topBar
+
+	-- Mini pulse loop sur le tag
+	;(function()
+		local _t = tween
+		local _tag = uniTag
+		;(function()
+			while _tag and _tag.Parent do
+				_t(_tag, {TextColor3 = Color3.fromRGB(220, 180, 255)}, 1.2)
+				task.wait(1.2)
+				if not (_tag and _tag.Parent) then break end
+				_t(_tag, {TextColor3 = Color3.fromRGB(140, 100, 255)}, 1.2)
+				task.wait(1.2)
+			end
+		end)()
+	end)()
+end)()
+
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -90, 1, 0)
-titleLabel.Position = UDim2.new(0, 14, 0, 0)
+titleLabel.Size = UDim2.new(1, -110, 1, 0)
+titleLabel.Position = UDim2.new(0, 36, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "Agora Admin | " .. getDeviceType()
+titleLabel.Text = "Agora Admin"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
@@ -834,6 +884,9 @@ local minimized = false
 		minimized = false
 		_contentFrame.Visible = true
 		_tabBar.Visible = true
+		_topBar.Visible = true
+		_minimizeBtn.Visible = true
+		_closeBtn.Visible = true
 		_tween(_mainFrame, {Size = UDim2.new(0, 460, 0, 520)}, 0.2)
 		btn.Visible = false
 	end)
@@ -849,8 +902,12 @@ local minimized = false
 		minimized = not minimized
 		_contentFrame.Visible = not minimized
 		_tabBar.Visible = not minimized
+		-- Cache aussi le topBar quand minimisé : juste le logo flottant reste visible
+		_topBar.Visible = not minimized
+		_minimizeBtn.Visible = not minimized
+		_closeBtn.Visible = not minimized
+		_tween(_mainFrame, {Size = minimized and UDim2.new(0, 0, 0, 0) or UDim2.new(0, 460, 0, 520)}, 0.2)
 		btn.Visible = minimized
-		_tween(_mainFrame, {Size = minimized and UDim2.new(0, 460, 0, 52) or UDim2.new(0, 460, 0, 520)}, 0.2)
 	end)
 end)()
 
@@ -7373,7 +7430,7 @@ end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlay
 	credits.Size = UDim2.new(1, 0, 0, 18)
 	credits.Position = UDim2.new(0, 0, 1, -20)
 	credits.BackgroundTransparency = 1
-	credits.Text = "Agora Universelle — by Milan & Emerick"
+	credits.Text = "Agora Universelle"
 	credits.Font = Enum.Font.GothamBold
 	credits.TextSize = 11
 	credits.TextColor3 = Color3.fromRGB(140, 140, 180)
