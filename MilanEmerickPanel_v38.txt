@@ -5309,6 +5309,204 @@ local function joinOrIndi(list, sep, max)
 	return table.concat(parts, sep)
 end
 
+-- ============= TAGS CUSTOMS + BARRE D'ACTIONS + DEVICE DETECTION =============
+-- Tout est wrappé dans une IIFE pour économiser les locals top-level (limite CLI Luau 200)
+-- Le code expose : getUserTags, addTagToUser, removeTagFromUser, openTagPopup, detectLocalDevice
+local getUserTags, addTagToUser, removeTagFromUser, openTagPopup, detectLocalDevice
+do
+	local _TAG_STORE = {} -- _TAG_STORE[userId] = { tags = {...}, lastSeen = "..." }
+	local _tagPopup = nil
+
+	function getUserTags(userId)
+		if not _TAG_STORE[userId] then return {} end
+		return _TAG_STORE[userId].tags or {}
+	end
+
+	function addTagToUser(userId, tag)
+		tag = tag:match("^%s*(.-)%s*$") -- trim
+		if tag == "" or #tag > 20 then return false end
+		if not _TAG_STORE[userId] then
+			_TAG_STORE[userId] = { tags = {}, lastSeen = os.date("%Y-%m-%d") }
+		end
+		for _, t in ipairs(_TAG_STORE[userId].tags) do
+			if t:lower() == tag:lower() then return false end
+		end
+		table.insert(_TAG_STORE[userId].tags, tag)
+		_TAG_STORE[userId].lastSeen = os.date("%Y-%m-%d")
+		return true
+	end
+
+	function removeTagFromUser(userId, tag)
+		if not _TAG_STORE[userId] then return false end
+		for i, t in ipairs(_TAG_STORE[userId].tags) do
+			if t:lower() == tag:lower() then
+				table.remove(_TAG_STORE[userId].tags, i)
+				return true
+			end
+		end
+		return false
+	end
+
+	local function closeTagPopup()
+		if _tagPopup and _tagPopup.Parent then _tagPopup:Destroy() end
+		_tagPopup = nil
+	end
+
+	function openTagPopup(userId, username, parentRef)
+		closeTagPopup()
+		local overlay = Instance.new("Frame")
+		overlay.Size = UDim2.new(1, 0, 1, 0)
+		overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		overlay.BackgroundTransparency = 0.4
+		overlay.BorderSizePixel = 0
+		overlay.ZIndex = 50
+		overlay.Parent = parentRef
+		overlay.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				closeTagPopup()
+			end
+		end)
+		local card = Instance.new("Frame")
+		card.Size = UDim2.new(0, 280, 0, 220)
+		card.Position = UDim2.new(0.5, -140, 0.5, -110)
+		card.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+		card.BorderSizePixel = 0
+		card.ZIndex = 51
+		card.Parent = overlay
+		createCorner(card, 10)
+		createStroke(card, Color3.fromRGB(120, 80, 255), 2)
+		local title = Instance.new("TextLabel")
+		title.Size = UDim2.new(1, 0, 0, 26)
+		title.BackgroundTransparency = 1
+		title.Text = "🏷️ Tags — @" .. (username or "?")
+		title.TextColor3 = Color3.fromRGB(255, 255, 255)
+		title.Font = Enum.Font.GothamBold
+		title.TextSize = 14
+		title.ZIndex = 52
+		title.Parent = card
+		local subtitle = Instance.new("TextLabel")
+		subtitle.Size = UDim2.new(1, -16, 0, 16)
+		subtitle.Position = UDim2.new(0, 8, 0, 26)
+		subtitle.BackgroundTransparency = 1
+		subtitle.Text = "Tape un tag et appuie sur Ajouter (max 20 car.)"
+		subtitle.TextColor3 = Color3.fromRGB(180, 180, 200)
+		subtitle.Font = Enum.Font.Gotham
+		subtitle.TextSize = 10
+		subtitle.TextXAlignment = Enum.TextXAlignment.Left
+		subtitle.ZIndex = 52
+		subtitle.Parent = card
+		local tagInput = Instance.new("TextBox")
+		tagInput.Size = UDim2.new(1, -16, 0, 28)
+		tagInput.Position = UDim2.new(0, 8, 0, 46)
+		tagInput.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+		tagInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+		tagInput.PlaceholderText = "ex: VIP, cheater, à surveiller..."
+		tagInput.Text = ""
+		tagInput.Font = Enum.Font.Gotham
+		tagInput.TextSize = 12
+		tagInput.ClearTextOnFocus = false
+		tagInput.ZIndex = 52
+		tagInput.Parent = card
+		createCorner(tagInput, 6)
+		local listLabel = Instance.new("TextLabel")
+		listLabel.Size = UDim2.new(1, -16, 0, 50)
+		listLabel.Position = UDim2.new(0, 8, 0, 80)
+		listLabel.BackgroundTransparency = 1
+		listLabel.Font = Enum.Font.Gotham
+		listLabel.TextSize = 11
+		listLabel.TextWrapped = true
+		listLabel.TextXAlignment = Enum.TextXAlignment.Left
+		listLabel.TextYAlignment = Enum.TextYAlignment.Top
+		listLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+		listLabel.ZIndex = 52
+		listLabel.Parent = card
+		local function refreshList()
+			local tags = getUserTags(userId)
+			if #tags == 0 then
+				listLabel.Text = "Aucun tag pour l'instant"
+				listLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
+			else
+				local parts = {}
+				for _, t in ipairs(tags) do parts[#parts + 1] = "• " .. t end
+				listLabel.Text = table.concat(parts, "\n")
+				listLabel.TextColor3 = Color3.fromRGB(220, 220, 255)
+			end
+		end
+		refreshList()
+		local addBtn = Instance.new("TextButton")
+		addBtn.Size = UDim2.new(0.5, -12, 0, 30)
+		addBtn.Position = UDim2.new(0, 8, 0, 140)
+		addBtn.BackgroundColor3 = Color3.fromRGB(80, 200, 120)
+		addBtn.Text = "➕ Ajouter"
+		addBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		addBtn.Font = Enum.Font.GothamBold
+		addBtn.TextSize = 12
+		addBtn.BorderSizePixel = 0
+		addBtn.ZIndex = 52
+		addBtn.Parent = card
+		createCorner(addBtn, 6)
+		addBtn.MouseButton1Click:Connect(function()
+			if addTagToUser(userId, tagInput.Text) then tagInput.Text = "" ; refreshList() end
+		end)
+		local removeBtn = Instance.new("TextButton")
+		removeBtn.Size = UDim2.new(0.5, -12, 0, 30)
+		removeBtn.Position = UDim2.new(0.5, 4, 0, 140)
+		removeBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+		removeBtn.Text = "➖ Retirer dernier"
+		removeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		removeBtn.Font = Enum.Font.GothamBold
+		removeBtn.TextSize = 11
+		removeBtn.BorderSizePixel = 0
+		removeBtn.ZIndex = 52
+		removeBtn.Parent = card
+		createCorner(removeBtn, 6)
+		removeBtn.MouseButton1Click:Connect(function()
+			local tags = getUserTags(userId)
+			if #tags > 0 then removeTagFromUser(userId, tags[#tags]) ; refreshList() end
+		end)
+		tagInput.FocusLost:Connect(function(enterPressed)
+			if enterPressed then
+				if addTagToUser(userId, tagInput.Text) then tagInput.Text = "" ; refreshList() end
+			end
+		end)
+		local closeBtn = Instance.new("TextButton")
+		closeBtn.Size = UDim2.new(0, 30, 0, 30)
+		closeBtn.Position = UDim2.new(1, -36, 0, 6)
+		closeBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+		closeBtn.Text = "✕"
+		closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		closeBtn.Font = Enum.Font.GothamBold
+		closeBtn.TextSize = 14
+		closeBtn.BorderSizePixel = 0
+		closeBtn.ZIndex = 52
+		closeBtn.Parent = card
+		createCorner(closeBtn, 15)
+		closeBtn.MouseButton1Click:Connect(function() closeTagPopup() end)
+		_tagPopup = overlay
+	end
+
+	-- === DÉTECTION APPAREIL (seulement pour le local player) ===
+	function detectLocalDevice()
+		local ok, result = pcall(function()
+			local touchOn = UserInputService.TouchEnabled
+			local kbOn = UserInputService.KeyboardEnabled
+			local mouseOn = UserInputService.MouseEnabled
+			local gamepadOn = UserInputService.GamepadEnabled
+			local vrOn = UserInputService.VREnabled
+			if vrOn then return "🥽 VR (casque)"
+			elseif gamepadOn and not kbOn and not mouseOn then return "🎮 Console (manette)"
+			elseif touchOn and not kbOn and not mouseOn then return "📱 Mobile (tactile)"
+			elseif touchOn and kbOn then return "💻 PC + tactile (tablette/laptop)"
+			elseif kbOn and mouseOn then return "💻 PC (clavier+souris)"
+			elseif kbOn then return "💻 PC (clavier seul)"
+			else return "❓ Inconnu" end
+		end)
+		if not ok then return nil end
+		return result
+	end
+end
+-- ============= FIN TAGS CUSTOMS + BARRE D'ACTIONS + DEVICE DETECTION =============
+
 -- Affiche un résultat (un compte) — UNE seule grosse bulle unie, sans RichText/HTML
 -- Apparition ligne par ligne (typewriter) pour faciliter la lecture
 local function renderResult(data, parent)
@@ -5329,12 +5527,56 @@ local function renderResult(data, parent)
 	padding.PaddingRight = UDim.new(0, 12)
 	padding.Parent = card
 
-	-- Layout horizontal : à gauche le texte (TextLabel), à droite le ViewportFrame avatar
+	-- Layout vertical : header (encadré API bloquée + nom) en haut, puis content (texte + avatar)
+	local cardLayout = Instance.new("UIListLayout")
+	cardLayout.Padding = UDim.new(0, 8)
+	cardLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	cardLayout.Parent = card
+
+	-- === EN-TÊTE : bandeau d'avertissement si APIs bloquées ===
+	local apiBlocked = (data.apiBlocked == true) or (
+		not data.created and not data.friendCount and not data.isBanned
+		and not data.isPremium and not data.badgeCount and not data.langName
+		and not data.groups and not data.games and not data.favGames
+	)
+	if apiBlocked then
+		local warnBar = Instance.new("Frame")
+		warnBar.Name = "APIWarning"
+		warnBar.Size = UDim2.new(1, 0, 0, 36)
+		warnBar.BackgroundColor3 = Color3.fromRGB(80, 40, 20)
+		warnBar.BorderSizePixel = 0
+		warnBar.LayoutOrder = 0
+		warnBar.Parent = card
+		createCorner(warnBar, 6)
+		createStroke(warnBar, Color3.fromRGB(255, 150, 50), 1.2)
+		local wLbl = Instance.new("TextLabel")
+		wLbl.Size = UDim2.new(1, -16, 1, 0)
+		wLbl.Position = UDim2.new(0, 8, 0, 0)
+		wLbl.BackgroundTransparency = 1
+		wLbl.Text = "⚠️  APIs Roblox bloquées par l'exécuteur — essaie Synapse X, Wave ou Fluxus pour voir les détails (jeux favoris, badges, groupes, etc.)"
+		wLbl.Font = Enum.Font.GothamBold
+		wLbl.TextSize = 10
+		wLbl.TextColor3 = Color3.fromRGB(255, 200, 100)
+		wLbl.TextXAlignment = Enum.TextXAlignment.Left
+		wLbl.TextYAlignment = Enum.TextYAlignment.Center
+		wLbl.TextWrapped = true
+		wLbl.Parent = warnBar
+	end
+
+	-- === Contenu : Frame horizontal qui contient le texte à gauche et l'avatar à droite ===
+	local contentRow = Instance.new("Frame")
+	contentRow.Name = "ContentRow"
+	contentRow.Size = UDim2.new(1, 0, 0, 200) -- sera ajusté par AutomaticSize
+	contentRow.AutomaticSize = Enum.AutomaticSize.Y
+	contentRow.BackgroundTransparency = 1
+	contentRow.BorderSizePixel = 0
+	contentRow.LayoutOrder = 1
+	contentRow.Parent = card
 	local contentLayout = Instance.new("UIListLayout")
 	contentLayout.FillDirection = Enum.FillDirection.Horizontal
 	contentLayout.Padding = UDim.new(0, 10)
 	contentLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-	contentLayout.Parent = card
+	contentLayout.Parent = contentRow
 
 	-- === Colonne gauche : TextLabel avec toutes les infos ===
 	local big = Instance.new("TextLabel")
@@ -5351,7 +5593,7 @@ local function renderResult(data, parent)
 	big.TextWrapped = true
 	big.RichText = false
 	big.LayoutOrder = 1
-	big.Parent = card
+	big.Parent = contentRow
 
 	-- === Colonne droite : ImageLabel avec la photo 2D du joueur (thumbnail) ===
 	-- Fallback: InsertService (avatar 3D manequin) est bloqué par certains exécuteurs → on affiche la photo thumbnail
@@ -5361,7 +5603,7 @@ local function renderResult(data, parent)
 	avatarHolder.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
 	avatarHolder.BorderSizePixel = 0
 	avatarHolder.LayoutOrder = 2
-	avatarHolder.Parent = card
+	avatarHolder.Parent = contentRow
 	createCorner(avatarHolder, 8)
 	createStroke(avatarHolder, Color3.fromRGB(120, 80, 255), 1.5)
 
@@ -5424,8 +5666,20 @@ local function renderResult(data, parent)
 	table.insert(lines, "  🆔 User ID          : " .. (data.userId or "Indisponible"))
 	table.insert(lines, "  📛 Display Name     : " .. (data.displayName or "Indisponible"))
 	table.insert(lines, "  📝 Bio / Blurb      : " .. (data.blurb or "Indisponible"))
-	table.insert(lines, "  📅 Date d'inscription : " .. (data.created or "Indisponible"))
+	if data.customTags and #data.customTags > 0 then
+		table.insert(lines, "  🏷️  TAGS CUSTOMS     : " .. table.concat(data.customTags, " • "))
+	else
+		table.insert(lines, "  🏷️  TAGS CUSTOMS     : aucun (clique 🏷️ Tag en bas de la carte)")
+	end
+	-- Appareil (seulement pour le local player — Roblox n'expose pas le device des autres)
+	if data.deviceHint then
+		table.insert(lines, "  📱 Appareil        : " .. data.deviceHint)
+	else
+		table.insert(lines, "  📱 Appareil        : Indisponible (visible seulement pour ton propre compte)")
+	end
+	table.insert(lines, "  📅 Date d'inscription : " .. (data.created or (data.createdEst and ("~" .. data.createdEst .. " (estimé via ID)") or "Indisponible")))
 	table.insert(lines, "  🔞 Âge du compte    : " .. (data.accountAge or "Indisponible"))
+	if data.idHint then table.insert(lines, "  🆔 Heuristique ID   : " .. data.idHint) end
 	table.insert(lines, "  ⭐ Vérifié          : " .. (data.hasVerifiedBadge == true and "OUI" or (data.hasVerifiedBadge == false and "non" or "Indisponible")))
 	table.insert(lines, "  💎 Premium          : " .. (data.isPremium == true and "OUI" or (data.isPremium == false and "non" or "Indisponible")))
 	if data.premiumUntil then table.insert(lines, "  ⭐ Premium jusqu'au : " .. tostring(data.premiumUntil):sub(1, 10)) end
@@ -5503,6 +5757,50 @@ local function renderResult(data, parent)
 				pcall(function()
 					avatarImg.Image = data.avatarUrl
 				end)
+			end)
+		end
+	end
+
+	-- ============= BARRE D'ACTIONS EN BAS DE LA CARTE =============
+	-- Wrap dans un IIFE pour économiser les locals top-level
+	do
+		local actionsRow = Instance.new("Frame")
+		actionsRow.Size = UDim2.new(1, -16, 0, 30)
+		actionsRow.Position = UDim2.new(0, 8, 0, 100) -- position fixe (le big TextLabel est plus haut)
+		actionsRow.BackgroundTransparency = 1
+		actionsRow.ZIndex = 5
+		actionsRow.Parent = card
+		local actionsLayout = Instance.new("UIListLayout")
+		actionsLayout.FillDirection = Enum.FillDirection.Horizontal
+		actionsLayout.Padding = UDim.new(0, 6)
+		actionsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+		actionsLayout.Parent = actionsRow
+		local function makeActionBtn(text, color, layoutOrder, onClick)
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(0, 100, 0, 28)
+			btn.BackgroundColor3 = color
+			btn.Text = text
+			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			btn.Font = Enum.Font.GothamBold
+			btn.TextSize = 11
+			btn.BorderSizePixel = 0
+			btn.LayoutOrder = layoutOrder
+			btn.ZIndex = 6
+			btn.AutoButtonColor = true
+			btn.Parent = actionsRow
+			createCorner(btn, 6)
+			if onClick then btn.MouseButton1Click:Connect(onClick) end
+			return btn
+		end
+		if data.userId then
+			makeActionBtn("🏷️ Tag", Color3.fromRGB(180, 100, 220), 1, function()
+				openTagPopup(data.userId, data.username, screenGui)
+			end)
+			makeActionBtn("📋 ID", Color3.fromRGB(80, 130, 200), 2, function()
+				pcall(function() setclipboard(tostring(data.userId)) end)
+			end)
+			makeActionBtn("🔗 Profil", Color3.fromRGB(80, 180, 120), 3, function()
+				pcall(function() setclipboard("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile") end)
 			end)
 		end
 	end
@@ -5937,6 +6235,51 @@ function runRegistrySearch(query)
 					statusLbl.Text = "⚠ @" .. username .. " (ID:" .. userId .. ") — APIs externes bloquées par l'exécuteur. Lien : " .. data.profileUrl
 					statusLbl.TextColor3 = Color3.fromRGB(255, 180, 90)
 				end
+
+				-- === HEURISTIQUES LOCALES (marchent même si HttpGet bloqué) ===
+				-- Estimer la date de création du compte à partir de l'UserId
+				-- Les IDs Roblox sont séquentiels : ID 1 = 2003, ID 10000000 ≈ 2006, ID 100000000 ≈ 2010,
+				-- ID 1000000000 ≈ 2015, ID 10000000000 ≈ 2020, ID 100000000000 ≈ 2024
+				if userId and not data.created then
+					-- Formule simple : année ≈ 2003 + log10(userId) * 4
+					local estYear = 2003 + math.floor(math.log10(math.max(userId, 1)) * 4)
+					estYear = math.min(estYear, 2026)
+					estYear = math.max(estYear, 2003)
+					data.createdEst = estYear
+					if data.accountAge == nil then
+						data.accountAge = "~" .. (2026 - estYear) .. " an(s) (estimé)"
+					end
+				end
+
+				-- Détecter si l'ID est très petit (compte ancien) ou très grand (compte récent)
+				if userId then
+					if userId < 1000000 then
+						data.idHint = "🟢 Compte ANCIEN (beta tester probable)"
+					elseif userId < 10000000 then
+						data.idHint = "🟢 Compte ancien (2010+)"
+					elseif userId < 100000000 then
+						data.idHint = "🟡 Compte ~2010-2015"
+					elseif userId < 1000000000 then
+						data.idHint = "🟡 Compte ~2015-2020"
+					elseif userId < 10000000000 then
+						data.idHint = "🟠 Compte ~2020-2024"
+					else
+						data.idHint = "🔴 Compte TRÈS RÉCENT (2024+)"
+					end
+				end
+
+				-- Marquer l'API comme bloquée si toutes les HttpGet ont échoué
+				if not data.apiOk then
+					data.apiBlocked = true
+				end
+
+				-- === DÉTECTION APPAREIL (seulement pour le local player) ===
+				-- Roblox n'expose pas le device des autres joueurs au LocalScript
+				-- On peut détecter le nôtre via UserInputService
+				if userId and Players.LocalPlayer and userId == Players.LocalPlayer.UserId then
+					data.deviceHint = detectLocalDevice()
+				end
+
 				renderResult(data, resultScroll)
 
 			end)
