@@ -4728,63 +4728,55 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 				platformState.part.CanCollide = true
 				platformState.part.Transparency = 1
 				platformState.part.Name = "InvisiblePlatform"
-				platformState.part.Size = Vector3.new(200, 1, 200)
+				-- Plate GIGANTESQUE (couvre la map entière) et FIXE en X/Z : on ne suit plus la position
+				platformState.part.Size = Vector3.new(2000, 1, 2000)
 				platformState.part.Parent = Workspace
 			end
-			updateCharacter()
-			-- Détection intelligente : si on est assis dans un véhicule, on spawn sous les roues du véhicule
-			-- sinon on spawn sous nos pieds
+			-- Détermine la hauteur initiale de la plate selon le contexte (à pied / en voiture)
+			-- La plate ne suit PAS la position, seulement la hauteur capturée ici
 			local seatPart = humanoid and humanoid.SeatPart
-			local target, targetSize
+			local capturedY
 			if seatPart and seatPart:IsA("BasePart") then
-				-- On est dans un véhicule : plateforme sous les roues du véhicule (avec marge pour pas toucher le châssis)
+				-- En voiture : plate sous les roues (marge 1.5 stud pour pas toucher le châssis)
 				local seatModel = seatPart:FindFirstAncestorOfClass("Model") or seatPart.Parent
 				if seatModel and seatModel ~= character then
 					local ok, cf, size = pcall(function() return seatModel:GetBoundingBox() end)
 					if ok and cf and size then
-						target = cf.Position
-						targetSize = size
-						-- Marge de 1.5 stud SOUS le bas de la voiture (évite que la plate touche les roues et fasse rebondir)
-						platformState.y = cf.Position.Y - size.Y / 2 - 1.5
+						capturedY = cf.Position.Y - size.Y / 2 - 1.5
 					end
 				end
-				if not target then
-					-- fallback : utiliser le siège lui-même
+				if not capturedY then
 					local cf = seatPart.CFrame
 					local size = seatPart.Size
-					target = cf.Position
-					targetSize = size
-					platformState.y = cf.Position.Y - size.Y / 2 - 1.5
+					capturedY = cf.Position.Y - size.Y / 2 - 1.5
 				end
 			elseif character then
-				-- À pied : spawn exactement sous nos pieds (utiliser HumanoidRootPart bas)
-				if rootPart then
-					-- Position des pieds = bas de la bounding box du character
-					local ok, cf, size = pcall(function() return character:GetBoundingBox() end)
-					if ok and cf and size then
-						target = cf.Position
-						platformState.y = cf.Position.Y - size.Y / 2 - 0.2
-					else
-						target = rootPart.Position
-						platformState.y = rootPart.Position.Y - 3
-					end
+				-- À pied : sous nos pieds (marge 0.2 stud)
+				local ok, cf, size = pcall(function() return character:GetBoundingBox() end)
+				if ok and cf and size then
+					capturedY = cf.Position.Y - size.Y / 2 - 0.2
+				elseif rootPart then
+					capturedY = rootPart.Position.Y - 3
 				else
-					target = character:GetPivot().Position
-					platformState.y = target.Y - 3
+					capturedY = (character:GetPivot().Position.Y) - 3
 				end
 			end
-			if target then
+			if capturedY then
+				platformState.y = capturedY
 				platformState.offset = 0
-				platformState.smoothedOffset = 0  -- pour le lissage du slider +/-
-				platformState.part.CFrame = CFrame.new(target.X, platformState.y, target.Z)
-				-- Suivre la cible (voiture ou joueur) en X/Z
-				platformState.followTarget = (seatPart and seatPart:IsA("BasePart") and (seatPart:FindFirstAncestorOfClass("Model") or seatPart.Parent)) or character
+				platformState.smoothedOffset = 0
+				-- Centre la plate sur le joueur/voiture au moment du toggle, puis elle reste FIXE
+				local anchorPos = rootPart and rootPart.Position or (humanoid and humanoid.SeatPart and humanoid.SeatPart.Position)
+				if anchorPos then
+					platformState.part.CFrame = CFrame.new(anchorPos.X, capturedY, anchorPos.Z)
+				else
+					platformState.part.CFrame = CFrame.new(0, capturedY, 0)
+				end
 			end
 		else
 			if platformState.part then
 				platformState.part:Destroy()
 				platformState.part = nil
-				platformState.followTarget = nil
 			end
 		end
 	end
@@ -4798,40 +4790,20 @@ RunService.Stepped:Connect(function(_, dt)
 		end
 	end
 	if platformState.enabled and platformState.part then
-		updateCharacter()
-		-- Suit la cible d'origine (voiture ou character) en X/Z, ou recale sur rootPart
-		local followT = platformState.followTarget
-		local trackX, trackZ
-		if followT and followT.Parent then
-			if followT:IsA("Model") then
-				local ok, cf = pcall(function() return followT:GetBoundingBox() end)
-				if ok and cf then
-					trackX, trackZ = cf.Position.X, cf.Position.Z
-				end
-			elseif followT:IsA("BasePart") then
-				trackX, trackZ = followT.Position.X, followT.Position.Z
-			end
+		-- Plate FIXE en X/Z : on ne tracke plus la position, on ajuste juste la hauteur
+		-- avec les touches +/-
+		if UserInputService:IsKeyDown(Enum.KeyCode.Equals) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadPlus) then
+			platformState.offset += 25 * dt
 		end
-		if not trackX then
-			local seatPart = humanoid and humanoid.SeatPart
-			local target = (seatPart and seatPart:IsA("BasePart")) or rootPart
-			if target then trackX, trackZ = target.Position.X, target.Position.Z end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Minus) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadMinus) then
+			platformState.offset -= 25 * dt
 		end
-		if trackX and trackZ then
-			-- Cible offset : monte (+=) ou descend (-=) selon les touches
-			local targetOffset = platformState.offset
-			if UserInputService:IsKeyDown(Enum.KeyCode.Equals) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadPlus) then
-				platformState.offset += 25 * dt
-			end
-			if UserInputService:IsKeyDown(Enum.KeyCode.Minus) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadMinus) then
-				platformState.offset -= 25 * dt
-			end
-			-- Lissage de la position verticale (évite les sauts secs dans la voiture)
-			-- smoothedOffset lerp vers offset avec facteur ~12 (atteint 95% en ~0.25s)
-			local smoothing = math.min(1, dt * 12)
-			platformState.smoothedOffset = platformState.smoothedOffset + (platformState.offset - platformState.smoothedOffset) * smoothing
-			platformState.part.CFrame = CFrame.new(trackX, platformState.y + platformState.smoothedOffset, trackZ)
-		end
+		-- Lissage de la position verticale (évite les sauts secs)
+		local smoothing = math.min(1, dt * 12)
+		platformState.smoothedOffset = platformState.smoothedOffset + (platformState.offset - platformState.smoothedOffset) * smoothing
+		-- Conserve la position X/Z initiale, change juste Y
+		local cur = platformState.part.CFrame
+		platformState.part.CFrame = CFrame.new(cur.X, platformState.y + platformState.smoothedOffset, cur.Z)
 	end
 	-- Go to Walk : déplace le humanoid vers chaque waypoint avec MoveTo
 	-- Go to Walk : deplace le humanoid vers chaque waypoint avec MoveTo + saut auto si bloque
