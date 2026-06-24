@@ -133,6 +133,7 @@ local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 460, 0, 520)
 mainFrame.Position = UDim2.new(0.5, -230, 0.5, -260)
+mainFrame.Visible = false  -- Sera révélé après l'intro
 -- S'assure que le panel reste visible et ne se fait pas pousser par le chat au démarrage
 task.delay(0, function()
 	local function clampFrame()
@@ -155,64 +156,181 @@ mainFrame.ZIndex = 1
 createCorner(mainFrame, 14)
 createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 
--- ===== ANIM ENTREE "cristallisation" : panel apparait avec zoom + rotation + glow =====
-local entrySplash = Instance.new("Frame")
-entrySplash.Name = "EntrySplash"
-entrySplash.Size = UDim2.new(1, 0, 1, 0)
-entrySplash.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
-entrySplash.BackgroundTransparency = 1
-entrySplash.BorderSizePixel = 0
-entrySplash.ZIndex = 50
-entrySplash.Parent = screenGui
+-- ===== INTRO CINÉMA : "Agora Admin" puis TAMPON "UNIVERSELLE" BOUM =====
+-- Backdrop full screen noir pour masquer le panel pendant l'intro
+;(function()
+	local _mainFrame = mainFrame
+	local _screenGui = screenGui
+	local _LocalPlayer = LocalPlayer
+	local _TweenService = TweenService
+	local _tween = tween
+	local _createCorner = createCorner
 
-local entryRing = Instance.new("Frame")
-entryRing.Size = UDim2.new(0, 200, 0, 200)
-entryRing.Position = UDim2.new(0.5, -100, 0.5, -100)
-entryRing.BackgroundTransparency = 1
-entryRing.BorderSizePixel = 4
-entryRing.BorderColor3 = Color3.fromRGB(150, 200, 255)
-entryRing.ZIndex = 51
-entryRing.Parent = entrySplash
-createCorner(entryRing, 100)
+	local bootGui = Instance.new("ScreenGui")
+	bootGui.Name = "MilanEmerickIntro"
+	bootGui.ResetOnSpawn = false
+	bootGui.DisplayOrder = 99999
+	bootGui.IgnoreGuiInset = true
+	bootGui.Parent = _LocalPlayer:WaitForChild("PlayerGui")
 
-local entryDot = Instance.new("Frame")
-entryDot.Size = UDim2.new(0, 0, 0, 0)
-entryDot.Position = UDim2.new(0.5, 0, 0.5, 0)
-entryDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-entryDot.BorderSizePixel = 0
-entryDot.ZIndex = 52
-entryDot.AnchorPoint = Vector2.new(0.5, 0.5)
-entryDot.Parent = entrySplash
-createCorner(entryDot, 100)
+	-- Backdrop noir full screen
+	local backdrop = Instance.new("Frame")
+	backdrop.Name = "Backdrop"
+	backdrop.Size = UDim2.new(1, 0, 1, 0)
+	backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	backdrop.BorderSizePixel = 0
+	backdrop.ZIndex = 100
+	backdrop.Parent = bootGui
 
-local entryText = Instance.new("TextLabel")
-entryText.Size = UDim2.new(0.8, 0, 0, 30)
-entryText.Position = UDim2.new(0.1, 0, 0.5, 20)
-entryText.BackgroundTransparency = 1
-entryText.Text = "Agora Admin [UNIVERSELLE]"
-entryText.Font = Enum.Font.GothamBlack
-entryText.TextSize = 18
-entryText.TextColor3 = Color3.fromRGB(255, 255, 255)
-entryText.TextTransparency = 1
-entryText.ZIndex = 52
-entryText.Parent = entrySplash
+	-- Vignette dorée subtile en arrière-plan
+	local vignette = Instance.new("ImageLabel")
+	vignette.Name = "Vignette"
+	vignette.Size = UDim2.new(1.4, 0, 1.4, 0)
+	vignette.Position = UDim2.new(-0.2, 0, -0.2, 0)
+	vignette.BackgroundTransparency = 1
+	vignette.Image = "rbxassetid://9638773891"
+	vignette.ImageColor3 = Color3.fromRGB(120, 90, 30)
+	vignette.ImageTransparency = 0.6
+	vignette.ZIndex = 101
+	vignette.Parent = bootGui
 
--- Lance l'anim avec un petit delai pour qu'elle demarre apres le boot
-task.defer(function()
-	task.wait(0.3)
-	-- Flash blanc rapide (effet "cristallisation") par-dessus le panel deja visible
-	pcall(function()
-		tween(entrySplash, {BackgroundTransparency = 0.7}, 0.15)
-		tween(entryDot, {Size = UDim2.new(0, 600, 0, 600), BackgroundTransparency = 0.5}, 0.4)
-		tween(entryRing, {Size = UDim2.new(0, 500, 0, 500), BackgroundTransparency = 1, BorderTransparency = 1}, 0.5)
-		tween(entryText, {TextTransparency = 0.4}, 0.2)
-		task.wait(0.4)
-		tween(entrySplash, {BackgroundTransparency = 1}, 0.4)
-		tween(entryText, {TextTransparency = 1}, 0.4)
+	-- Titre "Agora Admin" - apparaît avec un fade in
+	local title = Instance.new("TextLabel")
+	title.Name = "Title"
+	title.Size = UDim2.new(0.9, 0, 0, 50)
+	title.Position = UDim2.new(0.05, 0, 0.45, -10)
+	title.BackgroundTransparency = 1
+	title.Font = Enum.Font.GothamBlack
+	title.Text = "Agora Admin"
+	title.TextSize = 38
+	title.TextColor3 = Color3.fromRGB(220, 220, 240)
+	title.TextTransparency = 1
+	title.TextStrokeTransparency = 0.5
+	title.TextStrokeColor3 = Color3.fromRGB(40, 40, 50)
+	title.ZIndex = 102
+	title.Parent = bootGui
+
+	-- Sous-titre fin "by Milan & Emerick" en gris clair
+	local subtitle = Instance.new("TextLabel")
+	subtitle.Name = "Subtitle"
+	subtitle.Size = UDim2.new(0.9, 0, 0, 20)
+	subtitle.Position = UDim2.new(0.05, 0, 0.45, 36)
+	subtitle.BackgroundTransparency = 1
+	subtitle.Font = Enum.Font.Gotham
+	subtitle.Text = "by Milan & Emerick"
+	subtitle.TextSize = 13
+	subtitle.TextColor3 = Color3.fromRGB(150, 150, 170)
+	subtitle.TextTransparency = 1
+	subtitle.ZIndex = 102
+	subtitle.Parent = bootGui
+
+	-- Tag "UNIVERSELLE" - cachée au début, scale 0
+	local uniTag = Instance.new("TextLabel")
+	uniTag.Name = "UniTag"
+	uniTag.Size = UDim2.new(1.1, 0, 0, 130)
+	uniTag.Position = UDim2.new(-0.05, 0, 0.4, 0)
+	uniTag.AnchorPoint = Vector2.new(0, 0)
+	uniTag.BackgroundTransparency = 1
+	uniTag.Rotation = -8
+	uniTag.Font = Enum.Font.GothamBlack
+	uniTag.Text = "UNIVERSELLE"
+	uniTag.TextScaled = false
+	uniTag.TextSize = 110
+	uniTag.TextColor3 = Color3.fromRGB(255, 220, 120)
+	uniTag.TextStrokeTransparency = 0.2
+	uniTag.TextStrokeColor3 = Color3.fromRGB(120, 80, 0)
+	uniTag.TextTransparency = 1
+	uniTag.ZIndex = 103
+	uniTag.Parent = bootGui
+
+	-- 3 traits noirs "stamp borders" autour du tag pour effet tampon
+	local stampTop = Instance.new("Frame")
+	stampTop.Name = "StampTop"
+	stampTop.Size = UDim2.new(0.8, 0, 0, 2)
+	stampTop.Position = UDim2.new(0.1, 0, 0.41, 0)
+	stampTop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	stampTop.BorderSizePixel = 0
+	stampTop.BackgroundTransparency = 1
+	stampTop.ZIndex = 103
+	stampTop.Parent = bootGui
+
+	local stampBot = Instance.new("Frame")
+	stampBot.Name = "StampBot"
+	stampBot.Size = UDim2.new(0.8, 0, 0, 2)
+	stampBot.Position = UDim2.new(0.1, 0, 0.68, 0)
+	stampBot.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	stampBot.BorderSizePixel = 0
+	stampBot.BackgroundTransparency = 1
+	stampBot.ZIndex = 103
+	stampBot.Parent = bootGui
+
+	-- BOOM FLASH blanc court (effet impact)
+	local flash = Instance.new("Frame")
+	flash.Name = "Flash"
+	flash.Size = UDim2.new(1, 0, 1, 0)
+	flash.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	flash.BackgroundTransparency = 1
+	flash.BorderSizePixel = 0
+	flash.ZIndex = 110
+	flash.Parent = bootGui
+
+	-- === SÉQUENCE CINÉMA ===
+	task.spawn(function()
+		local ok, err = pcall(function()
+			-- Étape 1 : fade in du backdrop depuis noir
+			backdrop.BackgroundTransparency = 0
+
+			-- Étape 2 : titre "Agora Admin" fade in (0.5s)
+			task.wait(0.3)
+			_tween(title, {TextTransparency = 0}, 0.5)
+			_tween(subtitle, {TextTransparency = 0}, 0.5)
+
+			-- Étape 3 : pause 1s pour lire le titre
+			task.wait(1.0)
+
+			-- Étape 4 : BOUM - flash blanc brutal + tag scale 0→1.3→1 + rotation impact
+			flash.BackgroundTransparency = 0
+			uniTag.TextTransparency = 0
+			stampTop.BackgroundTransparency = 0
+			stampBot.BackgroundTransparency = 0
+
+			-- Scale : commence à 0, monte à 1.3 puis 1 (impact élastique)
+			uniTag.Size = UDim2.new(0, 0, 0, 0)
+			uniTag.Position = UDim2.new(0.5, 0, 0.5, 0)
+			uniTag.AnchorPoint = Vector2.new(0.5, 0.5)
+			uniTag.Rotation = 4  -- rotation d'entrée (corrigée à -8 à la fin)
+			_tween(uniTag, {Size = UDim2.new(1.2, 0, 0, 140), Rotation = -10}, 0.12, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			_tween(flash, {BackgroundTransparency = 1}, 0.25)
+			task.wait(0.12)
+			-- Stabilise à la taille finale avec la bonne rotation
+			_tween(uniTag, {Size = UDim2.new(1.1, 0, 0, 130), Rotation = -8}, 0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+			-- Étape 5 : le tag reste affiché 1.2s
+			task.wait(1.2)
+
+			-- Étape 6 : fade out de tout
+			_tween(title, {TextTransparency = 1}, 0.3)
+			_tween(subtitle, {TextTransparency = 1}, 0.3)
+			_tween(uniTag, {TextTransparency = 1, Rotation = -12}, 0.4)
+			_tween(stampTop, {BackgroundTransparency = 1}, 0.3)
+			_tween(stampBot, {BackgroundTransparency = 1}, 0.3)
+			_tween(vignette, {ImageTransparency = 1}, 0.3)
+			task.wait(0.3)
+			_tween(backdrop, {BackgroundTransparency = 1}, 0.4)
+			task.wait(0.5)
+		end)
+
+		if not ok then
+			warn("[MILAN] Intro crash: " .. tostring(err))
+		end
+
+		-- Cleanup + révélation du panel
+		pcall(function() if bootGui and bootGui.Parent then bootGui:Destroy() end end)
+		pcall(function()
+			_mainFrame.Visible = true
+		end)
 	end)
-	-- Garantit que le splash disparait meme si le tween crash
-	task.delay(2, function() pcall(function() if entrySplash and entrySplash.Parent then entrySplash:Destroy() end end) end)
-end)
+end)()
 
 
 local topBar = Instance.new("Frame")
@@ -225,11 +343,8 @@ topBar.ZIndex = 2
 createCorner(topBar, 14)
 createStroke(topBar, Color3.fromRGB(80, 80, 100), 0.8)
 
--- Logo à gauche du titre + gros tag "UNIVERSELLE" penché (wibe) à droite du titre
+-- Logo à gauche du titre (le tag "UNIVERSELLE" est dans l'intro cinéma, pas dans le panel)
 ;(function()
-	local _createCorner = createCorner
-	local _createStroke = createStroke
-	local _tween = tween
 	local _topBar = topBar
 
 	local titleLogo = Instance.new("ImageLabel")
@@ -240,39 +355,6 @@ createStroke(topBar, Color3.fromRGB(80, 80, 100), 0.8)
 	titleLogo.BackgroundTransparency = 1
 	titleLogo.Image = "rbxassetid://73314612607499"
 	titleLogo.Parent = _topBar
-
-	-- Tag "UNIVERSELLE" : TextLabel pivoté, Neon, glow
-	local uniTag = Instance.new("TextLabel")
-	uniTag.Name = "UniTag"
-	uniTag.Size = UDim2.new(0, 120, 0, 22)
-	uniTag.Position = UDim2.new(1, -150, 0.5, 0)
-	uniTag.AnchorPoint = Vector2.new(0, 0.5)
-	uniTag.BackgroundTransparency = 1
-	uniTag.Rotation = -8
-	uniTag.Text = "UNIVERSELLE"
-	uniTag.Font = Enum.Font.GothamBlack
-	uniTag.TextSize = 13
-	uniTag.TextColor3 = Color3.fromRGB(180, 130, 255)
-	uniTag.TextStrokeTransparency = 0.3
-	uniTag.TextStrokeColor3 = Color3.fromRGB(60, 20, 120)
-	uniTag.TextXAlignment = Enum.TextXAlignment.Right
-	uniTag.ZIndex = 5
-	uniTag.Parent = _topBar
-
-	-- Mini pulse loop sur le tag
-	;(function()
-		local _t = tween
-		local _tag = uniTag
-		;(function()
-			while _tag and _tag.Parent do
-				_t(_tag, {TextColor3 = Color3.fromRGB(220, 180, 255)}, 1.2)
-				task.wait(1.2)
-				if not (_tag and _tag.Parent) then break end
-				_t(_tag, {TextColor3 = Color3.fromRGB(140, 100, 255)}, 1.2)
-				task.wait(1.2)
-			end
-		end)()
-	end)()
 end)()
 
 local titleLabel = Instance.new("TextLabel")
@@ -7437,25 +7519,18 @@ end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlay
 	credits.Parent = _mainFrame
 end)(mainFrame)
 
--- BOOT SAFE LAYER 3: absolute fallback (if everything above fails, force first tab visible after 3s)
-;(function(_pages, _switchTab, _bootSequence)
-	local function safeBoot()
-		local ok, err = pcall(function()
-			_bootSequence(function()
-				_switchTab("Joueurs")
-			end)
-		end)
-		if not ok then
-			warn("[MILAN] bootSequence crashed: " .. tostring(err))
-			pcall(function() _switchTab("Joueurs") end)
-		end
-	end
-	safeBoot()
+-- BOOT SAFE: switchTab après l'intro cinéma. Le bootSequence détaillé
+-- (avec backdrop noir, vignettes, logs, particules) est conservé dans le code
+-- mais n'est plus appelé pour éviter la double animation.
+;(function(_pages, _switchTab)
+	-- Fallback absolu 3s : si l'intro cinéma n'a pas révélé le panel pour X raison
+	pcall(function() _switchTab("Joueurs") end)
 	task.delay(3, function()
 		pcall(function()
 			if _pages and _pages["Joueurs"] and not _pages["Joueurs"].Visible then
 				_switchTab("Joueurs")
 			end
+			pcall(function() if mainFrame and not mainFrame.Visible then mainFrame.Visible = true end end)
 		end)
 	end)
-end)(pages, switchTab, bootSequence)
+end)(pages, switchTab)
