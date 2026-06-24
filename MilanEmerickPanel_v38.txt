@@ -2360,9 +2360,9 @@ local function createPlayerEntry(plr)
 						table.insert(extra, pingIcon .. " Ping : " .. math.floor(ping * 1000) .. " ms")
 					end)
 					-- Ami avec moi ?
-					if localPlayer and plr ~= localPlayer then
+					if LocalPlayer and plr ~= LocalPlayer then
 						pcall(function()
-							local isFriend = localPlayer:IsFriendsWith(plr.UserId)
+							local isFriend = LocalPlayer:IsFriendsWith(plr.UserId)
 							if isFriend then
 								table.insert(extra, "👥 Ami avec toi : OUI")
 							end
