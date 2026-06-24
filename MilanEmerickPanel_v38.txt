@@ -555,7 +555,7 @@ local function _initRegistrySearch()
 	registryClearBtn.Size = UDim2.new(0, 22, 0, 22)
 	registryClearBtn.Position = UDim2.new(1, -28, 0, 8)
 	registryClearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-	registryClearBtn.Text = "✕"
+	registryClearBtn.Text = "X"
 	registryClearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	registryClearBtn.Font = Enum.Font.GothamBold
 	registryClearBtn.TextSize = 11
@@ -887,15 +887,13 @@ local minimized = false
 	local _topBar = topBar
 	local _closeBtn = closeBtn
 
-	local btn = Instance.new("TextButton")
+	local btn = Instance.new("ImageButton")
 	btn.Name = "RestoreBtn"
 	btn.Size = UDim2.new(0, 56, 0, 56)
 	btn.Position = UDim2.new(0, 12, 0.5, -28)
 	btn.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
-	btn.Text = "+"
-	btn.Font = Enum.Font.GothamBlack
-	btn.TextSize = 32
-	btn.TextColor3 = Color3.fromRGB(180, 130, 255)
+	btn.Image = "rbxassetid://73314612607499"
+	btn.ScaleType = Enum.ScaleType.Fit
 	btn.AutoButtonColor = false
 	btn.BorderSizePixel = 0
 	btn.Visible = false
@@ -907,79 +905,78 @@ local minimized = false
 	stroke.Thickness = 2
 	stroke.Parent = btn
 
-	-- Long-press 2s sur le bouton "+" = destroy all (escape hatch)
-	local longPressProgress = nil
-	local lpStartTime = 0
+	-- Long-press 2s sur le bouton = destroy all (escape hatch)
+		-- lpStartTime = -1 quand on vient de finir un long-press (sentinel)
+		local longPressProgress = nil
+		local lpStartTime = 0
 
-	local function destroyAllPanel()
-		if longPressProgress and longPressProgress.Parent then
-			longPressProgress:Destroy()
+		local function destroyAllPanel()
+			if longPressProgress and longPressProgress.Parent then
+				longPressProgress:Destroy()
+			end
+			btn.Visible = false
+			for _, gui in ipairs(game.Players.LocalPlayer.PlayerGui:GetChildren()) do
+				if gui.Name == "MilanEmerickPanel" or gui.Name == "AgoraAdminUniverselle" then
+					pcall(function() gui:Destroy() end)
+				end
+			end
+			pcall(function()
+				if game.CoreGui:FindFirstChild("MilanEmerickPanel") then
+					game.CoreGui.MilanEmerickPanel:Destroy()
+				end
+			end)
+			print("[Agora Universelle] Panel detruit.")
 		end
-		btn.Visible = false
-		for _, gui in ipairs(game.Players.LocalPlayer.PlayerGui:GetChildren()) do
-			if gui.Name == "MilanEmerickPanel" or gui.Name == "AgoraAdminUniverselle" then
-				pcall(function() gui:Destroy() end)
+
+		local function startLongPress()
+			lpStartTime = tick()
+			if not longPressProgress or not longPressProgress.Parent then
+				longPressProgress = Instance.new("Frame")
+				longPressProgress.Size = UDim2.new(1.4, 0, 1.4, 0)
+				longPressProgress.Position = UDim2.new(0.5, 0, 0.5, 0)
+				longPressProgress.AnchorPoint = Vector2.new(0.5, 0.5)
+				longPressProgress.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+				longPressProgress.BackgroundTransparency = 0.6
+				longPressProgress.BorderSizePixel = 0
+				longPressProgress.ZIndex = btn.ZIndex - 1
+				longPressProgress.Parent = btn
+				_createCorner(longPressProgress, 1)
+			end
+			longPressProgress.Visible = true
+			longPressProgress.Size = UDim2.new(1, 0, 1, 0)
+			longPressProgress.BackgroundTransparency = 1
+			_tween(longPressProgress, {Size = UDim2.new(1.4, 0, 1.4, 0), BackgroundTransparency = 0.6}, 2)
+		end
+		local function endLongPress()
+			local longPressed = lpStartTime > 0 and (tick() - lpStartTime) >= 2
+			lpStartTime = longPressed and -1 or 0
+			if longPressed then
+				destroyAllPanel()
+			end
+			if longPressProgress and longPressProgress.Parent then
+				_tween(longPressProgress, {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1}, 0.2)
 			end
 		end
-		pcall(function()
-			if game.CoreGui:FindFirstChild("MilanEmerickPanel") then
-				game.CoreGui.MilanEmerickPanel:Destroy()
+
+		btn.MouseButton1Down:Connect(startLongPress)
+		btn.MouseLeave:Connect(endLongPress)
+		btn.MouseButton1Up:Connect(endLongPress)
+
+		-- Clic court = restaurer le panel (seulement si pas un long-press)
+		btn.MouseButton1Click:Connect(function()
+			if lpStartTime == -1 then
+				lpStartTime = 0
+				return
 			end
+			minimized = false
+			_contentFrame.Visible = true
+			_tabBar.Visible = true
+			_topBar.Visible = true
+			_minimizeBtn.Visible = true
+			_closeBtn.Visible = true
+			_tween(_mainFrame, {Size = UDim2.new(0, 460, 0, 520), BackgroundTransparency = 0.35}, 0.25)
+			btn.Visible = false
 		end)
-		print("[Agora Universelle] Panel detruit.")
-	end
-
-	local function startLongPress()
-		lpStartTime = tick()
-		if not longPressProgress or not longPressProgress.Parent then
-			longPressProgress = Instance.new("Frame")
-			longPressProgress.Size = UDim2.new(1.4, 0, 1.4, 0)
-			longPressProgress.Position = UDim2.new(0.5, 0, 0.5, 0)
-			longPressProgress.AnchorPoint = Vector2.new(0.5, 0.5)
-			longPressProgress.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-			longPressProgress.BackgroundTransparency = 0.6
-			longPressProgress.BorderSizePixel = 0
-			longPressProgress.ZIndex = btn.ZIndex - 1
-			longPressProgress.Parent = btn
-			_createCorner(longPressProgress, 1)
-		end
-		longPressProgress.Visible = true
-		longPressProgress.Size = UDim2.new(1, 0, 1, 0)
-		longPressProgress.BackgroundTransparency = 1
-		_tween(longPressProgress, {Size = UDim2.new(1.4, 0, 1.4, 0), BackgroundTransparency = 0.6}, 2)
-	end
-	local function endLongPress()
-		lpStartTime = 0
-		if longPressProgress and longPressProgress.Parent then
-			_tween(longPressProgress, {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1}, 0.2)
-		end
-	end
-
-	btn.MouseButton1Down:Connect(startLongPress)
-	btn.MouseLeave:Connect(endLongPress)
-	btn.MouseButton1Up:Connect(function()
-		if lpStartTime > 0 and (tick() - lpStartTime) >= 2 then
-			endLongPress()
-			destroyAllPanel()
-		else
-			endLongPress()
-		end
-	end)
-
-	-- Clic court = restaurer le panel
-	btn.MouseButton1Click:Connect(function()
-		if lpStartTime > 0 and (tick() - lpStartTime) < 1.8 then
-			return
-		end
-		minimized = false
-		_contentFrame.Visible = true
-		_tabBar.Visible = true
-		_topBar.Visible = true
-		_minimizeBtn.Visible = true
-		_closeBtn.Visible = true
-		_tween(_mainFrame, {Size = UDim2.new(0, 460, 0, 520), BackgroundTransparency = 0.35}, 0.25)
-		btn.Visible = false
-	end)
 
 	btn.MouseEnter:Connect(function()
 		_tween(btn, {Size = UDim2.new(0, 62, 0, 62)}, 0.15)
@@ -1246,7 +1243,7 @@ local playerClearBtn = Instance.new("TextButton")
 playerClearBtn.Size = UDim2.new(0, 20, 0, 20)
 playerClearBtn.Position = UDim2.new(1, -25, 0, 11)
 playerClearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-playerClearBtn.Text = "✕"
+playerClearBtn.Text = "X"
 playerClearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 playerClearBtn.Font = Enum.Font.GothamBold
 playerClearBtn.TextSize = 10
@@ -6202,7 +6199,7 @@ do
 		closeBtn.Size = UDim2.new(0, 30, 0, 30)
 		closeBtn.Position = UDim2.new(1, -36, 0, 6)
 		closeBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-		closeBtn.Text = "✕"
+		closeBtn.Text = "X"
 		closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 		closeBtn.Font = Enum.Font.GothamBold
 		closeBtn.TextSize = 14
