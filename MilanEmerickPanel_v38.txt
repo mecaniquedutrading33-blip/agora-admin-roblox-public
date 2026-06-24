@@ -6581,6 +6581,24 @@ local function renderResult(data, parent)
 			makeActionBtn("🔗 Profil", Color3.fromRGB(80, 180, 120), 3, function()
 				pcall(function() setclipboard("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile") end)
 			end)
+			-- Rejoindre ce joueur : tente TeleportToPlaceInstance avec son gameId si dispo
+			if data.gameId or data.placeId then
+				makeActionBtn("🌐 Rejoindre", Color3.fromRGB(70, 130, 200), 4, function()
+					pcall(function()
+						local TS = game:GetService("TeleportService")
+						local pid = data.placeId or data.gameId
+						if data.gameInstanceId and data.gameInstanceId ~= "" then
+							TS:TeleportToPlaceInstance(pid, data.gameInstanceId, LocalPlayer)
+						else
+							TS:Teleport(pid, LocalPlayer)
+						end
+					end)
+				end)
+			else
+				makeActionBtn("🌐 Profil web", Color3.fromRGB(70, 130, 200), 4, function()
+					pcall(function() setclipboard("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile") end)
+				end)
+			end
 		end
 	end
 
