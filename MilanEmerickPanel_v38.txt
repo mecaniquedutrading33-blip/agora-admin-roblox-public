@@ -6562,6 +6562,36 @@ local function renderResult(data, parent)
 				table.insert(lines, "  ├─ Avatar chargé   : " .. _loaded)
 				table.insert(lines, "  ├─ Ami avec toi    : " .. _isFriend)
 				table.insert(lines, "  └─ HP / MaxHP      : " .. _hp .. " / " .. _maxHp)
+				-- Groupes clés (natives Roblox : pas d'HTTP)
+				;(function(_t, _ll, _lp)
+					local _groups = {
+						{1, "Roblox (officiel)"},
+						{1200769, "Groupe Officiel"},
+						{687101511, "Vzlom_Emk"},
+					}
+					for _, g in ipairs(_groups) do
+						local ok, rank, isIn = pcall(function()
+							local r = _t:GetRankInGroup(g[1])
+							local b = _t:IsInGroup(g[1])
+							return r, b
+						end)
+						if ok then
+							local role = isIn and "Membre (rank " .. tostring(rank) .. ")" or "Non-membre"
+							_ll:insert("  └─ " .. g[2] .. " (g" .. g[1] .. ") : " .. role)
+						end
+					end
+					-- Badges Officier / Admin (natives : pas d'HTTP)
+					local ok2, has = pcall(function()
+						local bs = game:GetService("BadgeService")
+						return bs and bs:UserHasBadgeAsync(_t.UserId, 1)
+					end)
+					if ok2 and has then _ll:insert("  └─ 🛡️ Badge Administrator : OUI") end
+					local ok3, hasOfficial = pcall(function()
+						local bs = game:GetService("BadgeService")
+						return bs and bs:UserHasBadgeAsync(_t.UserId, 2)
+					end)
+					if ok3 and hasOfficial then _ll:insert("  └─ 🛡️ Badge Official : OUI") end
+				end)(target, lines, LocalPlayer)
 			end
 		end)
 		if not liveFound then
