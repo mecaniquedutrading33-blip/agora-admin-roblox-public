@@ -2369,7 +2369,7 @@ local function createPlayerEntry(plr)
 						end)
 					end
 					-- Joue à CE JEU (vérif locale, pas besoin d'API)
-					if plr ~= localPlayer then
+					if plr ~= LocalPlayer then
 						local placeId = game.PlaceId
 						pcall(function()
 							local hasAsset = game:GetService("MarketplaceService"):UserOwnsGamePassAsync(plr.UserId, 0)
