@@ -6551,15 +6551,18 @@ end
 buildRegistrySection(registryPage)
 
 -- Reparent: tous les enfants directs de registryPage (sauf registryScroll) vont dans registryScroll
-for _, child in ipairs(registryPage:GetChildren()) do
-	if child ~= registryScroll then
-		child.Parent = registryScroll
+-- Wrap dans une IIFE anonyme avec ';' pour économiser les registres du chunk
+;(function(rp, rs, rl)
+	for _, child in ipairs(rp:GetChildren()) do
+		if child ~= rs then
+			child.Parent = rs
+		end
 	end
-end
-registryScroll.CanvasSize = UDim2.new(0, 0, 0, registryLayout.AbsoluteContentSize.Y + 10)
-registryLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	registryScroll.CanvasSize = UDim2.new(0, 0, 0, registryLayout.AbsoluteContentSize.Y + 10)
-end)
+	rs.CanvasSize = UDim2.new(0, 0, 0, rl.AbsoluteContentSize.Y + 10)
+	rl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		rs.CanvasSize = UDim2.new(0, 0, 0, rl.AbsoluteContentSize.Y + 10)
+	end)
+end)(registryPage, registryScroll, registryLayout)
 task.defer(function()
 	registryScroll.CanvasSize = UDim2.new(0, 0, 0, registryLayout.AbsoluteContentSize.Y + 10)
 end)
@@ -7023,49 +7026,56 @@ function giveSpiderTool()
 end
 
 -- ============= CHAT COMMANDS =============
-LocalPlayer.Chatted:Connect(function(msg)
-	local m = msg:lower()
-	if m == ";fly" then flySwitch.set(true)
-	elseif m == ";unfly" then flySwitch.set(false)
-	elseif m == ";noclip" then noclipSwitch.set(true)
-	elseif m == ";unnoclip" then noclipSwitch.set(false)
-	elseif m == ";esp" then espState.enabled = true refreshESP()
-	elseif m == ";unesp" then espState.enabled = false clearESP()
-	elseif m == ";fullbright" then fullbrightSwitch.set(true)
-	elseif m == ";unfullbright" then fullbrightSwitch.set(false)
-	elseif m == ";zerog" then zeroGSwitch.set(true)
-	elseif m == ";unzerog" then zeroGSwitch.set(false)
-	end
-end)
-
--- ============= CRÉDITS =============
-local credits = Instance.new("TextLabel")
-credits.Size = UDim2.new(1, 0, 0, 18)
-credits.Position = UDim2.new(0, 0, 1, -20)
-credits.BackgroundTransparency = 1
-credits.Text = "Panel by Milan & Emerick"
-credits.Font = Enum.Font.GothamBold
-credits.TextSize = 11
-credits.TextColor3 = Color3.fromRGB(140, 140, 180)
-credits.Parent = mainFrame
-
--- BOOT SAFE LAYER 3: absolute fallback (if everything above fails, force first tab visible after 3s)
-local function safeBoot()
-	local ok, err = pcall(function()
-		bootSequence(function()
-			switchTab("Joueurs")
-		end)
-	end)
-	if not ok then
-		warn("[MILAN] bootSequence crashed: " .. tostring(err))
-		pcall(function() switchTab("Joueurs") end)
-	end
-end
-safeBoot()
-task.delay(3, function()
-	pcall(function()
-		if pages and pages["Joueurs"] and not pages["Joueurs"].Visible then
-			switchTab("Joueurs")
+-- Wrap dans IIFE avec paramètres pour éviter la limite d'upvalues (200)
+;(function(_fly, _noclip, _esp, _fullbright, _zeroG, _localPlayer)
+	_localPlayer.Chatted:Connect(function(msg)
+		local m = msg:lower()
+		if m == ";fly" then _fly.set(true)
+		elseif m == ";unfly" then _fly.set(false)
+		elseif m == ";noclip" then _noclip.set(true)
+		elseif m == ";unnoclip" then _noclip.set(false)
+		elseif m == ";esp" then _esp.enabled = true refreshESP()
+		elseif m == ";unesp" then _esp.enabled = false clearESP()
+		elseif m == ";fullbright" then _fullbright.set(true)
+		elseif m == ";unfullbright" then _fullbright.set(false)
+		elseif m == ";zerog" then _zeroG.set(true)
+		elseif m == ";unzerog" then _zeroG.set(false)
 		end
 	end)
-end)
+end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlayer)
+
+-- ============= CRÉDITS =============
+;(function(_mainFrame)
+	local credits = Instance.new("TextLabel")
+	credits.Size = UDim2.new(1, 0, 0, 18)
+	credits.Position = UDim2.new(0, 0, 1, -20)
+	credits.BackgroundTransparency = 1
+	credits.Text = "Panel by Milan & Emerick"
+	credits.Font = Enum.Font.GothamBold
+	credits.TextSize = 11
+	credits.TextColor3 = Color3.fromRGB(140, 140, 180)
+	credits.Parent = _mainFrame
+end)(mainFrame)
+
+-- BOOT SAFE LAYER 3: absolute fallback (if everything above fails, force first tab visible after 3s)
+;(function(_pages, _switchTab, _bootSequence)
+	local function safeBoot()
+		local ok, err = pcall(function()
+			_bootSequence(function()
+				_switchTab("Joueurs")
+			end)
+		end)
+		if not ok then
+			warn("[MILAN] bootSequence crashed: " .. tostring(err))
+			pcall(function() _switchTab("Joueurs") end)
+		end
+	end
+	safeBoot()
+	task.delay(3, function()
+		pcall(function()
+			if _pages and _pages["Joueurs"] and not _pages["Joueurs"].Visible then
+				_switchTab("Joueurs")
+			end
+		end)
+	end)
+end)(pages, switchTab, bootSequence)
