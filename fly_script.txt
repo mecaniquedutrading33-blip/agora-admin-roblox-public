@@ -1,0 +1,283 @@
+if game.CoreGui:FindFirstChild("FlyGuiLou") then game.CoreGui.FlyGuiLou:Destroy() end
+if game.Players.LocalPlayer.PlayerGui:FindFirstChild("FlyGuiLou") then game.Players.LocalPlayer.PlayerGui.FlyGuiLou:Destroy() end
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local FlyGui = Instance.new("ScreenGui")
+FlyGui.Name = "FlyGuiLou"
+FlyGui.ResetOnSpawn = false
+FlyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+FlyGui.DisplayOrder = 999
+FlyGui.Parent = game.CoreGui
+
+local Intro = Instance.new("Frame")
+Intro.Size = UDim2.new(0, 360, 0, 140)
+Intro.Position = UDim2.new(0.5, -180, 0.5, -70)
+Intro.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+Intro.BorderSizePixel = 0
+Intro.Parent = FlyGui
+local IntroCorner = Instance.new("UICorner")
+IntroCorner.CornerRadius = UDim.new(0, 14)
+IntroCorner.Parent = Intro
+local IntroStroke = Instance.new("UIStroke")
+IntroStroke.Color = Color3.fromRGB(120, 90, 220)
+IntroStroke.Thickness = 2
+IntroStroke.Transparency = 0.3
+IntroStroke.Parent = Intro
+local IntroGlow = Instance.new("ImageLabel")
+IntroGlow.Size = UDim2.new(1, 30, 1, 30)
+IntroGlow.Position = UDim2.new(0, -15, 0, -15)
+IntroGlow.BackgroundTransparency = 1
+IntroGlow.Image = "rbxassetid://5028857084"
+IntroGlow.ImageColor3 = Color3.fromRGB(120, 90, 220)
+IntroGlow.ImageTransparency = 0.5
+IntroGlow.ScaleType = Enum.ScaleType.Slice
+IntroGlow.SliceCenter = Rect.new(24, 24, 276, 276)
+IntroGlow.ZIndex = -1
+IntroGlow.Parent = Intro
+
+local IntroRing = Instance.new("Frame")
+IntroRing.Size = UDim2.new(0, 60, 0, 60)
+IntroRing.Position = UDim2.new(0.5, -30, 0, 18)
+IntroRing.BackgroundTransparency = 1
+IntroRing.Parent = Intro
+local IntroRingCorner = Instance.new("UICorner")
+IntroRingCorner.CornerRadius = UDim.new(1, 0)
+IntroRingCorner.Parent = IntroRing
+local IntroRingStroke = Instance.new("UIStroke")
+IntroRingStroke.Color = Color3.fromRGB(180, 140, 255)
+IntroRingStroke.Thickness = 2.5
+IntroRingStroke.Parent = IntroRing
+local IntroDot = Instance.new("Frame")
+IntroDot.Size = UDim2.new(0, 14, 0, 14)
+IntroDot.Position = UDim2.new(0.5, -7, 0.5, -7)
+IntroDot.BackgroundColor3 = Color3.fromRGB(180, 140, 255)
+IntroDot.BorderSizePixel = 0
+IntroDot.Parent = IntroRing
+local IntroDotCorner = Instance.new("UICorner")
+IntroDotCorner.CornerRadius = UDim.new(1, 0)
+IntroDotCorner.Parent = IntroDot
+
+local IntroText = Instance.new("TextLabel")
+IntroText.Size = UDim2.new(1, -20, 0, 30)
+IntroText.Position = UDim2.new(0, 10, 0, 84)
+IntroText.BackgroundTransparency = 1
+IntroText.Text = "Bienvenue Lou"
+IntroText.Font = Enum.Font.GothamBold
+IntroText.TextSize = 22
+IntroText.TextColor3 = Color3.fromRGB(230, 220, 255)
+IntroText.Parent = Intro
+
+local IntroSub = Instance.new("TextLabel")
+IntroSub.Size = UDim2.new(1, -20, 0, 16)
+IntroSub.Position = UDim2.new(0, 10, 0, 112)
+IntroSub.BackgroundTransparency = 1
+IntroSub.Text = "Fly mode prêt"
+IntroSub.Font = Enum.Font.Gotham
+IntroSub.TextSize = 12
+IntroSub.TextColor3 = Color3.fromRGB(160, 150, 200)
+IntroSub.Parent = Intro
+
+TweenService:Create(IntroRing, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true), {Rotation = 360}):Play()
+TweenService:Create(IntroDot, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0.5, -10, 0.5, -10)}):Play()
+TweenService:Create(IntroGlow, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {ImageTransparency = 0.8}):Play()
+
+task.delay(2.2, function()
+	TweenService:Create(Intro, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
+	TweenService:Create(IntroText, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
+	TweenService:Create(IntroSub, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
+	TweenService:Create(IntroRing, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
+	TweenService:Create(IntroRingStroke, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Transparency = 1}):Play()
+	TweenService:Create(IntroDot, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
+	TweenService:Create(IntroGlow, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {ImageTransparency = 1}):Play()
+	TweenService:Create(IntroStroke, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Transparency = 1}):Play()
+	task.wait(0.65)
+	Intro:Destroy()
+end)
+
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Name = "FlyToggle"
+ToggleBtn.Size = UDim2.new(0, 70, 0, 70)
+ToggleBtn.Position = UDim2.new(0, 30, 0.5, -35)
+ToggleBtn.AnchorPoint = Vector2.new(0, 0)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+ToggleBtn.BorderSizePixel = 0
+ToggleBtn.Text = ""
+ToggleBtn.AutoButtonColor = false
+ToggleBtn.Parent = FlyGui
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(1, 0)
+ToggleCorner.Parent = ToggleBtn
+
+local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke.Name = "Stroke"
+ToggleStroke.Color = Color3.fromRGB(80, 80, 110)
+ToggleStroke.Thickness = 2
+ToggleStroke.Parent = ToggleBtn
+
+local ToggleGlow = Instance.new("ImageLabel")
+ToggleGlow.Size = UDim2.new(1, 30, 1, 30)
+ToggleGlow.Position = UDim2.new(0, -15, 0, -15)
+ToggleGlow.BackgroundTransparency = 1
+ToggleGlow.Image = "rbxassetid://5028857084"
+ToggleGlow.ImageColor3 = Color3.fromRGB(80, 80, 110)
+ToggleGlow.ImageTransparency = 0.7
+ToggleGlow.ScaleType = Enum.ScaleType.Slice
+ToggleGlow.SliceCenter = Rect.new(24, 24, 276, 276)
+ToggleGlow.ZIndex = -1
+ToggleGlow.Parent = ToggleBtn
+
+local ToggleIcon = Instance.new("TextLabel")
+ToggleIcon.Name = "Icon"
+ToggleIcon.Size = UDim2.new(1, 0, 1, 0)
+ToggleIcon.BackgroundTransparency = 1
+ToggleIcon.Text = "✈"
+ToggleIcon.Font = Enum.Font.GothamBold
+ToggleIcon.TextSize = 32
+ToggleIcon.TextColor3 = Color3.fromRGB(180, 180, 200)
+ToggleIcon.Parent = ToggleBtn
+
+local ToggleLabel = Instance.new("TextLabel")
+ToggleLabel.Name = "Label"
+ToggleLabel.Size = UDim2.new(0, 60, 0, 18)
+ToggleLabel.Position = UDim2.new(0.5, -30, 0, 72)
+ToggleLabel.BackgroundTransparency = 1
+ToggleLabel.Text = "FLY OFF"
+ToggleLabel.Font = Enum.Font.GothamBold
+ToggleLabel.TextSize = 11
+ToggleLabel.TextColor3 = Color3.fromRGB(120, 120, 150)
+ToggleLabel.Parent = ToggleBtn
+
+local dragging = false
+local dragStart, startPos
+local dragConn, releaseConn
+
+ToggleBtn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = ToggleBtn.Position
+		dragConn = input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+				if dragConn then dragConn:Disconnect() end
+				if releaseConn then releaseConn:Disconnect() end
+			end
+		end)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		ToggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+local flying = false
+local flySpeed = 60
+local flyBody, flyGyro, flyForce, flyConn
+
+local function startFly()
+	if flying then return end
+	local char = LocalPlayer.Character
+	if not char then return end
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hrp or not hum then return end
+
+	flyBody = Instance.new("BodyVelocity")
+	flyBody.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+	flyBody.Velocity = Vector3.new(0, 0, 0)
+	flyBody.Parent = hrp
+
+	flyGyro = Instance.new("BodyGyro")
+	flyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+	flyGyro.D = 100
+	flyGyro.P = 10000
+	flyGyro.Parent = hrp
+
+	flyForce = Instance.new("BodyPosition")
+	flyForce.MaxForce = Vector3.new(0, math.huge, 0)
+	flyForce.Position = hrp.Position
+	flyForce.D = 50
+	flyForce.P = 4000
+	flyForce.Parent = hrp
+
+	hum.PlatformStand = true
+
+	flyConn = RunService.RenderStepped:Connect(function()
+		if not flying or not hrp or not hrp.Parent then return end
+		local camCF = Camera.CFrame
+		local moveDir = Vector3.new(0, 0, 0)
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camCF.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camCF.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camCF.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camCF.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+		if moveDir.Magnitude > 0 then
+			moveDir = moveDir.Unit * flySpeed
+		end
+		flyBody.Velocity = moveDir
+		flyGyro.CFrame = camCF
+		flyForce.Position = hrp.Position
+	end)
+
+	flying = true
+	TweenService:Create(ToggleStroke, TweenInfo.new(0.3), {Color = Color3.fromRGB(120, 220, 140)}):Play()
+	TweenService:Create(ToggleGlow, TweenInfo.new(0.3), {ImageColor3 = Color3.fromRGB(120, 220, 140), ImageTransparency = 0.4}):Play()
+	TweenService:Create(ToggleIcon, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(120, 255, 160)}):Play()
+	TweenService:Create(ToggleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(120, 255, 160)}):Play()
+	ToggleLabel.Text = "FLY ON"
+end
+
+local function stopFly()
+	if not flying then return end
+	flying = false
+	if flyConn then flyConn:Disconnect() flyConn = nil end
+	if flyBody then flyBody:Destroy() flyBody = nil end
+	if flyGyro then flyGyro:Destroy() flyGyro = nil end
+	if flyForce then flyForce:Destroy() flyForce = nil end
+	local char = LocalPlayer.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then hum.PlatformStand = false end
+	end
+	TweenService:Create(ToggleStroke, TweenInfo.new(0.3), {Color = Color3.fromRGB(80, 80, 110)}):Play()
+	TweenService:Create(ToggleGlow, TweenInfo.new(0.3), {ImageColor3 = Color3.fromRGB(80, 80, 110), ImageTransparency = 0.7}):Play()
+	TweenService:Create(ToggleIcon, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(180, 180, 200)}):Play()
+	TweenService:Create(ToggleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(120, 120, 150)}):Play()
+	ToggleLabel.Text = "FLY OFF"
+end
+
+local function toggleFly()
+	if flying then stopFly() else startFly() end
+end
+
+ToggleBtn.MouseButton1Click:Connect(toggleFly)
+
+ToggleBtn.MouseEnter:Connect(function()
+	TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {Size = UDim2.new(0, 76, 0, 76)}):Play()
+end)
+ToggleBtn.MouseLeave:Connect(function()
+	TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {Size = UDim2.new(0, 70, 0, 70)}):Play()
+end)
+
+LocalPlayer.Chatted:Connect(function(msg)
+	local m = msg:lower()
+	if m == ";fly" then
+		if not flying then startFly() end
+	elseif m == ";unfly" then
+		if flying then stopFly() end
+	end
+end)
+
+print("[FLY LOU] Script chargé. Toggle à l'écran, ou tape ;fly / ;unfly dans le chat.")
