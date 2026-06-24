@@ -155,6 +155,178 @@ ToggleLabel.TextSize = 11
 ToggleLabel.TextColor3 = Color3.fromRGB(120, 120, 150)
 ToggleLabel.Parent = ToggleBtn
 
+-- ============= PANNEAU CONTROLES (slider vitesse + X pour fermer) =============
+local ControlsPanel = Instance.new("Frame")
+ControlsPanel.Name = "ControlsPanel"
+ControlsPanel.Size = UDim2.new(0, 200, 0, 80)
+ControlsPanel.Position = UDim2.new(0, 110, 0.5, -40)
+ControlsPanel.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+ControlsPanel.BorderSizePixel = 0
+ControlsPanel.Visible = false
+ControlsPanel.Parent = FlyGui
+
+local PanelCorner = Instance.new("UICorner")
+PanelCorner.CornerRadius = UDim.new(0, 12)
+PanelCorner.Parent = ControlsPanel
+
+local PanelStroke = Instance.new("UIStroke")
+PanelStroke.Color = Color3.fromRGB(80, 80, 110)
+PanelStroke.Thickness = 1.5
+PanelStroke.Parent = ControlsPanel
+
+-- Titre "VITESSE"
+local SpeedTitle = Instance.new("TextLabel")
+SpeedTitle.Size = UDim2.new(0, 100, 0, 18)
+SpeedTitle.Position = UDim2.new(0, 12, 0, 8)
+SpeedTitle.BackgroundTransparency = 1
+SpeedTitle.Text = "VITESSE"
+SpeedTitle.Font = Enum.Font.GothamBold
+SpeedTitle.TextSize = 11
+SpeedTitle.TextColor3 = Color3.fromRGB(160, 150, 200)
+SpeedTitle.TextXAlignment = Enum.TextXAlignment.Left
+SpeedTitle.Parent = ControlsPanel
+
+-- Valeur vitesse affichée
+local SpeedValue = Instance.new("TextLabel")
+SpeedValue.Name = "SpeedValue"
+SpeedValue.Size = UDim2.new(0, 80, 0, 18)
+SpeedValue.Position = UDim2.new(1, -12, 0, 8)
+SpeedValue.AnchorPoint = Vector2.new(1, 0)
+SpeedValue.BackgroundTransparency = 1
+SpeedValue.Text = "60"
+SpeedValue.Font = Enum.Font.GothamBold
+SpeedValue.TextSize = 13
+SpeedValue.TextColor3 = Color3.fromRGB(180, 140, 255)
+SpeedValue.TextXAlignment = Enum.TextXAlignment.Right
+SpeedValue.Parent = ControlsPanel
+
+-- Slider track
+local SliderTrack = Instance.new("Frame")
+SliderTrack.Name = "SliderTrack"
+SliderTrack.Size = UDim2.new(1, -24, 0, 6)
+SliderTrack.Position = UDim2.new(0, 12, 0, 32)
+SliderTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+SliderTrack.BorderSizePixel = 0
+SliderTrack.Parent = ControlsPanel
+local SliderTrackCorner = Instance.new("UICorner")
+SliderTrackCorner.CornerRadius = UDim.new(1, 0)
+SliderTrackCorner.Parent = SliderTrack
+
+-- Slider fill (partie remplie)
+local SliderFill = Instance.new("Frame")
+SliderFill.Name = "SliderFill"
+SliderFill.Size = UDim2.new(0.18, 0, 1, 0)  -- 60/300 = 0.2
+SliderFill.BackgroundColor3 = Color3.fromRGB(120, 90, 220)
+SliderFill.BorderSizePixel = 0
+SliderFill.Parent = SliderTrack
+local SliderFillCorner = Instance.new("UICorner")
+SliderFillCorner.CornerRadius = UDim.new(1, 0)
+SliderFillCorner.Parent = SliderFill
+
+-- Slider knob (la boule qu'on drag)
+local SliderKnob = Instance.new("TextButton")
+SliderKnob.Name = "SliderKnob"
+SliderKnob.Size = UDim2.new(0, 18, 0, 18)
+SliderKnob.Position = UDim2.new(0.18, -9, 0.5, -9)
+SliderKnob.AnchorPoint = Vector2.new(0, 0)
+SliderKnob.BackgroundColor3 = Color3.fromRGB(230, 220, 255)
+SliderKnob.BorderSizePixel = 0
+SliderKnob.Text = ""
+SliderKnob.AutoButtonColor = false
+SliderKnob.ZIndex = 5
+SliderKnob.Parent = SliderTrack
+local SliderKnobCorner = Instance.new("UICorner")
+SliderKnobCorner.CornerRadius = UDim.new(1, 0)
+SliderKnobCorner.Parent = SliderKnob
+
+-- Bouton X pour fermer/désactiver
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Name = "CloseBtn"
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.Position = UDim2.new(0, 12, 0, 50)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Text = "✕"
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 14
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.AutoButtonColor = true
+CloseBtn.Parent = ControlsPanel
+local CloseBtnCorner = Instance.new("UICorner")
+CloseBtnCorner.CornerRadius = UDim.new(0, 6)
+CloseBtnCorner.Parent = CloseBtn
+
+-- Label "DÉSACTIVER"
+local CloseLabel = Instance.new("TextLabel")
+CloseLabel.Size = UDim2.new(0, 140, 0, 18)
+CloseLabel.Position = UDim2.new(0, 44, 0, 53)
+CloseLabel.BackgroundTransparency = 1
+CloseLabel.Text = "DÉSACTIVER LE SCRIPT"
+CloseLabel.Font = Enum.Font.GothamBold
+CloseLabel.TextSize = 10
+CloseLabel.TextColor3 = Color3.fromRGB(200, 80, 80)
+CloseLabel.TextXAlignment = Enum.TextXAlignment.Left
+CloseLabel.Parent = ControlsPanel
+
+-- ============= SLIDER DRAG =============
+local flySpeed = 60
+local MIN_SPEED = 10
+local MAX_SPEED = 300
+local sliderDragging = false
+
+local function updateSpeed(value)
+	flySpeed = math.clamp(math.floor(value), MIN_SPEED, MAX_SPEED)
+	SpeedValue.Text = tostring(flySpeed)
+	-- Mise à jour visuelle du fill + knob
+	local pct = (flySpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
+	SliderFill.Size = UDim2.new(pct, 0, 1, 0)
+	SliderKnob.Position = UDim2.new(pct, -9, 0.5, -9)
+end
+
+SliderKnob.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		sliderDragging = true
+		-- Empêcher le drag du bouton fly pendant qu'on drag le slider
+		dragging = false
+	end
+end)
+
+SliderKnob.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		sliderDragging = false
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if sliderDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local trackAbsPos = SliderTrack.AbsolutePosition
+		local trackAbsSize = SliderTrack.AbsoluteSize
+		local relX = (input.Position.X - trackAbsPos.X) / trackAbsSize.X
+		relX = math.clamp(relX, 0, 1)
+		local newSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * relX
+		updateSpeed(newSpeed)
+	end
+end)
+
+-- ============= CLOSE BUTTON (désactive tout le script) =============
+local function destroyAll()
+	-- Stop fly si actif
+	if flying then stopFly() end
+	-- Cleanup connections
+	for _, c in ipairs(_flyConnections) do
+		pcall(function() c:Disconnect() end)
+	end
+	-- Destroy GUI
+	pcall(function() FlyGui:Destroy() end)
+	print("[FLY LOU] Script désactivé.")
+end
+
+CloseBtn.MouseButton1Click:Connect(destroyAll)
+
+-- ============= TOGGLE BUTTON (montre/cache le panneau + drag) =============
+local controlsVisible = false
+local _flyConnections = {}
+
 local dragging = false
 local dragStart, startPos
 local dragConn, releaseConn
@@ -173,6 +345,27 @@ ToggleBtn.InputBegan:Connect(function(input)
 		end)
 	end
 end)
+
+local function toggleControls()
+	controlsVisible = not controlsVisible
+	ControlsPanel.Visible = controlsVisible
+end
+
+-- Single-click vs drag detection: si le bouton est cliqué SANS drag, on toggle le panel
+local clickConn = ToggleBtn.MouseButton1Click:Connect(function()
+	if not sliderDragging then
+		toggleFly()
+		-- Affiche le panel de contrôles quand fly ON, cache quand OFF
+		if flying and not controlsVisible then
+			controlsVisible = true
+			ControlsPanel.Visible = true
+		elseif not flying and controlsVisible then
+			controlsVisible = false
+			ControlsPanel.Visible = false
+		end
+	end
+end)
+table.insert(_flyConnections, clickConn)
 
 UserInputService.InputChanged:Connect(function(input)
 	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
@@ -392,8 +585,6 @@ end
 local function toggleFly()
 	if flying then stopFly() else startFly() end
 end
-
-ToggleBtn.MouseButton1Click:Connect(toggleFly)
 
 ToggleBtn.MouseEnter:Connect(function()
 	TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {Size = UDim2.new(0, 76, 0, 76)}):Play()
