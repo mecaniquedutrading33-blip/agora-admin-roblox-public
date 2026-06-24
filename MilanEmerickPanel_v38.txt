@@ -4481,7 +4481,7 @@ clickControl.ZIndex = 120
 clickControl.Parent = screenGui
 clickControl.Active = true
 clickControl.Visible = false
-clickControl.Draggable = true
+-- PAS de Draggable Roblox (entre en conflit avec le drag manuel sur controlHeader)
 createCorner(clickControl, 12)
 createStroke(clickControl, Color3.fromRGB(80, 80, 100), 1)
 
@@ -4497,17 +4497,27 @@ controlHeader.ZIndex = 122
 controlHeader.Parent = clickControl
 
 -- Drag manuel du clickControl depuis le header (TextButton avec AutoButtonColor=false)
-local ccDragging, ccDragStart, ccStartPos
+-- Listener global sur UserInputService pour que le drag suive la souris même hors du header
+local ccDragging, ccDragStart, ccStartPos = false, nil, nil
 controlHeader.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		ccDragging = true
 		ccDragStart = input.Position
 		ccStartPos = clickControl.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				ccDragging = false
-			end
-		end)
+	end
+end)
+UserInputService.InputChanged:Connect(function(input)
+	if ccDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		if ccStartPos and ccDragStart then
+			local dx = input.Position.X - ccDragStart.X
+			local dy = input.Position.Y - ccDragStart.Y
+			clickControl.Position = UDim2.new(ccStartPos.X.Scale, ccStartPos.X.Offset + dx, ccStartPos.Y.Scale, ccStartPos.Y.Offset + dy)
+		end
+	end
+end)
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		ccDragging = false
 	end
 end)
 
@@ -4727,14 +4737,15 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 			local seatPart = humanoid and humanoid.SeatPart
 			local target, targetSize
 			if seatPart and seatPart:IsA("BasePart") then
-				-- On est dans un véhicule : plateforme sous le châssis du véhicule, pas sous nos pieds
+				-- On est dans un véhicule : plateforme sous les roues du véhicule (avec marge pour pas toucher le châssis)
 				local seatModel = seatPart:FindFirstAncestorOfClass("Model") or seatPart.Parent
 				if seatModel and seatModel ~= character then
 					local ok, cf, size = pcall(function() return seatModel:GetBoundingBox() end)
 					if ok and cf and size then
 						target = cf.Position
 						targetSize = size
-						platformState.y = cf.Position.Y - size.Y / 2
+						-- Marge de 1.5 stud SOUS le bas de la voiture (évite que la plate touche les roues et fasse rebondir)
+						platformState.y = cf.Position.Y - size.Y / 2 - 1.5
 					end
 				end
 				if not target then
@@ -4743,7 +4754,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 					local size = seatPart.Size
 					target = cf.Position
 					targetSize = size
-					platformState.y = cf.Position.Y - size.Y / 2
+					platformState.y = cf.Position.Y - size.Y / 2 - 1.5
 				end
 			elseif character then
 				-- À pied : spawn exactement sous nos pieds (utiliser HumanoidRootPart bas)
@@ -4752,7 +4763,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 					local ok, cf, size = pcall(function() return character:GetBoundingBox() end)
 					if ok and cf and size then
 						target = cf.Position
-						platformState.y = cf.Position.Y - size.Y / 2
+						platformState.y = cf.Position.Y - size.Y / 2 - 0.2
 					else
 						target = rootPart.Position
 						platformState.y = rootPart.Position.Y - 3
@@ -4764,7 +4775,8 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 			end
 			if target then
 				platformState.offset = 0
-				platformState.part.CFrame = CFrame.new(target.X, platformState.y - 0.5, target.Z)
+				platformState.smoothedOffset = 0  -- pour le lissage du slider +/-
+				platformState.part.CFrame = CFrame.new(target.X, platformState.y, target.Z)
 				-- Suivre la cible (voiture ou joueur) en X/Z
 				platformState.followTarget = (seatPart and seatPart:IsA("BasePart") and (seatPart:FindFirstAncestorOfClass("Model") or seatPart.Parent)) or character
 			end
@@ -4806,13 +4818,19 @@ RunService.Stepped:Connect(function(_, dt)
 			if target then trackX, trackZ = target.Position.X, target.Position.Z end
 		end
 		if trackX and trackZ then
+			-- Cible offset : monte (+=) ou descend (-=) selon les touches
+			local targetOffset = platformState.offset
 			if UserInputService:IsKeyDown(Enum.KeyCode.Equals) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadPlus) then
 				platformState.offset += 25 * dt
 			end
 			if UserInputService:IsKeyDown(Enum.KeyCode.Minus) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadMinus) then
 				platformState.offset -= 25 * dt
 			end
-			platformState.part.CFrame = CFrame.new(trackX, platformState.y + platformState.offset - 0.5, trackZ)
+			-- Lissage de la position verticale (évite les sauts secs dans la voiture)
+			-- smoothedOffset lerp vers offset avec facteur ~12 (atteint 95% en ~0.25s)
+			local smoothing = math.min(1, dt * 12)
+			platformState.smoothedOffset = platformState.smoothedOffset + (platformState.offset - platformState.smoothedOffset) * smoothing
+			platformState.part.CFrame = CFrame.new(trackX, platformState.y + platformState.smoothedOffset, trackZ)
 		end
 	end
 	-- Go to Walk : déplace le humanoid vers chaque waypoint avec MoveTo
