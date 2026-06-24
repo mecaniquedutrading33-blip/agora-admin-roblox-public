@@ -6302,6 +6302,60 @@ local function renderResult(data, parent)
 	createCorner(card, 8)
 	createStroke(card, Color3.fromRGB(60, 60, 90), 1)
 
+	-- Badges VERIFIED / PREMIUM / BANNED en haut à droite de la carte
+	;(function()
+		local hasVerified = data.isVerified == true
+		local hasPremium = data.isPremium == true
+		local isBanned = data.isBanned == true
+		if not hasVerified and not hasPremium and not isBanned then return end
+		local headerY = 0
+		if hasVerified then
+			local v = Instance.new("TextLabel")
+			v.Size = UDim2.new(0, 70, 0, 18)
+			v.Position = UDim2.new(1, -82, 0, 8)
+			v.BackgroundColor3 = Color3.fromRGB(50, 130, 220)
+			v.BackgroundTransparency = 0.2
+			v.BorderSizePixel = 0
+			v.Font = Enum.Font.GothamBlack
+			v.Text = "✓ VÉRIFIÉ"
+			v.TextSize = 9
+			v.TextColor3 = Color3.fromRGB(220, 240, 255)
+			v.ZIndex = 5
+			v.Parent = card
+			createCorner(v, 4)
+		end
+		if hasPremium then
+			local p = Instance.new("TextLabel")
+			p.Size = UDim2.new(0, 60, 0, 18)
+			p.Position = UDim2.new(1, -156, 0, 8)
+			p.BackgroundColor3 = Color3.fromRGB(255, 200, 60)
+			p.BackgroundTransparency = 0.15
+			p.BorderSizePixel = 0
+			p.Font = Enum.Font.GothamBlack
+			p.Text = "💎 PREMIUM"
+			p.TextSize = 9
+			p.TextColor3 = Color3.fromRGB(60, 40, 0)
+			p.ZIndex = 5
+			p.Parent = card
+			createCorner(p, 4)
+		end
+		if isBanned then
+			local b = Instance.new("TextLabel")
+			b.Size = UDim2.new(0, 50, 0, 18)
+			b.Position = UDim2.new(1, -210, 0, 8)
+			b.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+			b.BackgroundTransparency = 0.15
+			b.BorderSizePixel = 0
+			b.Font = Enum.Font.GothamBlack
+			b.Text = "🚫 BANNI"
+			b.TextSize = 9
+			b.TextColor3 = Color3.fromRGB(255, 220, 220)
+			b.ZIndex = 5
+			b.Parent = card
+			createCorner(b, 4)
+		end
+	end)()
+
 	local padding = Instance.new("UIPadding")
 	padding.PaddingTop = UDim.new(0, 10)
 	padding.PaddingBottom = UDim.new(0, 10)
