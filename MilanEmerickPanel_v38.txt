@@ -274,11 +274,13 @@ closeBtn.BorderSizePixel = 0
 closeBtn.Parent = topBar
 createCorner(closeBtn, 8)
 
-local minimizeBtn = Instance.new("TextButton")
+local minimizeBtn = Instance.new("ImageButton")
+minimizeBtn.Name = "LogoBtn"
 minimizeBtn.Size = UDim2.new(0, 28, 0, 28)
 minimizeBtn.Position = UDim2.new(1, -68, 0, 5)
-minimizeBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 220)
-minimizeBtn.Text = ""
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+minimizeBtn.Image = "rbxassetid://73314612607499"
+minimizeBtn.ScaleType = Enum.ScaleType.Fit
 minimizeBtn.AutoButtonColor = false
 minimizeBtn.BorderSizePixel = 0
 minimizeBtn.Parent = topBar
@@ -296,7 +298,6 @@ local function makeIcon(btn, txt)
 end
 
 makeIcon(closeBtn, "×")
-makeIcon(minimizeBtn, "−")
 
 local function createButton(parent, text, yPos, color, callback)
 	local btn = Instance.new("TextButton")
@@ -742,12 +743,116 @@ local ccInputConn = UserInputService.InputChanged:Connect(function(input)
 end)
 
 local minimized = false
-minimizeBtn.MouseButton1Click:Connect(function()
-	minimized = not minimized
-	contentFrame.Visible = not minimized
-	tabBar.Visible = not minimized
-	tween(mainFrame, {Size = minimized and UDim2.new(0, 460, 0, 52) or UDim2.new(0, 460, 0, 520)}, 0.2)
-end)
+;(function()
+	local _createCorner = createCorner
+	local _tween = tween
+	local _contentFrame = contentFrame
+	local _tabBar = tabBar
+	local _mainFrame = mainFrame
+	local _minimizeBtn = minimizeBtn
+
+	local btn = Instance.new("ImageButton")
+	btn.Name = "LogoFloat"
+	btn.Size = UDim2.new(0, 56, 0, 56)
+	btn.Position = UDim2.new(0, 12, 0.5, -28)
+	btn.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+	btn.Image = "rbxassetid://73314612607499"
+	btn.ScaleType = Enum.ScaleType.Fit
+	btn.AutoButtonColor = false
+	btn.BorderSizePixel = 0
+	btn.Visible = false
+	btn.ZIndex = 9999
+	btn.Parent = screenGui
+	_createCorner(btn, 1)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(120, 80, 220)
+	stroke.Thickness = 2
+	stroke.Parent = btn
+
+	local longPressProgress = nil
+	local lpStartTime = 0
+
+	local function destroyAllPanel()
+		if longPressProgress and longPressProgress.Parent then
+			longPressProgress:Destroy()
+		end
+		btn.Visible = false
+		for _, gui in ipairs(game.Players.LocalPlayer.PlayerGui:GetChildren()) do
+			if gui.Name == "MilanEmerickPanel" or gui.Name == "AgoraAdminUniverselle" then
+				pcall(function() gui:Destroy() end)
+			end
+		end
+		pcall(function()
+			if game.CoreGui:FindFirstChild("MilanEmerickPanel") then
+				game.CoreGui.MilanEmerickPanel:Destroy()
+			end
+		end)
+		print("[Agora Universelle] Panel detruit.")
+	end
+
+	local function startLongPress()
+		lpStartTime = tick()
+		if not longPressProgress or not longPressProgress.Parent then
+			longPressProgress = Instance.new("Frame")
+			longPressProgress.Size = UDim2.new(1.4, 0, 1.4, 0)
+			longPressProgress.Position = UDim2.new(0.5, 0, 0.5, 0)
+			longPressProgress.AnchorPoint = Vector2.new(0.5, 0.5)
+			longPressProgress.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+			longPressProgress.BackgroundTransparency = 0.6
+			longPressProgress.BorderSizePixel = 0
+			longPressProgress.ZIndex = btn.ZIndex - 1
+			longPressProgress.Parent = btn
+			_createCorner(longPressProgress, 1)
+		end
+		longPressProgress.Visible = true
+		longPressProgress.Size = UDim2.new(1, 0, 1, 0)
+		longPressProgress.BackgroundTransparency = 1
+		_tween(longPressProgress, {Size = UDim2.new(1.4, 0, 1.4, 0), BackgroundTransparency = 0.6}, 2)
+	end
+	local function endLongPress()
+		lpStartTime = 0
+		if longPressProgress and longPressProgress.Parent then
+			_tween(longPressProgress, {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1}, 0.2)
+		end
+	end
+
+	btn.MouseButton1Down:Connect(startLongPress)
+	btn.MouseLeave:Connect(endLongPress)
+	btn.MouseButton1Up:Connect(function()
+		if lpStartTime > 0 and (tick() - lpStartTime) >= 2 then
+			endLongPress()
+			destroyAllPanel()
+		else
+			endLongPress()
+		end
+	end)
+
+	btn.MouseButton1Click:Connect(function()
+		if lpStartTime > 0 and (tick() - lpStartTime) < 1.8 then
+			return
+		end
+		minimized = false
+		_contentFrame.Visible = true
+		_tabBar.Visible = true
+		_tween(_mainFrame, {Size = UDim2.new(0, 460, 0, 520)}, 0.2)
+		btn.Visible = false
+	end)
+
+	btn.MouseEnter:Connect(function()
+		_tween(btn, {Size = UDim2.new(0, 62, 0, 62)}, 0.15)
+	end)
+	btn.MouseLeave:Connect(function()
+		_tween(btn, {Size = UDim2.new(0, 56, 0, 56)}, 0.15)
+	end)
+
+	_minimizeBtn.MouseButton1Click:Connect(function()
+		minimized = not minimized
+		_contentFrame.Visible = not minimized
+		_tabBar.Visible = not minimized
+		btn.Visible = minimized
+		_tween(_mainFrame, {Size = minimized and UDim2.new(0, 460, 0, 52) or UDim2.new(0, 460, 0, 520)}, 0.2)
+	end)
+end)()
 
 closeBtn.MouseButton1Click:Connect(function()
 	local confirm = Instance.new("Frame")
@@ -3665,6 +3770,7 @@ local function stopAutoClickEngine()
 	if autoClickState.activeThread then
 		autoClickState.activeThread = nil
 	end
+	destroyAutoClickMarker()
 	statusLabel.Text = "Statut : arret"
 	statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 	pcall(hideMarker)
@@ -3688,7 +3794,35 @@ local acTarget = {
 	worldHit = nil,                 -- Mouse.Hit sous le curseur à la capture
 	worldTarget = nil,              -- l'instance Part/GUI sous le curseur à la capture
 	targetType = "any",             -- "any" | "world" | "gui"
+	markerPart = nil                -- Part 3D visuelle au worldHit.Position (marker dans la map)
 }
+
+-- Fonctions marker autoclick: définies inline ci-dessous
+;(function()
+	function destroyAutoClickMarker()
+		if acTarget.markerPart and acTarget.markerPart.Parent then
+			pcall(function() acTarget.markerPart:Destroy() end)
+		end
+		acTarget.markerPart = nil
+	end
+	function refreshAutoClickMarker()
+		destroyAutoClickMarker()
+		if not acTarget.worldHit then return end
+		local marker = Instance.new("Part")
+		marker.Name = "AutoClickMarker"
+		marker.Size = Vector3.new(0.6, 0.6, 0.6)
+		marker.Shape = Enum.PartType.Ball
+		marker.Anchored = true
+		marker.CanCollide = false
+		marker.CastShadow = false
+		marker.Material = Enum.Material.Neon
+		marker.Color = Color3.fromRGB(255, 80, 80)
+		marker.Transparency = 0.3
+		marker.Position = acTarget.worldHit.Position
+		marker.Parent = workspace
+		acTarget.markerPart = marker
+	end
+end)()
 
 -- Met à jour la position FIXE = le curseur au moment de l'appel
 local function captureTargetFromCursor()
@@ -3698,6 +3832,7 @@ local function captureTargetFromCursor()
 	acTarget.position = UserInputService:GetMouseLocation()
 	acTarget.worldHit = mouse.Hit
 	acTarget.worldTarget = mouse.Target
+	refreshAutoClickMarker()
 	return true
 end
 
