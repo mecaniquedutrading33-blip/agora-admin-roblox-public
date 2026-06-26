@@ -3703,6 +3703,111 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 	end
 end)
 
+-- ============= ANGEL FLY (Realistic Wings) =============
+-- IIFE pour 0 top-level local supplementaire
+;(function(_localScroll, _localPage, _createSwitch, _createSlider, _flyState, _flySwitch, _RunService, _UserInputService, _Camera, _Workspace, _LocalPlayer, _tween, _createCorner, _createStroke)
+	local angelState = { flying = false, speed = 80, gyro = nil, vel = nil, loop = nil, tilt = 0, bobPhase = 0 }
+	
+	local function updateChar()
+		local char = _LocalPlayer.Character
+		if not char then return nil end
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if not hrp or not hum then return nil end
+		return char, hrp, hum
+	end
+	
+	local function startAngelFly()
+		local char, hrp, hum = updateChar()
+		if not hrp then return end
+		angelState.flying = true
+		local bg = Instance.new("BodyGyro")
+		bg.MaxTorque = Vector3.new(0, 0, 0)
+		bg.D = 100
+		bg.P = 10000
+		bg.Parent = hrp
+		angelState.gyro = bg
+		local bv = Instance.new("BodyVelocity")
+		bv.MaxForce = Vector3.new(0, 0, 0)
+		bv.Velocity = Vector3.new(0, 0, 0)
+		bv.Parent = hrp
+		angelState.vel = bv
+		hum.PlatformStand = true
+		if angelState.loop then angelState.loop:Disconnect() end
+		angelState.bobPhase = 0
+		angelState.loop = _RunService.RenderStepped:Connect(function(dt)
+			local c, h, hu = updateChar()
+			if not h or not angelState.flying then
+				if angelState.loop then angelState.loop:Disconnect() angelState.loop = nil end
+				return
+			end
+			local cam = _Camera
+			local camLook = cam.CFrame.LookVector
+			local moveVec = Vector3.new(0, 0, 0)
+			if _UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVec = moveVec + camLook end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVec = moveVec - camLook end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVec = moveVec - cam.CFrame.RightVector end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + cam.CFrame.RightVector end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveVec = moveVec + Vector3.new(0, 1, 0) end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveVec = moveVec - Vector3.new(0, 1, 0) end
+			if moveVec.Magnitude > 0 then moveVec = moveVec.Unit end
+			local speed = angelState.speed
+			local targetVel = moveVec * speed
+			angelState.vel.Velocity = angelState.vel.Velocity:Lerp(targetVel, 0.12)
+			angelState.gyro.CFrame = CFrame.new(h.Position, h.Position + camLook)
+			local tiltTarget = 0
+			local bankTarget = 0
+			if moveVec.Y > 0.1 then tiltTarget = -0.15
+			elseif moveVec.Y < -0.1 then tiltTarget = 0.15 end
+			local rightDot = moveVec:Dot(cam.CFrame.RightVector)
+			bankTarget = rightDot * 0.2
+			angelState.tilt = angelState.tilt:Lerp(tiltTarget, 0.1)
+			angelState.bobPhase = angelState.bobPhase + dt * 8
+			local bob = math.sin(angelState.bobPhase) * 0.3
+			angelState.gyro.CFrame = angelState.gyro.CFrame * CFrame.Angles(angelState.tilt, 0, bankTarget + bob * 0.05)
+		end)
+	end
+	
+	local function stopAngelFly()
+		angelState.flying = false
+		if angelState.loop then angelState.loop:Disconnect() angelState.loop = nil end
+		if angelState.vel then angelState.vel:Destroy() angelState.vel = nil end
+		if angelState.gyro then angelState.gyro:Destroy() angelState.gyro = nil end
+		local char, hrp, hum = updateChar()
+		if hum then hum.PlatformStand = false end
+		angelState.tilt = 0
+	end
+	
+	local angelSwitch = _createSwitch(_localScroll, "Angel Fly (G)", 0, function(on)
+		if on then
+			if _flySwitch then _flySwitch.set(false) end
+			startAngelFly()
+			if angelSwitch then angelSwitch.set(true) end
+		else
+			stopAngelFly()
+		end
+	end)
+	
+	local angelSpeedSlider = _createSlider(_localScroll, "Angel Speed", 40, 20, 300, angelState.speed, function(v)
+		angelState.speed = v
+		if angelSpeedSlider then angelSpeedSlider.set(v) end
+	end, Color3.fromRGB(100, 150, 255), 0, 5)
+	
+	_UserInputService.InputBegan:Connect(function(input, gp)
+		if gp then return end
+		if input.KeyCode == Enum.KeyCode.G then
+			if angelState.flying then
+				stopAngelFly()
+				if angelSwitch then angelSwitch.set(false) end
+			else
+				if _flySwitch and _flySwitch.get and _flySwitch.get() then _flySwitch.set(false) end
+				startAngelFly()
+				if angelSwitch then angelSwitch.set(true) end
+			end
+		end
+	end)
+end)(localScroll, localPage, createSwitch, createSlider, flyState, flySwitch, RunService, UserInputService, Camera, Workspace, LocalPlayer, tween, createCorner, createStroke)
+
 local PathfindingService = game:GetService("PathfindingService")
 
 local gotoWalkState = { enabled = false, active = false, target = nil, path = {}, visuals = {}, lastClick = 0, lastMoveTo = nil, recompute = nil, busy = false }
@@ -7826,6 +7931,159 @@ end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlay
 	credits.TextColor3 = Color3.fromRGB(140, 140, 180)
 	credits.Parent = _mainFrame
 end)(mainFrame)
+
+
+-- ============= NOTIFICATIONS JOIN/LEAVE + TOP BAR OVERLAY =============
+-- IIFE pour 0 top-level local supplementaire
+;(function(_statsScroll, _createSwitch, _createCorner, _createStroke, _tween, _Players, _RunService, _LocalPlayer)
+	-- ---- NOTIFICATIONS JOIN/LEAVE ----
+	local notifContainer = Instance.new("Frame")
+	notifContainer.Name = "NotifContainer"
+	notifContainer.Size = UDim2.new(0, 260, 0, 200)
+	notifContainer.Position = UDim2.new(1, -270, 1, -210)
+	notifContainer.BackgroundTransparency = 1
+	notifContainer.Parent = game:GetService("CoreGui")
+	
+	local notifList = Instance.new("UIListLayout")
+	notifList.FillDirection = Enum.FillDirection.Vertical
+	notifList.SortOrder = Enum.SortOrder.Reverse
+	notifList.Padding = UDim.new(0, 6)
+	notifList.Parent = notifContainer
+	
+	local activeNotifs = {}
+	
+	local function makeNotif(name, isJoin)
+		if #activeNotifs >= 5 then
+			local oldest = table.remove(activeNotifs, 1)
+			if oldest and oldest.frame then
+				pcall(function() oldest.frame:Destroy() end)
+			end
+		end
+		local card = Instance.new("Frame")
+		card.Size = UDim2.new(0, 250, 0, 42)
+		card.Position = UDim2.new(1, 260, 0, 0)
+		card.BackgroundColor3 = isJoin and Color3.fromRGB(30, 50, 35) or Color3.fromRGB(50, 30, 30)
+		card.BorderSizePixel = 0
+		card.Parent = notifContainer
+		_createCorner(card, 6)
+		_createStroke(card, isJoin and Color3.fromRGB(60, 120, 70) or Color3.fromRGB(120, 60, 60), 1)
+		local lbl = Instance.new("TextLabel")
+		lbl.Size = UDim2.new(1, -10, 1, 0)
+		lbl.Position = UDim2.new(0, 10, 0, 0)
+		lbl.BackgroundTransparency = 1
+		lbl.Font = Enum.Font.GothamSemibold
+		lbl.TextSize = 13
+		lbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+		lbl.TextXAlignment = Enum.TextXAlignment.Left
+		lbl.Text = (isJoin and "● " or "○ ") .. name
+		lbl.Parent = card
+		local entry = {frame = card, name = name}
+		table.insert(activeNotifs, entry)
+		_tween(card, {Position = UDim2.new(1, -260, 0, 0)}, 0.3)
+		task.delay(4, function()
+			pcall(function()
+				_tween(card, {Position = UDim2.new(1, 260, 0, 0), BackgroundTransparency = 1}, 0.4)
+				task.delay(0.5, function()
+					pcall(function() card:Destroy() end)
+					for idx, n in ipairs(activeNotifs) do
+						if n == entry then table.remove(activeNotifs, idx) break end
+					end
+				end)
+			end)
+		end)
+	end
+	
+	local notifSwitch = _createSwitch(_statsScroll, "Notifs Join/Leave", 0, function(on)
+		notifContainer.Visible = on
+	end)
+	notifContainer.Visible = false
+	
+	if notifSwitch then notifSwitch.set(false) end
+	
+	_Players.PlayerAdded:Connect(function(plr)
+		makeNotif(plr.Name, true)
+	end)
+	_Players.PlayerRemoving:Connect(function(plr)
+		makeNotif(plr.Name, false)
+	end)
+	
+	-- ---- TOP BAR OVERLAY (FPS / PING / SIGNAL) ----
+	local topBar = Instance.new("Frame")
+	topBar.Name = "TopBarOverlay"
+	topBar.Size = UDim2.new(0, 180, 0, 28)
+	topBar.Position = UDim2.new(0.5, -90, 0, 4)
+	topBar.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+	topBar.BackgroundTransparency = 0.3
+	topBar.BorderSizePixel = 0
+	topBar.Visible = false
+	topBar.Parent = game:GetService("CoreGui")
+	_createCorner(topBar, 4)
+	_createStroke(topBar, Color3.fromRGB(60, 60, 100), 1)
+	
+	local fpsLabel = Instance.new("TextLabel")
+	fpsLabel.Size = UDim2.new(0, 55, 1, -4)
+	fpsLabel.Position = UDim2.new(0, 4, 0, 2)
+	fpsLabel.BackgroundTransparency = 1
+	fpsLabel.Font = Enum.Font.Gotham
+	fpsLabel.TextSize = 11
+	fpsLabel.TextColor3 = Color3.fromRGB(100, 200, 100)
+	fpsLabel.TextXAlignment = Enum.TextXAlignment.Left
+	fpsLabel.Text = "FPS: --"
+	fpsLabel.Parent = topBar
+	
+	local pingLabel = Instance.new("TextLabel")
+	pingLabel.Size = UDim2.new(0, 55, 1, -4)
+	pingLabel.Position = UDim2.new(0, 62, 0, 2)
+	pingLabel.BackgroundTransparency = 1
+	pingLabel.Font = Enum.Font.Gotham
+	pingLabel.TextSize = 11
+	pingLabel.TextColor3 = Color3.fromRGB(100, 180, 200)
+	pingLabel.TextXAlignment = Enum.TextXAlignment.Left
+	pingLabel.Text = "Ping: --"
+	pingLabel.Parent = topBar
+	
+	-- 5 signal bars
+	local bars = {}
+	for i = 1, 5 do
+		local bar = Instance.new("Frame")
+		bar.Size = UDim2.new(0, 4, 0, 6 + i * 3)
+		bar.Position = UDim2.new(0, 122 + (i - 1) * 8, 0.5, -(6 + i * 3) / 2)
+		bar.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+		bar.BorderSizePixel = 0
+		bar.Parent = topBar
+		_createCorner(bar, 1)
+		bars[i] = bar
+	end
+	
+	local topBarSwitch = _createSwitch(_statsScroll, "Top Bar Overlay", 56, function(on)
+		topBar.Visible = on
+	end)
+	if topBarSwitch then topBarSwitch.set(false) end
+	
+	local frameCount = 0
+	local lastFpsTime = tick()
+	local lastFps = 60
+	local conn = _RunService.RenderStepped:Connect(function()
+		frameCount = frameCount + 1
+		local now = tick()
+		if now - lastFpsTime >= 0.5 then
+			lastFps = math.floor(frameCount / (now - lastFpsTime))
+			frameCount = 0
+			lastFpsTime = now
+			fpsLabel.Text = "FPS: " .. tostring(lastFps)
+			local ping = 0
+			pcall(function() ping = math.floor(_LocalPlayer:GetNetworkPing() * 1000) end)
+			pingLabel.Text = "Ping: " .. tostring(ping) .. "ms"
+			local quality = math.clamp(lastFps / 60, 0, 1)
+			local barsOn = math.ceil(quality * 5)
+			for i = 1, 5 do
+				bars[i].BackgroundColor3 = i <= barsOn
+					and Color3.fromRGB(60 + (i-1) * 20, 180 - (i-1) * 20, 80)
+				or Color3.fromRGB(50, 50, 50)
+			end
+		end
+	end)
+end)(statsScroll, createSwitch, createCorner, createStroke, tween, Players, RunService, LocalPlayer)
 
 -- BOOT SAFE 3 LAYERS:
 -- Layer 1: reveal immédiat à 0.5s (filet de sécurité absolu)
