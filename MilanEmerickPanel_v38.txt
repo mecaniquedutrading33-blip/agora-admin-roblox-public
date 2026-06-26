@@ -556,11 +556,11 @@ end
 
 local function createTab(name)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0.135, -2, 1, 0)
+	btn.Size = UDim2.new(0.115, -2, 1, 0)
 	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 	btn.Text = name
 	btn.Font = Enum.Font.GothamSemibold
-	btn.TextSize = 11
+	btn.TextSize = 10
 	btn.TextColor3 = Color3.fromRGB(160, 160, 160)
 	btn.BorderSizePixel = 0
 	btn.AutoButtonColor = false
@@ -586,6 +586,7 @@ local remotesPage = createTab("Remotes")
 local registryPage = createTab("Registry")
 local localPage = createTab("Local")
 local protectionsPage = createTab("Protections")
+local statsPage = createTab("Stats")
 
 -- ============= REGISTRY SEARCH + AUTOCOMPLETE =============
 -- WRAP dans local function + appel pour isoler les locals
@@ -880,6 +881,24 @@ protectionsLayout.Padding = UDim.new(0, 6)
 protectionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 protectionsLayout.Parent = protectionsScroll
 
+;(function(_statsPage)
+	statsScroll = Instance.new("ScrollingFrame")
+	statsScroll.Name = "StatsScroll"
+	statsScroll.Size = UDim2.new(1, -10, 1, -10)
+	statsScroll.Position = UDim2.new(0, 5, 0, 5)
+	statsScroll.BackgroundTransparency = 1
+	statsScroll.ScrollBarThickness = 4
+	statsScroll.BorderSizePixel = 0
+	statsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	statsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	statsScroll.Parent = _statsPage
+	
+	local statsTabLayout = Instance.new("UIListLayout")
+	statsTabLayout.Padding = UDim.new(0, 6)
+	statsTabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	statsTabLayout.Parent = statsScroll
+end)(statsPage)
+
 -- FIX: CanvasSize handler manquant + force remeasure après 1er render
 protectionsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, protectionsLayout.AbsoluteContentSize.Y + 10)
@@ -888,6 +907,181 @@ task.defer(function()
 	protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, protectionsLayout.AbsoluteContentSize.Y + 10)
 end)
 
+-- ============= ANGEL FLY (Realistic Wings) =============
+-- IIFE pour 0 top-level local supplementaire
+;(function(_localScroll, _localPage, _createSwitch, _createSlider, _flyState, _flySwitch, _RunService, _UserInputService, _Camera, _Workspace, _LocalPlayer, _tween, _createCorner, _createStroke)
+	-- Angel Fly state
+	local angelState = { flying = false, speed = 80, gyro = nil, vel = nil, loop = nil, tilt = 0, bobPhase = 0 }
+	
+	local function updateChar()
+		local char = _LocalPlayer.Character
+		if not char then return nil end
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		return hrp, hum, char
+	end
+	
+	local function stopAngelFly()
+		if not angelState.flying then return end
+		angelState.flying = false
+		if angelState.loop then angelState.loop:Disconnect() angelState.loop = nil end
+		if angelState.gyro then angelState.gyro:Destroy() angelState.gyro = nil end
+		if angelState.vel then angelState.vel:Destroy() angelState.vel = nil end
+		local hrp, hum = updateChar()
+		if hum then hum.PlatformStand = false end
+		-- Reset tilt smoothly
+		if hrp then
+			_tween({CFrame = hrp.CFrame * CFrame.Angles(-angelState.tilt, 0, 0)}, 0) -- not used on Instance, see below
+		end
+		angelState.tilt = 0
+		angelState.bobPhase = 0
+	end
+	
+	local function startAngelFly()
+		local hrp, hum = updateChar()
+		if angelState.flying or not hrp then return end
+		angelState.flying = true
+		
+		-- BodyGyro for smooth rotation + tilt
+		angelState.gyro = Instance.new("BodyGyro")
+		angelState.gyro.P = 50000
+		angelState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+		angelState.gyro.CFrame = hrp.CFrame
+		angelState.gyro.Parent = hrp
+		
+		-- BodyVelocity for smooth movement
+		angelState.vel = Instance.new("BodyVelocity")
+		angelState.vel.Velocity = Vector3.zero
+		angelState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+		angelState.vel.Parent = hrp
+		
+		if hum then hum.PlatformStand = true end
+		angelState.tilt = 0
+		angelState.bobPhase = 0
+		
+		local lastFrame = tick()
+		
+		angelState.loop = _RunService.RenderStepped:Connect(function()
+			local hrp2, hum2 = updateChar()
+			if not angelState.flying or not hrp2 or not hrp2.Parent then return end
+			-- Re-attach if rootPart changed (respawn)
+			if angelState.gyro and angelState.gyro.Parent ~= hrp2 then angelState.gyro.Parent = hrp2 end
+			if angelState.vel and angelState.vel.Parent ~= hrp2 then angelState.vel.Parent = hrp2 end
+			
+			local now = tick()
+			local dt = now - lastFrame
+			lastFrame = now
+			
+			-- Movement input (PC controls)
+			local move = Vector3.zero
+			if _UserInputService:IsKeyDown(Enum.KeyCode.W) or _UserInputService:IsKeyDown(Enum.KeyCode.Z) then
+				move += _Camera.CFrame.LookVector
+			end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.S) then
+				move -= _Camera.CFrame.LookVector
+			end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.A) or _UserInputService:IsKeyDown(Enum.KeyCode.Q) then
+				move -= _Camera.CFrame.RightVector
+			end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.D) then
+				move += _Camera.CFrame.RightVector
+			end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+				move += Vector3.new(0, 1, 0)
+			end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or _UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+				move -= Vector3.new(0, 1, 0)
+			end
+			
+			-- Calculate target tilt based on vertical input
+			local targetTilt = 0
+			if move.Y > 0.1 then
+				targetTilt = -0.35 -- lean forward (nose down) when going up
+			elseif move.Y < -0.1 then
+				targetTilt = 0.25 -- lean back when going down
+			end
+			
+			-- Smooth tilt interpolation (lerp)
+			angelState.tilt = angelState.tilt + (targetTilt - angelState.tilt) * math.min(1, dt * 4)
+			
+			-- Gentle bobbing (imaginary wing flap)
+			angelState.bobPhase = angelState.bobPhase + dt * 3
+			local bob = math.sin(angelState.bobPhase) * 0.15
+			
+			-- Apply velocity with smoothing (no snap)
+			local targetVel = Vector3.zero
+			if move.Magnitude > 0 then
+				targetVel = move.Unit * angelState.speed
+			end
+			-- Smooth velocity transition
+			if angelState.vel then
+				angelState.vel.Velocity = angelState.vel.Velocity + (targetVel - angelState.vel.Velocity) * math.min(1, dt * 6)
+			end
+			
+			-- Apply gyro with tilt + slight bank based on horizontal movement
+			if angelState.gyro then
+				local camCf = _Camera.CFrame
+				-- Add forward tilt (superman pose) + gentle bob
+				local tiltCFrame = CFrame.Angles(angelState.tilt + bob * 0.1, 0, 0)
+				-- Slight bank left/right based on A/D input
+				local bankZ = 0
+				if _UserInputService:IsKeyDown(Enum.KeyCode.A) or _UserInputService:IsKeyDown(Enum.KeyCode.Q) then
+					bankZ = 0.2
+				elseif _UserInputService:IsKeyDown(Enum.KeyCode.D) then
+					bankZ = -0.2
+				end
+				bankZ = bankZ + (0 - bankZ) * math.min(1, dt * 3) -- smooth bank
+				local bankCFrame = CFrame.Angles(0, 0, bankZ)
+				angelState.gyro.CFrame = camCf * tiltCFrame * bankCFrame
+			end
+		end)
+	end
+	
+	-- Create switch in Local tab (below the existing fly, after autoclick)
+	local angelSwitch = _createSwitch(_localScroll, "Angel Fly (Ailes)", 0, function(on)
+		if on then
+			-- Stop normal fly if active
+			if _flyState.flying then
+				_flyState.flying = false
+				if _flyState.loop then _flyState.loop:Disconnect() _flyState.loop = nil end
+				if _flyState.gyro then _flyState.gyro:Destroy() _flyState.gyro = nil end
+				if _flyState.vel then _flyState.vel:Destroy() _flyState.vel = nil end
+				_flySwitch.set(false)
+			end
+			startAngelFly()
+		else
+			stopAngelFly()
+		end
+	end)
+	
+	-- Speed slider for Angel Fly
+	local angelSlider = _createSlider(_localScroll, "Vitesse Angel", 0, 20, 300, angelState.speed, function(v)
+		angelState.speed = math.floor(v)
+	end, Color3.fromRGB(180, 130, 255))
+	
+	-- E key toggle for Angel Fly (separate from normal fly which also uses E)
+	-- Use G key instead to avoid conflict
+	_UserInputService.InputBegan:Connect(function(input, gpe)
+		if gpe then return end
+		if input.KeyCode == Enum.KeyCode.G then
+			if angelState.flying then
+				stopAngelFly()
+				if angelSwitch then angelSwitch.set(false) end
+			else
+				-- Stop normal fly first
+				if _flyState.flying then
+					_flyState.flying = false
+					if _flyState.loop then _flyState.loop:Disconnect() _flyState.loop = nil end
+					if _flyState.gyro then _flyState.gyro:Destroy() _flyState.gyro = nil end
+					if _flyState.vel then _flyState.vel:Destroy() _flyState.vel = nil end
+					_flySwitch.set(false)
+				end
+				startAngelFly()
+				if angelSwitch then angelSwitch.set(true) end
+			end
+		end
+	end)
+end)(localScroll, localPage, createSwitch, createSlider, flyState, flySwitch, RunService, UserInputService, Camera, Workspace, LocalPlayer, tween, createCorner, createStroke)
 local function reparentChildrenToLocalScroll()
 	for _, child in ipairs(localPage:GetChildren()) do
 		if child ~= localScroll then
@@ -4924,7 +5118,7 @@ local function _initServerStatsCard()
 	statsCard.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 	statsCard.BorderSizePixel = 0
 	statsCard.LayoutOrder = 1 -- AVANT serverInfoCard (LayoutOrder 0 sera mis à 0 après)
-	statsCard.Parent = extraScroll
+	statsCard.Parent = statsScroll
 	createCorner(statsCard, 8)
 	createStroke(statsCard, Color3.fromRGB(80, 80, 120), 1)
 
@@ -7790,6 +7984,221 @@ end
 	end)
 end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlayer)
 
+-- ============= NOTIFICATIONS JOIN/LEAVE (Stats switch) =============
+;(function(_statsScroll, _screenGui, _Players, _LocalPlayer, _createCorner, _createStroke, _tween)
+	-- Switch pour activer/désactiver les notifications
+	local notifEnabled = false
+	local notifSwitch = createSwitch(_statsScroll, "Notifs Join/Leave", 0, function(on)
+		notifEnabled = on
+	end)
+	
+	-- Switch pour activer/désactiver la top bar overlay (FPS/ping/latence)
+	local topBarEnabled = false
+	local topBarSwitch = createSwitch(_statsScroll, "Top Bar Overlay", 56, function(on)
+		topBarEnabled = on
+		if on then
+			if topBarFrame then topBarFrame.Visible = true end
+			updateTopBar()
+		else
+			if topBarFrame then topBarFrame.Visible = false end
+		end
+	end)
+	
+	-- ===== Top Bar Overlay (FPS, Ping, 5 barres signal) =====
+	local topBarFrame = Instance.new("Frame")
+	topBarFrame.Name = "TopBarOverlay"
+	topBarFrame.Size = UDim2.new(0, 220, 0, 28)
+	topBarFrame.Position = UDim2.new(0.5, -110, 0, 4)
+	topBarFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+	topBarFrame.BackgroundTransparency = 0.15
+	topBarFrame.BorderSizePixel = 0
+	topBarFrame.Visible = false
+	topBarFrame.ZIndex = 9998
+	topBarFrame.Parent = _screenGui
+	_createCorner(topBarFrame, 8)
+	_createStroke(topBarFrame, Color3.fromRGB(100, 100, 140), 1)
+	
+	local topBarLayout = Instance.new("UIListLayout")
+	topBarLayout.FillDirection = Enum.FillDirection.Horizontal
+	topBarLayout.Padding = UDim.new(0, 8)
+	topBarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	topBarLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	topBarLayout.Parent = topBarFrame
+	
+	local fpsLabel = Instance.new("TextLabel")
+	fpsLabel.BackgroundTransparency = 1
+	fpsLabel.Font = Enum.Font.GothamBold
+	fpsLabel.TextSize = 11
+	fpsLabel.TextColor3 = Color3.fromRGB(120, 255, 120)
+	fpsLabel.Text = "FPS: --"
+	fpsLabel.LayoutOrder = 1
+	fpsLabel.Parent = topBarFrame
+	
+	local pingLabel = Instance.new("TextLabel")
+	pingLabel.BackgroundTransparency = 1
+	pingLabel.Font = Enum.Font.GothamBold
+	pingLabel.TextSize = 11
+	pingLabel.TextColor3 = Color3.fromRGB(120, 180, 255)
+	pingLabel.Text = "Ping: --"
+	pingLabel.LayoutOrder = 2
+	pingLabel.Parent = topBarFrame
+	
+	-- 5 barres signal
+	local signalBars = {}
+	for i = 1, 5 do
+		local bar = Instance.new("Frame")
+		bar.Size = UDim2.new(0, 4, 0, 4 + i * 3)
+		bar.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+		bar.BorderSizePixel = 0
+		bar.LayoutOrder = 2 + i
+		bar.Parent = topBarFrame
+		signalBars[i] = bar
+	end
+	
+	-- FPS tracking
+	local _nbFrames = 0
+	local _nbLastTime = tick()
+	local _currentFps = 60
+	local _rsConn = nil
+	local _updateConn = nil
+	
+	local function updateTopBar()
+		if not topBarEnabled then return end
+		pcall(function()
+			fpsLabel.Text = "FPS: " .. tostring(math.floor(_currentFps))
+			local ping = _LocalPlayer:GetNetworkPing() * 1000
+			pingLabel.Text = string.format("Ping: %.0fms", ping)
+			-- Signal bars based on ping (lower = better)
+			local bars = 5
+			if ping > 300 then bars = 1
+			elseif ping > 200 then bars = 2
+			elseif ping > 100 then bars = 3
+			elseif ping > 50 then bars = 4
+			end
+			for i = 1, 5 do
+				signalBars[i].BackgroundColor3 = (i <= bars)
+					and Color3.fromRGB(120, 255, 120)
+				or Color3.fromRGB(60, 60, 70)
+			end
+		end)
+	end
+	
+	-- Start FPS tracking loop
+	_rsConn = game:GetService("RunService").RenderStepped:Connect(function()
+		_nbFrames = _nbFrames + 1
+		local now = tick()
+		if now - _nbLastTime >= 1 then
+			_currentFps = _nbFrames / (now - _nbLastTime)
+			_nbFrames = 0
+			_nbLastTime = now
+		end
+	end)
+	
+	-- Update top bar every 0.5s
+	_updateConn = task.spawn(function()
+		while task.wait(0.5) do
+			if topBarEnabled then updateTopBar() end
+		end
+	end)
+	
+	-- ===== Notifications Join/Leave =====
+	local maxNotifs = 5
+	local notifList = {}
+	
+	local function createNotif(name, action, color)
+		if not notifEnabled then return end
+		pcall(function()
+			-- Remove oldest if too many
+			while #notifList >= maxNotifs do
+				local oldest = table.remove(notifList, 1)
+				if oldest and oldest.frame and oldest.frame.Parent then
+					oldest.frame:Destroy()
+				end
+			end
+			
+			-- Shift existing notifs up
+			for _, n in ipairs(notifList) do
+				if n.frame and n.frame.Parent then
+					n.frame.Position = n.frame.Position + UDim2.new(0, 0, 0, -52)
+				end
+			end
+			
+			local notif = Instance.new("Frame")
+			notif.Name = "Notif_" .. name
+		notif.Size = UDim2.new(0, 240, 0, 44)
+		notif.Position = UDim2.new(1, -260, 1, -60)
+		notif.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+		notif.BackgroundTransparency = 0.1
+		notif.BorderSizePixel = 0
+		notif.ZIndex = 9997
+		notif.Parent = _screenGui
+		_createCorner(notif, 10)
+		_createStroke(notif, color, 1)
+		
+		local icon = Instance.new("TextLabel")
+		icon.Size = UDim2.new(0, 32, 0, 32)
+		icon.Position = UDim2.new(0, 6, 0, 6)
+		icon.BackgroundTransparency = 1
+		icon.Text = action == "join" and "→" or "←"
+		icon.Font = Enum.Font.GothamBold
+		icon.TextSize = 20
+		icon.TextColor3 = color
+		icon.Parent = notif
+		
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(1, -44, 0, 16)
+		label.Position = UDim2.new(0, 40, 0, 6)
+		label.BackgroundTransparency = 1
+		label.Text = name
+		label.Font = Enum.Font.GothamSemibold
+		label.TextSize = 12
+		label.TextColor3 = Color3.fromRGB(240, 240, 250)
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.Parent = notif
+		
+		local subLabel = Instance.new("TextLabel")
+		subLabel.Size = UDim2.new(1, -44, 0, 14)
+		subLabel.Position = UDim2.new(0, 40, 0, 22)
+		subLabel.BackgroundTransparency = 1
+		subLabel.Text = action == "join" and "a rejoint le jeu" or "a quitte le jeu"
+		subLabel.Font = Enum.Font.Gotham
+		subLabel.TextSize = 10
+		subLabel.TextColor3 = Color3.fromRGB(160, 160, 180)
+		subLabel.TextXAlignment = Enum.TextXAlignment.Left
+		subLabel.Parent = notif
+		
+		-- Slide-in animation
+		notif.Position = UDim2.new(1, 0, 1, -60)
+		_tween(notif, {Position = UDim2.new(1, -260, 1, -60)}, 0.3)
+		
+		table.insert(notifList, {frame = notif, name = name})
+		
+		-- Auto-remove after 4s
+		task.delay(4, function()
+			if notif and notif.Parent then
+				_tween(notif, {Position = UDim2.new(1, 0, 1, -60), BackgroundTransparency = 1}, 0.4)
+				task.wait(0.4)
+				notif:Destroy()
+				for idx, n in ipairs(notifList) do
+					if n.frame == notif then table.remove(notifList, idx) break end
+				end
+			end
+		end)
+		end)
+	end
+	
+	-- Hook player join/leave
+	_Players.PlayerAdded:Connect(function(plr)
+		createNotif(plr.DisplayName, "join", Color3.fromRGB(100, 200, 120))
+	end)
+	_Players.PlayerRemoving:Connect(function(plr)
+		createNotif(plr.DisplayName, "leave", Color3.fromRGB(200, 120, 100))
+	end)
+	
+	-- Show notif for already-connected players on first enable
+	local firstEnable = true
+	local origSwitchCb = notifSwitch
+end)(statsScroll, screenGui, Players, LocalPlayer, createCorner, createStroke, tween)
 -- ============= CRÉDITS =============
 ;(function(_mainFrame)
 	local credits = Instance.new("TextLabel")
