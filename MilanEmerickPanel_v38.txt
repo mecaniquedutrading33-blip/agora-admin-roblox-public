@@ -3703,110 +3703,6 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 	end
 end)
 
--- ============= ANGEL FLY (Realistic Wings) =============
--- IIFE pour 0 top-level local supplementaire
-;(function(_localScroll, _localPage, _createSwitch, _createSlider, _flyState, _flySwitch, _RunService, _UserInputService, _Camera, _Workspace, _LocalPlayer, _tween, _createCorner, _createStroke)
-	local angelState = { flying = false, speed = 80, gyro = nil, vel = nil, loop = nil, tilt = 0, bobPhase = 0 }
-	
-	local function updateChar()
-		local char = _LocalPlayer.Character
-		if not char then return nil end
-		local hrp = char:FindFirstChild("HumanoidRootPart")
-		local hum = char:FindFirstChildOfClass("Humanoid")
-		if not hrp or not hum then return nil end
-		return char, hrp, hum
-	end
-	
-	local function startAngelFly()
-		local char, hrp, hum = updateChar()
-		if not hrp then return end
-		angelState.flying = true
-		local bg = Instance.new("BodyGyro")
-		bg.MaxTorque = Vector3.new(0, 0, 0)
-		bg.D = 100
-		bg.P = 10000
-		bg.Parent = hrp
-		angelState.gyro = bg
-		local bv = Instance.new("BodyVelocity")
-		bv.MaxForce = Vector3.new(0, 0, 0)
-		bv.Velocity = Vector3.new(0, 0, 0)
-		bv.Parent = hrp
-		angelState.vel = bv
-		hum.PlatformStand = true
-		if angelState.loop then angelState.loop:Disconnect() end
-		angelState.bobPhase = 0
-		angelState.loop = _RunService.RenderStepped:Connect(function(dt)
-			local c, h, hu = updateChar()
-			if not h or not angelState.flying then
-				if angelState.loop then angelState.loop:Disconnect() angelState.loop = nil end
-				return
-			end
-			local cam = _Camera
-			local camLook = cam.CFrame.LookVector
-			local moveVec = Vector3.new(0, 0, 0)
-			if _UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVec = moveVec + camLook end
-			if _UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVec = moveVec - camLook end
-			if _UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVec = moveVec - cam.CFrame.RightVector end
-			if _UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + cam.CFrame.RightVector end
-			if _UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveVec = moveVec + Vector3.new(0, 1, 0) end
-			if _UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveVec = moveVec - Vector3.new(0, 1, 0) end
-			if moveVec.Magnitude > 0 then moveVec = moveVec.Unit end
-			local speed = angelState.speed
-			local targetVel = moveVec * speed
-			angelState.vel.Velocity = angelState.vel.Velocity:Lerp(targetVel, 0.12)
-			angelState.gyro.CFrame = CFrame.new(h.Position, h.Position + camLook)
-			local tiltTarget = 0
-			local bankTarget = 0
-			if moveVec.Y > 0.1 then tiltTarget = -0.15
-			elseif moveVec.Y < -0.1 then tiltTarget = 0.15 end
-			local rightDot = moveVec:Dot(cam.CFrame.RightVector)
-			bankTarget = rightDot * 0.2
-			angelState.tilt = angelState.tilt:Lerp(tiltTarget, 0.1)
-			angelState.bobPhase = angelState.bobPhase + dt * 8
-			local bob = math.sin(angelState.bobPhase) * 0.3
-			angelState.gyro.CFrame = angelState.gyro.CFrame * CFrame.Angles(angelState.tilt, 0, bankTarget + bob * 0.05)
-		end)
-	end
-	
-	local function stopAngelFly()
-		angelState.flying = false
-		if angelState.loop then angelState.loop:Disconnect() angelState.loop = nil end
-		if angelState.vel then angelState.vel:Destroy() angelState.vel = nil end
-		if angelState.gyro then angelState.gyro:Destroy() angelState.gyro = nil end
-		local char, hrp, hum = updateChar()
-		if hum then hum.PlatformStand = false end
-		angelState.tilt = 0
-	end
-	
-	local angelSwitch = _createSwitch(_localScroll, "Angel Fly (G)", 0, function(on)
-		if on then
-			if _flySwitch then _flySwitch.set(false) end
-			startAngelFly()
-			if angelSwitch then angelSwitch.set(true) end
-		else
-			stopAngelFly()
-		end
-	end)
-	
-	local angelSpeedSlider = _createSlider(_localScroll, "Angel Speed", 40, 20, 300, angelState.speed, function(v)
-		angelState.speed = v
-		if angelSpeedSlider then angelSpeedSlider.set(v) end
-	end, Color3.fromRGB(100, 150, 255), 0, 5)
-	
-	_UserInputService.InputBegan:Connect(function(input, gp)
-		if gp then return end
-		if input.KeyCode == Enum.KeyCode.G then
-			if angelState.flying then
-				stopAngelFly()
-				if angelSwitch then angelSwitch.set(false) end
-			else
-				if _flySwitch and _flySwitch.get and _flySwitch.get() then _flySwitch.set(false) end
-				startAngelFly()
-				if angelSwitch then angelSwitch.set(true) end
-			end
-		end
-	end)
-end)(localScroll, localPage, createSwitch, createSlider, flyState, flySwitch, RunService, UserInputService, Camera, Workspace, LocalPlayer, tween, createCorner, createStroke)
 
 local PathfindingService = game:GetService("PathfindingService")
 
@@ -7942,7 +7838,8 @@ end)(mainFrame)
 	notifContainer.Size = UDim2.new(0, 260, 0, 200)
 	notifContainer.Position = UDim2.new(1, -270, 1, -210)
 	notifContainer.BackgroundTransparency = 1
-	notifContainer.Parent = game:GetService("CoreGui")
+	pcall(function() notifContainer.Parent = game:GetService("CoreGui") end)
+	if not notifContainer.Parent then pcall(function() notifContainer.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") end) end
 	
 	local notifList = Instance.new("UIListLayout")
 	notifList.FillDirection = Enum.FillDirection.Vertical
@@ -8016,7 +7913,8 @@ end)(mainFrame)
 	topBar.BackgroundTransparency = 0.3
 	topBar.BorderSizePixel = 0
 	topBar.Visible = false
-	topBar.Parent = game:GetService("CoreGui")
+	pcall(function() topBar.Parent = game:GetService("CoreGui") end)
+	if not topBar.Parent then pcall(function() topBar.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") end) end
 	_createCorner(topBar, 4)
 	_createStroke(topBar, Color3.fromRGB(60, 60, 100), 1)
 	
@@ -8084,28 +7982,21 @@ end)(mainFrame)
 		end
 	end)
 end)(statsScroll, createSwitch, createCorner, createStroke, tween, Players, RunService, LocalPlayer)
-
--- BOOT SAFE 3 LAYERS:
--- Layer 1: reveal immédiat à 0.5s (filet de sécurité absolu)
--- Layer 2: reveal à 3s si pas encore visible (fallback)
--- Layer 3: switchTab après reveal
+-- BOOT SAFE: reveal panel + switchTab IMMEDIATELY (not in task.delay)
 ;(function(_pages, _switchTab)
-	-- LAYER 1: reveal immédiat à 0.5s
+	pcall(function()
+		if mainFrame then mainFrame.Visible = true end
+	end)
+	pcall(function() _switchTab("Joueurs") end)
 	task.delay(0.5, function()
 		pcall(function()
-			if mainFrame and not mainFrame.Visible then
-				mainFrame.Visible = true
-			end
+			if mainFrame and not mainFrame.Visible then mainFrame.Visible = true end
 		end)
+		pcall(function() _switchTab("Joueurs") end)
 	end)
-	-- LAYER 2: switchTab Joueurs
-	pcall(function() _switchTab("Joueurs") end)
-	-- LAYER 3: fallback à 3s (au cas où)
 	task.delay(3, function()
 		pcall(function()
-			if mainFrame and not mainFrame.Visible then
-				mainFrame.Visible = true
-			end
+			if mainFrame and not mainFrame.Visible then mainFrame.Visible = true end
 			if _pages and _pages["Joueurs"] and not _pages["Joueurs"].Visible then
 				pcall(function() _switchTab("Joueurs") end)
 			end
