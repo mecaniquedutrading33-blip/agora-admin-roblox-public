@@ -3569,7 +3569,12 @@ local function startFly()
 		if flyState.mobileDownHeld then move -= Vector3.new(0, 1, 0) end
 
 		if flyState.vel then
-			flyState.vel.Velocity = move.Magnitude > 0 and move.Unit * flyState.speed or Vector3.zero
+			if move.Magnitude > 0 then
+				flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+				flyState.vel.Velocity = move.Unit * flyState.speed
+			else
+				flyState.vel.MaxForce = Vector3.zero
+			end
 		end
 	end)
 end
@@ -3704,6 +3709,13 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 end)
 
 
+-- Slider vitesse Fly basique dans Local (IIFE pour 0 top-level)
+;(function()
+	local _s = createSlider(localScroll, "Vitesse Fly (E)", 0, 20, 500, flyState.speed, function(v)
+		flyState.speed = math.floor(v)
+	end, Color3.fromRGB(100, 180, 255))
+end)()
+
 -- ============= ANGEL FLY (Chill Wings) =============
 -- IIFE pour 0 top-level local supplementaire
 ;(function(_localScroll, _localPage, _createSwitch, _createSlider, _flyState, _flySwitch, _RunService, _UserInputService, _Camera, _Workspace, _LocalPlayer, _tween, _createCorner, _createStroke)
@@ -3754,7 +3766,12 @@ end)
 			if moveVec.Magnitude > 0 then moveVec = moveVec.Unit end
 			local speed = angelState.speed
 			local targetVel = moveVec * speed
-			angelState.vel.Velocity = angelState.vel.Velocity:Lerp(targetVel, 0.12)
+			if moveVec.Magnitude > 0 then
+				angelState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+				angelState.vel.Velocity = angelState.vel.Velocity:Lerp(targetVel, 0.12)
+			else
+				angelState.vel.MaxForce = Vector3.zero
+			end
 			angelState.gyro.CFrame = CFrame.new(h.Position, h.Position + camLook)
 			local tiltTarget = 0
 			local bankTarget = 0
@@ -8002,6 +8019,17 @@ end)(mainFrame)
 	
 	if notifSwitch then notifSwitch.set(false) end
 	
+	-- Set LayoutOrder so switch appears AFTER statsCard (which has LayoutOrder=1)
+	pcall(function()
+		for _, child in ipairs(_statsScroll:GetChildren()) do
+			if child:IsA("Frame") and child.Name ~= "" and child ~= statsCard then
+				if not child.LayoutOrder or child.LayoutOrder == 0 then
+					child.LayoutOrder = 2
+				end
+			end
+		end
+	end)
+	
 	_Players.PlayerAdded:Connect(function(plr)
 		makeNotif(plr.Name, true)
 	end)
@@ -8062,6 +8090,18 @@ end)(mainFrame)
 		topBar.Visible = on
 	end)
 	if topBarSwitch then topBarSwitch.set(false) end
+	
+	-- Set LayoutOrder=3 (after notifSwitch=2, after statsCard=1)
+	pcall(function()
+		for _, child in ipairs(_statsScroll:GetChildren()) do
+			if child:IsA("Frame") and child ~= statsCard then
+				local lo = child.LayoutOrder or 0
+				if lo == 0 or lo == 2 then
+					child.LayoutOrder = 3
+				end
+			end
+		end
+	end)
 	
 	local frameCount = 0
 	local lastFpsTime = tick()
