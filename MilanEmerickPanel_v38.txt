@@ -907,181 +907,6 @@ task.defer(function()
 	protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, protectionsLayout.AbsoluteContentSize.Y + 10)
 end)
 
--- ============= ANGEL FLY (Realistic Wings) =============
--- IIFE pour 0 top-level local supplementaire
-;(function(_localScroll, _localPage, _createSwitch, _createSlider, _flyState, _flySwitch, _RunService, _UserInputService, _Camera, _Workspace, _LocalPlayer, _tween, _createCorner, _createStroke)
-	-- Angel Fly state
-	local angelState = { flying = false, speed = 80, gyro = nil, vel = nil, loop = nil, tilt = 0, bobPhase = 0 }
-	
-	local function updateChar()
-		local char = _LocalPlayer.Character
-		if not char then return nil end
-		local hrp = char:FindFirstChild("HumanoidRootPart")
-		local hum = char:FindFirstChildOfClass("Humanoid")
-		return hrp, hum, char
-	end
-	
-	local function stopAngelFly()
-		if not angelState.flying then return end
-		angelState.flying = false
-		if angelState.loop then angelState.loop:Disconnect() angelState.loop = nil end
-		if angelState.gyro then angelState.gyro:Destroy() angelState.gyro = nil end
-		if angelState.vel then angelState.vel:Destroy() angelState.vel = nil end
-		local hrp, hum = updateChar()
-		if hum then hum.PlatformStand = false end
-		-- Reset tilt smoothly
-		if hrp then
-			_tween({CFrame = hrp.CFrame * CFrame.Angles(-angelState.tilt, 0, 0)}, 0) -- not used on Instance, see below
-		end
-		angelState.tilt = 0
-		angelState.bobPhase = 0
-	end
-	
-	local function startAngelFly()
-		local hrp, hum = updateChar()
-		if angelState.flying or not hrp then return end
-		angelState.flying = true
-		
-		-- BodyGyro for smooth rotation + tilt
-		angelState.gyro = Instance.new("BodyGyro")
-		angelState.gyro.P = 50000
-		angelState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-		angelState.gyro.CFrame = hrp.CFrame
-		angelState.gyro.Parent = hrp
-		
-		-- BodyVelocity for smooth movement
-		angelState.vel = Instance.new("BodyVelocity")
-		angelState.vel.Velocity = Vector3.zero
-		angelState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-		angelState.vel.Parent = hrp
-		
-		if hum then hum.PlatformStand = true end
-		angelState.tilt = 0
-		angelState.bobPhase = 0
-		
-		local lastFrame = tick()
-		
-		angelState.loop = _RunService.RenderStepped:Connect(function()
-			local hrp2, hum2 = updateChar()
-			if not angelState.flying or not hrp2 or not hrp2.Parent then return end
-			-- Re-attach if rootPart changed (respawn)
-			if angelState.gyro and angelState.gyro.Parent ~= hrp2 then angelState.gyro.Parent = hrp2 end
-			if angelState.vel and angelState.vel.Parent ~= hrp2 then angelState.vel.Parent = hrp2 end
-			
-			local now = tick()
-			local dt = now - lastFrame
-			lastFrame = now
-			
-			-- Movement input (PC controls)
-			local move = Vector3.zero
-			if _UserInputService:IsKeyDown(Enum.KeyCode.W) or _UserInputService:IsKeyDown(Enum.KeyCode.Z) then
-				move += _Camera.CFrame.LookVector
-			end
-			if _UserInputService:IsKeyDown(Enum.KeyCode.S) then
-				move -= _Camera.CFrame.LookVector
-			end
-			if _UserInputService:IsKeyDown(Enum.KeyCode.A) or _UserInputService:IsKeyDown(Enum.KeyCode.Q) then
-				move -= _Camera.CFrame.RightVector
-			end
-			if _UserInputService:IsKeyDown(Enum.KeyCode.D) then
-				move += _Camera.CFrame.RightVector
-			end
-			if _UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-				move += Vector3.new(0, 1, 0)
-			end
-			if _UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or _UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-				move -= Vector3.new(0, 1, 0)
-			end
-			
-			-- Calculate target tilt based on vertical input
-			local targetTilt = 0
-			if move.Y > 0.1 then
-				targetTilt = -0.35 -- lean forward (nose down) when going up
-			elseif move.Y < -0.1 then
-				targetTilt = 0.25 -- lean back when going down
-			end
-			
-			-- Smooth tilt interpolation (lerp)
-			angelState.tilt = angelState.tilt + (targetTilt - angelState.tilt) * math.min(1, dt * 4)
-			
-			-- Gentle bobbing (imaginary wing flap)
-			angelState.bobPhase = angelState.bobPhase + dt * 3
-			local bob = math.sin(angelState.bobPhase) * 0.15
-			
-			-- Apply velocity with smoothing (no snap)
-			local targetVel = Vector3.zero
-			if move.Magnitude > 0 then
-				targetVel = move.Unit * angelState.speed
-			end
-			-- Smooth velocity transition
-			if angelState.vel then
-				angelState.vel.Velocity = angelState.vel.Velocity + (targetVel - angelState.vel.Velocity) * math.min(1, dt * 6)
-			end
-			
-			-- Apply gyro with tilt + slight bank based on horizontal movement
-			if angelState.gyro then
-				local camCf = _Camera.CFrame
-				-- Add forward tilt (superman pose) + gentle bob
-				local tiltCFrame = CFrame.Angles(angelState.tilt + bob * 0.1, 0, 0)
-				-- Slight bank left/right based on A/D input
-				local bankZ = 0
-				if _UserInputService:IsKeyDown(Enum.KeyCode.A) or _UserInputService:IsKeyDown(Enum.KeyCode.Q) then
-					bankZ = 0.2
-				elseif _UserInputService:IsKeyDown(Enum.KeyCode.D) then
-					bankZ = -0.2
-				end
-				bankZ = bankZ + (0 - bankZ) * math.min(1, dt * 3) -- smooth bank
-				local bankCFrame = CFrame.Angles(0, 0, bankZ)
-				angelState.gyro.CFrame = camCf * tiltCFrame * bankCFrame
-			end
-		end)
-	end
-	
-	-- Create switch in Local tab (below the existing fly, after autoclick)
-	local angelSwitch = _createSwitch(_localScroll, "Angel Fly (Ailes)", 0, function(on)
-		if on then
-			-- Stop normal fly if active
-			if _flyState.flying then
-				_flyState.flying = false
-				if _flyState.loop then _flyState.loop:Disconnect() _flyState.loop = nil end
-				if _flyState.gyro then _flyState.gyro:Destroy() _flyState.gyro = nil end
-				if _flyState.vel then _flyState.vel:Destroy() _flyState.vel = nil end
-				_flySwitch.set(false)
-			end
-			startAngelFly()
-		else
-			stopAngelFly()
-		end
-	end)
-	
-	-- Speed slider for Angel Fly
-	local angelSlider = _createSlider(_localScroll, "Vitesse Angel", 0, 20, 300, angelState.speed, function(v)
-		angelState.speed = math.floor(v)
-	end, Color3.fromRGB(180, 130, 255))
-	
-	-- E key toggle for Angel Fly (separate from normal fly which also uses E)
-	-- Use G key instead to avoid conflict
-	_UserInputService.InputBegan:Connect(function(input, gpe)
-		if gpe then return end
-		if input.KeyCode == Enum.KeyCode.G then
-			if angelState.flying then
-				stopAngelFly()
-				if angelSwitch then angelSwitch.set(false) end
-			else
-				-- Stop normal fly first
-				if _flyState.flying then
-					_flyState.flying = false
-					if _flyState.loop then _flyState.loop:Disconnect() _flyState.loop = nil end
-					if _flyState.gyro then _flyState.gyro:Destroy() _flyState.gyro = nil end
-					if _flyState.vel then _flyState.vel:Destroy() _flyState.vel = nil end
-					_flySwitch.set(false)
-				end
-				startAngelFly()
-				if angelSwitch then angelSwitch.set(true) end
-			end
-		end
-	end)
-end)(localScroll, localPage, createSwitch, createSlider, flyState, flySwitch, RunService, UserInputService, Camera, Workspace, LocalPlayer, tween, createCorner, createStroke)
 local function reparentChildrenToLocalScroll()
 	for _, child in ipairs(localPage:GetChildren()) do
 		if child ~= localScroll then
@@ -3864,6 +3689,181 @@ local flySlider = createSlider(movePage, "Vitesse Fly", 52, 20, 500, flyState.sp
 	flyState.speed = math.floor(v)
 end, Color3.fromRGB(100, 180, 255))
 
+-- ============= ANGEL FLY (Realistic Wings) =============
+-- IIFE pour 0 top-level local supplementaire
+;(function(_localScroll, _localPage, _createSwitch, _createSlider, _flyState, _flySwitch, _RunService, _UserInputService, _Camera, _Workspace, _LocalPlayer, _tween, _createCorner, _createStroke)
+	-- Angel Fly state
+	local angelState = { flying = false, speed = 80, gyro = nil, vel = nil, loop = nil, tilt = 0, bobPhase = 0 }
+	
+	local function updateChar()
+		local char = _LocalPlayer.Character
+		if not char then return nil end
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		return hrp, hum, char
+	end
+	
+	local function stopAngelFly()
+		if not angelState.flying then return end
+		angelState.flying = false
+		if angelState.loop then angelState.loop:Disconnect() angelState.loop = nil end
+		if angelState.gyro then angelState.gyro:Destroy() angelState.gyro = nil end
+		if angelState.vel then angelState.vel:Destroy() angelState.vel = nil end
+		local hrp, hum = updateChar()
+		if hum then hum.PlatformStand = false end
+		-- Reset tilt smoothly
+		if hrp then
+			_tween({CFrame = hrp.CFrame * CFrame.Angles(-angelState.tilt, 0, 0)}, 0) -- not used on Instance, see below
+		end
+		angelState.tilt = 0
+		angelState.bobPhase = 0
+	end
+	
+	local function startAngelFly()
+		local hrp, hum = updateChar()
+		if angelState.flying or not hrp then return end
+		angelState.flying = true
+		
+		-- BodyGyro for smooth rotation + tilt
+		angelState.gyro = Instance.new("BodyGyro")
+		angelState.gyro.P = 50000
+		angelState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+		angelState.gyro.CFrame = hrp.CFrame
+		angelState.gyro.Parent = hrp
+		
+		-- BodyVelocity for smooth movement
+		angelState.vel = Instance.new("BodyVelocity")
+		angelState.vel.Velocity = Vector3.zero
+		angelState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+		angelState.vel.Parent = hrp
+		
+		if hum then hum.PlatformStand = true end
+		angelState.tilt = 0
+		angelState.bobPhase = 0
+		
+		local lastFrame = tick()
+		
+		angelState.loop = _RunService.RenderStepped:Connect(function()
+			local hrp2, hum2 = updateChar()
+			if not angelState.flying or not hrp2 or not hrp2.Parent then return end
+			-- Re-attach if rootPart changed (respawn)
+			if angelState.gyro and angelState.gyro.Parent ~= hrp2 then angelState.gyro.Parent = hrp2 end
+			if angelState.vel and angelState.vel.Parent ~= hrp2 then angelState.vel.Parent = hrp2 end
+			
+			local now = tick()
+			local dt = now - lastFrame
+			lastFrame = now
+			
+			-- Movement input (PC controls)
+			local move = Vector3.zero
+			if _UserInputService:IsKeyDown(Enum.KeyCode.W) or _UserInputService:IsKeyDown(Enum.KeyCode.Z) then
+				move += _Camera.CFrame.LookVector
+			end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.S) then
+				move -= _Camera.CFrame.LookVector
+			end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.A) or _UserInputService:IsKeyDown(Enum.KeyCode.Q) then
+				move -= _Camera.CFrame.RightVector
+			end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.D) then
+				move += _Camera.CFrame.RightVector
+			end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+				move += Vector3.new(0, 1, 0)
+			end
+			if _UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or _UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+				move -= Vector3.new(0, 1, 0)
+			end
+			
+			-- Calculate target tilt based on vertical input
+			local targetTilt = 0
+			if move.Y > 0.1 then
+				targetTilt = -0.35 -- lean forward (nose down) when going up
+			elseif move.Y < -0.1 then
+				targetTilt = 0.25 -- lean back when going down
+			end
+			
+			-- Smooth tilt interpolation (lerp)
+			angelState.tilt = angelState.tilt + (targetTilt - angelState.tilt) * math.min(1, dt * 4)
+			
+			-- Gentle bobbing (imaginary wing flap)
+			angelState.bobPhase = angelState.bobPhase + dt * 3
+			local bob = math.sin(angelState.bobPhase) * 0.15
+			
+			-- Apply velocity with smoothing (no snap)
+			local targetVel = Vector3.zero
+			if move.Magnitude > 0 then
+				targetVel = move.Unit * angelState.speed
+			end
+			-- Smooth velocity transition
+			if angelState.vel then
+				angelState.vel.Velocity = angelState.vel.Velocity + (targetVel - angelState.vel.Velocity) * math.min(1, dt * 6)
+			end
+			
+			-- Apply gyro with tilt + slight bank based on horizontal movement
+			if angelState.gyro then
+				local camCf = _Camera.CFrame
+				-- Add forward tilt (superman pose) + gentle bob
+				local tiltCFrame = CFrame.Angles(angelState.tilt + bob * 0.1, 0, 0)
+				-- Slight bank left/right based on A/D input
+				local bankZ = 0
+				if _UserInputService:IsKeyDown(Enum.KeyCode.A) or _UserInputService:IsKeyDown(Enum.KeyCode.Q) then
+					bankZ = 0.2
+				elseif _UserInputService:IsKeyDown(Enum.KeyCode.D) then
+					bankZ = -0.2
+				end
+				bankZ = bankZ + (0 - bankZ) * math.min(1, dt * 3) -- smooth bank
+				local bankCFrame = CFrame.Angles(0, 0, bankZ)
+				angelState.gyro.CFrame = camCf * tiltCFrame * bankCFrame
+			end
+		end)
+	end
+	
+	-- Create switch in Local tab (below the existing fly, after autoclick)
+	local angelSwitch = _createSwitch(_localScroll, "Angel Fly (Ailes)", 0, function(on)
+		if on then
+			-- Stop normal fly if active
+			if _flyState.flying then
+				_flyState.flying = false
+				if _flyState.loop then _flyState.loop:Disconnect() _flyState.loop = nil end
+				if _flyState.gyro then _flyState.gyro:Destroy() _flyState.gyro = nil end
+				if _flyState.vel then _flyState.vel:Destroy() _flyState.vel = nil end
+				_flySwitch.set(false)
+			end
+			startAngelFly()
+		else
+			stopAngelFly()
+		end
+	end)
+	
+	-- Speed slider for Angel Fly
+	local angelSlider = _createSlider(_localScroll, "Vitesse Angel", 0, 20, 300, angelState.speed, function(v)
+		angelState.speed = math.floor(v)
+	end, Color3.fromRGB(180, 130, 255))
+	
+	-- E key toggle for Angel Fly (separate from normal fly which also uses E)
+	-- Use G key instead to avoid conflict
+	_UserInputService.InputBegan:Connect(function(input, gpe)
+		if gpe then return end
+		if input.KeyCode == Enum.KeyCode.G then
+			if angelState.flying then
+				stopAngelFly()
+				if angelSwitch then angelSwitch.set(false) end
+			else
+				-- Stop normal fly first
+				if _flyState.flying then
+					_flyState.flying = false
+					if _flyState.loop then _flyState.loop:Disconnect() _flyState.loop = nil end
+					if _flyState.gyro then _flyState.gyro:Destroy() _flyState.gyro = nil end
+					if _flyState.vel then _flyState.vel:Destroy() _flyState.vel = nil end
+					_flySwitch.set(false)
+				end
+				startAngelFly()
+				if angelSwitch then angelSwitch.set(true) end
+			end
+		end
+	end)
+end)(localScroll, localPage, createSwitch, createSlider, flyState, flySwitch, RunService, UserInputService, Camera, Workspace, LocalPlayer, tween, createCorner, createStroke)
 local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 	noclipState.enabled = on
 	if not on then
