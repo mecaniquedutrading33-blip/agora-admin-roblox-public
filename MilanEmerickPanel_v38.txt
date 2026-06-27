@@ -1,4 +1,4 @@
--- Panel Roblox universel amélioré - Agora Admin Universel
+-- Agora Admin [UNIVERSELLE] - Panel Roblox universel
 -- LocalScript dans StarterPlayerScripts ou exécuteur
 
 local SETTINGS = {
@@ -19,6 +19,29 @@ local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
+local SoundService = game:GetService("SoundService")
+
+-- Wrapper de son multi-exécuteur (Solara, etc.) - pcall silencieux
+local function playSound(id, vol)
+	if not id then return end
+	pcall(function()
+		local s = Instance.new("Sound")
+		s.SoundId = "rbxassetid://" .. tostring(id)
+		s.Volume = vol or 0.4
+		s.Parent = SoundService
+		if s.IsLoaded then
+			s:Play()
+		else
+			s.Loaded:Connect(function()
+				s:Play()
+			end)
+		end
+		local len = (s.TimeLength and s.TimeLength > 0) and s.TimeLength or 3
+		task.delay(len + 0.2, function()
+			pcall(function() s:Destroy() end)
+		end)
+	end)
+end
 
 -- Helper HTTP multi-exécuteur (essaie game:HttpGet, GetAsync, request/syn.request)
 local function httpGet(url)
@@ -118,14 +141,17 @@ local function createStroke(parent, color, thickness)
 end
 
 local function tween(obj, props, duration)
-	TweenService:Create(obj, TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
+	if not obj or not obj.Parent then return end
+	pcall(function()
+		TweenService:Create(obj, TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
+	end)
 end
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AgoraAdminPanel"
+screenGui.Name = "MilanEmerickPanel"
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui", 10)
 
 -- Backdrop retiré : il recouvrait tout l'écran en noir semi-transparent.
 
@@ -133,6 +159,7 @@ local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 460, 0, 520)
 mainFrame.Position = UDim2.new(0.5, -230, 0.5, -260)
+mainFrame.Visible = false  -- Sera révélé après l'intro
 -- S'assure que le panel reste visible et ne se fait pas pousser par le chat au démarrage
 task.delay(0, function()
 	local function clampFrame()
@@ -155,64 +182,184 @@ mainFrame.ZIndex = 1
 createCorner(mainFrame, 14)
 createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 
--- ===== ANIM ENTREE "cristallisation" : panel apparait avec zoom + rotation + glow =====
-local entrySplash = Instance.new("Frame")
-entrySplash.Name = "EntrySplash"
-entrySplash.Size = UDim2.new(1, 0, 1, 0)
-entrySplash.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
-entrySplash.BackgroundTransparency = 1
-entrySplash.BorderSizePixel = 0
-entrySplash.ZIndex = 50
-entrySplash.Parent = screenGui
+-- ===== INTRO CINÉMA : "Agora Admin" puis TAMPON "UNIVERSELLE" BOUM =====
+-- Backdrop full screen noir pour masquer le panel pendant l'intro
+;(function()
+	local _mainFrame = mainFrame
+	local _screenGui = screenGui
+	local _LocalPlayer = LocalPlayer
+	local _TweenService = TweenService
+	local _tween = tween
+	local _createCorner = createCorner
 
-local entryRing = Instance.new("Frame")
-entryRing.Size = UDim2.new(0, 200, 0, 200)
-entryRing.Position = UDim2.new(0.5, -100, 0.5, -100)
-entryRing.BackgroundTransparency = 1
-entryRing.BorderSizePixel = 4
-entryRing.BorderColor3 = Color3.fromRGB(150, 200, 255)
-entryRing.ZIndex = 51
-entryRing.Parent = entrySplash
-createCorner(entryRing, 100)
+	local bootGui = Instance.new("ScreenGui")
+	bootGui.Name = "MilanEmerickIntro"
+	bootGui.ResetOnSpawn = false
+	bootGui.DisplayOrder = 99999
+	bootGui.IgnoreGuiInset = true
+	bootGui.Parent = _LocalPlayer:WaitForChild("PlayerGui")
 
-local entryDot = Instance.new("Frame")
-entryDot.Size = UDim2.new(0, 0, 0, 0)
-entryDot.Position = UDim2.new(0.5, 0, 0.5, 0)
-entryDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-entryDot.BorderSizePixel = 0
-entryDot.ZIndex = 52
-entryDot.AnchorPoint = Vector2.new(0.5, 0.5)
-entryDot.Parent = entrySplash
-createCorner(entryDot, 100)
+	-- Backdrop noir full screen
+	local backdrop = Instance.new("Frame")
+	backdrop.Name = "Backdrop"
+	backdrop.Size = UDim2.new(1, 0, 1, 0)
+	backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	backdrop.BorderSizePixel = 0
+	backdrop.ZIndex = 100
+	backdrop.Parent = bootGui
 
-local entryText = Instance.new("TextLabel")
-entryText.Size = UDim2.new(0.8, 0, 0, 30)
-entryText.Position = UDim2.new(0.1, 0, 0.5, 20)
-entryText.BackgroundTransparency = 1
-entryText.Text = "Agora Admin"
-entryText.Font = Enum.Font.GothamBlack
-entryText.TextSize = 18
-entryText.TextColor3 = Color3.fromRGB(255, 255, 255)
-entryText.TextTransparency = 1
-entryText.ZIndex = 52
-entryText.Parent = entrySplash
+	-- Vignette dorée subtile en arrière-plan
+	local vignette = Instance.new("ImageLabel")
+	vignette.Name = "Vignette"
+	vignette.Size = UDim2.new(1.4, 0, 1.4, 0)
+	vignette.Position = UDim2.new(-0.2, 0, -0.2, 0)
+	vignette.BackgroundTransparency = 1
+	vignette.Image = "rbxassetid://9638773891"
+	vignette.ImageColor3 = Color3.fromRGB(120, 90, 30)
+	vignette.ImageTransparency = 0.6
+	vignette.ZIndex = 101
+	vignette.Parent = bootGui
 
--- Lance l'anim avec un petit delai pour qu'elle demarre apres le boot
-task.defer(function()
-	task.wait(0.3)
-	-- Flash blanc rapide (effet "cristallisation") par-dessus le panel deja visible
-	pcall(function()
-		tween(entrySplash, {BackgroundTransparency = 0.7}, 0.15)
-		tween(entryDot, {Size = UDim2.new(0, 600, 0, 600), BackgroundTransparency = 0.5}, 0.4)
-		tween(entryRing, {Size = UDim2.new(0, 500, 0, 500), BackgroundTransparency = 1, BorderTransparency = 1}, 0.5)
-		tween(entryText, {TextTransparency = 0.4}, 0.2)
-		task.wait(0.4)
-		tween(entrySplash, {BackgroundTransparency = 1}, 0.4)
-		tween(entryText, {TextTransparency = 1}, 0.4)
+	-- Titre "Agora Admin" - apparaît avec un fade in
+	local title = Instance.new("TextLabel")
+	title.Name = "Title"
+	title.Size = UDim2.new(0.9, 0, 0, 50)
+	title.Position = UDim2.new(0.05, 0, 0.45, -10)
+	title.BackgroundTransparency = 1
+	title.Font = Enum.Font.GothamBlack
+	title.Text = "Agora Admin"
+	title.TextSize = 38
+	title.TextColor3 = Color3.fromRGB(220, 220, 240)
+	title.TextTransparency = 1
+	title.TextStrokeTransparency = 0.5
+	title.TextStrokeColor3 = Color3.fromRGB(40, 40, 50)
+	title.ZIndex = 102
+	title.Parent = bootGui
+
+	-- Sous-titre fin "by Milan & Emerick" en gris clair
+	local subtitle = Instance.new("TextLabel")
+	subtitle.Name = "Subtitle"
+	subtitle.Size = UDim2.new(0.9, 0, 0, 20)
+	subtitle.Position = UDim2.new(0.05, 0, 0.45, 36)
+	subtitle.BackgroundTransparency = 1
+	subtitle.Font = Enum.Font.Gotham
+	subtitle.Text = "by Milan & Emerick"
+	subtitle.TextSize = 13
+	subtitle.TextColor3 = Color3.fromRGB(150, 150, 170)
+	subtitle.TextTransparency = 1
+	subtitle.ZIndex = 102
+	subtitle.Parent = bootGui
+
+	-- Tag "UNIVERSELLE" - cachée au début, scale 0
+	local uniTag = Instance.new("TextLabel")
+	uniTag.Name = "UniTag"
+	uniTag.Size = UDim2.new(1.1, 0, 0, 130)
+	uniTag.Position = UDim2.new(-0.05, 0, 0.4, 0)
+	uniTag.AnchorPoint = Vector2.new(0, 0)
+	uniTag.BackgroundTransparency = 1
+	uniTag.Rotation = -8
+	uniTag.Font = Enum.Font.GothamBlack
+	uniTag.Text = "UNIVERSELLE"
+	uniTag.TextScaled = false
+	uniTag.TextSize = 110
+	uniTag.TextColor3 = Color3.fromRGB(255, 220, 120)
+	uniTag.TextStrokeTransparency = 0.2
+	uniTag.TextStrokeColor3 = Color3.fromRGB(120, 80, 0)
+	uniTag.TextTransparency = 1
+	uniTag.ZIndex = 103
+	uniTag.Parent = bootGui
+
+	-- 3 traits noirs "stamp borders" autour du tag pour effet tampon
+	local stampTop = Instance.new("Frame")
+	stampTop.Name = "StampTop"
+	stampTop.Size = UDim2.new(0.8, 0, 0, 2)
+	stampTop.Position = UDim2.new(0.1, 0, 0.41, 0)
+	stampTop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	stampTop.BorderSizePixel = 0
+	stampTop.BackgroundTransparency = 1
+	stampTop.ZIndex = 103
+	stampTop.Parent = bootGui
+
+	local stampBot = Instance.new("Frame")
+	stampBot.Name = "StampBot"
+	stampBot.Size = UDim2.new(0.8, 0, 0, 2)
+	stampBot.Position = UDim2.new(0.1, 0, 0.68, 0)
+	stampBot.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	stampBot.BorderSizePixel = 0
+	stampBot.BackgroundTransparency = 1
+	stampBot.ZIndex = 103
+	stampBot.Parent = bootGui
+
+	-- BOOM FLASH blanc court (effet impact)
+	local flash = Instance.new("Frame")
+	flash.Name = "Flash"
+	flash.Size = UDim2.new(1, 0, 1, 0)
+	flash.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	flash.BackgroundTransparency = 1
+	flash.BorderSizePixel = 0
+	flash.ZIndex = 110
+	flash.Parent = bootGui
+
+	-- === SÉQUENCE CINÉMA ===
+	task.spawn(function()
+		local ok, err = pcall(function()
+			-- Étape 1 : fade in du backdrop depuis noir + whoosh grave
+			playSound(9114850423, 0.5)
+			backdrop.BackgroundTransparency = 0
+
+			-- Étape 2 : titre "Agora Admin" fade in (0.5s) + ding doux
+			task.wait(0.3)
+			_tween(title, {TextTransparency = 0}, 0.5)
+			_tween(subtitle, {TextTransparency = 0}, 0.5)
+			playSound(6042053626, 0.25)
+
+			-- Étape 3 : pause 1s pour lire le titre
+			task.wait(1.0)
+
+			-- Étape 4 : BOUM - flash blanc brutal + tag scale 0→1.3→1 + boom impact fort
+			flash.BackgroundTransparency = 0
+			uniTag.TextTransparency = 0
+			stampTop.BackgroundTransparency = 0
+			stampBot.BackgroundTransparency = 0
+
+			-- Scale : commence à 0, monte à 1.3 puis 1 (impact élastique)
+			uniTag.Size = UDim2.new(0, 0, 0, 0)
+			uniTag.Position = UDim2.new(0.5, 0, 0.5, 0)
+			uniTag.AnchorPoint = Vector2.new(0.5, 0.5)
+			uniTag.Rotation = 4  -- rotation d'entrée (corrigée à -8 à la fin)
+			playSound(4590662766, 0.85)  -- boom impact
+			_tween(uniTag, {Size = UDim2.new(1.2, 0, 0, 140), Rotation = -10}, 0.12, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			_tween(flash, {BackgroundTransparency = 1}, 0.25)
+			task.wait(0.12)
+			-- Stabilise à la taille finale avec la bonne rotation
+			_tween(uniTag, {Size = UDim2.new(1.1, 0, 0, 130), Rotation = -8}, 0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+			-- Étape 5 : le tag reste affiché 1.2s
+			task.wait(1.2)
+
+			-- Étape 6 : fade out de tout
+			_tween(title, {TextTransparency = 1}, 0.3)
+			_tween(subtitle, {TextTransparency = 1}, 0.3)
+			_tween(uniTag, {TextTransparency = 1, Rotation = -12}, 0.4)
+			_tween(stampTop, {BackgroundTransparency = 1}, 0.3)
+			_tween(stampBot, {BackgroundTransparency = 1}, 0.3)
+			_tween(vignette, {ImageTransparency = 1}, 0.3)
+			task.wait(0.3)
+			_tween(backdrop, {BackgroundTransparency = 1}, 0.4)
+			task.wait(0.5)
+		end)
+
+		if not ok then
+			warn("[MILAN] Intro crash: " .. tostring(err))
+		end
+
+		-- Cleanup + révélation du panel
+		pcall(function() if bootGui and bootGui.Parent then bootGui:Destroy() end end)
+		pcall(function()
+			_mainFrame.Visible = true
+		end)
 	end)
-	-- Garantit que le splash disparait meme si le tween crash
-	task.delay(2, function() pcall(function() if entrySplash and entrySplash.Parent then entrySplash:Destroy() end end) end)
-end)
+end)()
 
 
 local topBar = Instance.new("Frame")
@@ -225,11 +372,49 @@ topBar.ZIndex = 2
 createCorner(topBar, 14)
 createStroke(topBar, Color3.fromRGB(80, 80, 100), 0.8)
 
+-- Logo à gauche du titre + badge "UNIVERSELLE" penché (mini) à droite du titre
+;(function()
+	local _topBar = topBar
+	local _createCorner = createCorner
+	local _createStroke = createStroke
+
+	local titleLogo = Instance.new("ImageLabel")
+	titleLogo.Name = "TitleLogo"
+	titleLogo.Size = UDim2.new(0, 22, 0, 22)
+	titleLogo.Position = UDim2.new(0, 8, 0.5, 0)
+	titleLogo.AnchorPoint = Vector2.new(0, 0.5)
+	titleLogo.BackgroundTransparency = 1
+	titleLogo.Image = "rbxassetid://73314612607499"
+	titleLogo.Parent = _topBar
+
+	-- Badge "UNIVERSELLE" petit et penché, à droite du titre
+	local uniBadge = Instance.new("TextLabel")
+	uniBadge.Name = "UniBadge"
+	uniBadge.Size = UDim2.new(0, 90, 0, 18)
+	uniBadge.Position = UDim2.new(0, 134, 0.5, 0)
+	uniBadge.AnchorPoint = Vector2.new(0, 0.5)
+	uniBadge.BackgroundColor3 = Color3.fromRGB(60, 30, 110)
+	uniBadge.BackgroundTransparency = 0.15
+	uniBadge.BorderSizePixel = 0
+	uniBadge.Font = Enum.Font.GothamBlack
+	uniBadge.Text = "UNIVERSELLE"
+	uniBadge.TextSize = 9
+	uniBadge.TextColor3 = Color3.fromRGB(220, 180, 255)
+	uniBadge.Rotation = -8
+	uniBadge.ZIndex = 5
+	uniBadge.Parent = _topBar
+	_createCorner(uniBadge, 4)
+	local badgeStroke = Instance.new("UIStroke")
+	badgeStroke.Color = Color3.fromRGB(150, 100, 220)
+	badgeStroke.Thickness = 1
+	badgeStroke.Parent = uniBadge
+end)()
+
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -90, 1, 0)
-titleLabel.Position = UDim2.new(0, 14, 0, 0)
+titleLabel.Size = UDim2.new(1, -110, 1, 0)
+titleLabel.Position = UDim2.new(0, 36, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "Agora Admin Universel | " .. getDeviceType()
+titleLabel.Text = "Agora Admin"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
@@ -275,10 +460,14 @@ closeBtn.Parent = topBar
 createCorner(closeBtn, 8)
 
 local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Name = "MinimizeBtn"
 minimizeBtn.Size = UDim2.new(0, 28, 0, 28)
 minimizeBtn.Position = UDim2.new(1, -68, 0, 5)
-minimizeBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 220)
-minimizeBtn.Text = ""
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+minimizeBtn.Text = "—"
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.TextSize = 18
+minimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
 minimizeBtn.AutoButtonColor = false
 minimizeBtn.BorderSizePixel = 0
 minimizeBtn.Parent = topBar
@@ -296,7 +485,6 @@ local function makeIcon(btn, txt)
 end
 
 makeIcon(closeBtn, "×")
-makeIcon(minimizeBtn, "−")
 
 local function createButton(parent, text, yPos, color, callback)
 	local btn = Instance.new("TextButton")
@@ -313,7 +501,10 @@ local function createButton(parent, text, yPos, color, callback)
 	createCorner(btn, 8)
 	btn.MouseEnter:Connect(function() tween(btn, {BackgroundColor3 = color and color * 1.15 or Color3.fromRGB(60, 95, 200)}, 0.1) end)
 	btn.MouseLeave:Connect(function() tween(btn, {BackgroundColor3 = color or Color3.fromRGB(45, 75, 160)}, 0.1) end)
-	btn.MouseButton1Click:Connect(callback)
+	btn.MouseButton1Click:Connect(function()
+		playSound(6042053626, 0.22)
+		if callback then callback() end
+	end)
 	return btn
 end
 
@@ -396,9 +587,251 @@ local registryPage = createTab("Registry")
 local localPage = createTab("Local")
 local protectionsPage = createTab("Protections")
 
+-- ============= REGISTRY SEARCH + AUTOCOMPLETE =============
+-- WRAP dans local function + appel pour isoler les locals
+local function _initRegistrySearch()
+	local registrySearchBox = Instance.new("TextBox")
+	registrySearchBox.Size = UDim2.new(1, -10, 0, 28)
+	registrySearchBox.Position = UDim2.new(0, 5, 0, 5)
+	registrySearchBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+	registrySearchBox.BackgroundTransparency = 0.2
+	registrySearchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
+	registrySearchBox.PlaceholderText = "🔍 Rechercher un pseudo Roblox..."
+	registrySearchBox.Text = ""
+	registrySearchBox.Font = Enum.Font.Gotham
+	registrySearchBox.TextSize = 12
+	registrySearchBox.TextXAlignment = Enum.TextXAlignment.Center
+	registrySearchBox.ClearTextOnFocus = false
+	registrySearchBox.Parent = registryPage
+	createCorner(registrySearchBox, 8)
+	createStroke(registrySearchBox, Color3.fromRGB(80, 80, 100), 1)
+
+	-- Bouton X pour effacer la saisie (à droite de la searchBox)
+	local registryClearBtn = Instance.new("TextButton")
+	registryClearBtn.Size = UDim2.new(0, 22, 0, 22)
+	registryClearBtn.Position = UDim2.new(1, -28, 0, 8)
+	registryClearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+	registryClearBtn.Text = "X"
+	registryClearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	registryClearBtn.Font = Enum.Font.GothamBold
+	registryClearBtn.TextSize = 11
+	registryClearBtn.BorderSizePixel = 0
+	registryClearBtn.Visible = false -- caché quand la searchBox est vide
+	registryClearBtn.ZIndex = registrySearchBox.ZIndex + 1
+	registryClearBtn.AutoButtonColor = true
+	registryClearBtn.Parent = registryPage
+	createCorner(registryClearBtn, 11) -- rond
+	registryClearBtn.MouseButton1Click:Connect(function()
+		registrySearchBox.Text = ""
+		registryClearBtn.Visible = false
+		suggestionsFrame.Visible = false
+	end)
+	-- Afficher/cacher le X selon le contenu
+	registrySearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+		registryClearBtn.Visible = (registrySearchBox.Text ~= "")
+	end)
+
+	-- Frame pour les 3 suggestions (sous la search box)
+	local suggestionsFrame = Instance.new("Frame")
+	suggestionsFrame.Size = UDim2.new(1, -10, 0, 0) -- hauteur auto
+	suggestionsFrame.AutomaticSize = Enum.AutomaticSize.Y
+	suggestionsFrame.Position = UDim2.new(0, 5, 0, 38)
+	suggestionsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	suggestionsFrame.BorderSizePixel = 0
+	suggestionsFrame.Visible = false -- caché par défaut
+	suggestionsFrame.Parent = registryPage
+	createCorner(suggestionsFrame, 6)
+	createStroke(suggestionsFrame, Color3.fromRGB(70, 70, 100), 1)
+
+	local suggestionsLayout = Instance.new("UIListLayout")
+	suggestionsLayout.Padding = UDim.new(0, 2)
+	suggestionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	suggestionsLayout.Parent = suggestionsFrame
+
+	local suggestionsPadding = Instance.new("UIPadding")
+	suggestionsPadding.PaddingTop = UDim.new(0, 4)
+	suggestionsPadding.PaddingBottom = UDim.new(0, 4)
+	suggestionsPadding.PaddingLeft = UDim.new(0, 4)
+	suggestionsPadding.PaddingRight = UDim.new(0, 4)
+	suggestionsPadding.Parent = suggestionsFrame
+
+	-- Liste de pseudos Roblox populaires (pour aider la recherche fuzzy)
+	local popularNames = {
+		"Builderman", "Roblox", "Stickmasterluke", "Shedletsky", "Telamon",
+		"Gigaplex", "FaZe_Sway", "DenisDaily", "KreekCraft", "Flamingo",
+		"Peppa Pig", "Pinky", "Tanqr", "The Bacon Hair", "Alex Banzi",
+		"Benjamin", "Bloxy News", "Brittany", "Caleb", "Chip",
+		"Connor", "Daisy", "Dakota", "Emma", "Ethan",
+		"Faith", "Gabriel", "Grace", "Henry", "Ian",
+		"Isaac", "Jack", "Jacob", "James", "Jasmine",
+		"Jennifer", "Jessica", "John", "Joshua", "Julia",
+		"Karen", "Kate", "Kevin", "Kyle", "Laura",
+		"Liam", "Lily", "Logan", "Lucas", "Lucy",
+		"Mason", "Megan", "Mia", "Nathan", "Noah",
+		"Olivia", "Owen", "Patrick", "Rachel", "Riley",
+		"Samuel", "Sara", "Savannah", "Sean", "Sophie",
+		"Stephen", "Taylor", "Thomas", "Tyler", "Victoria",
+		"William", "Zoe", "Xx_Shadow_xX", "Dark_Mage", "ProGamer123",
+		-- Pseudos spécifiques (connus / populaires)
+		"Vzlom_Emk", "MilanAC", "Eme_Giroux", "RobloxDev", "TestAccount",
+	}
+
+	-- Helper : calcule un score de match entre query et name
+	-- Retourne nil si pas de match, sinon un score (plus haut = meilleur)
+	local function fuzzyScore(query, name)
+		if not query or query == "" then return nil end
+		query = string.lower(query)
+		name = string.lower(name)
+
+		-- Préfixe exact = meilleur score
+		if string.sub(name, 1, #query) == query then
+			return 1000 - #name -- plus court = mieux
+		end
+
+		-- Sous-string match = bon score
+		local sPos = string.find(name, query, 1, true)
+		if sPos then
+			return 500 - sPos
+		end
+
+		-- Match flou : tous les caractères de query présents dans name dans l'ordre
+		local qi = 1
+		local lastPos = 0
+		local matches = 0
+		for i = 1, #name do
+			if qi > #query then break end
+			if string.sub(name, i, i) == string.sub(query, qi, qi) then
+				matches = matches + 1
+				qi = qi + 1
+				lastPos = i
+			end
+		end
+		if matches == #query then
+			return 100 - lastPos -- sous-séquence trouve, mais plus loin dans le nom
+		end
+
+		return nil -- pas de match
+	end
+
+	-- Met à jour la liste de suggestions en fonction de queryText
+	local function updateSuggestions(queryText)
+		-- Nettoyer les anciennes suggestions
+		for _, child in ipairs(suggestionsFrame:GetChildren()) do
+			if child:IsA("TextButton") then child:Destroy() end
+		end
+
+		if not queryText or queryText == "" or #queryText < 1 then
+			suggestionsFrame.Visible = false
+			return
+		end
+
+		-- Collecter tous les candidats (connectés + populaires)
+		local candidates = {}
+		for _, plr in ipairs(Players:GetPlayers()) do
+			table.insert(candidates, plr.Name)
+		end
+		for _, name in ipairs(popularNames) do
+			table.insert(candidates, name)
+		end
+
+		-- Calculer les scores et trier
+		local scored = {}
+		for _, name in ipairs(candidates) do
+			local score = fuzzyScore(queryText, name)
+			if score then
+				table.insert(scored, {name = name, score = score})
+			end
+		end
+		table.sort(scored, function(a, b) return a.score > b.score end)
+
+		-- Prendre top 3
+		local top3 = {}
+		for i = 1, math.min(3, #scored) do
+			table.insert(top3, scored[i].name)
+		end
+
+		if #top3 == 0 then
+			suggestionsFrame.Visible = false
+			return
+		end
+
+		-- Créer les 3 boutons de suggestion
+		-- Pour les connectés : "NomComplet (ID: 12345678)"
+		-- Pour les hardcodés : "NomComplet" (pas d'ID connu)
+		for i, name in ipairs(top3) do
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(1, 0, 0, 22)
+			btn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+			btn.BorderSizePixel = 0
+			btn.Text = "  " .. i .. ". " .. name
+			btn.Font = Enum.Font.Gotham
+			btn.TextSize = 11
+			btn.TextColor3 = Color3.fromRGB(220, 220, 240)
+			btn.TextXAlignment = Enum.TextXAlignment.Left
+			btn.LayoutOrder = i
+			btn.Parent = suggestionsFrame
+			createCorner(btn, 4)
+
+			-- Cliquer = remplir la search box
+			btn.MouseButton1Click:Connect(function()
+				registrySearchBox.Text = name
+				registrySearchBox:CaptureFocus()
+				updateSuggestions(name)
+			end)
+
+			-- Hover effects
+			btn.MouseEnter:Connect(function()
+				btn.BackgroundColor3 = Color3.fromRGB(60, 60, 100)
+			end)
+			btn.MouseLeave:Connect(function()
+				btn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+			end)
+		end
+
+		-- Label d'aide : ID du joueur quand on tape un nom connu
+		local helpLabel = Instance.new("TextLabel")
+		helpLabel.Name = "HelpLabel"
+		helpLabel.Size = UDim2.new(1, -10, 0, 16)
+		helpLabel.Position = UDim2.new(0, 5, 0, 0)
+		helpLabel.BackgroundTransparency = 1
+		helpLabel.Text = ""
+		helpLabel.Font = Enum.Font.Gotham
+		helpLabel.TextSize = 9
+		helpLabel.TextColor3 = Color3.fromRGB(120, 180, 140)
+		helpLabel.TextXAlignment = Enum.TextXAlignment.Left
+		helpLabel.LayoutOrder = 100
+		helpLabel.Parent = suggestionsFrame
+
+		suggestionsFrame.Visible = true
+	end
+
+	-- Listener sur changement de texte
+	registrySearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+		updateSuggestions(registrySearchBox.Text)
+	end)
+
+	-- Enter = lancer la recherche Roblox officielle (relie à runRegistrySearch)
+	registrySearchBox.FocusLost:Connect(function(enterPressed)
+		if enterPressed then
+			pcall(function() runRegistrySearch(registrySearchBox.Text) end)
+		end
+		task.delay(3, function()
+			if not registrySearchBox:IsFocused() then
+				suggestionsFrame.Visible = false
+			end
+		end)
+	end)
+
+	-- Cliquer sur le frame parent (registryPage) en dehors de la search box
+	-- cache les suggestions (pour pas qu'elles restent flottantes)
+end
+_initRegistrySearch()
+
 -- ============= REGISTRY SCROLL =============
+-- registryScroll commence juste après la search box + un peu de gap pour les suggestions
 local registryScroll = Instance.new("ScrollingFrame")
-registryScroll.Size = UDim2.new(1, 0, 1, 0)
+registryScroll.Size = UDim2.new(1, 0, 1, -40) -- 40px = search box (33) + gap (7)
+registryScroll.Position = UDim2.new(0, 0, 0, 40)
 registryScroll.BackgroundTransparency = 1
 registryScroll.ScrollBarThickness = 4
 registryScroll.BorderSizePixel = 0
@@ -408,9 +841,16 @@ registryScroll.Parent = registryPage
 createCorner(registryScroll, 4)
 
 local registryLayout = Instance.new("UIListLayout")
-registryLayout.Padding = UDim.new(0, 4)
+registryLayout.Padding = UDim.new(0, 6)
 registryLayout.SortOrder = Enum.SortOrder.LayoutOrder
 registryLayout.Parent = registryScroll
+
+local registryPadding = Instance.new("UIPadding")
+registryPadding.PaddingTop = UDim.new(0, 4)
+registryPadding.PaddingBottom = UDim.new(0, 4)
+registryPadding.PaddingLeft = UDim.new(0, 6)
+registryPadding.PaddingRight = UDim.new(0, 6)
+registryPadding.Parent = registryScroll
 
 local localScroll = Instance.new("ScrollingFrame")
 localScroll.Size = UDim2.new(1, 0, 1, 0)
@@ -481,13 +921,137 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
-local minimized = false
-minimizeBtn.MouseButton1Click:Connect(function()
-	minimized = not minimized
-	contentFrame.Visible = not minimized
-	tabBar.Visible = not minimized
-	tween(mainFrame, {Size = minimized and UDim2.new(0, 460, 0, 52) or UDim2.new(0, 460, 0, 520)}, 0.2)
+-- Drag manuel du mini panel autoclick (clickControl) — déclenché par controlHeader
+local ccInputConn = UserInputService.InputChanged:Connect(function(input)
+	if ccDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - ccDragStart
+		local absSize = clickControl.AbsoluteSize
+		local newX = math.clamp(ccStartPos.X.Offset + delta.X, 0, screenGui.AbsoluteSize.X - absSize.X)
+		local newY = math.clamp(ccStartPos.Y.Offset + delta.Y, 0, screenGui.AbsoluteSize.Y - absSize.Y)
+		clickControl.Position = UDim2.new(0, newX, 0, newY)
+	end
 end)
+
+local minimized = false
+;(function()
+	local _createCorner = createCorner
+	local _tween = tween
+	local _contentFrame = contentFrame
+	local _tabBar = tabBar
+	local _mainFrame = mainFrame
+	local _minimizeBtn = minimizeBtn
+	local _topBar = topBar
+	local _closeBtn = closeBtn
+
+	local btn = Instance.new("ImageButton")
+	btn.Name = "RestoreBtn"
+	btn.Size = UDim2.new(0, 56, 0, 56)
+	btn.Position = UDim2.new(0, 12, 0.5, -28)
+	btn.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+	btn.Image = "rbxassetid://73314612607499"
+	btn.ScaleType = Enum.ScaleType.Fit
+	btn.AutoButtonColor = false
+	btn.BorderSizePixel = 0
+	btn.Visible = false
+	btn.ZIndex = 9999
+	btn.Parent = screenGui
+	_createCorner(btn, 14)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(120, 80, 220)
+	stroke.Thickness = 2
+	stroke.Parent = btn
+
+	-- Long-press 2s sur le bouton = destroy all (escape hatch)
+		-- lpStartTime = -1 quand on vient de finir un long-press (sentinel)
+		local longPressProgress = nil
+		local lpStartTime = 0
+
+		local function destroyAllPanel()
+			if longPressProgress and longPressProgress.Parent then
+				longPressProgress:Destroy()
+			end
+			btn.Visible = false
+			for _, gui in ipairs(game.Players.LocalPlayer.PlayerGui:GetChildren()) do
+				if gui.Name == "MilanEmerickPanel" or gui.Name == "AgoraAdminUniverselle" then
+					pcall(function() gui:Destroy() end)
+				end
+			end
+			pcall(function()
+				if game.CoreGui:FindFirstChild("MilanEmerickPanel") then
+					game.CoreGui.MilanEmerickPanel:Destroy()
+				end
+			end)
+			print("[Agora Universelle] Panel detruit.")
+		end
+
+		local function startLongPress()
+			lpStartTime = tick()
+			if not longPressProgress or not longPressProgress.Parent then
+				longPressProgress = Instance.new("Frame")
+				longPressProgress.Size = UDim2.new(1.4, 0, 1.4, 0)
+				longPressProgress.Position = UDim2.new(0.5, 0, 0.5, 0)
+				longPressProgress.AnchorPoint = Vector2.new(0.5, 0.5)
+				longPressProgress.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+				longPressProgress.BackgroundTransparency = 0.6
+				longPressProgress.BorderSizePixel = 0
+				longPressProgress.ZIndex = btn.ZIndex - 1
+				longPressProgress.Parent = btn
+				_createCorner(longPressProgress, 1)
+			end
+			longPressProgress.Visible = true
+			longPressProgress.Size = UDim2.new(1, 0, 1, 0)
+			longPressProgress.BackgroundTransparency = 1
+			_tween(longPressProgress, {Size = UDim2.new(1.4, 0, 1.4, 0), BackgroundTransparency = 0.6}, 2)
+		end
+		local function endLongPress()
+			local longPressed = lpStartTime > 0 and (tick() - lpStartTime) >= 2
+			lpStartTime = longPressed and -1 or 0
+			if longPressed then
+				destroyAllPanel()
+			end
+			if longPressProgress and longPressProgress.Parent then
+				_tween(longPressProgress, {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1}, 0.2)
+			end
+		end
+
+		btn.MouseButton1Down:Connect(startLongPress)
+		btn.MouseLeave:Connect(endLongPress)
+		btn.MouseButton1Up:Connect(endLongPress)
+
+		-- Clic court = restaurer le panel (seulement si pas un long-press)
+		btn.MouseButton1Click:Connect(function()
+			if lpStartTime == -1 then
+				lpStartTime = 0
+				return
+			end
+			minimized = false
+			_contentFrame.Visible = true
+			_tabBar.Visible = true
+			_topBar.Visible = true
+			_minimizeBtn.Visible = true
+			_closeBtn.Visible = true
+			_tween(_mainFrame, {Size = UDim2.new(0, 460, 0, 520), BackgroundTransparency = 0.35}, 0.25)
+			btn.Visible = false
+		end)
+
+	btn.MouseEnter:Connect(function()
+		_tween(btn, {Size = UDim2.new(0, 62, 0, 62)}, 0.15)
+	end)
+	btn.MouseLeave:Connect(function()
+		_tween(btn, {Size = UDim2.new(0, 56, 0, 56)}, 0.15)
+	end)
+
+	_minimizeBtn.MouseButton1Click:Connect(function()
+		minimized = true
+		_contentFrame.Visible = false
+		_tabBar.Visible = false
+		_topBar.Visible = false
+		_minimizeBtn.Visible = false
+		_closeBtn.Visible = false
+		_tween(_mainFrame, {Size = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1}, 0.25)
+		btn.Visible = true
+	end)
+end)()
 
 closeBtn.MouseButton1Click:Connect(function()
 	local confirm = Instance.new("Frame")
@@ -710,131 +1274,170 @@ end
 
 -- ============= JOUEURS =============
 local playerCards = {}
-local searchBox = Instance.new("TextBox")
-searchBox.Size = UDim2.new(1, -10, 0, 28)
-searchBox.Position = UDim2.new(0, 5, 0, 5)
-searchBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-searchBox.BackgroundTransparency = 0.2
-searchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
-searchBox.PlaceholderText = "Rechercher un joueur..."
-searchBox.Text = ""
-searchBox.Font = Enum.Font.Gotham
-searchBox.TextSize = 12
-searchBox.TextXAlignment = Enum.TextXAlignment.Center
-searchBox.ClearTextOnFocus = false
-searchBox.Parent = playersPage
-createCorner(searchBox, 8)
-createStroke(searchBox, Color3.fromRGB(80, 80, 100), 1)
+local playerSearchQuery = "" -- query actuelle (vide = pas de filtre)
 
--- ============= JOUEURS =============
--- Layout : searchBox en haut, puis serverStatsBar (stats toujours visibles), puis playersScroll
+-- searchBox de Joueurs = FILTRE LOCAL de la liste des joueurs connectés
+-- (la recherche officielle par username Roblox reste dans Registry)
+local playerSearchBox = Instance.new("TextBox")
+playerSearchBox.Size = UDim2.new(1, -10, 0, 26)
+playerSearchBox.Position = UDim2.new(0, 5, 0, 8)
+playerSearchBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+playerSearchBox.BackgroundTransparency = 0.4 -- plus discret que la search box Registry
+playerSearchBox.TextColor3 = Color3.fromRGB(200, 200, 200)
+playerSearchBox.PlaceholderText = "🔎 Filtrer la liste des joueurs..."
+playerSearchBox.Text = ""
+playerSearchBox.Font = Enum.Font.Gotham
+playerSearchBox.TextSize = 11
+playerSearchBox.TextXAlignment = Enum.TextXAlignment.Left
+playerSearchBox.ClearTextOnFocus = false
+playerSearchBox.Parent = playersPage
+createCorner(playerSearchBox, 6)
+createStroke(playerSearchBox, Color3.fromRGB(60, 60, 80), 1)
+
+-- Bouton X pour effacer le filtre Joueurs
+local playerClearBtn = Instance.new("TextButton")
+playerClearBtn.Size = UDim2.new(0, 20, 0, 20)
+playerClearBtn.Position = UDim2.new(1, -25, 0, 11)
+playerClearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+playerClearBtn.Text = "X"
+playerClearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+playerClearBtn.Font = Enum.Font.GothamBold
+playerClearBtn.TextSize = 10
+playerClearBtn.BorderSizePixel = 0
+playerClearBtn.Visible = false
+playerClearBtn.ZIndex = playerSearchBox.ZIndex + 1
+playerClearBtn.AutoButtonColor = true
+playerClearBtn.Parent = playersPage
+createCorner(playerClearBtn, 10)
+playerClearBtn.MouseButton1Click:Connect(function()
+	playerSearchBox.Text = ""
+	playerClearBtn.Visible = false
+end)
+
+local psbPad = Instance.new("UIPadding")
+psbPad.PaddingLeft = UDim.new(0, 8)
+psbPad.Parent = playerSearchBox
+
+-- playersScroll commence sous la searchBox de Joueurs
 local playersScroll = Instance.new("ScrollingFrame")
-playersScroll.Size = UDim2.new(1, -10, 1, -110)
-playersScroll.Position = UDim2.new(0, 5, 0, 100)
+playersScroll.Size = UDim2.new(1, -10, 1, -48)
+playersScroll.Position = UDim2.new(0, 5, 0, 40)
 playersScroll.BackgroundTransparency = 1
 playersScroll.ScrollBarThickness = 4
 playersScroll.BorderSizePixel = 0
 playersScroll.Parent = playersPage
 
--- ============= STATS SERVEUR (intégré en haut de Joueurs, TOUJOURS VISIBLE) =============
-local serverStatsBar = Instance.new("Frame")
-serverStatsBar.Size = UDim2.new(1, -10, 0, 50)
-serverStatsBar.Position = UDim2.new(0, 5, 0, 42)
-serverStatsBar.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-serverStatsBar.BorderSizePixel = 0
-serverStatsBar.Visible = true
-serverStatsBar.Parent = playersPage
-createCorner(serverStatsBar, 6)
-createStroke(serverStatsBar, Color3.fromRGB(60, 60, 80), 1)
-
-local serverStatsLayout = Instance.new("UIListLayout")
-serverStatsLayout.Padding = UDim.new(0, 4)
-serverStatsLayout.FillDirection = Enum.FillDirection.Horizontal
-serverStatsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-serverStatsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-serverStatsLayout.Parent = serverStatsBar
-
-local function addServerStat(name)
-	local card = Instance.new("Frame")
-	card.Size = UDim2.new(0, 78, 0, 42)
-	card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-	card.BorderSizePixel = 0
-	card.Parent = serverStatsBar
-	createCorner(card, 6)
-	createStroke(card, Color3.fromRGB(45, 45, 55), 1)
-
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, -8, 0, 14)
-	label.Position = UDim2.new(0, 4, 0, 3)
-	label.BackgroundTransparency = 1
-	label.Text = name
-	label.Font = Enum.Font.GothamSemibold
-	label.TextSize = 9
-	label.TextColor3 = Color3.fromRGB(150, 150, 170)
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Parent = card
-
-	local value = Instance.new("TextLabel")
-	value.Size = UDim2.new(1, -8, 0, 18)
-	value.Position = UDim2.new(0, 4, 0, 19)
-	value.BackgroundTransparency = 1
-	value.Text = "..."
-	value.Font = Enum.Font.GothamBold
-	value.TextSize = 12
-	value.TextColor3 = Color3.fromRGB(230, 230, 240)
-	value.TextXAlignment = Enum.TextXAlignment.Left
-	value.TextTruncate = Enum.TextTruncate.AtEnd
-	value.Parent = card
-	return value
-end
-
--- WRAP: encapsule la création des stats serveur + update loop dans une fonction
--- pour limiter les 200 registers au top-level.
-local function _initServerStats()
-	local statPlayers = addServerStat("Joueurs")
-	local statFPS = addServerStat("FPS")
-	local statPing = addServerStat("Ping")
-	local statTime = addServerStat("Heure")
-	local statJobId = addServerStat("Job ID")
-	local statPlaceId = addServerStat("Place ID")
-	local statCreator = addServerStat("Créateur")
-
-	local _fps = 60
-	local _lastFrame = tick()
-	pcall(function()
-		RunService.RenderStepped:Connect(function()
-			local now = tick()
-			local dt = now - _lastFrame
-			_lastFrame = now
-			if dt > 0 then _fps = math.clamp(1 / dt, 1, 240) end
-		end)
-	end)
-	task.spawn(function()
-		while task.wait(1) do
-			pcall(function()
-				statPlayers.Text = tostring(#Players:GetPlayers()) .. "/" .. tostring(Players.MaxPlayers)
-				statFPS.Text = tostring(math.floor(_fps))
-				local ping = LocalPlayer:GetNetworkPing() * 1000
-				statPing.Text = string.format("%.0f ms", ping)
-				statTime.Text = os.date("%H:%M:%S")
-				local ok, jobId = pcall(function() return game.JobId end)
-				statJobId.Text = (ok and jobId and jobId ~= "") and jobId:sub(1, 20) .. "..." or "N/A"
-				local ok2, placeId = pcall(function() return game.PlaceId end)
-				statPlaceId.Text = ok2 and tostring(placeId) or "N/A"
-				local ok3, creator = pcall(function() return game.CreatorId end)
-				statCreator.Text = ok3 and tostring(creator) or "N/A"
-			end)
-		end
-	end)
-end
-_initServerStats()
-
--- Bouton toggle retiré : la barre de stats est maintenant TOUJOURS visible en haut de Joueurs.
--- Le playersScroll commence en dessous de la barre de stats (Position = 92, Height = 1 - 110).
+-- Stats serveur déplacées vers l'onglet Extra (card "Stats serveur")
+-- playersScroll prend maintenant toute la place disponible sous la searchBox
 local playersLayout = Instance.new("UIListLayout")
 playersLayout.Padding = UDim.new(0, 6)
 playersLayout.SortOrder = Enum.SortOrder.LayoutOrder
 playersLayout.Parent = playersScroll
+
+-- === CARTE "👑 MOI" (LocalPlayer) — auto-créée, toujours en haut ===
+;(function(_createCorner, _createStroke)
+	local myCard = Instance.new("Frame")
+	myCard.Name = "MyCard"
+	myCard.Size = UDim2.new(1, -8, 0, 0)
+	myCard.AutomaticSize = Enum.AutomaticSize.Y
+	myCard.BackgroundColor3 = Color3.fromRGB(45, 30, 70)
+	myCard.BorderSizePixel = 0
+	myCard.LayoutOrder = -100 -- toujours en premier
+	myCard.Parent = playersScroll
+	_createCorner(myCard, 8)
+	_createStroke(myCard, Color3.fromRGB(180, 130, 255), 1.5)
+
+	-- Titre "👑 TOI — @pseudo"
+	local myTitle = Instance.new("TextLabel")
+	myTitle.Size = UDim2.new(1, -16, 0, 22)
+	myTitle.Position = UDim2.new(0, 8, 0, 6)
+	myTitle.BackgroundTransparency = 1
+	myTitle.Font = Enum.Font.GothamBlack
+	myTitle.TextSize = 14
+	myTitle.TextColor3 = Color3.fromRGB(220, 180, 255)
+	myTitle.TextXAlignment = Enum.TextXAlignment.Left
+	myTitle.Parent = myCard
+
+	-- Contenu (lignes natives Roblox)
+	local myContent = Instance.new("TextLabel")
+	myContent.Name = "MyContent"
+	myContent.Size = UDim2.new(1, -16, 0, 0)
+	myContent.Position = UDim2.new(0, 8, 0, 30)
+	myContent.AutomaticSize = Enum.AutomaticSize.Y
+	myContent.BackgroundTransparency = 1
+	myContent.Font = Enum.Font.Gotham
+	myContent.TextSize = 11
+	myContent.TextColor3 = Color3.fromRGB(210, 210, 230)
+	myContent.TextXAlignment = Enum.TextXAlignment.Left
+	myContent.TextYAlignment = Enum.TextYAlignment.Top
+	myContent.TextWrapped = true
+	myContent.Parent = myCard
+
+	-- Update function (IIFE pour isoler les locals)
+	local function updateMyCard()
+		pcall(function()
+			local _lp = LocalPlayer
+			local myName = _lp.Name or "?"
+			local myDisp = _lp.DisplayName or "?"
+			local myUid = tostring(_lp.UserId or "?")
+			local myAgeDays = _lp.AccountAge or 0
+			local myYears = math.floor(myAgeDays / 365)
+			local myRem = myAgeDays - (myYears * 365)
+			local myMt = tostring(_lp.MembershipType or "None"):gsub("Enum.MembershipType.", "")
+			local myPing = "?"
+			pcall(function() myPing = tostring(math.floor((_lp.GetNetworkPing and _lp:GetNetworkPing() or 0) * 1000)) .. " ms" end)
+			local myTeam = (_lp.Team and _lp.Team.Name) or "Aucune"
+			local myChar = _lp.Character
+			local myHp = "?"
+			local myPos = "?"
+			pcall(function()
+				if myChar then
+					local h = myChar:FindFirstChildOfClass("Humanoid")
+					if h then myHp = tostring(math.floor(h.Health)) .. "/" .. tostring(math.floor(h.MaxHealth)) end
+					local hrp = myChar:FindFirstChild("HumanoidRootPart")
+					if hrp then
+						local p = hrp.Position
+						myPos = string.format("(%.0f, %.0f, %.0f)", p.X, p.Y, p.Z)
+					end
+				end
+			end)
+			local myGame = tostring(game.GameId or "?")
+			local myPlace = tostring(game.PlaceId or "?")
+
+			myTitle.Text = "👑 TOI — @" .. myName .. " (" .. myDisp .. ")"
+			myContent.Text = table.concat({
+				"UserId      : " .. myUid,
+				"Compte      : " .. myYears .. " an(s) " .. myRem .. "j (" .. myAgeDays .. " jours)",
+				"Membership  : " .. myMt,
+				"Team        : " .. myTeam,
+				"Ping        : " .. myPing,
+				"HP          : " .. myHp,
+				"Position    : " .. myPos,
+				"GameId      : " .. myGame .. " / PlaceId " .. myPlace,
+			}, "\n")
+		end)
+	end
+	updateMyCard()
+	-- Update chaque seconde
+	task.spawn(function()
+		while true do
+			task.wait(1)
+			updateMyCard()
+		end
+	end)
+end)(createCorner, createStroke)
+
+-- Listener filtre de la searchBox de Joueurs
+playerSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+	local q = playerSearchBox.Text:lower():gsub("%s+", "")
+	playerClearBtn.Visible = (playerSearchBox.Text ~= "")
+	for plr, card in pairs(playerCards) do
+		local n = plr.Name:lower()
+		local d = plr.DisplayName:lower()
+		local match = (q == "") or (n:find(q, 1, true) ~= nil) or (d:find(q, 1, true) ~= nil)
+		card.Visible = match
+	end
+end)
 
 local echoStatusLabel = Instance.new("TextLabel")
 echoStatusLabel.Size = UDim2.new(1, -20, 0, 18)
@@ -1850,16 +2453,16 @@ local function createPlayerEntry(plr)
 						table.insert(extra, pingIcon .. " Ping : " .. math.floor(ping * 1000) .. " ms")
 					end)
 					-- Ami avec moi ?
-					if localPlayer and plr ~= localPlayer then
+					if LocalPlayer and plr ~= LocalPlayer then
 						pcall(function()
-							local isFriend = localPlayer:IsFriendsWith(plr.UserId)
+							local isFriend = LocalPlayer:IsFriendsWith(plr.UserId)
 							if isFriend then
 								table.insert(extra, "👥 Ami avec toi : OUI")
 							end
 						end)
 					end
 					-- Joue à CE JEU (vérif locale, pas besoin d'API)
-					if plr ~= localPlayer then
+					if plr ~= LocalPlayer then
 						local placeId = game.PlaceId
 						pcall(function()
 							local hasAsset = game:GetService("MarketplaceService"):UserOwnsGamePassAsync(plr.UserId, 0)
@@ -1944,78 +2547,14 @@ if panelMemory.lastEchoPlayerName and not panelMemory.dontAskRestore then
 	end)
 end
 
-searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-	local q = searchBox.Text:lower():gsub("%s+", "")
-	local matches = {}
-	local exactMatch, startsWithMatches, containsMatches = nil, {}, {}
-	for plr, card in pairs(playerCards) do
-		if not plr or not card then continue end
-		local name = plr.Name:lower()
-		local dname = plr.DisplayName:lower()
-		-- 1) Match exact (username == query)
-		if q ~= "" and (name == q or dname == q) then
-			exactMatch = plr
-		-- 2) Commence par (le plus pertinent)
-		elseif q ~= "" and (name:sub(1, #q) == q or dname:sub(1, #q) == q) then
-			table.insert(startsWithMatches, plr)
-		-- 3) Contient (moins pertinent)
-		elseif q ~= "" and (name:find(q, 1, true) ~= nil or dname:find(q, 1, true) ~= nil) then
-			table.insert(containsMatches, plr)
-		-- 4) Pas de query ou pas de match
-		end
-		-- Visibilité : tout ce qui matche est visible
-		local match = q == "" or name:find(q, 1, true) ~= nil or dname:find(q, 1, true) ~= nil
-		card.Visible = match
-		if match and q ~= "" then table.insert(matches, plr) end
+-- searchBox de Joueurs supprimée (doublon avec Registry)
+-- Plus de filtre local ici, le filtrage se fait dans Registry
+-- Toutes les cartes sont toujours visibles par défaut
+for plr, card in pairs(playerCards) do
+	if card then
+		card.Visible = true
 	end
-	-- Tri : les cartes qui matchent sont déplacées en haut, exact en premier, puis startsWith, puis contains
-	-- (en réordonnant le LayoutOrder)
-	local order = 0
-	local function bumpCard(plr)
-		local card = playerCards[plr]
-		if card then
-			card.LayoutOrder = order
-			order = order + 1
-		end
-	end
-	-- D'abord le exact
-	if exactMatch then bumpCard(exactMatch) end
-	-- Puis les startsWith (triés alphabétiquement)
-	table.sort(startsWithMatches, function(a, b) return a.Name:lower() < b.Name:lower() end)
-	for _, p in ipairs(startsWithMatches) do bumpCard(p) end
-	-- Puis les contains (triés)
-	table.sort(containsMatches, function(a, b) return a.Name:lower() < b.Name:lower() end)
-	for _, p in ipairs(containsMatches) do bumpCard(p) end
-	-- Les non-matches en queue (gardent leur ordre relatif)
-	for plr, card in pairs(playerCards) do
-		if not plr or not card then continue end
-		if q ~= "" then
-			local name = plr.Name:lower()
-			local dname = plr.DisplayName:lower()
-			if name:find(q, 1, true) == nil and dname:find(q, 1, true) == nil then
-				card.LayoutOrder = order
-				order = order + 1
-			end
-		else
-			-- Pas de query : ordre par nom
-			card.LayoutOrder = order
-			order = order + 1
-		end
-	end
-	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
-	-- Highlight du match exact (anim 0.5s)
-	if exactMatch and exactMatch.Parent and playerCards[exactMatch] then
-		local card = playerCards[exactMatch]
-		if card and card.Parent then
-			tween(card, {BackgroundColor3 = Color3.fromRGB(70, 50, 100)}, 0.2)
-			task.delay(1.2, function()
-				if card and card.Parent then
-					tween(card, {BackgroundColor3 = Color3.fromRGB(28, 28, 35)}, 0.3)
-				end
-			end)
-		end
-	end
-end)
+end
 
 -- ECHO CHAT
 local function sendEchoMessage(text)
@@ -2281,7 +2820,7 @@ local function bootSequence(onComplete)
 	-- BOOT ANIMATION v2 : "Genesis" - le panel s'assemble piece par piece avec effets cinematiques
 	-- Layer 1 boot-safe : pcall dans le task.spawn
 	local bootGui = Instance.new("ScreenGui")
-	bootGui.Name = "AgoraAdminBoot"
+	bootGui.Name = "MilanEmerickBoot"
 	bootGui.ResetOnSpawn = false
 	bootGui.DisplayOrder = 99999
 	bootGui.IgnoreGuiInset = true
@@ -2805,7 +3344,7 @@ local function bootSequence(onComplete)
 end
 
 -- ============= MOVE =============
-local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil }
+local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
 local noclipState = { enabled = false }
 local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
@@ -2814,10 +3353,14 @@ local platformState = { enabled = false, part = nil, y = 0, offset = 0 }
 local function stopFly()
 	if not flyState.flying then return end
 	flyState.flying = false
-	pcall(function() if _G._stopAngelFly then _G._stopAngelFly() end end)
 	if flyState.loop then flyState.loop:Disconnect() flyState.loop = nil end
 	if flyState.gyro then flyState.gyro:Destroy() flyState.gyro = nil end
 	if flyState.vel then flyState.vel:Destroy() flyState.vel = nil end
+	flyState.mobileInput = Vector3.zero
+	flyState.mobileUpHeld = false
+	flyState.mobileDownHeld = false
+	flyState.mobileStickId = nil
+	if flyState.showMobileUi then flyState.showMobileUi(false) end
 	updateCharacter()
 	if humanoid then humanoid.PlatformStand = false end
 	flySwitch.set(false)
@@ -2827,14 +3370,145 @@ local function stopFly()
 	end
 end
 
+-- ============= FLY MOBILE JOYSTICK (auto-show on touch devices) =============
+;(function(_fly, _screenGui)
+	local function isMobile()
+		return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+	end
+	local function ensureMobileUi()
+		if _fly.mobileUiCreated then return end
+		_fly.mobileUiCreated = true
+		local base = Instance.new("Frame")
+		base.Name = "FlyJoystickBase"
+		base.Size = UDim2.new(0, 110, 0, 110)
+		base.Position = UDim2.new(0, 30, 1, -240)
+		base.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
+		base.BackgroundTransparency = 0.35
+		base.BorderSizePixel = 0
+		base.Visible = false
+		base.ZIndex = 50
+		base.Parent = _screenGui
+		local bc = Instance.new("UICorner")
+		bc.CornerRadius = UDim.new(1, 0)
+		bc.Parent = base
+		local bs = Instance.new("UIStroke")
+		bs.Color = Color3.fromRGB(140, 100, 230)
+		bs.Thickness = 2
+		bs.Transparency = 0.4
+		bs.Parent = base
+		local knob = Instance.new("Frame")
+		knob.Name = "Knob"
+		knob.Size = UDim2.new(0, 50, 0, 50)
+		knob.Position = UDim2.new(0.5, -25, 0.5, -25)
+		knob.BackgroundColor3 = Color3.fromRGB(180, 140, 255)
+		knob.BorderSizePixel = 0
+		knob.ZIndex = 51
+		knob.Parent = base
+		local kc = Instance.new("UICorner")
+		kc.CornerRadius = UDim.new(1, 0)
+		kc.Parent = knob
+		local upBtn = Instance.new("TextButton")
+		upBtn.Name = "FlyUp"
+		upBtn.Size = UDim2.new(0, 60, 0, 60)
+		upBtn.Position = UDim2.new(0, 30, 1, -130)
+		upBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
+		upBtn.BackgroundTransparency = 0.35
+		upBtn.BorderSizePixel = 0
+		upBtn.Text = "▲"
+		upBtn.TextColor3 = Color3.fromRGB(140, 100, 230)
+		upBtn.Font = Enum.Font.GothamBold
+		upBtn.TextSize = 22
+		upBtn.Visible = false
+		upBtn.ZIndex = 50
+		upBtn.Parent = _screenGui
+		local uc = Instance.new("UICorner")
+		uc.CornerRadius = UDim.new(1, 0)
+		uc.Parent = upBtn
+		local us = Instance.new("UIStroke")
+		us.Color = Color3.fromRGB(140, 100, 230)
+		us.Thickness = 2
+		us.Transparency = 0.4
+		us.Parent = upBtn
+		local dnBtn = Instance.new("TextButton")
+		dnBtn.Name = "FlyDown"
+		dnBtn.Size = UDim2.new(0, 60, 0, 60)
+		dnBtn.Position = UDim2.new(0, 100, 1, -130)
+		dnBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
+		dnBtn.BackgroundTransparency = 0.35
+		dnBtn.BorderSizePixel = 0
+		dnBtn.Text = "▼"
+		dnBtn.TextColor3 = Color3.fromRGB(140, 100, 230)
+		dnBtn.Font = Enum.Font.GothamBold
+		dnBtn.TextSize = 22
+		dnBtn.Visible = false
+		dnBtn.ZIndex = 50
+		dnBtn.Parent = _screenGui
+		local dc = Instance.new("UICorner")
+		dc.CornerRadius = UDim.new(1, 0)
+		dc.Parent = dnBtn
+		local ds = Instance.new("UIStroke")
+		ds.Color = Color3.fromRGB(140, 100, 230)
+		ds.Thickness = 2
+		ds.Transparency = 0.4
+		ds.Parent = dnBtn
+		_fly.mobileBase = base
+		_fly.mobileKnob = knob
+		_fly.mobileUp = upBtn
+		_fly.mobileDown = dnBtn
+		-- Joystick drag handler
+		base.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.Touch then
+				_fly.mobileStickId = input
+			end
+		end)
+		upBtn.MouseButton1Down:Connect(function() _fly.mobileUpHeld = true end)
+		upBtn.MouseButton1Up:Connect(function() _fly.mobileUpHeld = false end)
+		dnBtn.MouseButton1Down:Connect(function() _fly.mobileDownHeld = true end)
+		dnBtn.MouseButton1Up:Connect(function() _fly.mobileDownHeld = false end)
+		-- Use direct touch state via .TouchEnded events
+		upBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then _fly.mobileUpHeld = true end end)
+		upBtn.InputEnded:Connect(function() _fly.mobileUpHeld = false end)
+		dnBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then _fly.mobileDownHeld = true end end)
+		dnBtn.InputEnded:Connect(function() _fly.mobileDownHeld = false end)
+	end
+	-- Track mobile joystick in RenderStepped via global InputChanged
+	UserInputService.InputChanged:Connect(function(input, gpe)
+		if not _fly.flying or not _fly.mobileStickId then return end
+		if gpe then return end
+		if input ~= _fly.mobileStickId then return end
+		if input.UserInputState == Enum.UserInputState.End then
+			_fly.mobileStickId = nil
+			_fly.mobileInput = Vector3.zero
+			if _fly.mobileKnob then _fly.mobileKnob.Position = UDim2.new(0.5, -25, 0.5, -25) end
+			return
+		end
+		-- Convert position relative to joystick base
+		local base = _fly.mobileBase
+		if not base or not _fly.mobileKnob then return end
+		local center = base.AbsolutePosition + base.AbsoluteSize / 2
+		local radius = base.AbsoluteSize.X / 2
+		local delta = input.Position - center
+		local dist = math.min(delta.Magnitude, radius)
+		local dir = delta.Magnitude > 0 and delta.Unit or Vector2.new(0, 0)
+		local knobOffset = dir * dist
+		_fly.mobileKnob.Position = UDim2.new(0.5, knobOffset.X - 25, 0.5, knobOffset.Y - 25)
+		-- Normalized input for camera-relative direction (-1..1)
+		_fly.mobileInput = Vector3.new(dir.X, 0, dir.Y)
+	end)
+	-- Public API used by startFly/stopFly
+	_fly.showMobileUi = function(visible)
+		ensureMobileUi()
+		if _fly.mobileBase then _fly.mobileBase.Visible = visible end
+		if _fly.mobileUp then _fly.mobileUp.Visible = visible end
+		if _fly.mobileDown then _fly.mobileDown.Visible = visible end
+	end
+	_fly.isMobile = isMobile
+end)(flyState, screenGui)
+
 local function startFly()
 	updateCharacter()
 	if flyState.flying or not rootPart then return end
 	flyState.flying = true
-
-	-- Détruit les anciens body movers si présents
-	if flyState.gyro then pcall(function() flyState.gyro:Destroy() end) end
-	if flyState.vel then pcall(function() flyState.vel:Destroy() end) end
 
 	flyState.gyro = Instance.new("BodyGyro")
 	flyState.gyro.P = 9e4
@@ -2849,36 +3523,33 @@ local function startFly()
 
 	if humanoid then humanoid.PlatformStand = true end
 
+	-- Show mobile UI on touch devices
+	if flyState.isMobile and flyState.isMobile() and flyState.showMobileUi then
+		flyState.showMobileUi(true)
+	end
+
 	flyState.loop = RunService.RenderStepped:Connect(function()
 		updateCharacter()
-		if not flyState.flying or not rootPart then return end
-
-		-- Re-attach body movers si rootPart a changé (respawn)
-		if flyState.gyro and flyState.gyro.Parent ~= rootPart then
-			flyState.gyro:Destroy()
-			flyState.gyro = Instance.new("BodyGyro")
-			flyState.gyro.P = 9e4
-			flyState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-			flyState.gyro.CFrame = rootPart.CFrame
-			flyState.gyro.Parent = rootPart
-		end
-		if flyState.vel and flyState.vel.Parent ~= rootPart then
-			flyState.vel:Destroy()
-			flyState.vel = Instance.new("BodyVelocity")
-			flyState.vel.Velocity = Vector3.zero
-			flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-			flyState.vel.Parent = rootPart
-		end
-
+		if not flyState.flying or not rootPart or not rootPart.Parent then return end
+		-- Re-attach body movers if rootPart changed (respawn)
+		if flyState.gyro and flyState.gyro.Parent ~= rootPart then flyState.gyro.Parent = rootPart end
+		if flyState.vel and flyState.vel.Parent ~= rootPart then flyState.vel.Parent = rootPart end
 		if flyState.gyro then flyState.gyro.CFrame = Camera.CFrame end
 
 		local move = Vector3.zero
+		-- PC controls (clavier)
 		if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move += Camera.CFrame.LookVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= Camera.CFrame.LookVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then move -= Camera.CFrame.RightVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += Camera.CFrame.RightVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
 		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0, 1, 0) end
+		-- Mobile controls (joystick + boutons)
+		if flyState.mobileInput and flyState.mobileInput.Magnitude > 0 then
+			move += Camera.CFrame.LookVector * flyState.mobileInput.Z + Camera.CFrame.RightVector * flyState.mobileInput.X
+		end
+		if flyState.mobileUpHeld then move += Vector3.new(0, 1, 0) end
+		if flyState.mobileDownHeld then move -= Vector3.new(0, 1, 0) end
 
 		if flyState.vel then
 			flyState.vel.Velocity = move.Magnitude > 0 and move.Unit * flyState.speed or Vector3.zero
@@ -3014,96 +3685,6 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 		end
 	end
 end)
-
--- ===================== ANGEL FLY (IIFE, 0 top-level locals) =====================
-;(function()
-	local angelState = { flying = false, vel = nil, gyro = nil, loop = nil, speed = 80, smoothedVel = Vector3.zero }
-	_G._angelState = angelState
-
-	function _G._stopAngelFly()
-		if not angelState.flying then return end
-		angelState.flying = false
-		if angelState.loop then angelState.loop:Disconnect() angelState.loop = nil end
-		if angelState.vel then pcall(function() angelState.vel:Destroy() end) angelState.vel = nil end
-		if angelState.gyro then pcall(function() angelState.gyro:Destroy() end) angelState.gyro = nil end
-		updateCharacter()
-		if humanoid then humanoid.PlatformStand = false end
-		if _angelSwitch then _angelSwitch.set(false) end
-		if protectionsState then protectionsState.antiTeleportGraceUntil = tick() + 0.4 end
-	end
-
-	function _G._startAngelFly()
-		updateCharacter()
-		if angelState.flying or not rootPart then return end
-		if flyState.flying then stopFly() end
-		angelState.flying = true
-		angelState.smoothedVel = Vector3.zero
-
-		angelState.gyro = Instance.new("BodyGyro")
-		angelState.gyro.P = 5e3
-		angelState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-		angelState.gyro.CFrame = rootPart.CFrame
-		angelState.gyro.Parent = rootPart
-
-		angelState.vel = Instance.new("BodyVelocity")
-		angelState.vel.Velocity = Vector3.zero
-		angelState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-		angelState.vel.Parent = rootPart
-
-		if humanoid then humanoid.PlatformStand = true end
-
-		angelState.loop = RunService.RenderStepped:Connect(function()
-			updateCharacter()
-			if not angelState.flying or not rootPart then return end
-
-			if angelState.gyro and angelState.gyro.Parent ~= rootPart then
-				angelState.gyro:Destroy()
-				angelState.gyro = Instance.new("BodyGyro")
-				angelState.gyro.P = 5e3
-				angelState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-				angelState.gyro.CFrame = rootPart.CFrame
-				angelState.gyro.Parent = rootPart
-			end
-			if angelState.vel and angelState.vel.Parent ~= rootPart then
-				angelState.vel:Destroy()
-				angelState.vel = Instance.new("BodyVelocity")
-				angelState.vel.Velocity = Vector3.zero
-				angelState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-				angelState.vel.Parent = rootPart
-			end
-
-			local move = Vector3.zero
-			if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move += Camera.CFrame.LookVector end
-			if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= Camera.CFrame.LookVector end
-			if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then move -= Camera.CFrame.RightVector end
-			if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += Camera.CFrame.RightVector end
-			if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
-			if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0, 1, 0) end
-
-			local targetVel = move.Magnitude > 0 and move.Unit * angelState.speed or Vector3.zero
-			angelState.smoothedVel = angelState.smoothedVel:Lerp(targetVel, 0.12)
-			if angelState.vel then angelState.vel.Velocity = angelState.smoothedVel end
-
-			if angelState.gyro then
-				local lookRot = Camera.CFrame
-				local velX = angelState.smoothedVel.X
-				local velZ = angelState.smoothedVel.Z
-				local pitch = math.rad(math.clamp(-velZ * 0.3, -20, 20))
-				local roll = math.rad(math.clamp(velX * 0.3, -20, 20))
-				local bob = math.sin(tick() * 3) * 0.5
-				angelState.gyro.CFrame = lookRot * CFrame.Angles(pitch, 0, roll) * CFrame.new(0, bob, 0)
-			end
-		end)
-	end
-
-	_angelSwitch = createSwitch(movePage, "Angel Fly", 156, function(on)
-		if on then _G._startAngelFly() else _G._stopAngelFly() end
-	end)
-
-	_angelSlider = createSlider(movePage, "Vitesse Angel", 198, 20, 500, angelState.speed, function(v)
-		angelState.speed = math.floor(v)
-	end, Color3.fromRGB(180, 120, 255))
-end)()
 
 local PathfindingService = game:GetService("PathfindingService")
 
@@ -3481,6 +4062,7 @@ local function stopAutoClickEngine()
 	if autoClickState.activeThread then
 		autoClickState.activeThread = nil
 	end
+	destroyAutoClickMarker()
 	statusLabel.Text = "Statut : arret"
 	statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 	pcall(hideMarker)
@@ -3504,7 +4086,35 @@ local acTarget = {
 	worldHit = nil,                 -- Mouse.Hit sous le curseur à la capture
 	worldTarget = nil,              -- l'instance Part/GUI sous le curseur à la capture
 	targetType = "any",             -- "any" | "world" | "gui"
+	markerPart = nil                -- Part 3D visuelle au worldHit.Position (marker dans la map)
 }
+
+-- Fonctions marker autoclick: définies inline ci-dessous
+;(function()
+	function destroyAutoClickMarker()
+		if acTarget.markerPart and acTarget.markerPart.Parent then
+			pcall(function() acTarget.markerPart:Destroy() end)
+		end
+		acTarget.markerPart = nil
+	end
+	function refreshAutoClickMarker()
+		destroyAutoClickMarker()
+		if not acTarget.worldHit then return end
+		local marker = Instance.new("Part")
+		marker.Name = "AutoClickMarker"
+		marker.Size = Vector3.new(0.6, 0.6, 0.6)
+		marker.Shape = Enum.PartType.Ball
+		marker.Anchored = true
+		marker.CanCollide = false
+		marker.CastShadow = false
+		marker.Material = Enum.Material.Neon
+		marker.Color = Color3.fromRGB(255, 80, 80)
+		marker.Transparency = 0.3
+		marker.Position = acTarget.worldHit.Position
+		marker.Parent = workspace
+		acTarget.markerPart = marker
+	end
+end)()
 
 -- Met à jour la position FIXE = le curseur au moment de l'appel
 local function captureTargetFromCursor()
@@ -3514,6 +4124,7 @@ local function captureTargetFromCursor()
 	acTarget.position = UserInputService:GetMouseLocation()
 	acTarget.worldHit = mouse.Hit
 	acTarget.worldTarget = mouse.Target
+	refreshAutoClickMarker()
 	return true
 end
 
@@ -3756,25 +4367,15 @@ local autoClickSwitch = createSwitch(autoClickContainer, "Activer (touche G) - o
 	setAutoClickSave()
 end)
 
--- Raccourci touche G : toggle Angel Fly
+-- Raccourci touche G : toggle le mini panel d'autoclick (pas besoin de tool !)
 UserInputService.InputBegan:Connect(function(input, gpe)
 	if gpe then return end
 	if input.KeyCode == Enum.KeyCode.G then
-		if _G._angelState and _G._angelState.flying then
-			_G._stopAngelFly()
-		else
-			_G._startAngelFly()
-		end
-	end
-end)
-
--- Raccourci touche G2 : toggle le mini panel d'autoclick (Ctrl+G pour éviter conflit)
-UserInputService.InputBegan:Connect(function(input, gpe)
-	if gpe then return end
-	if input.KeyCode == Enum.KeyCode.G and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
 		if clickControl then
 			clickControl.Visible = not clickControl.Visible
 			autoClickState.toolActive = clickControl.Visible
+			-- Sync le switch visuellement (mais sans declencher la callback)
+			-- (le state du switch est gere en interne, pas besoin de le toucher)
 		end
 	end
 end)
@@ -3880,19 +4481,45 @@ clickControl.ZIndex = 120
 clickControl.Parent = screenGui
 clickControl.Active = true
 clickControl.Visible = false
-clickControl.Draggable = true
+-- PAS de Draggable Roblox (entre en conflit avec le drag manuel sur controlHeader)
 createCorner(clickControl, 12)
 createStroke(clickControl, Color3.fromRGB(80, 80, 100), 1)
 
-local controlHeader = Instance.new("TextLabel")
+local controlHeader = Instance.new("TextButton")
+controlHeader.AutoButtonColor = false
 controlHeader.Size = UDim2.new(1, 0, 0, 24)
 controlHeader.BackgroundTransparency = 1
-controlHeader.Text = "AutoClick"
+controlHeader.Text = ":: AutoClick ::"
 controlHeader.Font = Enum.Font.GothamBold
 controlHeader.TextSize = 12
 controlHeader.TextColor3 = Color3.fromRGB(230, 230, 230)
 controlHeader.ZIndex = 122
 controlHeader.Parent = clickControl
+
+-- Drag manuel du clickControl depuis le header (TextButton avec AutoButtonColor=false)
+-- Listener global sur UserInputService pour que le drag suive la souris même hors du header
+local ccDragging, ccDragStart, ccStartPos = false, nil, nil
+controlHeader.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		ccDragging = true
+		ccDragStart = input.Position
+		ccStartPos = clickControl.Position
+	end
+end)
+UserInputService.InputChanged:Connect(function(input)
+	if ccDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		if ccStartPos and ccDragStart then
+			local dx = input.Position.X - ccDragStart.X
+			local dy = input.Position.Y - ccDragStart.Y
+			clickControl.Position = UDim2.new(ccStartPos.X.Scale, ccStartPos.X.Offset + dx, ccStartPos.Y.Scale, ccStartPos.Y.Offset + dy)
+		end
+	end
+end)
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		ccDragging = false
+	end
+end)
 
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(0.9, 0, 0, 16)
@@ -4101,61 +4728,55 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 				platformState.part.CanCollide = true
 				platformState.part.Transparency = 1
 				platformState.part.Name = "InvisiblePlatform"
-				platformState.part.Size = Vector3.new(200, 1, 200)
+				-- Plate GIGANTESQUE (couvre la map entière) et FIXE en X/Z : on ne suit plus la position
+				platformState.part.Size = Vector3.new(2000, 1, 2000)
 				platformState.part.Parent = Workspace
 			end
-			updateCharacter()
-			-- Détection intelligente : si on est assis dans un véhicule, on spawn sous les roues du véhicule
-			-- sinon on spawn sous nos pieds
+			-- Détermine la hauteur initiale de la plate selon le contexte (à pied / en voiture)
+			-- La plate ne suit PAS la position, seulement la hauteur capturée ici
 			local seatPart = humanoid and humanoid.SeatPart
-			local target, targetSize
+			local capturedY
 			if seatPart and seatPart:IsA("BasePart") then
-				-- On est dans un véhicule : plateforme sous le châssis du véhicule, pas sous nos pieds
+				-- En voiture : plate sous les roues (marge 1.5 stud pour pas toucher le châssis)
 				local seatModel = seatPart:FindFirstAncestorOfClass("Model") or seatPart.Parent
 				if seatModel and seatModel ~= character then
 					local ok, cf, size = pcall(function() return seatModel:GetBoundingBox() end)
 					if ok and cf and size then
-						target = cf.Position
-						targetSize = size
-						platformState.y = cf.Position.Y - size.Y / 2
+						capturedY = cf.Position.Y - size.Y / 2 - 1.5
 					end
 				end
-				if not target then
-					-- fallback : utiliser le siège lui-même
+				if not capturedY then
 					local cf = seatPart.CFrame
 					local size = seatPart.Size
-					target = cf.Position
-					targetSize = size
-					platformState.y = cf.Position.Y - size.Y / 2
+					capturedY = cf.Position.Y - size.Y / 2 - 1.5
 				end
 			elseif character then
-				-- À pied : spawn exactement sous nos pieds (utiliser HumanoidRootPart bas)
-				if rootPart then
-					-- Position des pieds = bas de la bounding box du character
-					local ok, cf, size = pcall(function() return character:GetBoundingBox() end)
-					if ok and cf and size then
-						target = cf.Position
-						platformState.y = cf.Position.Y - size.Y / 2
-					else
-						target = rootPart.Position
-						platformState.y = rootPart.Position.Y - 3
-					end
+				-- À pied : sous nos pieds (marge 0.2 stud)
+				local ok, cf, size = pcall(function() return character:GetBoundingBox() end)
+				if ok and cf and size then
+					capturedY = cf.Position.Y - size.Y / 2 - 0.2
+				elseif rootPart then
+					capturedY = rootPart.Position.Y - 3
 				else
-					target = character:GetPivot().Position
-					platformState.y = target.Y - 3
+					capturedY = (character:GetPivot().Position.Y) - 3
 				end
 			end
-			if target then
+			if capturedY then
+				platformState.y = capturedY
 				platformState.offset = 0
-				platformState.part.CFrame = CFrame.new(target.X, platformState.y - 0.5, target.Z)
-				-- Suivre la cible (voiture ou joueur) en X/Z
-				platformState.followTarget = (seatPart and seatPart:IsA("BasePart") and (seatPart:FindFirstAncestorOfClass("Model") or seatPart.Parent)) or character
+				platformState.smoothedOffset = 0
+				-- Centre la plate sur le joueur/voiture au moment du toggle, puis elle reste FIXE
+				local anchorPos = rootPart and rootPart.Position or (humanoid and humanoid.SeatPart and humanoid.SeatPart.Position)
+				if anchorPos then
+					platformState.part.CFrame = CFrame.new(anchorPos.X, capturedY, anchorPos.Z)
+				else
+					platformState.part.CFrame = CFrame.new(0, capturedY, 0)
+				end
 			end
 		else
 			if platformState.part then
 				platformState.part:Destroy()
 				platformState.part = nil
-				platformState.followTarget = nil
 			end
 		end
 	end
@@ -4169,34 +4790,20 @@ RunService.Stepped:Connect(function(_, dt)
 		end
 	end
 	if platformState.enabled and platformState.part then
-		updateCharacter()
-		-- Suit la cible d'origine (voiture ou character) en X/Z, ou recale sur rootPart
-		local followT = platformState.followTarget
-		local trackX, trackZ
-		if followT and followT.Parent then
-			if followT:IsA("Model") then
-				local ok, cf = pcall(function() return followT:GetBoundingBox() end)
-				if ok and cf then
-					trackX, trackZ = cf.Position.X, cf.Position.Z
-				end
-			elseif followT:IsA("BasePart") then
-				trackX, trackZ = followT.Position.X, followT.Position.Z
-			end
+		-- Plate FIXE en X/Z : on ne tracke plus la position, on ajuste juste la hauteur
+		-- avec les touches +/-
+		if UserInputService:IsKeyDown(Enum.KeyCode.Equals) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadPlus) then
+			platformState.offset += 25 * dt
 		end
-		if not trackX then
-			local seatPart = humanoid and humanoid.SeatPart
-			local target = (seatPart and seatPart:IsA("BasePart")) or rootPart
-			if target then trackX, trackZ = target.Position.X, target.Position.Z end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Minus) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadMinus) then
+			platformState.offset -= 25 * dt
 		end
-		if trackX and trackZ then
-			if UserInputService:IsKeyDown(Enum.KeyCode.Equals) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadPlus) then
-				platformState.offset += 25 * dt
-			end
-			if UserInputService:IsKeyDown(Enum.KeyCode.Minus) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadMinus) then
-				platformState.offset -= 25 * dt
-			end
-			platformState.part.CFrame = CFrame.new(trackX, platformState.y + platformState.offset - 0.5, trackZ)
-		end
+		-- Lissage de la position verticale (évite les sauts secs)
+		local smoothing = math.min(1, dt * 12)
+		platformState.smoothedOffset = platformState.smoothedOffset + (platformState.offset - platformState.smoothedOffset) * smoothing
+		-- Conserve la position X/Z initiale, change juste Y
+		local cur = platformState.part.CFrame
+		platformState.part.CFrame = CFrame.new(cur.X, platformState.y + platformState.smoothedOffset, cur.Z)
 	end
 	-- Go to Walk : déplace le humanoid vers chaque waypoint avec MoveTo
 	-- Go to Walk : deplace le humanoid vers chaque waypoint avec MoveTo + saut auto si bloque
@@ -4307,6 +4914,432 @@ task.defer(function()
 	extraScroll.CanvasSize = UDim2.new(0, 0, 0, extraLayout.AbsoluteContentSize.Y + 10)
 end)
 
+-- === Carte "Stats serveur" (6 stats en grille) — déplacée depuis Joueurs (trop large) ===
+-- WRAP dans local function + appel pour isoler les locals
+local function _initServerStatsCard()
+	local statsCard = Instance.new("Frame")
+	statsCard.Name = "StatsCard"
+	statsCard.Size = UDim2.new(1, -10, 0, 0)
+	statsCard.AutomaticSize = Enum.AutomaticSize.Y
+	statsCard.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	statsCard.BorderSizePixel = 0
+	statsCard.LayoutOrder = 1 -- AVANT serverInfoCard (LayoutOrder 0 sera mis à 0 après)
+	statsCard.Parent = extraScroll
+	createCorner(statsCard, 8)
+	createStroke(statsCard, Color3.fromRGB(80, 80, 120), 1)
+
+	local statsPadding = Instance.new("UIPadding")
+	statsPadding.PaddingTop = UDim.new(0, 8)
+	statsPadding.PaddingBottom = UDim.new(0, 8)
+	statsPadding.PaddingLeft = UDim.new(0, 12)
+	statsPadding.PaddingRight = UDim.new(0, 12)
+	statsPadding.Parent = statsCard
+
+	local statsTitle = Instance.new("TextLabel")
+	statsTitle.Size = UDim2.new(1, 0, 0, 16)
+	statsTitle.BackgroundTransparency = 1
+	statsTitle.Text = "📊 Stats serveur"
+	statsTitle.Font = Enum.Font.GothamBold
+	statsTitle.TextSize = 12
+	statsTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
+	statsTitle.TextXAlignment = Enum.TextXAlignment.Left
+	statsTitle.LayoutOrder = 1
+	statsTitle.Parent = statsCard
+
+	-- Container pour la grille de stats (2 lignes × 3 colonnes)
+	local statsGrid = Instance.new("Frame")
+	statsGrid.Size = UDim2.new(1, 0, 0, 90) -- 2 lignes × 42 + gap 6 = 90
+	statsGrid.BackgroundTransparency = 1
+	statsGrid.LayoutOrder = 2
+	statsGrid.Parent = statsCard
+
+	local statsGridLayout = Instance.new("UIGridLayout")
+	statsGridLayout.CellSize = UDim2.new(0, 100, 0, 38)
+	statsGridLayout.CellPadding = UDim2.new(0, 6, 0, 6)
+	statsGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	statsGridLayout.Parent = statsGrid
+
+	-- Helper local pour créer une stat cell dans la grille
+	local function addGridStat(parent, name, layoutOrder)
+		local cell = Instance.new("Frame")
+		cell.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+		cell.BorderSizePixel = 0
+		cell.LayoutOrder = layoutOrder
+		cell.Parent = parent
+		createCorner(cell, 6)
+
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(1, -8, 0, 12)
+		label.Position = UDim2.new(0, 4, 0, 2)
+		label.BackgroundTransparency = 1
+		label.Text = name
+		label.Font = Enum.Font.GothamSemibold
+		label.TextSize = 8
+		label.TextColor3 = Color3.fromRGB(150, 150, 170)
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.TextTruncate = Enum.TextTruncate.AtEnd
+		label.Parent = cell
+
+		local value = Instance.new("TextLabel")
+		value.Size = UDim2.new(1, -8, 0, 18)
+		value.Position = UDim2.new(0, 4, 0, 16)
+		value.BackgroundTransparency = 1
+		value.Text = "..."
+		value.Font = Enum.Font.GothamBold
+		value.TextSize = 11
+		value.TextColor3 = Color3.fromRGB(230, 230, 240)
+		value.TextXAlignment = Enum.TextXAlignment.Left
+		value.TextTruncate = Enum.TextTruncate.AtEnd
+		value.Parent = cell
+		return value
+	end
+
+	-- Créer les 6 stats dans la grille (LayoutOrder 1-6)
+	local statPlayers = addGridStat(statsGrid, "Joueurs", 1)
+	local statFPS = addGridStat(statsGrid, "FPS", 2)
+	local statPing = addGridStat(statsGrid, "Ping", 3)
+	local statTime = addGridStat(statsGrid, "Heure", 4)
+	local statJobId = addGridStat(statsGrid, "Job ID", 5)
+	local statPlaceId = addGridStat(statsGrid, "Place ID", 6)
+
+	-- FPS counter
+	local _fps = 60
+	local _lastFrame = tick()
+	pcall(function()
+		RunService.RenderStepped:Connect(function()
+			local now = tick()
+			local dt = now - _lastFrame
+			_lastFrame = now
+			if dt > 0 then _fps = math.clamp(1 / dt, 1, 240) end
+		end)
+	end)
+
+	-- Update loop pour les 6 stats
+	task.spawn(function()
+		while task.wait(1) do
+			pcall(function()
+				statPlayers.Text = tostring(#Players:GetPlayers()) .. "/" .. tostring(Players.MaxPlayers)
+				statFPS.Text = tostring(math.floor(_fps))
+				local ping = LocalPlayer:GetNetworkPing() * 1000
+				statPing.Text = string.format("%.0f ms", ping)
+				statTime.Text = os.date("%H:%M:%S")
+				local okJ, jobId = pcall(function() return game.JobId end)
+				statJobId.Text = (okJ and jobId and jobId ~= "") and jobId:sub(1, 12) .. "..." or "N/A"
+				local okP, placeId = pcall(function() return game.PlaceId end)
+				statPlaceId.Text = okP and tostring(placeId) or "N/A"
+			end)
+		end
+	end)
+end
+_initServerStatsCard()
+
+-- === Carte "Infos serveur" (Créateur du jeu) — déplacée depuis Joueurs (était trop large) ===
+-- WRAP dans local function + appel pour isoler les locals (réduit les 200 registres)
+local function _initServerInfoCard()
+	local serverInfoCard = Instance.new("Frame")
+	serverInfoCard.Name = "ServerInfoCard"
+	serverInfoCard.Size = UDim2.new(1, -10, 0, 0)
+	serverInfoCard.AutomaticSize = Enum.AutomaticSize.Y
+	serverInfoCard.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	serverInfoCard.BorderSizePixel = 0
+	serverInfoCard.LayoutOrder = 2 -- sous la carte "Stats serveur" (LayoutOrder 1)
+	serverInfoCard.Parent = extraScroll
+	createCorner(serverInfoCard, 8)
+	createStroke(serverInfoCard, Color3.fromRGB(80, 80, 120), 1)
+
+	local serverInfoPadding = Instance.new("UIPadding")
+	serverInfoPadding.PaddingTop = UDim.new(0, 8)
+	serverInfoPadding.PaddingBottom = UDim.new(0, 8)
+	serverInfoPadding.PaddingLeft = UDim.new(0, 12)
+	serverInfoPadding.PaddingRight = UDim.new(0, 12)
+	serverInfoPadding.Parent = serverInfoCard
+
+	local serverInfoTitle = Instance.new("TextLabel")
+	serverInfoTitle.Size = UDim2.new(1, 0, 0, 16)
+	serverInfoTitle.BackgroundTransparency = 1
+	serverInfoTitle.Text = "🖥️ Infos serveur"
+	serverInfoTitle.Font = Enum.Font.GothamBold
+	serverInfoTitle.TextSize = 12
+	serverInfoTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
+	serverInfoTitle.TextXAlignment = Enum.TextXAlignment.Left
+	serverInfoTitle.LayoutOrder = 1
+	serverInfoTitle.Parent = serverInfoCard
+
+	local serverInfoText = Instance.new("TextLabel")
+	serverInfoText.Size = UDim2.new(1, 0, 0, 0)
+	serverInfoText.AutomaticSize = Enum.AutomaticSize.Y
+	serverInfoText.BackgroundTransparency = 1
+	serverInfoText.Text = "Chargement..."
+	serverInfoText.Font = Enum.Font.Gotham
+	serverInfoText.TextSize = 10
+	serverInfoText.TextColor3 = Color3.fromRGB(180, 180, 200)
+	serverInfoText.TextXAlignment = Enum.TextXAlignment.Left
+	serverInfoText.TextYAlignment = Enum.TextYAlignment.Top
+	serverInfoText.TextWrapped = true
+	serverInfoText.LayoutOrder = 2
+	serverInfoText.Parent = serverInfoCard
+
+	-- UIListLayout pour empiler verticalement les enfants
+	local serverInfoLayout = Instance.new("UIListLayout")
+	serverInfoLayout.Padding = UDim.new(0, 4)
+	serverInfoLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	serverInfoLayout.Parent = serverInfoCard
+
+	-- Update loop pour la carte "Infos serveur" dans Extra
+	task.spawn(function()
+		while task.wait(2) do
+			pcall(function()
+				local lines = {}
+				local okCreator, creatorId = pcall(function() return game.CreatorId end)
+				if okCreator and creatorId and creatorId ~= 0 then
+					table.insert(lines, "  🎮 Créateur du jeu (CreatorId) : " .. tostring(creatorId))
+					local okCreatorType, creatorType = pcall(function() return game.CreatorType end)
+					if okCreatorType then
+						table.insert(lines, "  📌 Type créateur    : " .. tostring(creatorType))
+					end
+					local okName, gameName = pcall(function() return game.Name end)
+					if okName then
+						table.insert(lines, "  🎯 Nom du jeu       : " .. tostring(gameName))
+					end
+					local okVIP, vipOwnerId = pcall(function() return game.VIPServerOwnerId end)
+					if okVIP and vipOwnerId and vipOwnerId ~= 0 then
+						table.insert(lines, "  👑 Proprio VIP     : " .. tostring(vipOwnerId))
+					end
+					local okVIPId, vipId = pcall(function() return game.VIPServerId end)
+					if okVIPId and vipId and vipId ~= "" then
+						table.insert(lines, "  🔑 VIP Server ID    : " .. tostring(vipId):sub(1, 24))
+					end
+				else
+					table.insert(lines, "  🎮 Créateur : Indisponible")
+				end
+				serverInfoText.Text = table.concat(lines, "\n")
+			end)
+		end
+	end)
+end
+_initServerInfoCard()
+
+-- ============= AIMBOT =============
+-- Verrouille la souris sur la TÊTE du joueur le plus proche du CENTRE de l'écran
+-- - Filtre "pas à travers les murs" : raycast camera → head, vérifie qu'on touche le character
+-- - Filtre "à l'écran" : WorldToScreenPoint.Z > 0 et X/Y dans les bornes
+-- - Pas de visée amis (seulement les joueurs, pas le local player)
+-- - Option clic auto : mouse1click à chaque frame sur la cible
+-- Wrap dans local function + appel pour isoler les locals (limite 200 registers)
+local function _initAimbot()
+	local aimbotCard = Instance.new("Frame")
+	aimbotCard.Name = "AimbotCard"
+	aimbotCard.Size = UDim2.new(1, -10, 0, 0)
+	aimbotCard.AutomaticSize = Enum.AutomaticSize.Y
+	aimbotCard.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	aimbotCard.BorderSizePixel = 0
+	aimbotCard.LayoutOrder = 4 -- après serverInfoCard
+	aimbotCard.Parent = extraScroll
+	createCorner(aimbotCard, 8)
+	createStroke(aimbotCard, Color3.fromRGB(180, 80, 80), 1)
+
+	-- UIListLayout OBLIGATOIRE pour que les enfants se positionnent en colonne
+	-- Sans ça, les enfants s'empilent tous à (0,0) et se chevauchent
+	local aimbotLayout = Instance.new("UIListLayout")
+	aimbotLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	aimbotLayout.Padding = UDim.new(0, 4)
+	aimbotLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	aimbotLayout.Parent = aimbotCard
+
+	local aimbotPad = Instance.new("UIPadding")
+	aimbotPad.PaddingTop = UDim.new(0, 8)
+	aimbotPad.PaddingBottom = UDim.new(0, 8)
+	aimbotPad.PaddingLeft = UDim.new(0, 12)
+	aimbotPad.PaddingRight = UDim.new(0, 12)
+	aimbotPad.Parent = aimbotCard
+
+	local aimbotTitle = Instance.new("TextLabel")
+	aimbotTitle.Size = UDim2.new(1, 0, 0, 16)
+	aimbotTitle.BackgroundTransparency = 1
+	aimbotTitle.Text = "🎯 Aimbot (verrouille le centre écran sur la cible)"
+	aimbotTitle.Font = Enum.Font.GothamBold
+	aimbotTitle.TextSize = 12
+	aimbotTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
+	aimbotTitle.TextXAlignment = Enum.TextXAlignment.Left
+	aimbotTitle.LayoutOrder = 1
+	aimbotTitle.Parent = aimbotCard
+
+	-- Toggle principal (aim ON/OFF)
+	local aimbotEnabled = false
+	local aimbotAutoClick = false
+	local aimbotMaxDist = 300 -- studs (par défaut)
+
+	local mainSwitchRow = Instance.new("Frame")
+	mainSwitchRow.Size = UDim2.new(1, 0, 0, 26)
+	mainSwitchRow.BackgroundTransparency = 1
+	mainSwitchRow.LayoutOrder = 2
+	mainSwitchRow.Parent = aimbotCard
+	local mainSwitchLabel = Instance.new("TextLabel")
+	mainSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
+	mainSwitchLabel.BackgroundTransparency = 1
+	mainSwitchLabel.Text = "Aim ON / OFF"
+	mainSwitchLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+	mainSwitchLabel.Font = Enum.Font.Gotham
+	mainSwitchLabel.TextSize = 11
+	mainSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
+	mainSwitchLabel.Parent = mainSwitchRow
+	local mainSwitch = createSwitch(mainSwitchRow, "", 1, function(on)
+		aimbotEnabled = on
+	end)
+	mainSwitch.Size = UDim2.new(0.3, -4, 1, 0)
+	mainSwitch.Position = UDim2.new(0.7, 4, 0, 0)
+
+	-- Toggle auto-clic
+	local clickSwitchRow = Instance.new("Frame")
+	clickSwitchRow.Size = UDim2.new(1, 0, 0, 26)
+	clickSwitchRow.BackgroundTransparency = 1
+	clickSwitchRow.LayoutOrder = 3
+	clickSwitchRow.Parent = aimbotCard
+	local clickSwitchLabel = Instance.new("TextLabel")
+	clickSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
+	clickSwitchLabel.BackgroundTransparency = 1
+	clickSwitchLabel.Text = "🎯 Clic auto sur cible"
+	clickSwitchLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+	clickSwitchLabel.Font = Enum.Font.Gotham
+	clickSwitchLabel.TextSize = 11
+	clickSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
+	clickSwitchLabel.Parent = clickSwitchRow
+	local clickSwitch = createSwitch(clickSwitchRow, "", 1, function(on)
+		aimbotAutoClick = on
+	end)
+	clickSwitch.Size = UDim2.new(0.3, -4, 1, 0)
+	clickSwitch.Position = UDim2.new(0.7, 4, 0, 0)
+
+	-- Slider de distance max (clic gauche = -25, clic droit = +25)
+	local distRow = Instance.new("Frame")
+	distRow.Size = UDim2.new(1, 0, 0, 26)
+	distRow.BackgroundTransparency = 1
+	distRow.LayoutOrder = 4
+	distRow.Parent = aimbotCard
+	local distLabel = Instance.new("TextLabel")
+	distLabel.Size = UDim2.new(0.5, 0, 1, 0)
+	distLabel.BackgroundTransparency = 1
+	distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
+	distLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+	distLabel.Font = Enum.Font.Gotham
+	distLabel.TextSize = 11
+	distLabel.TextXAlignment = Enum.TextXAlignment.Left
+	distLabel.Parent = distRow
+	local distSlider = Instance.new("TextButton")
+	distSlider.Size = UDim2.new(0.5, -4, 1, 0)
+	distSlider.Position = UDim2.new(0.5, 4, 0, 0)
+	distSlider.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+	distSlider.BorderSizePixel = 0
+	distSlider.Text = "—   +"
+	distSlider.TextColor3 = Color3.fromRGB(180, 180, 220)
+	distSlider.Font = Enum.Font.Gotham
+	distSlider.TextSize = 10
+	distSlider.Parent = distRow
+	createCorner(distSlider, 4)
+	distSlider.MouseButton1Click:Connect(function()
+		aimbotMaxDist = math.max(50, aimbotMaxDist - 25)
+		distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
+	end)
+	distSlider.MouseButton2Click:Connect(function()
+		aimbotMaxDist = math.min(1000, aimbotMaxDist + 25)
+		distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
+	end)
+
+	-- Indicateur visuel : cercle rouge qui apparaît sur la cible actuelle
+	local aimCircle = Instance.new("Frame")
+	aimCircle.Size = UDim2.new(0, 60, 0, 60)
+	aimCircle.BackgroundTransparency = 1
+	aimCircle.BorderSizePixel = 0
+	aimCircle.Visible = false
+	aimCircle.ZIndex = 999
+	aimCircle.Parent = screenGui
+	local aimCircleCorner = Instance.new("UICorner")
+	aimCircleCorner.CornerRadius = UDim.new(1, 0)
+	aimCircleCorner.Parent = aimCircle
+	local aimCircleStroke = Instance.new("UIStroke")
+	aimCircleStroke.Color = Color3.fromRGB(255, 60, 60)
+	aimCircleStroke.Thickness = 3
+	aimCircleStroke.Transparency = 0.3
+	aimCircleStroke.Parent = aimCircle
+
+	-- Status label
+	local aimStatusLabel = Instance.new("TextLabel")
+	aimStatusLabel.Size = UDim2.new(1, 0, 0, 16)
+	aimStatusLabel.BackgroundTransparency = 1
+	aimStatusLabel.Text = "⏸ Aim inactif"
+	aimStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
+	aimStatusLabel.Font = Enum.Font.Gotham
+	aimStatusLabel.TextSize = 10
+	aimStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+	aimStatusLabel.LayoutOrder = 5
+	aimStatusLabel.Parent = aimbotCard
+
+	-- Boucle aimbot sur RenderStepped
+	local cam = workspace.CurrentCamera
+	local localPlayer = Players.LocalPlayer
+	local lastClickTick = 0
+	local renderConn = RunService.RenderStepped:Connect(function()
+		if not aimbotEnabled then
+			if aimCircle.Visible then aimCircle.Visible = false end
+			return
+		end
+		if not localPlayer or not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			return
+		end
+		local bestTarget = nil
+		local bestDistFromCenter = math.huge
+		local screenCenter = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
+		local myChar = localPlayer.Character
+		local myPos = myChar.HumanoidRootPart.Position
+		for _, plr in ipairs(Players:GetPlayers()) do
+			if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
+				local targetHead = plr.Character.Head
+				local targetPos = targetHead.Position
+				if (targetPos - myPos).Magnitude <= aimbotMaxDist then
+					local screenPos, onScreen = cam:WorldToScreenPoint(targetPos)
+					if onScreen and screenPos.Z > 0 then
+						local origin = cam.CFrame.Position
+						local direction = (targetPos - origin)
+						local rayParams = RaycastParams.new()
+						rayParams.FilterDescendantsInstances = {myChar, plr.Character}
+						rayParams.FilterType = Enum.RaycastFilterType.Exclude
+						local result = workspace:Raycast(origin, direction, rayParams)
+						if result == nil then
+							local dx = screenPos.X - screenCenter.X
+							local dy = screenPos.Y - screenCenter.Y
+							local distFromCenter = math.sqrt(dx * dx + dy * dy)
+							if distFromCenter < bestDistFromCenter then
+								bestDistFromCenter = distFromCenter
+								bestTarget = {player = plr, head = targetHead, screen = Vector2.new(screenPos.X, screenPos.Y)}
+							end
+						end
+					end
+				end
+			end
+		end
+		if bestTarget then
+			local dx = bestTarget.screen.X - screenCenter.X
+			local dy = bestTarget.screen.Y - screenCenter.Y
+			local smoothX = dx * 0.33
+			local smoothY = dy * 0.33
+			pcall(function() mousemoverel(smoothX, smoothY) end)
+			aimCircle.Position = UDim2.new(0, bestTarget.screen.X - 30, 0, bestTarget.screen.Y - 30)
+			if not aimCircle.Visible then aimCircle.Visible = true end
+			aimStatusLabel.Text = "🎯 Verrouillé : " .. bestTarget.player.DisplayName .. " (dist: " .. math.floor(bestDistFromCenter) .. "px)"
+			aimStatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+			if aimbotAutoClick and tick() - lastClickTick > 0.1 then
+				pcall(function() mouse1click() end)
+				lastClickTick = tick()
+			end
+		else
+			if aimCircle.Visible then aimCircle.Visible = false end
+			aimStatusLabel.Text = "🔍 Aucune cible visible (hors portée ou derrière un mur)"
+			aimStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
+		end
+	end)
+end
+_initAimbot()
+
 local fullbrightSwitch = createSwitch(extraScroll, "Fullbright", 0, function(on)
 	fullbrightState.enabled = on
 	if on then
@@ -4358,7 +5391,7 @@ end)
 -- Fallback notify global si le panel n'en fournit pas
 if type(notify) ~= "function" then
 	notify = function(msg, dur)
-		warn("[AgoraAdminPanel] " .. tostring(msg))
+		warn("[MilanEmerickPanel] " .. tostring(msg))
 	end
 end
 
@@ -4850,74 +5883,98 @@ local function _wrapRemotes()
 
 	-- Fonction: crée une carte pour un remote
 	local function makeRemoteCard(remote)
-		local isFunction = remote:IsA("RemoteFunction")
-		local card = Instance.new("Frame")
-		card.Size = UDim2.new(1, -8, 0, 0)
-		card.AutomaticSize = Enum.AutomaticSize.Y
-		card.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-		card.BorderSizePixel = 0
-		card.LayoutOrder = 1
-		card.Parent = remoteListFrame
-		createCorner(card, 6)
-		createStroke(card, isFunction and Color3.fromRGB(255, 180, 80) or Color3.fromRGB(80, 180, 255), 1)
-		local cardPadding = Instance.new("UIPadding")
-		cardPadding.PaddingBottom = UDim.new(0, 8)
-		cardPadding.Parent = card
+	local isFunction = remote:IsA("RemoteFunction")
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(1, -8, 0, 0)
+	card.AutomaticSize = Enum.AutomaticSize.Y
+	card.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+	card.BorderSizePixel = 0
+	card.LayoutOrder = 1
+	card.Parent = remoteListFrame
+	createCorner(card, 6)
+	createStroke(card, isFunction and Color3.fromRGB(255, 180, 80) or Color3.fromRGB(80, 180, 255), 1)
+	local cardPadding = Instance.new("UIPadding")
+	cardPadding.PaddingTop = UDim.new(0, 6)
+	cardPadding.PaddingBottom = UDim.new(0, 6)
+	cardPadding.PaddingLeft = UDim.new(0, 8)
+	cardPadding.PaddingRight = UDim.new(0, 8)
+	cardPadding.Parent = card
 
-		local header = Instance.new("TextLabel")
-		header.Size = UDim2.new(1, -16, 0, 0)
-		header.AutomaticSize = Enum.AutomaticSize.Y
-		header.Position = UDim2.new(0, 8, 0, 4)
-		header.BackgroundTransparency = 1
-		header.Text = (isFunction and "[FN] " or "[EV] ") .. remote:GetFullName()
-		header.TextColor3 = isFunction and Color3.fromRGB(255, 200, 120) or Color3.fromRGB(140, 200, 255)
-		header.TextSize = 11
-		header.Font = Enum.Font.GothamBold
-		header.TextXAlignment = Enum.TextXAlignment.Left
-		header.TextWrapped = true
-		header.Parent = card
+	-- UIListLayout pour empiler header / row / result proprement
+	local cardLayout = Instance.new("UIListLayout")
+	cardLayout.Padding = UDim.new(0, 6)
+	cardLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	cardLayout.FillDirection = Enum.FillDirection.Vertical
+	cardLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	cardLayout.Parent = card
 
-		local argsBox = Instance.new("TextBox")
-		argsBox.Size = UDim2.new(1, -90, 0, 24)
-		argsBox.Position = UDim2.new(0, 8, 0, 28)
-		argsBox.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
-		argsBox.BorderSizePixel = 0
-		argsBox.Text = ""
-		argsBox.PlaceholderText = "args (ex: \"hello\", 42, true)"
-		argsBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
-		argsBox.TextColor3 = Color3.fromRGB(220, 220, 240)
-		argsBox.TextSize = 11
-		argsBox.Font = Enum.Font.Code
-		argsBox.TextXAlignment = Enum.TextXAlignment.Left
-		argsBox.ClearTextOnFocus = false
-		argsBox.Parent = card
-		createCorner(argsBox, 4)
+	local header = Instance.new("TextLabel")
+	header.Name = "Header"
+	header.Size = UDim2.new(1, 0, 0, 0)
+	header.AutomaticSize = Enum.AutomaticSize.Y
+	header.BackgroundTransparency = 1
+	header.Text = (isFunction and "[FN] " or "[EV] ") .. remote:GetFullName()
+	header.TextColor3 = isFunction and Color3.fromRGB(255, 200, 120) or Color3.fromRGB(140, 200, 255)
+	header.TextSize = 11
+	header.Font = Enum.Font.GothamBold
+	header.TextXAlignment = Enum.TextXAlignment.Left
+	header.TextWrapped = true
+	header.LayoutOrder = 1
+	header.Parent = card
 
-		local fireBtn = Instance.new("TextButton")
-		fireBtn.Size = UDim2.new(0, 64, 0, 24)
-		fireBtn.Position = UDim2.new(1, -72, 0, 28)
-		fireBtn.BackgroundColor3 = isFunction and Color3.fromRGB(180, 100, 30) or Color3.fromRGB(40, 120, 200)
-		fireBtn.BorderSizePixel = 0
-		fireBtn.Text = isFunction and "Invoke" or "Fire"
-		fireBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-		fireBtn.TextSize = 12
-		fireBtn.Font = Enum.Font.GothamBold
-		fireBtn.Parent = card
-		createCorner(fireBtn, 4)
+	-- Row: argsBox + fireBtn côte à côte
+	local row = Instance.new("Frame")
+	row.Name = "Row"
+	row.Size = UDim2.new(1, 0, 0, 24)
+	row.BackgroundTransparency = 1
+	row.LayoutOrder = 2
+	row.Parent = card
 
-		local resultLbl = Instance.new("TextLabel")
-		resultLbl.Size = UDim2.new(1, -16, 0, 0)
-		resultLbl.AutomaticSize = Enum.AutomaticSize.Y
-		resultLbl.Position = UDim2.new(0, 8, 0, 58)
-		resultLbl.BackgroundTransparency = 1
-		resultLbl.Text = ""
-		resultLbl.TextColor3 = Color3.fromRGB(180, 220, 180)
-		resultLbl.TextSize = 10
-		resultLbl.Font = Enum.Font.Code
-		resultLbl.TextWrapped = true
-		resultLbl.TextXAlignment = Enum.TextXAlignment.Left
-		resultLbl.TextYAlignment = Enum.TextYAlignment.Top
-		resultLbl.Parent = card
+	local argsBox = Instance.new("TextBox")
+	argsBox.Name = "ArgsBox"
+	argsBox.Size = UDim2.new(1, -72, 1, 0)
+	argsBox.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+	argsBox.BorderSizePixel = 0
+	argsBox.Text = ""
+	argsBox.PlaceholderText = "args (ex: \"hello\", 42, true)"
+	argsBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
+	argsBox.TextColor3 = Color3.fromRGB(220, 220, 240)
+	argsBox.TextSize = 11
+	argsBox.Font = Enum.Font.Code
+	argsBox.TextXAlignment = Enum.TextXAlignment.Left
+	argsBox.ClearTextOnFocus = false
+	argsBox.Parent = row
+	createCorner(argsBox, 4)
+
+	local fireBtn = Instance.new("TextButton")
+	fireBtn.Name = "FireBtn"
+	fireBtn.Size = UDim2.new(0, 64, 1, 0)
+	fireBtn.Position = UDim2.new(1, -64, 0, 0)
+	fireBtn.AnchorPoint = Vector2.new(0, 0)
+	fireBtn.BackgroundColor3 = isFunction and Color3.fromRGB(180, 100, 30) or Color3.fromRGB(40, 120, 200)
+	fireBtn.BorderSizePixel = 0
+	fireBtn.Text = isFunction and "Invoke" or "Fire"
+	fireBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	fireBtn.TextSize = 12
+	fireBtn.Font = Enum.Font.GothamBold
+	fireBtn.Parent = row
+	createCorner(fireBtn, 4)
+
+	local resultLbl = Instance.new("TextLabel")
+	resultLbl.Name = "ResultLbl"
+	resultLbl.Size = UDim2.new(1, 0, 0, 0)
+	resultLbl.AutomaticSize = Enum.AutomaticSize.Y
+	resultLbl.BackgroundTransparency = 1
+	resultLbl.Text = ""
+	resultLbl.TextColor3 = Color3.fromRGB(180, 220, 180)
+	resultLbl.TextSize = 10
+	resultLbl.Font = Enum.Font.Code
+	resultLbl.TextWrapped = true
+	resultLbl.TextXAlignment = Enum.TextXAlignment.Left
+	resultLbl.TextYAlignment = Enum.TextYAlignment.Top
+	resultLbl.Visible = false
+	resultLbl.LayoutOrder = 3
+	resultLbl.Parent = card
 
 		-- Parseur d'arguments simples
 		local function parseArgs(str)
@@ -4981,8 +6038,9 @@ local function _wrapRemotes()
 		end
 
 		fireBtn.MouseButton1Click:Connect(function()
-			local args = parseArgs(argsBox.Text)
-			resultLbl.Text = "→ Envoi en cours..."
+		local args = parseArgs(argsBox.Text)
+		resultLbl.Visible = true
+		resultLbl.Text = "→ Envoi en cours..."
 			resultLbl.TextColor3 = Color3.fromRGB(180, 180, 220)
 			local ok, err = pcall(function()
 				if isFunction then
@@ -5041,97 +6099,66 @@ _wrapRemotes() -- Exécute le wrap (IIFE pattern pour limiter les 200 registers)
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
 local function buildRegistrySection(parentPage)
-	-- Utilise le registryScroll global pour contenir tout le contenu du Registry.
-	local scroll = registryScroll
-local registryCard = Instance.new("Frame")
-registryCard.Size = UDim2.new(1, -8, 0, 0)
-registryCard.AutomaticSize = Enum.AutomaticSize.Y
-registryCard.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-registryCard.BorderSizePixel = 0
-registryCard.LayoutOrder = 999
-registryCard.Parent = scroll -- registryScroll via le local scroll = registryScroll en début de fonction
-createCorner(registryCard, 10)
-createStroke(registryCard, Color3.fromRGB(120, 80, 255), 1.2)
+	-- Refonte v38.14 : PAS de wrapper registryCard.
+	-- Tous les enfants (titre, subtitle, status, resultScroll) sont dans registryScroll DIRECTEMENT.
+	-- Chaque enfant a un LayoutOrder pour empiler verticalement via registryLayout (UIListLayout parent).
+	-- ResultScroll a une TAILLE FIXE (pas de scroll imbriqué foireux).
 
 local registryTitle = Instance.new("TextLabel")
-registryTitle.Size = UDim2.new(1, -12, 0, 22)
-registryTitle.Position = UDim2.new(0, 8, 0, 6)
+registryTitle.Name = "RegistryTitle"
+registryTitle.Size = UDim2.new(1, -16, 0, 22)
 registryTitle.BackgroundTransparency = 1
-registryTitle.Text = "Registre des comptes Roblox"
+registryTitle.Text = "📜 Registre des comptes Roblox"
 registryTitle.Font = Enum.Font.GothamBold
-registryTitle.TextSize = 13
+registryTitle.TextSize = 14
 registryTitle.TextColor3 = Color3.fromRGB(230, 230, 255)
 registryTitle.TextXAlignment = Enum.TextXAlignment.Left
-registryTitle.Parent = registryCard
+registryTitle.LayoutOrder = 1
+registryTitle.Parent = registryScroll
 
 local registrySubtitle = Instance.new("TextLabel")
-registrySubtitle.Size = UDim2.new(1, -12, 0, 14)
-registrySubtitle.Position = UDim2.new(0, 8, 0, 26)
+registrySubtitle.Name = "RegistrySubtitle"
+registrySubtitle.Size = UDim2.new(1, -16, 0, 14)
 registrySubtitle.BackgroundTransparency = 1
 registrySubtitle.Text = "Recherche un compte Roblox hors-jeu (par username)"
 registrySubtitle.Font = Enum.Font.Gotham
 registrySubtitle.TextSize = 10
 registrySubtitle.TextColor3 = Color3.fromRGB(160, 160, 180)
 registrySubtitle.TextXAlignment = Enum.TextXAlignment.Left
-registrySubtitle.Parent = registryCard
+registrySubtitle.LayoutOrder = 2
+registrySubtitle.Parent = registryScroll
 
--- Champ de recherche
-local searchBox = Instance.new("TextBox")
-searchBox.Size = UDim2.new(1, -100, 0, 28)
-searchBox.Position = UDim2.new(0, 8, 0, 46)
-searchBox.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-searchBox.BorderSizePixel = 0
-searchBox.Text = ""
-searchBox.PlaceholderText = "Tape un username Roblox..."
-searchBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
-searchBox.Font = Enum.Font.Gotham
-searchBox.TextSize = 12
-searchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
-searchBox.ClearTextOnFocus = false
-searchBox.Parent = registryCard
-createCorner(searchBox, 6)
-createStroke(searchBox, Color3.fromRGB(60, 60, 80), 1)
-
-local searchBtn = Instance.new("TextButton")
-searchBtn.Size = UDim2.new(0, 80, 0, 28)
-searchBtn.Position = UDim2.new(1, -88, 0, 46)
-searchBtn.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
-searchBtn.Text = "Rechercher"
-searchBtn.Font = Enum.Font.GothamBold
-searchBtn.TextSize = 11
-searchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-searchBtn.BorderSizePixel = 0
-searchBtn.AutoButtonColor = false
-searchBtn.Parent = registryCard
-createCorner(searchBtn, 6)
-searchBtn.MouseButton1Click:Connect(function() runRegistrySearch(searchBox.Text) end)
-
--- Label de statut (pour messages de recherche) — GLOBAL pour que runRegistrySearch (top-level) puisse y accéder
+-- Label de statut (GLOBAL pour runRegistrySearch top-level)
 statusLbl = Instance.new("TextLabel")
-statusLbl.Size = UDim2.new(1, -16, 0, 18)
-statusLbl.Position = UDim2.new(0, 8, 0, 80)
+statusLbl.Name = "RegistryStatus"
+statusLbl.Size = UDim2.new(1, -16, 0, 16)
 statusLbl.BackgroundTransparency = 1
-statusLbl.Text = "Tape un username et clique Rechercher."
+statusLbl.Text = "💡 Tape un pseudo ci-dessus et appuie sur Enter"
 statusLbl.Font = Enum.Font.Gotham
 statusLbl.TextSize = 10
 statusLbl.TextColor3 = Color3.fromRGB(180, 180, 200)
 statusLbl.TextXAlignment = Enum.TextXAlignment.Left
 statusLbl.TextWrapped = true
-statusLbl.Parent = registryCard
+statusLbl.LayoutOrder = 3
+statusLbl.Parent = registryScroll
 
--- Scroll pour les résultats de recherche — GLOBAL aussi
+-- Scroll pour les résultats de recherche (taille FIXE, pas de scroll imbriqué)
 resultScroll = Instance.new("ScrollingFrame")
-resultScroll.Size = UDim2.new(1, -16, 1, -110)
-resultScroll.Position = UDim2.new(0, 8, 0, 102)
-resultScroll.BackgroundTransparency = 1
-resultScroll.ScrollBarThickness = 4
-resultScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
+resultScroll.Name = "RegistryResults"
+resultScroll.Size = UDim2.new(1, -10, 1, -70) -- prend tout l'espace restant sous titre+subtitle+status
+resultScroll.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+resultScroll.BorderSizePixel = 0
+resultScroll.ScrollBarThickness = 6
+resultScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 resultScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-resultScroll.Parent = registryCard
-createCorner(resultScroll, 4)
+resultScroll.LayoutOrder = 4
+resultScroll.Parent = registryScroll
+createCorner(resultScroll, 6)
+createStroke(resultScroll, Color3.fromRGB(60, 60, 80), 1)
 
 local resultLayout = Instance.new("UIListLayout")
 resultLayout.Padding = UDim.new(0, 6)
+resultLayout.SortOrder = Enum.SortOrder.LayoutOrder
 resultLayout.Parent = resultScroll
 
 -- Helper: join a list into a string with separator, or "Indisponible" if empty
@@ -5147,6 +6174,204 @@ local function joinOrIndi(list, sep, max)
 	return table.concat(parts, sep)
 end
 
+-- ============= TAGS CUSTOMS + BARRE D'ACTIONS + DEVICE DETECTION =============
+-- Tout est wrappé dans une IIFE pour économiser les locals top-level (limite CLI Luau 200)
+-- Le code expose : getUserTags, addTagToUser, removeTagFromUser, openTagPopup, detectLocalDevice
+local getUserTags, addTagToUser, removeTagFromUser, openTagPopup, detectLocalDevice
+do
+	local _TAG_STORE = {} -- _TAG_STORE[userId] = { tags = {...}, lastSeen = "..." }
+	local _tagPopup = nil
+
+	function getUserTags(userId)
+		if not _TAG_STORE[userId] then return {} end
+		return _TAG_STORE[userId].tags or {}
+	end
+
+	function addTagToUser(userId, tag)
+		tag = tag:match("^%s*(.-)%s*$") -- trim
+		if tag == "" or #tag > 20 then return false end
+		if not _TAG_STORE[userId] then
+			_TAG_STORE[userId] = { tags = {}, lastSeen = os.date("%Y-%m-%d") }
+		end
+		for _, t in ipairs(_TAG_STORE[userId].tags) do
+			if t:lower() == tag:lower() then return false end
+		end
+		table.insert(_TAG_STORE[userId].tags, tag)
+		_TAG_STORE[userId].lastSeen = os.date("%Y-%m-%d")
+		return true
+	end
+
+	function removeTagFromUser(userId, tag)
+		if not _TAG_STORE[userId] then return false end
+		for i, t in ipairs(_TAG_STORE[userId].tags) do
+			if t:lower() == tag:lower() then
+				table.remove(_TAG_STORE[userId].tags, i)
+				return true
+			end
+		end
+		return false
+	end
+
+	local function closeTagPopup()
+		if _tagPopup and _tagPopup.Parent then _tagPopup:Destroy() end
+		_tagPopup = nil
+	end
+
+	function openTagPopup(userId, username, parentRef)
+		closeTagPopup()
+		local overlay = Instance.new("Frame")
+		overlay.Size = UDim2.new(1, 0, 1, 0)
+		overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		overlay.BackgroundTransparency = 0.4
+		overlay.BorderSizePixel = 0
+		overlay.ZIndex = 50
+		overlay.Parent = parentRef
+		overlay.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				closeTagPopup()
+			end
+		end)
+		local card = Instance.new("Frame")
+		card.Size = UDim2.new(0, 280, 0, 220)
+		card.Position = UDim2.new(0.5, -140, 0.5, -110)
+		card.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+		card.BorderSizePixel = 0
+		card.ZIndex = 51
+		card.Parent = overlay
+		createCorner(card, 10)
+		createStroke(card, Color3.fromRGB(120, 80, 255), 2)
+		local title = Instance.new("TextLabel")
+		title.Size = UDim2.new(1, 0, 0, 26)
+		title.BackgroundTransparency = 1
+		title.Text = "🏷️ Tags — @" .. (username or "?")
+		title.TextColor3 = Color3.fromRGB(255, 255, 255)
+		title.Font = Enum.Font.GothamBold
+		title.TextSize = 14
+		title.ZIndex = 52
+		title.Parent = card
+		local subtitle = Instance.new("TextLabel")
+		subtitle.Size = UDim2.new(1, -16, 0, 16)
+		subtitle.Position = UDim2.new(0, 8, 0, 26)
+		subtitle.BackgroundTransparency = 1
+		subtitle.Text = "Tape un tag et appuie sur Ajouter (max 20 car.)"
+		subtitle.TextColor3 = Color3.fromRGB(180, 180, 200)
+		subtitle.Font = Enum.Font.Gotham
+		subtitle.TextSize = 10
+		subtitle.TextXAlignment = Enum.TextXAlignment.Left
+		subtitle.ZIndex = 52
+		subtitle.Parent = card
+		local tagInput = Instance.new("TextBox")
+		tagInput.Size = UDim2.new(1, -16, 0, 28)
+		tagInput.Position = UDim2.new(0, 8, 0, 46)
+		tagInput.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+		tagInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+		tagInput.PlaceholderText = "ex: VIP, cheater, à surveiller..."
+		tagInput.Text = ""
+		tagInput.Font = Enum.Font.Gotham
+		tagInput.TextSize = 12
+		tagInput.ClearTextOnFocus = false
+		tagInput.ZIndex = 52
+		tagInput.Parent = card
+		createCorner(tagInput, 6)
+		local listLabel = Instance.new("TextLabel")
+		listLabel.Size = UDim2.new(1, -16, 0, 50)
+		listLabel.Position = UDim2.new(0, 8, 0, 80)
+		listLabel.BackgroundTransparency = 1
+		listLabel.Font = Enum.Font.Gotham
+		listLabel.TextSize = 11
+		listLabel.TextWrapped = true
+		listLabel.TextXAlignment = Enum.TextXAlignment.Left
+		listLabel.TextYAlignment = Enum.TextYAlignment.Top
+		listLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+		listLabel.ZIndex = 52
+		listLabel.Parent = card
+		local function refreshList()
+			local tags = getUserTags(userId)
+			if #tags == 0 then
+				listLabel.Text = "Aucun tag pour l'instant"
+				listLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
+			else
+				local parts = {}
+				for _, t in ipairs(tags) do parts[#parts + 1] = "• " .. t end
+				listLabel.Text = table.concat(parts, "\n")
+				listLabel.TextColor3 = Color3.fromRGB(220, 220, 255)
+			end
+		end
+		refreshList()
+		local addBtn = Instance.new("TextButton")
+		addBtn.Size = UDim2.new(0.5, -12, 0, 30)
+		addBtn.Position = UDim2.new(0, 8, 0, 140)
+		addBtn.BackgroundColor3 = Color3.fromRGB(80, 200, 120)
+		addBtn.Text = "➕ Ajouter"
+		addBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		addBtn.Font = Enum.Font.GothamBold
+		addBtn.TextSize = 12
+		addBtn.BorderSizePixel = 0
+		addBtn.ZIndex = 52
+		addBtn.Parent = card
+		createCorner(addBtn, 6)
+		addBtn.MouseButton1Click:Connect(function()
+			if addTagToUser(userId, tagInput.Text) then tagInput.Text = "" ; refreshList() end
+		end)
+		local removeBtn = Instance.new("TextButton")
+		removeBtn.Size = UDim2.new(0.5, -12, 0, 30)
+		removeBtn.Position = UDim2.new(0.5, 4, 0, 140)
+		removeBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+		removeBtn.Text = "➖ Retirer dernier"
+		removeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		removeBtn.Font = Enum.Font.GothamBold
+		removeBtn.TextSize = 11
+		removeBtn.BorderSizePixel = 0
+		removeBtn.ZIndex = 52
+		removeBtn.Parent = card
+		createCorner(removeBtn, 6)
+		removeBtn.MouseButton1Click:Connect(function()
+			local tags = getUserTags(userId)
+			if #tags > 0 then removeTagFromUser(userId, tags[#tags]) ; refreshList() end
+		end)
+		tagInput.FocusLost:Connect(function(enterPressed)
+			if enterPressed then
+				if addTagToUser(userId, tagInput.Text) then tagInput.Text = "" ; refreshList() end
+			end
+		end)
+		local closeBtn = Instance.new("TextButton")
+		closeBtn.Size = UDim2.new(0, 30, 0, 30)
+		closeBtn.Position = UDim2.new(1, -36, 0, 6)
+		closeBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+		closeBtn.Text = "X"
+		closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		closeBtn.Font = Enum.Font.GothamBold
+		closeBtn.TextSize = 14
+		closeBtn.BorderSizePixel = 0
+		closeBtn.ZIndex = 52
+		closeBtn.Parent = card
+		createCorner(closeBtn, 15)
+		closeBtn.MouseButton1Click:Connect(function() closeTagPopup() end)
+		_tagPopup = overlay
+	end
+
+	-- === DÉTECTION APPAREIL (seulement pour le local player) ===
+	function detectLocalDevice()
+		local ok, result = pcall(function()
+			local touchOn = UserInputService.TouchEnabled
+			local kbOn = UserInputService.KeyboardEnabled
+			local mouseOn = UserInputService.MouseEnabled
+			local gamepadOn = UserInputService.GamepadEnabled
+			local vrOn = UserInputService.VREnabled
+			if vrOn then return "🥽 VR (casque)"
+			elseif gamepadOn and not kbOn and not mouseOn then return "🎮 Console (manette)"
+			elseif touchOn and not kbOn and not mouseOn then return "📱 Mobile (tactile)"
+			elseif touchOn and kbOn then return "💻 PC + tactile (tablette/laptop)"
+			elseif kbOn and mouseOn then return "💻 PC (clavier+souris)"
+			elseif kbOn then return "💻 PC (clavier seul)"
+			else return "❓ Inconnu" end
+		end)
+		if not ok then return nil end
+		return result
+	end
+end
+-- ============= FIN TAGS CUSTOMS + BARRE D'ACTIONS + DEVICE DETECTION =============
+
 -- Affiche un résultat (un compte) — UNE seule grosse bulle unie, sans RichText/HTML
 -- Apparition ligne par ligne (typewriter) pour faciliter la lecture
 local function renderResult(data, parent)
@@ -5160,6 +6385,60 @@ local function renderResult(data, parent)
 	createCorner(card, 8)
 	createStroke(card, Color3.fromRGB(60, 60, 90), 1)
 
+	-- Badges VERIFIED / PREMIUM / BANNED en haut à droite de la carte
+	;(function()
+		local hasVerified = data.isVerified == true
+		local hasPremium = data.isPremium == true
+		local isBanned = data.isBanned == true
+		if not hasVerified and not hasPremium and not isBanned then return end
+		local headerY = 0
+		if hasVerified then
+			local v = Instance.new("TextLabel")
+			v.Size = UDim2.new(0, 70, 0, 18)
+			v.Position = UDim2.new(1, -82, 0, 8)
+			v.BackgroundColor3 = Color3.fromRGB(50, 130, 220)
+			v.BackgroundTransparency = 0.2
+			v.BorderSizePixel = 0
+			v.Font = Enum.Font.GothamBlack
+			v.Text = "✓ VÉRIFIÉ"
+			v.TextSize = 9
+			v.TextColor3 = Color3.fromRGB(220, 240, 255)
+			v.ZIndex = 5
+			v.Parent = card
+			createCorner(v, 4)
+		end
+		if hasPremium then
+			local p = Instance.new("TextLabel")
+			p.Size = UDim2.new(0, 60, 0, 18)
+			p.Position = UDim2.new(1, -156, 0, 8)
+			p.BackgroundColor3 = Color3.fromRGB(255, 200, 60)
+			p.BackgroundTransparency = 0.15
+			p.BorderSizePixel = 0
+			p.Font = Enum.Font.GothamBlack
+			p.Text = "💎 PREMIUM"
+			p.TextSize = 9
+			p.TextColor3 = Color3.fromRGB(60, 40, 0)
+			p.ZIndex = 5
+			p.Parent = card
+			createCorner(p, 4)
+		end
+		if isBanned then
+			local b = Instance.new("TextLabel")
+			b.Size = UDim2.new(0, 50, 0, 18)
+			b.Position = UDim2.new(1, -210, 0, 8)
+			b.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+			b.BackgroundTransparency = 0.15
+			b.BorderSizePixel = 0
+			b.Font = Enum.Font.GothamBlack
+			b.Text = "🚫 BANNI"
+			b.TextSize = 9
+			b.TextColor3 = Color3.fromRGB(255, 220, 220)
+			b.ZIndex = 5
+			b.Parent = card
+			createCorner(b, 4)
+		end
+	end)()
+
 	local padding = Instance.new("UIPadding")
 	padding.PaddingTop = UDim.new(0, 10)
 	padding.PaddingBottom = UDim.new(0, 10)
@@ -5167,20 +6446,111 @@ local function renderResult(data, parent)
 	padding.PaddingRight = UDim.new(0, 12)
 	padding.Parent = card
 
-	-- GROS TextLabel unique (couleur uniforme, pas de RichText)
+	-- Layout vertical : header (encadré API bloquée + nom) en haut, puis content (texte + avatar)
+	local cardLayout = Instance.new("UIListLayout")
+	cardLayout.Padding = UDim.new(0, 8)
+	cardLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	cardLayout.Parent = card
+
+	-- === EN-TÊTE : bandeau d'avertissement si APIs bloquées ===
+	local apiBlocked = (data.apiBlocked == true) or (
+		not data.created and not data.friendCount and not data.isBanned
+		and not data.isPremium and not data.badgeCount and not data.langName
+		and not data.groups and not data.games and not data.favGames
+	)
+	if apiBlocked then
+		local warnBar = Instance.new("Frame")
+		warnBar.Name = "APIWarning"
+		warnBar.Size = UDim2.new(1, 0, 0, 36)
+		warnBar.BackgroundColor3 = Color3.fromRGB(80, 40, 20)
+		warnBar.BorderSizePixel = 0
+		warnBar.LayoutOrder = 0
+		warnBar.Parent = card
+		createCorner(warnBar, 6)
+		createStroke(warnBar, Color3.fromRGB(255, 150, 50), 1.2)
+		local wLbl = Instance.new("TextLabel")
+		wLbl.Size = UDim2.new(1, -16, 1, 0)
+		wLbl.Position = UDim2.new(0, 8, 0, 0)
+		wLbl.BackgroundTransparency = 1
+		wLbl.Text = "⚠️  APIs Roblox bloquées par l'exécuteur — essaie Synapse X, Wave ou Fluxus pour voir les détails (jeux favoris, badges, groupes, etc.)"
+		wLbl.Font = Enum.Font.GothamBold
+		wLbl.TextSize = 10
+		wLbl.TextColor3 = Color3.fromRGB(255, 200, 100)
+		wLbl.TextXAlignment = Enum.TextXAlignment.Left
+		wLbl.TextYAlignment = Enum.TextYAlignment.Center
+		wLbl.TextWrapped = true
+		wLbl.Parent = warnBar
+	end
+
+	-- === Contenu : Frame horizontal qui contient le texte à gauche et l'avatar à droite ===
+	local contentRow = Instance.new("Frame")
+	contentRow.Name = "ContentRow"
+	contentRow.Size = UDim2.new(1, 0, 0, 200) -- sera ajusté par AutomaticSize
+	contentRow.AutomaticSize = Enum.AutomaticSize.Y
+	contentRow.BackgroundTransparency = 1
+	contentRow.BorderSizePixel = 0
+	contentRow.LayoutOrder = 1
+	contentRow.Parent = card
+	local contentLayout = Instance.new("UIListLayout")
+	contentLayout.FillDirection = Enum.FillDirection.Horizontal
+	contentLayout.Padding = UDim.new(0, 10)
+	contentLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+	contentLayout.Parent = contentRow
+
+	-- === Colonne gauche : TextLabel avec toutes les infos ===
 	local big = Instance.new("TextLabel")
-	big.Size = UDim2.new(1, -24, 0, 0)
+	big.Name = "InfoLabel"
+	big.Size = UDim2.new(1, -180, 0, 0) -- largeur réduite pour laisser place à l'avatar à droite
 	big.AutomaticSize = Enum.AutomaticSize.Y
 	big.BackgroundTransparency = 1
-	big.Text = "" -- sera rempli progressivement
+	big.Text = ""
 	big.Font = Enum.Font.GothamSemibold
 	big.TextSize = 11
-	big.TextColor3 = Color3.fromRGB(220, 220, 235) -- blanc cassé uniforme
+	big.TextColor3 = Color3.fromRGB(220, 220, 235)
 	big.TextXAlignment = Enum.TextXAlignment.Left
 	big.TextYAlignment = Enum.TextYAlignment.Top
 	big.TextWrapped = true
-	big.RichText = false -- IMPORTANT: pas de HTML
-	big.Parent = card
+	big.RichText = false
+	big.LayoutOrder = 1
+	big.Parent = contentRow
+
+	-- === Colonne droite : ImageLabel avec la photo 2D du joueur (thumbnail) ===
+	-- Fallback: InsertService (avatar 3D manequin) est bloqué par certains exécuteurs → on affiche la photo thumbnail
+	local avatarHolder = Instance.new("Frame")
+	avatarHolder.Name = "AvatarHolder"
+	avatarHolder.Size = UDim2.new(0, 160, 0, 200)
+	avatarHolder.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+	avatarHolder.BorderSizePixel = 0
+	avatarHolder.LayoutOrder = 2
+	avatarHolder.Parent = contentRow
+	createCorner(avatarHolder, 8)
+	createStroke(avatarHolder, Color3.fromRGB(120, 80, 255), 1.5)
+
+	-- Label "Chargement..." par-dessus tant que la photo n'est pas prête
+	local avatarLoading = Instance.new("TextLabel")
+	avatarLoading.Size = UDim2.new(1, 0, 1, 0)
+	avatarLoading.BackgroundTransparency = 1
+	avatarLoading.Text = "🖼️\nChargement\nphoto..."
+	avatarLoading.Font = Enum.Font.GothamSemibold
+	avatarLoading.TextSize = 11
+	avatarLoading.TextColor3 = Color3.fromRGB(150, 150, 180)
+	avatarLoading.TextWrapped = true
+	avatarLoading.ZIndex = 5
+	avatarLoading.Parent = avatarHolder
+
+	-- ImageLabel (photo 2D du joueur, thumbnail 150x150)
+	local avatarImg = Instance.new("ImageLabel")
+	avatarImg.Name = "AvatarImg"
+	avatarImg.Size = UDim2.new(1, -8, 1, -8)
+	avatarImg.Position = UDim2.new(0, 4, 0, 4)
+	avatarImg.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+	avatarImg.BackgroundTransparency = 1
+	avatarImg.BorderSizePixel = 0
+	avatarImg.ScaleType = Enum.ScaleType.Fit
+	avatarImg.Image = "" -- sera rempli après chargement
+	avatarImg.ZIndex = 2
+	avatarImg.Parent = avatarHolder
+	createCorner(avatarImg, 6)
 
 	-- Construire la liste des lignes (une par champ)
 	local friendsText = joinOrIndi(data.friendsList, ", ", 5)
@@ -5215,8 +6585,20 @@ local function renderResult(data, parent)
 	table.insert(lines, "  🆔 User ID          : " .. (data.userId or "Indisponible"))
 	table.insert(lines, "  📛 Display Name     : " .. (data.displayName or "Indisponible"))
 	table.insert(lines, "  📝 Bio / Blurb      : " .. (data.blurb or "Indisponible"))
-	table.insert(lines, "  📅 Date d'inscription : " .. (data.created or "Indisponible"))
+	if data.customTags and #data.customTags > 0 then
+		table.insert(lines, "  🏷️  TAGS CUSTOMS     : " .. table.concat(data.customTags, " • "))
+	else
+		table.insert(lines, "  🏷️  TAGS CUSTOMS     : aucun (clique 🏷️ Tag en bas de la carte)")
+	end
+	-- Appareil (seulement pour le local player — Roblox n'expose pas le device des autres)
+	if data.deviceHint then
+		table.insert(lines, "  📱 Appareil        : " .. data.deviceHint)
+	else
+		table.insert(lines, "  📱 Appareil        : Indisponible (visible seulement pour ton propre compte)")
+	end
+	table.insert(lines, "  📅 Date d'inscription : " .. (data.created or (data.createdEst and ("~" .. data.createdEst .. " (estimé via ID)") or "Indisponible")))
 	table.insert(lines, "  🔞 Âge du compte    : " .. (data.accountAge or "Indisponible"))
+	if data.idHint then table.insert(lines, "  🆔 Heuristique ID   : " .. data.idHint) end
 	table.insert(lines, "  ⭐ Vérifié          : " .. (data.hasVerifiedBadge == true and "OUI" or (data.hasVerifiedBadge == false and "non" or "Indisponible")))
 	table.insert(lines, "  💎 Premium          : " .. (data.isPremium == true and "OUI" or (data.isPremium == false and "non" or "Indisponible")))
 	if data.premiumUntil then table.insert(lines, "  ⭐ Premium jusqu'au : " .. tostring(data.premiumUntil):sub(1, 10)) end
@@ -5232,6 +6614,75 @@ local function renderResult(data, parent)
 	table.insert(lines, "  💱 Trades entrants  : " .. (data.tradesInbound or "Indisponible"))
 	table.insert(lines, "  💱 Trades sortants  : " .. (data.tradesOutbound or "Indisponible"))
 	table.insert(lines, "  💱 Trades actifs    : " .. (data.tradesActive or "Indisponible"))
+	-- === LIVE (serveur actuel) : check via natives Roblox ===
+	table.insert(lines, "  ━━━━━━━━━━ LIVE (ce serveur) ━━━━━━━━━━")
+	if data.userId and Players then
+		local liveFound = false
+		pcall(function()
+			local target = Players:GetPlayerByUserId(data.userId)
+			if target then
+				liveFound = true
+				local _ageDays = target.AccountAge or 0
+				local _ageYears = math.floor(_ageDays / 365)
+				local _ageRem = _ageDays - (_ageYears * 365)
+				local _mt = tostring(target.MembershipType or "None"):gsub("Enum.MembershipType.", "")
+				local _teamName = (target.Team and target.Team.Name) or "Aucune"
+				local _ping = "?"
+				pcall(function() _ping = tostring(math.floor((target.GetNetworkPing and target:GetNetworkPing() or 0) * 1000)) .. " ms" end)
+				local _loaded = (target.HasAppearanceLoaded and "Oui") or "Non"
+				local _isFriend = (target.IsFriendsWith and LocalPlayer and target:IsFriendsWith(LocalPlayer.UserId)) and "Oui" or "Non"
+				local _charOk = target.Character ~= nil
+				local _humOk = _charOk and target.Character:FindFirstChildOfClass("Humanoid") ~= nil
+				local _hp = "?"
+				local _maxHp = "?"
+				pcall(function() if _humOk then local h = target.Character:FindFirstChildOfClass("Humanoid"); _hp = tostring(math.floor(h.Health)); _maxHp = tostring(math.floor(h.MaxHealth)) end end)
+				table.insert(lines, "  🔴 Présent ici     : OUI (connecté à ce serveur)")
+				table.insert(lines, "  ├─ AccountAge      : " .. _ageYears .. " an(s) " .. _ageRem .. "j (" .. _ageDays .. " jours)")
+				table.insert(lines, "  ├─ Membership      : " .. _mt)
+				table.insert(lines, "  ├─ Team            : " .. _teamName)
+				table.insert(lines, "  ├─ GameId courant  : " .. tostring(game.GameId or "?") .. " / PlaceId " .. tostring(game.PlaceId or "?"))
+				table.insert(lines, "  ├─ NetworkPing     : " .. _ping)
+				table.insert(lines, "  ├─ Avatar chargé   : " .. _loaded)
+				table.insert(lines, "  ├─ Ami avec toi    : " .. _isFriend)
+				table.insert(lines, "  └─ HP / MaxHP      : " .. _hp .. " / " .. _maxHp)
+				-- Groupes clés (natives Roblox : pas d'HTTP)
+				;(function(_t, _ll, _lp)
+					local _groups = {
+						{1, "Roblox (officiel)"},
+						{1200769, "Groupe Officiel"},
+						{687101511, "Vzlom_Emk"},
+					}
+					for _, g in ipairs(_groups) do
+						local ok, rank, isIn = pcall(function()
+							local r = _t:GetRankInGroup(g[1])
+							local b = _t:IsInGroup(g[1])
+							return r, b
+						end)
+						if ok then
+							local role = isIn and "Membre (rank " .. tostring(rank) .. ")" or "Non-membre"
+							_ll:insert("  └─ " .. g[2] .. " (g" .. g[1] .. ") : " .. role)
+						end
+					end
+					-- Badges Officier / Admin (natives : pas d'HTTP)
+					local ok2, has = pcall(function()
+						local bs = game:GetService("BadgeService")
+						return bs and bs:UserHasBadgeAsync(_t.UserId, 1)
+					end)
+					if ok2 and has then _ll:insert("  └─ 🛡️ Badge Administrator : OUI") end
+					local ok3, hasOfficial = pcall(function()
+						local bs = game:GetService("BadgeService")
+						return bs and bs:UserHasBadgeAsync(_t.UserId, 2)
+					end)
+					if ok3 and hasOfficial then _ll:insert("  └─ 🛡️ Badge Official : OUI") end
+				end)(target, lines, LocalPlayer)
+			end
+		end)
+		if not liveFound then
+			table.insert(lines, "  ⚠ Pas dans ce serveur (vérification impossible)")
+		end
+	else
+		table.insert(lines, "  ⚠ userId manquant")
+	end
 	table.insert(lines, "  👥 Amis (nb)        : " .. (data.friendCount or "Indisponible"))
 	table.insert(lines, "  👥 Top 5 amis       : " .. friendsText)
 	table.insert(lines, "  👥 Followers        : " .. (data.followerCount or "Indisponible"))
@@ -5267,8 +6718,98 @@ local function renderResult(data, parent)
 			task.wait(animDelay)
 		end
 		-- Final resize
-		pcall(function() big.Size = UDim2.new(1, -24, 0, big.TextBounds.Y + 4) end)
+		pcall(function() big.Size = UDim2.new(1, -180, 0, big.TextBounds.Y + 4) end)
 	end)
+
+	-- === Charger la photo thumbnail dans l'ImageLabel ===
+	-- Approche : URL Roblox directe (marche même quand Players:GetUserThumbnailAsync bloque)
+	-- Format: http://www.roblox.com/Thumbs/Avatar.ashx?x=150&y=150&userId={userId}
+	if data.userId then
+		local userId = data.userId
+		-- URL directe thumbnail Roblox (image PNG, marche via ContentProvider)
+		local directUrl = "http://www.roblox.com/Thumbs/Avatar.ashx?x=150&y=150&userId=" .. tostring(userId)
+		task.spawn(function()
+			pcall(function()
+				avatarImg.Image = directUrl
+				-- Attendre un peu que l'image charge, puis enlever le label
+				task.delay(1.5, function()
+					if avatarLoading and avatarLoading.Parent then
+						avatarLoading:Destroy()
+					end
+				end)
+			end)
+		end)
+		-- Fallback optionnel via data.avatarUrl (ThumbnailAsync déjà chargé)
+		if data.avatarUrl and data.avatarUrl ~= "" then
+			task.delay(0.5, function()
+				pcall(function()
+					avatarImg.Image = data.avatarUrl
+				end)
+			end)
+		end
+	end
+
+	-- ============= BARRE D'ACTIONS EN BAS DE LA CARTE =============
+	-- Wrap dans un IIFE pour économiser les locals top-level
+	do
+		local actionsRow = Instance.new("Frame")
+		actionsRow.Size = UDim2.new(1, -16, 0, 30)
+		actionsRow.Position = UDim2.new(0, 8, 0, 100) -- position fixe (le big TextLabel est plus haut)
+		actionsRow.BackgroundTransparency = 1
+		actionsRow.ZIndex = 5
+		actionsRow.Parent = card
+		local actionsLayout = Instance.new("UIListLayout")
+		actionsLayout.FillDirection = Enum.FillDirection.Horizontal
+		actionsLayout.Padding = UDim.new(0, 6)
+		actionsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+		actionsLayout.Parent = actionsRow
+		local function makeActionBtn(text, color, layoutOrder, onClick)
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(0, 100, 0, 28)
+			btn.BackgroundColor3 = color
+			btn.Text = text
+			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			btn.Font = Enum.Font.GothamBold
+			btn.TextSize = 11
+			btn.BorderSizePixel = 0
+			btn.LayoutOrder = layoutOrder
+			btn.ZIndex = 6
+			btn.AutoButtonColor = true
+			btn.Parent = actionsRow
+			createCorner(btn, 6)
+			if onClick then btn.MouseButton1Click:Connect(onClick) end
+			return btn
+		end
+		if data.userId then
+			makeActionBtn("🏷️ Tag", Color3.fromRGB(180, 100, 220), 1, function()
+				openTagPopup(data.userId, data.username, screenGui)
+			end)
+			makeActionBtn("📋 ID", Color3.fromRGB(80, 130, 200), 2, function()
+				pcall(function() setclipboard(tostring(data.userId)) end)
+			end)
+			makeActionBtn("🔗 Profil", Color3.fromRGB(80, 180, 120), 3, function()
+				pcall(function() setclipboard("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile") end)
+			end)
+			-- Rejoindre ce joueur : tente TeleportToPlaceInstance avec son gameId si dispo
+			if data.gameId or data.placeId then
+				makeActionBtn("🌐 Rejoindre", Color3.fromRGB(70, 130, 200), 4, function()
+					pcall(function()
+						local TS = game:GetService("TeleportService")
+						local pid = data.placeId or data.gameId
+						if data.gameInstanceId and data.gameInstanceId ~= "" then
+							TS:TeleportToPlaceInstance(pid, data.gameInstanceId, LocalPlayer)
+						else
+							TS:Teleport(pid, LocalPlayer)
+						end
+					end)
+				end)
+			else
+				makeActionBtn("🌐 Profil web", Color3.fromRGB(70, 130, 200), 4, function()
+					pcall(function() setclipboard("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile") end)
+				end)
+			end
+		end
+	end
 
 	return card
 end
@@ -5700,6 +7241,51 @@ function runRegistrySearch(query)
 					statusLbl.Text = "⚠ @" .. username .. " (ID:" .. userId .. ") — APIs externes bloquées par l'exécuteur. Lien : " .. data.profileUrl
 					statusLbl.TextColor3 = Color3.fromRGB(255, 180, 90)
 				end
+
+				-- === HEURISTIQUES LOCALES (marchent même si HttpGet bloqué) ===
+				-- Estimer la date de création du compte à partir de l'UserId
+				-- Les IDs Roblox sont séquentiels : ID 1 = 2003, ID 10000000 ≈ 2006, ID 100000000 ≈ 2010,
+				-- ID 1000000000 ≈ 2015, ID 10000000000 ≈ 2020, ID 100000000000 ≈ 2024
+				if userId and not data.created then
+					-- Formule simple : année ≈ 2003 + log10(userId) * 4
+					local estYear = 2003 + math.floor(math.log10(math.max(userId, 1)) * 4)
+					estYear = math.min(estYear, 2026)
+					estYear = math.max(estYear, 2003)
+					data.createdEst = estYear
+					if data.accountAge == nil then
+						data.accountAge = "~" .. (2026 - estYear) .. " an(s) (estimé)"
+					end
+				end
+
+				-- Détecter si l'ID est très petit (compte ancien) ou très grand (compte récent)
+				if userId then
+					if userId < 1000000 then
+						data.idHint = "🟢 Compte ANCIEN (beta tester probable)"
+					elseif userId < 10000000 then
+						data.idHint = "🟢 Compte ancien (2010+)"
+					elseif userId < 100000000 then
+						data.idHint = "🟡 Compte ~2010-2015"
+					elseif userId < 1000000000 then
+						data.idHint = "🟡 Compte ~2015-2020"
+					elseif userId < 10000000000 then
+						data.idHint = "🟠 Compte ~2020-2024"
+					else
+						data.idHint = "🔴 Compte TRÈS RÉCENT (2024+)"
+					end
+				end
+
+				-- Marquer l'API comme bloquée si toutes les HttpGet ont échoué
+				if not data.apiOk then
+					data.apiBlocked = true
+				end
+
+				-- === DÉTECTION APPAREIL (seulement pour le local player) ===
+				-- Roblox n'expose pas le device des autres joueurs au LocalScript
+				-- On peut détecter le nôtre via UserInputService
+				if userId and Players.LocalPlayer and userId == Players.LocalPlayer.UserId then
+					data.deviceHint = detectLocalDevice()
+				end
+
 				renderResult(data, resultScroll)
 
 			end)
@@ -5711,15 +7297,18 @@ end
 buildRegistrySection(registryPage)
 
 -- Reparent: tous les enfants directs de registryPage (sauf registryScroll) vont dans registryScroll
-for _, child in ipairs(registryPage:GetChildren()) do
-	if child ~= registryScroll then
-		child.Parent = registryScroll
+-- Wrap dans une IIFE anonyme avec ';' pour économiser les registres du chunk
+;(function(rp, rs, rl)
+	for _, child in ipairs(rp:GetChildren()) do
+		if child ~= rs then
+			child.Parent = rs
+		end
 	end
-end
-registryScroll.CanvasSize = UDim2.new(0, 0, 0, registryLayout.AbsoluteContentSize.Y + 10)
-registryLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	registryScroll.CanvasSize = UDim2.new(0, 0, 0, registryLayout.AbsoluteContentSize.Y + 10)
-end)
+	rs.CanvasSize = UDim2.new(0, 0, 0, rl.AbsoluteContentSize.Y + 10)
+	rl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		rs.CanvasSize = UDim2.new(0, 0, 0, rl.AbsoluteContentSize.Y + 10)
+	end)
+end)(registryPage, registryScroll, registryLayout)
 task.defer(function()
 	registryScroll.CanvasSize = UDim2.new(0, 0, 0, registryLayout.AbsoluteContentSize.Y + 10)
 end)
@@ -6183,49 +7772,61 @@ function giveSpiderTool()
 end
 
 -- ============= CHAT COMMANDS =============
-LocalPlayer.Chatted:Connect(function(msg)
-	local m = msg:lower()
-	if m == ";fly" then flySwitch.set(true)
-	elseif m == ";unfly" then flySwitch.set(false)
-	elseif m == ";noclip" then noclipSwitch.set(true)
-	elseif m == ";unnoclip" then noclipSwitch.set(false)
-	elseif m == ";esp" then espState.enabled = true refreshESP()
-	elseif m == ";unesp" then espState.enabled = false clearESP()
-	elseif m == ";fullbright" then fullbrightSwitch.set(true)
-	elseif m == ";unfullbright" then fullbrightSwitch.set(false)
-	elseif m == ";zerog" then zeroGSwitch.set(true)
-	elseif m == ";unzerog" then zeroGSwitch.set(false)
-	end
-end)
-
--- ============= CRÉDITS =============
-local credits = Instance.new("TextLabel")
-credits.Size = UDim2.new(1, 0, 0, 18)
-credits.Position = UDim2.new(0, 0, 1, -20)
-credits.BackgroundTransparency = 1
-credits.Text = "Agora Admin Universel"
-credits.Font = Enum.Font.GothamBold
-credits.TextSize = 11
-credits.TextColor3 = Color3.fromRGB(140, 140, 180)
-credits.Parent = mainFrame
-
--- BOOT SAFE LAYER 3: absolute fallback (if everything above fails, force first tab visible after 3s)
-local function safeBoot()
-	local ok, err = pcall(function()
-		bootSequence(function()
-			switchTab("Joueurs")
-		end)
-	end)
-	if not ok then
-		warn("[MILAN] bootSequence crashed: " .. tostring(err))
-		pcall(function() switchTab("Joueurs") end)
-	end
-end
-safeBoot()
-task.delay(3, function()
-	pcall(function()
-		if pages and pages["Joueurs"] and not pages["Joueurs"].Visible then
-			switchTab("Joueurs")
+-- Wrap dans IIFE avec paramètres pour éviter la limite d'upvalues (200)
+;(function(_fly, _noclip, _esp, _fullbright, _zeroG, _localPlayer)
+	_localPlayer.Chatted:Connect(function(msg)
+		local m = msg:lower()
+		if m == ";fly" then _fly.set(true)
+		elseif m == ";unfly" then _fly.set(false)
+		elseif m == ";noclip" then _noclip.set(true)
+		elseif m == ";unnoclip" then _noclip.set(false)
+		elseif m == ";esp" then _esp.enabled = true refreshESP()
+		elseif m == ";unesp" then _esp.enabled = false clearESP()
+		elseif m == ";fullbright" then _fullbright.set(true)
+		elseif m == ";unfullbright" then _fullbright.set(false)
+		elseif m == ";zerog" then _zeroG.set(true)
+		elseif m == ";unzerog" then _zeroG.set(false)
 		end
 	end)
-end)
+end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlayer)
+
+-- ============= CRÉDITS =============
+;(function(_mainFrame)
+	local credits = Instance.new("TextLabel")
+	credits.Size = UDim2.new(1, 0, 0, 18)
+	credits.Position = UDim2.new(0, 0, 1, -20)
+	credits.BackgroundTransparency = 1
+	credits.Text = "Agora Universelle"
+	credits.Font = Enum.Font.GothamBold
+	credits.TextSize = 11
+	credits.TextColor3 = Color3.fromRGB(140, 140, 180)
+	credits.Parent = _mainFrame
+end)(mainFrame)
+
+-- BOOT SAFE 3 LAYERS:
+-- Layer 1: reveal immédiat à 0.5s (filet de sécurité absolu)
+-- Layer 2: reveal à 3s si pas encore visible (fallback)
+-- Layer 3: switchTab après reveal
+;(function(_pages, _switchTab)
+	-- LAYER 1: reveal immédiat à 0.5s
+	task.delay(0.5, function()
+		pcall(function()
+			if mainFrame and not mainFrame.Visible then
+				mainFrame.Visible = true
+			end
+		end)
+	end)
+	-- LAYER 2: switchTab Joueurs
+	pcall(function() _switchTab("Joueurs") end)
+	-- LAYER 3: fallback à 3s (au cas où)
+	task.delay(3, function()
+		pcall(function()
+			if mainFrame and not mainFrame.Visible then
+				mainFrame.Visible = true
+			end
+			if _pages and _pages["Joueurs"] and not _pages["Joueurs"].Visible then
+				pcall(function() _switchTab("Joueurs") end)
+			end
+		end)
+	end)
+end)(pages, switchTab)
