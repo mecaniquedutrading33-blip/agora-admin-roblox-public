@@ -1,4 +1,4 @@
--- Panel Roblox universel amélioré - by Milan & Emerick
+-- Panel Roblox universel amélioré - Agora Admin Universel
 -- LocalScript dans StarterPlayerScripts ou exécuteur
 
 local SETTINGS = {
@@ -122,7 +122,7 @@ local function tween(obj, props, duration)
 end
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MilanEmerickPanel"
+screenGui.Name = "AgoraAdminPanel"
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
@@ -189,7 +189,7 @@ local entryText = Instance.new("TextLabel")
 entryText.Size = UDim2.new(0.8, 0, 0, 30)
 entryText.Position = UDim2.new(0.1, 0, 0.5, 20)
 entryText.BackgroundTransparency = 1
-entryText.Text = "Milan x Emerick"
+entryText.Text = "Agora Admin"
 entryText.Font = Enum.Font.GothamBlack
 entryText.TextSize = 18
 entryText.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -229,7 +229,7 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -90, 1, 0)
 titleLabel.Position = UDim2.new(0, 14, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "Milan & Emerick Panel | " .. getDeviceType()
+titleLabel.Text = "Agora Admin Universel | " .. getDeviceType()
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
@@ -2281,7 +2281,7 @@ local function bootSequence(onComplete)
 	-- BOOT ANIMATION v2 : "Genesis" - le panel s'assemble piece par piece avec effets cinematiques
 	-- Layer 1 boot-safe : pcall dans le task.spawn
 	local bootGui = Instance.new("ScreenGui")
-	bootGui.Name = "MilanEmerickBoot"
+	bootGui.Name = "AgoraAdminBoot"
 	bootGui.ResetOnSpawn = false
 	bootGui.DisplayOrder = 99999
 	bootGui.IgnoreGuiInset = true
@@ -4358,7 +4358,7 @@ end)
 -- Fallback notify global si le panel n'en fournit pas
 if type(notify) ~= "function" then
 	notify = function(msg, dur)
-		warn("[MilanEmerickPanel] " .. tostring(msg))
+		warn("[AgoraAdminPanel] " .. tostring(msg))
 	end
 end
 
@@ -6203,7 +6203,7 @@ local credits = Instance.new("TextLabel")
 credits.Size = UDim2.new(1, 0, 0, 18)
 credits.Position = UDim2.new(0, 0, 1, -20)
 credits.BackgroundTransparency = 1
-credits.Text = "Panel by Milan & Emerick"
+credits.Text = "Agora Admin Universel"
 credits.Font = Enum.Font.GothamBold
 credits.TextSize = 11
 credits.TextColor3 = Color3.fromRGB(140, 140, 180)
