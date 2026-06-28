@@ -1,4 +1,4 @@
--- Agora Admin [UNIVERSELLE] - Panel Roblox universel
+-- Agora Hub [UNIVERSELLE] - Panel Roblox universel
 -- LocalScript dans StarterPlayerScripts ou exécuteur
 
 local SETTINGS = {
@@ -273,7 +273,7 @@ mainFrame.ZIndex = 1
 createCorner(mainFrame, 14)
 createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 
--- ===== INTRO CINÉMA : "Agora Admin" puis TAMPON "UNIVERSELLE" BOUM =====
+-- ===== INTRO CINÉMA : "Agora Hub" puis TAMPON "UNIVERSELLE" BOUM =====
 -- Backdrop full screen noir pour masquer le panel pendant l'intro
 ;(function()
 	local _mainFrame = mainFrame
@@ -311,14 +311,14 @@ createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 	vignette.ZIndex = 101
 	vignette.Parent = bootGui
 
-	-- Titre "Agora Admin" - apparaît avec un fade in
+	-- Titre "Agora Hub" - apparaît avec un fade in
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
 	title.Size = UDim2.new(0.9, 0, 0, 50)
 	title.Position = UDim2.new(0.05, 0, 0.45, -10)
 	title.BackgroundTransparency = 1
 	title.Font = Enum.Font.GothamBlack
-	title.Text = "Agora Admin"
+	title.Text = "Agora Hub"
 	title.TextSize = 38
 	title.TextColor3 = Color3.fromRGB(220, 220, 240)
 	title.TextTransparency = 1
@@ -398,7 +398,7 @@ createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 			playSound(9114850423, 0.5)
 			backdrop.BackgroundTransparency = 0
 
-			-- Étape 2 : titre "Agora Admin" fade in (0.5s) + ding doux
+			-- Étape 2 : titre "Agora Hub" fade in (0.5s) + ding doux
 			task.wait(0.3)
 			_tween(title, {TextTransparency = 0}, 0.5)
 			_tween(subtitle, {TextTransparency = 0}, 0.5)
@@ -505,7 +505,7 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -110, 1, 0)
 titleLabel.Position = UDim2.new(0, 36, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "Agora Admin"
+titleLabel.Text = "Agora Hub"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
