@@ -5828,7 +5828,9 @@ RunService.Heartbeat:Connect(function()
 
 	if protectionsState.antiTeleport then
 		if isAntiTpSuspended() then
-			-- Gel : ne pas toucher aux références pendant fly/noclip
+			-- Pendant fly/noclip, on met à jour la baseline en continu pour que l'atterrissage ne soit pas vu comme un TP
+			protectionsState.lastSafeCFrame = rootPart.CFrame
+			protectionsState.lastHrpPosition = pos
 		else
 			local last = protectionsState.lastHrpPosition
 			if last then
