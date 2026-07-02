@@ -10,6 +10,19 @@ local SETTINGS = {
 	SpiderTransitionSpeed = 15
 }
 
+-- SAFEGUARD EXECUTEUR: certains loadstring ne passent pas 'game' en global #1
+-- On récupère game via getfenv ou le premier argument de loadstring
+if not game then
+	local ok, envGame = pcall(function() return getfenv().game end)
+	if ok and envGame then
+		game = envGame
+	end
+end
+if not game then
+	warn("[AGORA] game est nil — exécuteur incompatible ou loadstring mal formé")
+	return
+end
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -949,6 +962,7 @@ localScroll.BackgroundTransparency = 1
 localScroll.ScrollBarThickness = 4
 localScroll.BorderSizePixel = 0
 localScroll.CanvasSize = UDim2.new(0, 0, 0, 900)
+localScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 localScroll.Parent = localPage
 
 local localLayout = Instance.new("UIListLayout")
@@ -964,6 +978,7 @@ protectionsScroll.BackgroundTransparency = 1
 protectionsScroll.ScrollBarThickness = 4
 protectionsScroll.BorderSizePixel = 0
 protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+protectionsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 protectionsScroll.Parent = protectionsPage
 
 local protectionsLayout = Instance.new("UIListLayout")
@@ -983,6 +998,9 @@ local function reparentChildrenToLocalScroll()
 	for _, child in ipairs(localPage:GetChildren()) do
 		if child ~= localScroll then
 			child.Parent = localScroll
+			if child:IsA("GuiObject") and child.LayoutOrder == 0 then
+				child.LayoutOrder = (#localScroll:GetChildren() - 1)
+			end
 		end
 	end
 end
@@ -7649,6 +7667,9 @@ buildRegistrySection(registryPage)
 	for _, child in ipairs(rp:GetChildren()) do
 		if child ~= rs then
 			child.Parent = rs
+			if child:IsA("GuiObject") and child.LayoutOrder == 0 then
+				child.LayoutOrder = (#rs:GetChildren() - 1)
+			end
 		end
 	end
 	rs.CanvasSize = UDim2.new(0, 0, 0, rl.AbsoluteContentSize.Y + 10)
