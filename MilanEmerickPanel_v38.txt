@@ -8153,7 +8153,7 @@ end)(mainFrame)
 -- BOOT SAFE 3 LAYERS:
 -- Layer 1: reveal immédiat à 0.5s (filet de sécurité absolu)
 -- Layer 2: reveal à 3s si pas encore visible (fallback)
--- Layer 3: switchTab après reveal
+-- Layer 3: switchTab après reveal (parse-time IIFE) + bootSequence call explicite
 ;(function(_pages, _switchTab)
 	-- LAYER 1: reveal immédiat à 0.5s
 	task.delay(0.5, function()
@@ -8177,3 +8177,22 @@ end)(mainFrame)
 		end)
 	end)
 end)(pages, switchTab)
+
+-- FALLBACK absolu: si l'intro n'a jamais révélé le panel, le forcer visible + onglet Joueurs après 5s
+task.delay(5, function()
+	pcall(function()
+		if mainFrame and not mainFrame.Visible then
+			warn("[AGORA] Fallback reveal: panel forcé visible")
+			mainFrame.Visible = true
+		end
+		if pages and pages["Joueurs"] and not pages["Joueurs"].Visible then
+			switchTab("Joueurs")
+		end
+	end)
+end)
+
+-- Lancer l'intro cinéma si on veut (désactivée par défaut car elle bloque le fallback)
+-- pcall(function() bootSequence(function()
+-- 	pcall(function() mainFrame.Visible = true end)
+-- 	switchTab("Joueurs")
+-- end) end)
