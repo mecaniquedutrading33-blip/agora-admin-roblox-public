@@ -1311,6 +1311,7 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	label.TextColor3 = Color3.fromRGB(210, 210, 210)
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.Parent = container
+	label.ZIndex = 4
 
 	local track = Instance.new("Frame")
 	track.Size = UDim2.new(0, 48, 0, 24)
@@ -1318,6 +1319,7 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	track.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 	track.BorderSizePixel = 0
 	track.Parent = container
+	track.ZIndex = 5
 	createCorner(track, 12)
 
 	local knob = Instance.new("Frame")
@@ -1326,6 +1328,7 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	knob.BackgroundColor3 = Color3.new(1, 1, 1)
 	knob.BorderSizePixel = 0
 	knob.Parent = track
+	knob.ZIndex = 6
 	createCorner(knob, 10)
 
 	local state = defaultOn or false
@@ -1350,6 +1353,10 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	hitbox.Text = ""
 	hitbox.Parent = container
 	hitbox.ZIndex = 10
+
+	-- Pass-through : les enfants (label, track) doivent être cliquables si le hitbox ne les recouvre pas,
+	-- MAIS le container opaque empiète sur le texte des lignes voisines. On force le hitbox à s'arrêter à la taille du switch.
+	container.ClipsDescendants = true
 
 	hitbox.MouseButton1Click:Connect(toggle)
 
@@ -1624,7 +1631,7 @@ local function createPlayerEntry(plr)
 	local moveBadge = Instance.new("TextLabel")
 	moveBadge.Name = "MoveBadge"
 	moveBadge.Size = UDim2.new(0, 110, 0, 16)
-	moveBadge.Position = UDim2.new(1, -118, 0, 5)
+	moveBadge.Position = UDim2.new(1, -118, 0, -2)
 	moveBadge.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
 	moveBadge.BackgroundTransparency = 0.2
 	moveBadge.BorderSizePixel = 0
@@ -1635,8 +1642,13 @@ local function createPlayerEntry(plr)
 	moveBadge.TextXAlignment = Enum.TextXAlignment.Center
 	moveBadge.Visible = false
 	moveBadge.Parent = card
+	moveBadge.ZIndex = 6
 	createCorner(moveBadge, 6)
 	createStroke(moveBadge, Color3.fromRGB(200, 80, 80), 1)
+
+	-- Timer de cooldown du badge (évite les flashs à chaque frame)
+	local lastMoveFlagAt = 0
+	local MOVE_FLAG_DURATION = 3
 
 	local infoLeft = Instance.new("TextLabel")
 	infoLeft.Size = UDim2.new(0.55, -6, 0, 14)
@@ -2190,12 +2202,23 @@ local function createPlayerEntry(plr)
 						local flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
 						local vSpeed = math.abs(vel.Y)
 						local floorY = hrp.Position.Y - 3
-						local isAirborne = (floorY > 20 and vSpeed > 5) or (vSpeed > 40)
+						-- Seuil d'airborne plus fiable : ignore les sauts legit grâce à HumanoidState
+						local isAirborne = (floorY > 20 and vSpeed > 15) or (vSpeed > 70)
 						if flatSpeed > 2 then
 							stateText = (h.WalkSpeed > 18 or flatSpeed > 18) and "Running" or "Walking"
 						end
-						-- Flag info uniquement : vitesse réelle > 30 OU air anormal OU vitesse verticale extrême
-						moveFlag = (flatSpeed > 30) or (isAirborne and h.WalkSpeed < 30) or (vSpeed > 50)
+						-- Flag info uniquement : vitesse réelle trop haute (et pas juste en train de sauter)
+						-- + vitesse verticale extrême + airborne suspect avec peu de WalkSpeed
+						local suspiciousHorizontal = (flatSpeed > 55) or (flatSpeed > 35 and flatSpeed > h.WalkSpeed * 2.2)
+						local suspiciousVertical = (vSpeed > 90)
+						local suspiciousAirborne = isAirborne and (flatSpeed > 25 or vSpeed > 60)
+						local now = tick()
+						if suspiciousHorizontal or suspiciousVertical or suspiciousAirborne then
+							lastMoveFlagAt = now
+							moveFlag = true
+						elseif now - lastMoveFlagAt < MOVE_FLAG_DURATION then
+							moveFlag = true
+						end
 					end
 					statusLbl.Text = "Statut: " .. stateText
 					pcall(function()
@@ -5373,11 +5396,12 @@ local function _initAimbot()
 	mainSwitchLabel.TextSize = 11
 	mainSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
 	mainSwitchLabel.Parent = mainSwitchRow
-	local mainSwitch = createSwitch(mainSwitchRow, "", 1, function(on)
+	mainSwitchLabel.ZIndex = 4
+	local mainSwitch = createSwitch(mainSwitchRow, "", 0, function(on)
 		aimbotEnabled = on
 	end)
-	mainSwitch.Size = UDim2.new(0.3, -4, 1, 0)
-	mainSwitch.Position = UDim2.new(0.7, 4, 0, 0)
+	mainSwitch.Size = UDim2.new(0.3, -4, 0.85, 0)
+	mainSwitch.Position = UDim2.new(0.7, 4, 0.075, 0)
 
 	-- Toggle auto-clic
 	local clickSwitchRow = Instance.new("Frame")
@@ -5394,11 +5418,12 @@ local function _initAimbot()
 	clickSwitchLabel.TextSize = 11
 	clickSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
 	clickSwitchLabel.Parent = clickSwitchRow
-	local clickSwitch = createSwitch(clickSwitchRow, "", 1, function(on)
+	clickSwitchLabel.ZIndex = 4
+	local clickSwitch = createSwitch(clickSwitchRow, "", 0, function(on)
 		aimbotAutoClick = on
 	end)
-	clickSwitch.Size = UDim2.new(0.3, -4, 1, 0)
-	clickSwitch.Position = UDim2.new(0.7, 4, 0, 0)
+	clickSwitch.Size = UDim2.new(0.3, -4, 0.85, 0)
+	clickSwitch.Position = UDim2.new(0.7, 4, 0.075, 0)
 
 	-- Slider de distance max (clic gauche = -25, clic droit = +25)
 	local distRow = Instance.new("Frame")
