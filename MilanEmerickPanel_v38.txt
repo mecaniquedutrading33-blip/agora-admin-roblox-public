@@ -1630,25 +1630,53 @@ local function createPlayerEntry(plr)
 	-- Badge local "mouvement anormal" — info seule, aucune action auto
 	local moveBadge = Instance.new("TextLabel")
 	moveBadge.Name = "MoveBadge"
-	moveBadge.Size = UDim2.new(0, 110, 0, 16)
-	moveBadge.Position = UDim2.new(1, -118, 0, -2)
-	moveBadge.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
-	moveBadge.BackgroundTransparency = 0.2
+	moveBadge.Size = UDim2.new(0, 24, 0, 20)
+	moveBadge.Position = UDim2.new(1, -32, 0, 16)
+	moveBadge.BackgroundTransparency = 1
 	moveBadge.BorderSizePixel = 0
-	moveBadge.Text = "⚠ mouv. anormal"
-	moveBadge.Font = Enum.Font.GothamSemibold
-	moveBadge.TextSize = 9
-	moveBadge.TextColor3 = Color3.fromRGB(255, 140, 120)
+	moveBadge.Text = "🔺"
+	moveBadge.Font = Enum.Font.GothamBold
+	moveBadge.TextSize = 15
+	moveBadge.TextColor3 = Color3.fromRGB(255, 80, 80)
 	moveBadge.TextXAlignment = Enum.TextXAlignment.Center
 	moveBadge.Visible = false
 	moveBadge.Parent = card
 	moveBadge.ZIndex = 6
-	createCorner(moveBadge, 6)
-	createStroke(moveBadge, Color3.fromRGB(200, 80, 80), 1)
+
+	-- Label détail du mouvement suspect (rouge, petit)
+	local moveDetail = Instance.new("TextLabel")
+	moveDetail.Name = "MoveDetail"
+	moveDetail.Size = UDim2.new(1, -12, 0, 14)
+	moveDetail.Position = UDim2.new(0, 6, 0, 124)
+	moveDetail.BackgroundTransparency = 1
+	moveDetail.Text = ""
+	moveDetail.Font = Enum.Font.Gotham
+	moveDetail.TextSize = 9
+	moveDetail.TextColor3 = Color3.fromRGB(255, 100, 100)
+	moveDetail.TextXAlignment = Enum.TextXAlignment.Left
+	moveDetail.TextWrapped = true
+	moveDetail.Parent = card
+
+	-- Badge chat activé sur le joueur
+	local playerChatBadge = Instance.new("TextLabel")
+	playerChatBadge.Name = "PlayerChatBadge"
+	playerChatBadge.Size = UDim2.new(0, 24, 0, 20)
+	playerChatBadge.Position = UDim2.new(1, -58, 0, 16)
+	playerChatBadge.BackgroundTransparency = 1
+	playerChatBadge.Text = "💬"
+	playerChatBadge.Font = Enum.Font.GothamBold
+	playerChatBadge.TextSize = 14
+	playerChatBadge.TextColor3 = Color3.fromRGB(220, 220, 255)
+	playerChatBadge.TextXAlignment = Enum.TextXAlignment.Center
+	playerChatBadge.Visible = false
+	playerChatBadge.Parent = card
+	playerChatBadge.ZIndex = 6
 
 	-- Timer de cooldown du badge (évite les flashs à chaque frame)
 	local lastMoveFlagAt = 0
+	local lastMoveReason = ""
 	local MOVE_FLAG_DURATION = 3
+	local lastChatCheck = 0
 
 	local infoLeft = Instance.new("TextLabel")
 	infoLeft.Size = UDim2.new(0.55, -6, 0, 14)
@@ -2213,8 +2241,17 @@ local function createPlayerEntry(plr)
 						local suspiciousVertical = (vSpeed > 90)
 						local suspiciousAirborne = isAirborne and (flatSpeed > 25 or vSpeed > 60)
 						local now = tick()
+						local reason = ""
+						if suspiciousHorizontal then
+							reason = "Vit. " .. math.floor(flatSpeed) .. " (max " .. math.floor(h.WalkSpeed) .. ")"
+						elseif suspiciousVertical then
+							reason = "Air " .. math.floor(vSpeed) .. " studs/s"
+						elseif suspiciousAirborne then
+							reason = "Airborne " .. math.floor(flatSpeed) .. "/s"
+						end
 						if suspiciousHorizontal or suspiciousVertical or suspiciousAirborne then
 							lastMoveFlagAt = now
+							lastMoveReason = reason
 							moveFlag = true
 						elseif now - lastMoveFlagAt < MOVE_FLAG_DURATION then
 							moveFlag = true
@@ -2224,12 +2261,22 @@ local function createPlayerEntry(plr)
 					pcall(function()
 						if moveFlag then
 							moveBadge.Visible = true
+							moveDetail.Text = "🔺 " .. lastMoveReason
 							card.BackgroundColor3 = Color3.fromRGB(38, 25, 25)
 							createStroke(card, Color3.fromRGB(160, 70, 70), 1.2)
 						else
 							moveBadge.Visible = false
+							moveDetail.Text = ""
 							card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 							createStroke(card, Color3.fromRGB(45, 45, 55), 1)
+						end
+						-- badge chat en temps réel
+						local now2 = tick()
+						if now2 - lastChatCheck > 0.5 then
+							lastChatCheck = now2
+							local seenChat = plr.UserId and _G._chatSeenPlayers[plr.UserId]
+							local sinceChat = seenChat and (now2 - seenChat) or math.huge
+							playerChatBadge.Visible = (seenChat and sinceChat <= 600)
 						end
 					end)
 				else
@@ -2767,7 +2814,7 @@ local espFolder = Instance.new("Folder")
 espFolder.Name = "PanelESP"
 espFolder.Parent = Workspace
 
-local espState = { enabled = false, individual = {} }
+local espState = { enabled = false, individual = {}, chatIcons = true }
 
 local function distanceColor(dist)
 	if dist < 50 then return Color3.fromRGB(80, 255, 120)
@@ -2818,6 +2865,19 @@ local function buildESP(plr)
 		data.label.TextColor3 = Color3.new(1, 1, 1)
 		data.label.TextStrokeTransparency = 0.3
 		data.label.Parent = data.bill
+
+		-- icône chat isolée à côté du nom (pas de texte)
+		data.chatIcon = Instance.new("TextLabel")
+		data.chatIcon.Size = UDim2.new(0, 20, 0, 20)
+		data.chatIcon.Position = UDim2.new(0, 226, 0, 0)
+		data.chatIcon.BackgroundTransparency = 1
+		data.chatIcon.Text = "💬"
+		data.chatIcon.Font = Enum.Font.GothamBold
+		data.chatIcon.TextSize = 14
+		data.chatIcon.TextColor3 = Color3.new(1, 1, 1)
+		data.chatIcon.TextStrokeTransparency = 0.2
+		data.chatIcon.Visible = false
+		data.chatIcon.Parent = data.bill
 	end
 	data.targetPart = targetPart
 	data.humanoid = hum
@@ -2883,6 +2943,10 @@ RunService.RenderStepped:Connect(function()
 	for plr, data in pairs(espState.individual) do
 		if data.active and data.targetPart and data.targetPart.Parent then
 			local dist = (data.targetPart.Position - rootPart.Position).Magnitude
+			-- icône chat isolée (toggle)
+			if data.chatIcon then
+				data.chatIcon.Visible = espState.chatIcons and (data.canChat == true)
+			end
 			if data.blink then
 				local pulse = (tick() % 0.5) < 0.25
 				if data.hl then
@@ -2893,13 +2957,7 @@ RunService.RenderStepped:Connect(function()
 				end
 				if data.label then
 					local hp = data.humanoid and math.floor(data.humanoid.Health) or 0
-					local chatSym = ""
-					if data.canChatSrc == "CanTalkWithMe" then
-						chatSym = data.canChat == true and " 💬" or " 🚫"
-					elseif data.canChat ~= nil then
-						chatSym = data.canChat == true and " 📢" or " 🔕"
-					end
-					data.label.Text = ">> " .. plr.Name .. " [" .. math.floor(dist) .. " studs] HP:" .. hp .. chatSym
+					data.label.Text = ">> " .. plr.Name .. " [" .. math.floor(dist) .. " studs] HP:" .. hp
 					data.label.TextColor3 = pulse and Color3.fromRGB(255, 255, 0) or Color3.fromRGB(255, 0, 0)
 				end
 				if data.bill then data.bill.Enabled = true end
@@ -2907,11 +2965,7 @@ RunService.RenderStepped:Connect(function()
 				local col = distanceColor(dist)
 				if data.label then
 					local hp = data.humanoid and math.floor(data.humanoid.Health) or 0
-					local chatSym = ""
-					if data.canChat == true then chatSym = " 💬"
-					elseif data.canChat == false then chatSym = " 🚫"
-					end
-					data.label.Text = plr.Name .. " [" .. math.floor(dist) .. " studs] HP:" .. hp .. chatSym
+					data.label.Text = plr.Name .. " [" .. math.floor(dist) .. " studs] HP:" .. hp
 					data.label.TextColor3 = col
 				end
 				if data.hl then
@@ -4198,6 +4252,12 @@ local globalESPSwitch = createSwitch(localPage, "ESP Global", 404, function(on)
 		clearESP()
 	end
 end)
+
+-- Toggle icônes chat sur l'ESP
+local chatIconsSwitch = createSwitch(localPage, "Icônes chat ESP", 448, function(on)
+	espState.chatIcons = on
+end)
+chatIconsSwitch.set(true)
 
 
 -- ============= AUTO CLICKER =============
