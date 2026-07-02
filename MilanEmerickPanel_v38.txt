@@ -1432,6 +1432,13 @@ playersLayout.Padding = UDim.new(0, 6)
 playersLayout.SortOrder = Enum.SortOrder.LayoutOrder
 playersLayout.Parent = playersScroll
 
+playersScroll:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
+end)
+task.defer(function()
+	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
+end)
+
 -- === CARTE "👑 MOI" (LocalPlayer) — auto-créée, toujours en haut ===
 ;(function(_createCorner, _createStroke)
 	local myCard = Instance.new("Frame")
@@ -1608,7 +1615,7 @@ end
 
 local function createPlayerEntry(plr)
 	local card = Instance.new("Frame")
-	card.Size = UDim2.new(1, -8, 0, 182)
+	card.Size = UDim2.new(1, -8, 0, 196)
 	card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 	card.BorderSizePixel = 0
 	card.LayoutOrder = plr.Name:byte(1)
@@ -1627,11 +1634,30 @@ local function createPlayerEntry(plr)
 	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
 	nameLbl.Parent = card
 
-	-- Badge local "mouvement anormal" — info seule, aucune action auto
+	-- Badge chat activé sur le joueur — à GAUCHE haut, jamais sur les boutons
+	local playerChatBadge = Instance.new("TextLabel")
+	playerChatBadge.Name = "PlayerChatBadge"
+	playerChatBadge.Size = UDim2.new(0, 24, 0, 20)
+	playerChatBadge.Position = UDim2.new(0, 6, 0, 4)
+	playerChatBadge.BackgroundTransparency = 1
+	playerChatBadge.Text = "💬"
+	playerChatBadge.Font = Enum.Font.GothamBold
+	playerChatBadge.TextSize = 14
+	playerChatBadge.TextColor3 = Color3.fromRGB(220, 220, 255)
+	playerChatBadge.TextXAlignment = Enum.TextXAlignment.Center
+	playerChatBadge.Visible = false
+	playerChatBadge.Parent = card
+	playerChatBadge.ZIndex = 6
+
+	-- Nom décalé si badge chat présent
+	nameLbl.Size = UDim2.new(1, -108, 0, 18)
+	nameLbl.Position = UDim2.new(0, 30, 0, 4)
+
+	-- Badge local "mouvement anormal" — à droite, plus haut pour pas toucher les boutons
 	local moveBadge = Instance.new("TextLabel")
 	moveBadge.Name = "MoveBadge"
 	moveBadge.Size = UDim2.new(0, 24, 0, 20)
-	moveBadge.Position = UDim2.new(1, -32, 0, 16)
+	moveBadge.Position = UDim2.new(1, -32, 0, 2)
 	moveBadge.BackgroundTransparency = 1
 	moveBadge.BorderSizePixel = 0
 	moveBadge.Text = "🔺"
@@ -1647,7 +1673,7 @@ local function createPlayerEntry(plr)
 	local moveDetail = Instance.new("TextLabel")
 	moveDetail.Name = "MoveDetail"
 	moveDetail.Size = UDim2.new(1, -12, 0, 14)
-	moveDetail.Position = UDim2.new(0, 6, 0, 124)
+	moveDetail.Position = UDim2.new(0, 6, 0, 108)
 	moveDetail.BackgroundTransparency = 1
 	moveDetail.Text = ""
 	moveDetail.Font = Enum.Font.Gotham
@@ -1657,20 +1683,20 @@ local function createPlayerEntry(plr)
 	moveDetail.TextWrapped = true
 	moveDetail.Parent = card
 
-	-- Badge chat activé sur le joueur
-	local playerChatBadge = Instance.new("TextLabel")
-	playerChatBadge.Name = "PlayerChatBadge"
-	playerChatBadge.Size = UDim2.new(0, 24, 0, 20)
-	playerChatBadge.Position = UDim2.new(1, -58, 0, 16)
-	playerChatBadge.BackgroundTransparency = 1
-	playerChatBadge.Text = "💬"
-	playerChatBadge.Font = Enum.Font.GothamBold
-	playerChatBadge.TextSize = 14
-	playerChatBadge.TextColor3 = Color3.fromRGB(220, 220, 255)
-	playerChatBadge.TextXAlignment = Enum.TextXAlignment.Center
-	playerChatBadge.Visible = false
-	playerChatBadge.Parent = card
-	playerChatBadge.ZIndex = 6
+	-- Bloc notes détection de cheat (rouge, sous les infos principales)
+	local cheatNotes = Instance.new("TextLabel")
+	cheatNotes.Name = "CheatNotes"
+	cheatNotes.Size = UDim2.new(1, -12, 0, 34)
+	cheatNotes.Position = UDim2.new(0, 6, 0, 140)
+	cheatNotes.BackgroundTransparency = 1
+	cheatNotes.Text = ""
+	cheatNotes.Font = Enum.Font.Gotham
+	cheatNotes.TextSize = 9
+	cheatNotes.TextColor3 = Color3.fromRGB(255, 120, 120)
+	cheatNotes.TextXAlignment = Enum.TextXAlignment.Left
+	cheatNotes.TextWrapped = true
+	cheatNotes.TextYAlignment = Enum.TextYAlignment.Top
+	cheatNotes.Parent = card
 
 	-- Timer de cooldown du badge (évite les flashs à chaque frame)
 	local lastMoveFlagAt = 0
@@ -2262,6 +2288,19 @@ local function createPlayerEntry(plr)
 						if moveFlag then
 							moveBadge.Visible = true
 							moveDetail.Text = "🔺 " .. lastMoveReason
+							-- ajout dans les notes avec heure
+							local ts = os.date("%H:%M:%S")
+							local line = "[" .. ts .. "] " .. stateText .. " — " .. lastMoveReason
+							if not cheatNotes.Text:find(line, 1, true) then
+								if #cheatNotes.Text > 0 then
+									cheatNotes.Text = line .. "\n" .. cheatNotes.Text
+								else
+									cheatNotes.Text = line
+								end
+								if #cheatNotes.Text > 240 then
+									cheatNotes.Text = cheatNotes.Text:sub(1, 240) .. "…"
+								end
+							end
 							card.BackgroundColor3 = Color3.fromRGB(38, 25, 25)
 							createStroke(card, Color3.fromRGB(160, 70, 70), 1.2)
 						else
