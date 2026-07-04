@@ -1,4 +1,4 @@
--- Agora Hub [UNIVERSELLE] - Panel Roblox universel
+-- Agora Admin [UNIVERSELLE] - Panel Roblox universel
 -- LocalScript dans StarterPlayerScripts ou exécuteur
 
 local SETTINGS = {
@@ -10,22 +10,6 @@ local SETTINGS = {
 	SpiderTransitionSpeed = 15
 }
 
--- SAFEGUARD EXECUTEUR: certains loadstring ne passent pas 'game' en global #1
--- On récupère game via getfenv ou le premier argument de loadstring
-if not game then
-	local ok, envGame = pcall(function() return getfenv().game end)
-	if ok and envGame then
-		game = envGame
-	end
-end
-
--- WRAP PANEL IN LOCAL FUNCTION to avoid Solara 200-register chunk limit
-local function _buildPanel()
-if not game then
-	warn("[AGORA] game est nil — exécuteur incompatible ou loadstring mal formé")
-	return
-end
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -36,97 +20,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local SoundService = game:GetService("SoundService")
-
--- Helper multi-fallback pour vérifier si un joueur peut chatter (client-only, pas d'accès serveur)
-_G._resolveCanChat = function(target, callback)
-	task.spawn(function()
-		local result, src = nil, "non vérifiable"
-		local uid = (typeof(target) == "Instance" and target:IsA("Player") and target.UserId) or tonumber(target)
-
-		-- 1) VRAIE réponse serveur : RemoteFunction CanUsersChatAsync
-		if uid and LocalPlayer then
-			local rf = ReplicatedStorage:FindFirstChild("AgoraCanChatRF")
-			if rf and rf:IsA("RemoteFunction") then
-				local ok, r = pcall(function() return rf:InvokeServer(uid) end)
-				if ok and r ~= nil then
-					result, src = r, "CanTalkWithMe"
-				end
-			end
-		end
-
-		-- 2) API client native (moins fiable, indique juste "a le chat activé")
-		if result == nil and uid then
-			local ok, r = pcall(function() return TextChatService:CanUserChatAsync(uid) end)
-			if ok then result, src = r, "ChatEnabled" end
-		end
-
-		-- 3) Propriétés legacy
-		if result == nil and typeof(target) == "Instance" and target:IsA("Player") then
-			local ok, r = pcall(function() return target.CanChat end)
-			if ok then result, src = r, "Player.CanChat" end
-		end
-		if result == nil and typeof(target) == "Instance" and target:IsA("Player") and LocalPlayer then
-			local ok, r = pcall(function() return target:CanChatWith(LocalPlayer.UserId) end)
-			if ok then result, src = r, "CanChatWith" end
-		end
-		if result == nil and typeof(target) == "Instance" and target:IsA("Player") then
-			local ok, r = pcall(function()
-				local chans = TextChatService:FindFirstChild("TextChannels")
-				if not chans then return nil end
-				local general = chans:FindFirstChild("RBXGeneral")
-				if not general then return nil end
-				for _, sp in ipairs(general:GetChildren()) do
-					if sp:IsA("TextSource") and tostring(sp.UserId) == tostring(target.UserId) then
-						return true
-					end
-				end
-				return false
-			end)
-			if ok then result, src = r, "TextChannels" end
-		end
-		-- 5) On a VU le joueur parler dans le chat public → il peut nous parler
-		if result == nil and uid and _G._chatSeenPlayers[uid] then
-			local since = tick() - _G._chatSeenPlayers[uid]
-			if since <= 600 then
-				result, src = true, "Vu parler"
-			else
-				_G._chatSeenPlayers[uid] = nil
-			end
-		end
-		pcall(function() callback(result, src) end)
-	end)
-end
-
--- Client-only chat detection: remember players whose public messages we actually saw
-_G._chatSeenPlayers = {}
-task.spawn(function()
-	local ok, svc = pcall(function() return game:GetService("TextChatService") end)
-	if not ok or not svc then return end
-	local ok2 = pcall(function()
-		svc.MessageReceived:Connect(function(msg)
-			if not (msg and msg.TextSource and msg.TextSource.UserId) then return end
-			local uid = tonumber(msg.TextSource.UserId)
-			if uid then
-				_G._chatSeenPlayers[uid] = tick()
-			end
-		end)
-	end)
-	if not ok2 then
-		-- Legacy chat fallback
-		pcall(function()
-			local default = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents", 3)
-			if default then
-				local ev = default:FindFirstChild("OnMessageDoneFiltering")
-				if ev then
-					ev.OnClientEvent:Connect(function(data)
-						local uid = tonumber(data and data.SpeakerUserId)
-						if uid then _G._chatSeenPlayers[uid] = tick() end
-					end)
-				end
-			end
-		end)
-	end
-end)
 
 -- Wrapper de son multi-exécuteur (Solara, etc.) - pcall silencieux
 local function playSound(id, vol)
@@ -289,7 +182,7 @@ mainFrame.ZIndex = 1
 createCorner(mainFrame, 14)
 createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 
--- ===== INTRO CINÉMA : "Agora Hub" puis TAMPON "UNIVERSELLE" BOUM =====
+-- ===== INTRO CINÉMA : "Agora Admin" puis TAMPON "UNIVERSELLE" BOUM =====
 -- Backdrop full screen noir pour masquer le panel pendant l'intro
 ;(function()
 	local _mainFrame = mainFrame
@@ -327,14 +220,14 @@ createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 	vignette.ZIndex = 101
 	vignette.Parent = bootGui
 
-	-- Titre "Agora Hub" - apparaît avec un fade in
+	-- Titre "Agora Admin" - apparaît avec un fade in
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
 	title.Size = UDim2.new(0.9, 0, 0, 50)
 	title.Position = UDim2.new(0.05, 0, 0.45, -10)
 	title.BackgroundTransparency = 1
 	title.Font = Enum.Font.GothamBlack
-	title.Text = "Agora Hub"
+	title.Text = "Agora Admin"
 	title.TextSize = 38
 	title.TextColor3 = Color3.fromRGB(220, 220, 240)
 	title.TextTransparency = 1
@@ -414,7 +307,7 @@ createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 			playSound(9114850423, 0.5)
 			backdrop.BackgroundTransparency = 0
 
-			-- Étape 2 : titre "Agora Hub" fade in (0.5s) + ding doux
+			-- Étape 2 : titre "Agora Admin" fade in (0.5s) + ding doux
 			task.wait(0.3)
 			_tween(title, {TextTransparency = 0}, 0.5)
 			_tween(subtitle, {TextTransparency = 0}, 0.5)
@@ -521,7 +414,7 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -110, 1, 0)
 titleLabel.Position = UDim2.new(0, 36, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "Agora Hub"
+titleLabel.Text = "Agora Admin"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
@@ -965,7 +858,6 @@ localScroll.BackgroundTransparency = 1
 localScroll.ScrollBarThickness = 4
 localScroll.BorderSizePixel = 0
 localScroll.CanvasSize = UDim2.new(0, 0, 0, 900)
-localScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 localScroll.Parent = localPage
 
 local localLayout = Instance.new("UIListLayout")
@@ -981,7 +873,6 @@ protectionsScroll.BackgroundTransparency = 1
 protectionsScroll.ScrollBarThickness = 4
 protectionsScroll.BorderSizePixel = 0
 protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-protectionsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 protectionsScroll.Parent = protectionsPage
 
 local protectionsLayout = Instance.new("UIListLayout")
@@ -1001,9 +892,6 @@ local function reparentChildrenToLocalScroll()
 	for _, child in ipairs(localPage:GetChildren()) do
 		if child ~= localScroll then
 			child.Parent = localScroll
-			if child:IsA("GuiObject") and child.LayoutOrder == 0 then
-				child.LayoutOrder = (#localScroll:GetChildren() - 1)
-			end
 		end
 	end
 end
@@ -1332,7 +1220,6 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	label.TextColor3 = Color3.fromRGB(210, 210, 210)
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.Parent = container
-	label.ZIndex = 4
 
 	local track = Instance.new("Frame")
 	track.Size = UDim2.new(0, 48, 0, 24)
@@ -1340,7 +1227,6 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	track.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 	track.BorderSizePixel = 0
 	track.Parent = container
-	track.ZIndex = 5
 	createCorner(track, 12)
 
 	local knob = Instance.new("Frame")
@@ -1349,7 +1235,6 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	knob.BackgroundColor3 = Color3.new(1, 1, 1)
 	knob.BorderSizePixel = 0
 	knob.Parent = track
-	knob.ZIndex = 6
 	createCorner(knob, 10)
 
 	local state = defaultOn or false
@@ -1374,10 +1259,6 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	hitbox.Text = ""
 	hitbox.Parent = container
 	hitbox.ZIndex = 10
-
-	-- Pass-through : les enfants (label, track) doivent être cliquables si le hitbox ne les recouvre pas,
-	-- MAIS le container opaque empiète sur le texte des lignes voisines. On force le hitbox à s'arrêter à la taille du switch.
-	container.ClipsDescendants = true
 
 	hitbox.MouseButton1Click:Connect(toggle)
 
@@ -1452,13 +1333,6 @@ local playersLayout = Instance.new("UIListLayout")
 playersLayout.Padding = UDim.new(0, 6)
 playersLayout.SortOrder = Enum.SortOrder.LayoutOrder
 playersLayout.Parent = playersScroll
-
-playersScroll:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
-end)
-task.defer(function()
-	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
-end)
 
 -- === CARTE "👑 MOI" (LocalPlayer) — auto-créée, toujours en haut ===
 ;(function(_createCorner, _createStroke)
@@ -1636,7 +1510,7 @@ end
 
 local function createPlayerEntry(plr)
 	local card = Instance.new("Frame")
-	card.Size = UDim2.new(1, -8, 0, 196)
+	card.Size = UDim2.new(1, -8, 0, 152)
 	card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 	card.BorderSizePixel = 0
 	card.LayoutOrder = plr.Name:byte(1)
@@ -1645,7 +1519,7 @@ local function createPlayerEntry(plr)
 	createStroke(card, Color3.fromRGB(45, 45, 55), 1)
 
 	local nameLbl = Instance.new("TextLabel")
-	nameLbl.Size = UDim2.new(1, -80, 0, 18)
+	nameLbl.Size = UDim2.new(1, -12, 0, 18)
 	nameLbl.Position = UDim2.new(0, 6, 0, 4)
 	nameLbl.BackgroundTransparency = 1
 	nameLbl.Text = plr.DisplayName .. " (@" .. plr.Name .. ")"
@@ -1654,76 +1528,6 @@ local function createPlayerEntry(plr)
 	nameLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
 	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
 	nameLbl.Parent = card
-
-	-- Badge chat activé sur le joueur — à GAUCHE haut, jamais sur les boutons
-	local playerChatBadge = Instance.new("TextLabel")
-	playerChatBadge.Name = "PlayerChatBadge"
-	playerChatBadge.Size = UDim2.new(0, 24, 0, 20)
-	playerChatBadge.Position = UDim2.new(0, 6, 0, 4)
-	playerChatBadge.BackgroundTransparency = 1
-	playerChatBadge.Text = "💬"
-	playerChatBadge.Font = Enum.Font.GothamBold
-	playerChatBadge.TextSize = 14
-	playerChatBadge.TextColor3 = Color3.fromRGB(220, 220, 255)
-	playerChatBadge.TextXAlignment = Enum.TextXAlignment.Center
-	playerChatBadge.Visible = false
-	playerChatBadge.Parent = card
-	playerChatBadge.ZIndex = 6
-
-	-- Nom décalé si badge chat présent
-	nameLbl.Size = UDim2.new(1, -108, 0, 18)
-	nameLbl.Position = UDim2.new(0, 30, 0, 4)
-
-	-- Badge local "mouvement anormal" — à droite, plus haut pour pas toucher les boutons
-	local moveBadge = Instance.new("TextLabel")
-	moveBadge.Name = "MoveBadge"
-	moveBadge.Size = UDim2.new(0, 24, 0, 20)
-	moveBadge.Position = UDim2.new(1, -32, 0, 2)
-	moveBadge.BackgroundTransparency = 1
-	moveBadge.BorderSizePixel = 0
-	moveBadge.Text = "🔺"
-	moveBadge.Font = Enum.Font.GothamBold
-	moveBadge.TextSize = 15
-	moveBadge.TextColor3 = Color3.fromRGB(255, 80, 80)
-	moveBadge.TextXAlignment = Enum.TextXAlignment.Center
-	moveBadge.Visible = false
-	moveBadge.Parent = card
-	moveBadge.ZIndex = 6
-
-	-- Label détail du mouvement suspect (rouge, petit)
-	local moveDetail = Instance.new("TextLabel")
-	moveDetail.Name = "MoveDetail"
-	moveDetail.Size = UDim2.new(1, -12, 0, 14)
-	moveDetail.Position = UDim2.new(0, 6, 0, 108)
-	moveDetail.BackgroundTransparency = 1
-	moveDetail.Text = ""
-	moveDetail.Font = Enum.Font.Gotham
-	moveDetail.TextSize = 9
-	moveDetail.TextColor3 = Color3.fromRGB(255, 100, 100)
-	moveDetail.TextXAlignment = Enum.TextXAlignment.Left
-	moveDetail.TextWrapped = true
-	moveDetail.Parent = card
-
-	-- Bloc notes détection de cheat (rouge, sous les infos principales)
-	local cheatNotes = Instance.new("TextLabel")
-	cheatNotes.Name = "CheatNotes"
-	cheatNotes.Size = UDim2.new(1, -12, 0, 34)
-	cheatNotes.Position = UDim2.new(0, 6, 0, 140)
-	cheatNotes.BackgroundTransparency = 1
-	cheatNotes.Text = ""
-	cheatNotes.Font = Enum.Font.Gotham
-	cheatNotes.TextSize = 9
-	cheatNotes.TextColor3 = Color3.fromRGB(255, 120, 120)
-	cheatNotes.TextXAlignment = Enum.TextXAlignment.Left
-	cheatNotes.TextWrapped = true
-	cheatNotes.TextYAlignment = Enum.TextYAlignment.Top
-	cheatNotes.Parent = card
-
-	-- Timer de cooldown du badge (évite les flashs à chaque frame)
-	local lastMoveFlagAt = 0
-	local lastMoveReason = ""
-	local MOVE_FLAG_DURATION = 3
-	local lastChatCheck = 0
 
 	local infoLeft = Instance.new("TextLabel")
 	infoLeft.Size = UDim2.new(0.55, -6, 0, 14)
@@ -1787,47 +1591,9 @@ local function createPlayerEntry(plr)
 	speedLbl.TextXAlignment = Enum.TextXAlignment.Left
 	speedLbl.Parent = card
 
-	local chatLbl = Instance.new("TextLabel")
-	chatLbl.Name = "ChatLabel"
-	chatLbl.Size = UDim2.new(0.55, -6, 0, 14)
-	chatLbl.Position = UDim2.new(0, 6, 0, 80)
-	chatLbl.BackgroundTransparency = 1
-	chatLbl.Text = "💬 can_chat: chargement..."
-	chatLbl.Font = Enum.Font.Gotham
-	chatLbl.TextSize = 10
-	chatLbl.TextColor3 = Color3.fromRGB(180, 180, 180)
-	chatLbl.TextXAlignment = Enum.TextXAlignment.Left
-	chatLbl.Parent = card
-
-	_G._resolveCanChat(plr, function(canChat, src)
-		if chatLbl and chatLbl.Parent then
-			if src == "CanTalkWithMe" then
-				if canChat == true then
-					chatLbl.Text = "💬 Peut me parler"
-					chatLbl.TextColor3 = Color3.fromRGB(120, 220, 140)
-				else
-					chatLbl.Text = "🚫 Ne peut pas me parler"
-					chatLbl.TextColor3 = Color3.fromRGB(220, 120, 120)
-				end
-			else
-				-- Pas de serveur : on montre juste si le joueur a le chat activé
-				if canChat == true then
-					chatLbl.Text = "💬 Chat activé (" .. src .. ")"
-					chatLbl.TextColor3 = Color3.fromRGB(180, 180, 180)
-				elseif canChat == false then
-					chatLbl.Text = "🚫 Chat désactivé (" .. src .. ")"
-					chatLbl.TextColor3 = Color3.fromRGB(180, 120, 120)
-				else
-					chatLbl.Text = "💬 Chat: non vérifiable"
-					chatLbl.TextColor3 = Color3.fromRGB(180, 180, 180)
-				end
-			end
-		end
-	end)
-
 	local statusLbl = Instance.new("TextLabel")
 	statusLbl.Size = UDim2.new(0.55, -6, 0, 14)
-	statusLbl.Position = UDim2.new(0, 6, 0, 94)
+	statusLbl.Position = UDim2.new(0, 6, 0, 80)
 	statusLbl.BackgroundTransparency = 1
 	statusLbl.Text = "Statut: ?"
 	statusLbl.Font = Enum.Font.Gotham
@@ -2263,7 +2029,6 @@ local function createPlayerEntry(plr)
 					-- Statut manuel plus fiable que GetState()
 					local hrp = char:FindFirstChild("HumanoidRootPart")
 					local stateText = "Standing"
-					local moveFlag = false
 					if h.Health <= 0 then
 						stateText = "Dead"
 					elseif h.Sit then
@@ -2275,70 +2040,11 @@ local function createPlayerEntry(plr)
 					elseif hrp then
 						local vel = hrp.AssemblyLinearVelocity
 						local flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
-						local vSpeed = math.abs(vel.Y)
-						local floorY = hrp.Position.Y - 3
-						-- Seuil d'airborne plus fiable : ignore les sauts legit grâce à HumanoidState
-						local isAirborne = (floorY > 20 and vSpeed > 15) or (vSpeed > 70)
 						if flatSpeed > 2 then
 							stateText = (h.WalkSpeed > 18 or flatSpeed > 18) and "Running" or "Walking"
 						end
-						-- Flag info uniquement : vitesse réelle trop haute (et pas juste en train de sauter)
-						-- + vitesse verticale extrême + airborne suspect avec peu de WalkSpeed
-						local suspiciousHorizontal = (flatSpeed > 55) or (flatSpeed > 35 and flatSpeed > h.WalkSpeed * 2.2)
-						local suspiciousVertical = (vSpeed > 90)
-						local suspiciousAirborne = isAirborne and (flatSpeed > 25 or vSpeed > 60)
-						local now = tick()
-						local reason = ""
-						if suspiciousHorizontal then
-							reason = "Vit. " .. math.floor(flatSpeed) .. " (max " .. math.floor(h.WalkSpeed) .. ")"
-						elseif suspiciousVertical then
-							reason = "Air " .. math.floor(vSpeed) .. " studs/s"
-						elseif suspiciousAirborne then
-							reason = "Airborne " .. math.floor(flatSpeed) .. "/s"
-						end
-						if suspiciousHorizontal or suspiciousVertical or suspiciousAirborne then
-							lastMoveFlagAt = now
-							lastMoveReason = reason
-							moveFlag = true
-						elseif now - lastMoveFlagAt < MOVE_FLAG_DURATION then
-							moveFlag = true
-						end
 					end
 					statusLbl.Text = "Statut: " .. stateText
-					pcall(function()
-						if moveFlag then
-							moveBadge.Visible = true
-							moveDetail.Text = "🔺 " .. lastMoveReason
-							-- ajout dans les notes avec heure
-							local ts = os.date("%H:%M:%S")
-							local line = "[" .. ts .. "] " .. stateText .. " — " .. lastMoveReason
-							if not cheatNotes.Text:find(line, 1, true) then
-								if #cheatNotes.Text > 0 then
-									cheatNotes.Text = line .. "\n" .. cheatNotes.Text
-								else
-									cheatNotes.Text = line
-								end
-								if #cheatNotes.Text > 240 then
-									cheatNotes.Text = cheatNotes.Text:sub(1, 240) .. "…"
-								end
-							end
-							card.BackgroundColor3 = Color3.fromRGB(38, 25, 25)
-							createStroke(card, Color3.fromRGB(160, 70, 70), 1.2)
-						else
-							moveBadge.Visible = false
-							moveDetail.Text = ""
-							card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-							createStroke(card, Color3.fromRGB(45, 45, 55), 1)
-						end
-						-- badge chat en temps réel
-						local now2 = tick()
-						if now2 - lastChatCheck > 0.5 then
-							lastChatCheck = now2
-							local seenChat = plr.UserId and _G._chatSeenPlayers[plr.UserId]
-							local sinceChat = seenChat and (now2 - seenChat) or math.huge
-							playerChatBadge.Visible = (seenChat and sinceChat <= 600)
-						end
-					end)
 				else
 					hpLbl.Text = "HP: mort"
 					speedLbl.Text = "Vit: ? | Saut: ?"
@@ -2357,7 +2063,7 @@ local function createPlayerEntry(plr)
 	-- Ligne du bas : "Connecté depuis 12m 34s" + badge "Arrivé avant toi" / "Arrivé il y a Xs"
 	local connTimeLbl = Instance.new("TextLabel")
 	connTimeLbl.Size = UDim2.new(0.55, -6, 0, 14)
-	connTimeLbl.Position = UDim2.new(0, 6, 0, 116)
+	connTimeLbl.Position = UDim2.new(0, 6, 0, 100)
 	connTimeLbl.BackgroundTransparency = 1
 	connTimeLbl.Text = "Connecté: ?"
 	connTimeLbl.Font = Enum.Font.Gotham
@@ -2368,7 +2074,7 @@ local function createPlayerEntry(plr)
 
 	local arrivalBadge = Instance.new("TextLabel")
 	arrivalBadge.Size = UDim2.new(0.55, -6, 0, 14)
-	arrivalBadge.Position = UDim2.new(0, 6, 0, 130)
+	arrivalBadge.Position = UDim2.new(0, 6, 0, 114)
 	arrivalBadge.BackgroundTransparency = 1
 	arrivalBadge.Text = ""
 	arrivalBadge.Font = Enum.Font.GothamSemibold
@@ -2874,7 +2580,7 @@ local espFolder = Instance.new("Folder")
 espFolder.Name = "PanelESP"
 espFolder.Parent = Workspace
 
-local espState = { enabled = false, individual = {}, chatIcons = true }
+local espState = { enabled = false, individual = {} }
 
 local function distanceColor(dist)
 	if dist < 50 then return Color3.fromRGB(80, 255, 120)
@@ -2925,27 +2631,9 @@ local function buildESP(plr)
 		data.label.TextColor3 = Color3.new(1, 1, 1)
 		data.label.TextStrokeTransparency = 0.3
 		data.label.Parent = data.bill
-
-		-- icône chat isolée à côté du nom (pas de texte)
-		data.chatIcon = Instance.new("TextLabel")
-		data.chatIcon.Size = UDim2.new(0, 20, 0, 20)
-		data.chatIcon.Position = UDim2.new(0, 226, 0, 0)
-		data.chatIcon.BackgroundTransparency = 1
-		data.chatIcon.Text = "💬"
-		data.chatIcon.Font = Enum.Font.GothamBold
-		data.chatIcon.TextSize = 14
-		data.chatIcon.TextColor3 = Color3.new(1, 1, 1)
-		data.chatIcon.TextStrokeTransparency = 0.2
-		data.chatIcon.Visible = false
-		data.chatIcon.Parent = data.bill
 	end
 	data.targetPart = targetPart
 	data.humanoid = hum
-	data.canChat = nil
-	_G._resolveCanChat(plr, function(canChat, src)
-		if data then data.canChat = canChat end
-		data.canChatSrc = src
-	end)
 	return data
 end
 
@@ -3003,10 +2691,6 @@ RunService.RenderStepped:Connect(function()
 	for plr, data in pairs(espState.individual) do
 		if data.active and data.targetPart and data.targetPart.Parent then
 			local dist = (data.targetPart.Position - rootPart.Position).Magnitude
-			-- icône chat isolée (toggle)
-			if data.chatIcon then
-				data.chatIcon.Visible = espState.chatIcons and (data.canChat == true)
-			end
 			if data.blink then
 				local pulse = (tick() % 0.5) < 0.25
 				if data.hl then
@@ -3025,6 +2709,7 @@ RunService.RenderStepped:Connect(function()
 				local col = distanceColor(dist)
 				if data.label then
 					local hp = data.humanoid and math.floor(data.humanoid.Health) or 0
+
 					data.label.Text = plr.Name .. " [" .. math.floor(dist) .. " studs] HP:" .. hp
 					data.label.TextColor3 = col
 				end
@@ -4313,12 +3998,6 @@ local globalESPSwitch = createSwitch(localPage, "ESP Global", 404, function(on)
 	end
 end)
 
--- Toggle icônes chat sur l'ESP
-local chatIconsSwitch = createSwitch(localPage, "Icônes chat ESP", 448, function(on)
-	espState.chatIcons = on
-end)
-chatIconsSwitch.set(true)
-
 
 -- ============= AUTO CLICKER =============
 local autoClickState = {
@@ -5490,22 +5169,10 @@ local function _initAimbot()
 	local aimbotAutoClick = false
 	local aimbotMaxDist = 300 -- studs (par défaut)
 
-	-- Status label (en haut, avant les switches)
-	local aimStatusLabel = Instance.new("TextLabel")
-	aimStatusLabel.Size = UDim2.new(1, 0, 0, 16)
-	aimStatusLabel.BackgroundTransparency = 1
-	aimStatusLabel.Text = "⏸ Aim inactif"
-	aimStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
-	aimStatusLabel.Font = Enum.Font.Gotham
-	aimStatusLabel.TextSize = 10
-	aimStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-	aimStatusLabel.LayoutOrder = 2
-	aimStatusLabel.Parent = aimbotCard
-
 	local mainSwitchRow = Instance.new("Frame")
 	mainSwitchRow.Size = UDim2.new(1, 0, 0, 26)
 	mainSwitchRow.BackgroundTransparency = 1
-	mainSwitchRow.LayoutOrder = 3
+	mainSwitchRow.LayoutOrder = 2
 	mainSwitchRow.Parent = aimbotCard
 	local mainSwitchLabel = Instance.new("TextLabel")
 	mainSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
@@ -5516,18 +5183,17 @@ local function _initAimbot()
 	mainSwitchLabel.TextSize = 11
 	mainSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
 	mainSwitchLabel.Parent = mainSwitchRow
-	mainSwitchLabel.ZIndex = 4
-	local mainSwitch = createSwitch(mainSwitchRow, "", 0, function(on)
+	local mainSwitch = createSwitch(mainSwitchRow, "", 1, function(on)
 		aimbotEnabled = on
 	end)
-	mainSwitch.Size = UDim2.new(0.3, -4, 0.85, 0)
-	mainSwitch.Position = UDim2.new(0.7, 4, 0.075, 0)
+	mainSwitch.Size = UDim2.new(0.3, -4, 1, 0)
+	mainSwitch.Position = UDim2.new(0.7, 4, 0, 0)
 
 	-- Toggle auto-clic
 	local clickSwitchRow = Instance.new("Frame")
 	clickSwitchRow.Size = UDim2.new(1, 0, 0, 26)
 	clickSwitchRow.BackgroundTransparency = 1
-	clickSwitchRow.LayoutOrder = 4
+	clickSwitchRow.LayoutOrder = 3
 	clickSwitchRow.Parent = aimbotCard
 	local clickSwitchLabel = Instance.new("TextLabel")
 	clickSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
@@ -5538,18 +5204,17 @@ local function _initAimbot()
 	clickSwitchLabel.TextSize = 11
 	clickSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
 	clickSwitchLabel.Parent = clickSwitchRow
-	clickSwitchLabel.ZIndex = 4
-	local clickSwitch = createSwitch(clickSwitchRow, "", 0, function(on)
+	local clickSwitch = createSwitch(clickSwitchRow, "", 1, function(on)
 		aimbotAutoClick = on
 	end)
-	clickSwitch.Size = UDim2.new(0.3, -4, 0.85, 0)
-	clickSwitch.Position = UDim2.new(0.7, 4, 0.075, 0)
+	clickSwitch.Size = UDim2.new(0.3, -4, 1, 0)
+	clickSwitch.Position = UDim2.new(0.7, 4, 0, 0)
 
 	-- Slider de distance max (clic gauche = -25, clic droit = +25)
 	local distRow = Instance.new("Frame")
 	distRow.Size = UDim2.new(1, 0, 0, 26)
 	distRow.BackgroundTransparency = 1
-	distRow.LayoutOrder = 5
+	distRow.LayoutOrder = 4
 	distRow.Parent = aimbotCard
 	local distLabel = Instance.new("TextLabel")
 	distLabel.Size = UDim2.new(0.5, 0, 1, 0)
@@ -5580,19 +5245,6 @@ local function _initAimbot()
 		distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
 	end)
 
-	-- Label d'aide sous les switches
-	local helpLbl = Instance.new("TextLabel")
-	helpLbl.Size = UDim2.new(1, 0, 0, 28)
-	helpLbl.BackgroundTransparency = 1
-	helpLbl.Text = "ℹ️  Active Aim puis vise une cible à l'écran. Clic auto tire quand verrouillé."
-	helpLbl.TextColor3 = Color3.fromRGB(150, 150, 170)
-	helpLbl.Font = Enum.Font.Gotham
-	helpLbl.TextSize = 10
-	helpLbl.TextXAlignment = Enum.TextXAlignment.Left
-	helpLbl.TextWrapped = true
-	helpLbl.LayoutOrder = 6
-	helpLbl.Parent = aimbotCard
-
 	-- Indicateur visuel : cercle rouge qui apparaît sur la cible actuelle
 	local aimCircle = Instance.new("Frame")
 	aimCircle.Size = UDim2.new(0, 60, 0, 60)
@@ -5609,6 +5261,18 @@ local function _initAimbot()
 	aimCircleStroke.Thickness = 3
 	aimCircleStroke.Transparency = 0.3
 	aimCircleStroke.Parent = aimCircle
+
+	-- Status label
+	local aimStatusLabel = Instance.new("TextLabel")
+	aimStatusLabel.Size = UDim2.new(1, 0, 0, 16)
+	aimStatusLabel.BackgroundTransparency = 1
+	aimStatusLabel.Text = "⏸ Aim inactif"
+	aimStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
+	aimStatusLabel.Font = Enum.Font.Gotham
+	aimStatusLabel.TextSize = 10
+	aimStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+	aimStatusLabel.LayoutOrder = 5
+	aimStatusLabel.Parent = aimbotCard
 
 	-- Boucle aimbot sur RenderStepped
 	local cam = workspace.CurrentCamera
@@ -6008,9 +5672,7 @@ RunService.Heartbeat:Connect(function()
 
 	if protectionsState.antiTeleport then
 		if isAntiTpSuspended() then
-			-- Pendant fly/noclip, on met à jour la baseline en continu pour que l'atterrissage ne soit pas vu comme un TP
-			protectionsState.lastSafeCFrame = rootPart.CFrame
-			protectionsState.lastHrpPosition = pos
+			-- Gel : ne pas toucher aux références pendant fly/noclip
 		else
 			local last = protectionsState.lastHrpPosition
 			if last then
@@ -6920,37 +6582,7 @@ local function renderResult(data, parent)
 
 	local lines = {}
 	table.insert(lines, "━━━━━━━━━ " .. (data.username or "?") .. " ━━━━━━━━━")
-	table.insert(lines, "  💬 Can chat        : [CHATSTATUS]")
 	table.insert(lines, "  🆔 User ID          : " .. (data.userId or "Indisponible"))
-
-	-- Mise à jour async du statut chat (API native Roblox)
-	if data.userId then
-		_G._resolveCanChat(data.userId, function(result, src)
-			local chatText
-			if src == "CanTalkWithMe" then
-				if result == true then
-					chatText = "  💬 Peut me parler    : oui"
-				elseif result == false then
-					chatText = "  🚫 Peut me parler    : non"
-				else
-					chatText = "  💬 Peut me parler    : inconnu"
-				end
-			else
-				if result == true then
-					chatText = "  📢 Chat activé       : oui (" .. src .. ")"
-				elseif result == false then
-					chatText = "  🔕 Chat activé       : non (" .. src .. ")"
-				else
-					chatText = "  💬 Chat                : non vérifiable"
-				end
-			end
-			if big and big.Parent then
-				pcall(function()
-					big.Text = big.Text:gsub("  💬 Can chat        : %[CHATSTATUS%]", chatText, 1)
-				end)
-			end
-		end)
-	end
 	table.insert(lines, "  📛 Display Name     : " .. (data.displayName or "Indisponible"))
 	table.insert(lines, "  📝 Bio / Blurb      : " .. (data.blurb or "Indisponible"))
 	if data.customTags and #data.customTags > 0 then
@@ -7670,9 +7302,6 @@ buildRegistrySection(registryPage)
 	for _, child in ipairs(rp:GetChildren()) do
 		if child ~= rs then
 			child.Parent = rs
-			if child:IsA("GuiObject") and child.LayoutOrder == 0 then
-				child.LayoutOrder = (#rs:GetChildren() - 1)
-			end
 		end
 	end
 	rs.CanvasSize = UDim2.new(0, 0, 0, rl.AbsoluteContentSize.Y + 10)
@@ -8177,7 +7806,7 @@ end)(mainFrame)
 -- BOOT SAFE 3 LAYERS:
 -- Layer 1: reveal immédiat à 0.5s (filet de sécurité absolu)
 -- Layer 2: reveal à 3s si pas encore visible (fallback)
--- Layer 3: switchTab après reveal (parse-time IIFE) + bootSequence call explicite
+-- Layer 3: switchTab après reveal
 ;(function(_pages, _switchTab)
 	-- LAYER 1: reveal immédiat à 0.5s
 	task.delay(0.5, function()
@@ -8201,25 +7830,3 @@ end)(mainFrame)
 		end)
 	end)
 end)(pages, switchTab)
-
--- FALLBACK absolu: si l'intro n'a jamais révélé le panel, le forcer visible + onglet Joueurs après 5s
-task.delay(5, function()
-	pcall(function()
-		if mainFrame and not mainFrame.Visible then
-			warn("[AGORA] Fallback reveal: panel forcé visible")
-			mainFrame.Visible = true
-		end
-		if pages and pages["Joueurs"] and not pages["Joueurs"].Visible then
-			switchTab("Joueurs")
-		end
-	end)
-end)
-
--- Lancer l'intro cinéma si on veut (désactivée par défaut car elle bloque le fallback)
--- pcall(function() bootSequence(function()
--- 	pcall(function() mainFrame.Visible = true end)
--- 	switchTab("Joueurs")
--- end) end)
-
-end
-_buildPanel()
