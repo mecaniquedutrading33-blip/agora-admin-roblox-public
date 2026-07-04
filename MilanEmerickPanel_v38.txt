@@ -10,6 +10,17 @@ local SETTINGS = {
 	SpiderTransitionSpeed = 15
 }
 
+-- Global Agora config (must be at very top of runtime logic)
+_G.AgoraUpdates = {}
+_G.AgoraLang = "FR"
+_G.AgoraDiscordURL = "https://discord.gg/agora-admin"
+function _G.registerUpdate(msg)
+	table.insert(_G.AgoraUpdates, 1, msg)
+	if #_G.AgoraUpdates > 50 then
+		table.remove(_G.AgoraUpdates)
+	end
+end
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -516,11 +527,16 @@ tabBar.BorderSizePixel = 0
 tabBar.Parent = mainFrame
 createCorner(tabBar, 10)
 
-local tabHolder = Instance.new("Frame")
+local tabHolder = Instance.new("ScrollingFrame")
+tabHolder.Name = "TabHolder"
 tabHolder.Size = UDim2.new(1, -8, 1, -8)
 tabHolder.Position = UDim2.new(0, 4, 0, 4)
 tabHolder.BackgroundTransparency = 1
 tabHolder.Parent = tabBar
+tabHolder.ScrollingDirection = Enum.ScrollingDirection.X
+tabHolder.ScrollBarThickness = 0
+tabHolder.ScrollingEnabled = true
+tabHolder.AutomaticCanvasSize = Enum.AutomaticSize.X
 
 local tabLayout = Instance.new("UIListLayout")
 tabLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -537,7 +553,7 @@ contentFrame.Parent = mainFrame
 
 local pages = {}
 local tabButtons = {}
-local activeTab = "Joueurs"
+local activeTab = "Home"
 
 local function switchTab(name)
 	activeTab = name
@@ -556,14 +572,15 @@ end
 
 local function createTab(name)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0.135, -2, 1, 0)
+	btn.Size = UDim2.new(0, 76, 1, -4)
 	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 	btn.Text = name
 	btn.Font = Enum.Font.GothamSemibold
-	btn.TextSize = 11
+	btn.TextSize = 10
 	btn.TextColor3 = Color3.fromRGB(160, 160, 160)
 	btn.BorderSizePixel = 0
 	btn.AutoButtonColor = false
+	btn.LayoutOrder = #pages + 1
 	btn.Parent = tabHolder
 	createCorner(btn, 6)
 	btn.MouseButton1Click:Connect(function() switchTab(name) end)
@@ -579,13 +596,207 @@ local function createTab(name)
 	return page
 end
 
-local playersPage = createTab("Joueurs")
-local movePage = createTab("Move")
-local extraPage = createTab("Extra")
-local remotesPage = createTab("Remotes")
-local registryPage = createTab("Registry")
-local localPage = createTab("Local")
-local protectionsPage = createTab("Protections")
+local P = {}
+local S = {}
+P.homePage = createTab("Home")
+P.playersPage = createTab("Joueurs")
+P.movePage = createTab("Move")
+P.extraPage = createTab("Extra")
+P.remotesPage = createTab("Remotes")
+P.registryPage = createTab("Registry")
+P.localPage = createTab("Local")
+P.protectionsPage = createTab("Protections")
+
+
+-- ============= HOME TAB =============
+local H = {}
+H.homeScroll = Instance.new("ScrollingFrame")
+H.homeScroll.Size = UDim2.new(1, -10, 1, -10)
+H.homeScroll.Position = UDim2.new(0, 5, 0, 5)
+H.homeScroll.BackgroundTransparency = 1
+H.homeScroll.BorderSizePixel = 0
+H.homeScroll.ScrollBarThickness = 4
+H.homeScroll.Parent = P.homePage
+H.homeScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+H.homeScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+H.homeLayout = Instance.new("UIListLayout")
+H.homeLayout.Padding = UDim.new(0, 8)
+H.homeLayout.SortOrder = Enum.SortOrder.LayoutOrder
+H.homeLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+H.homeLayout.Parent = H.homeScroll
+
+H.titleHome = Instance.new("TextLabel")
+H.titleHome.Size = UDim2.new(1, -20, 0, 40)
+H.titleHome.BackgroundTransparency = 1
+H.titleHome.Text = "Agora Admin"
+H.titleHome.Font = Enum.Font.GothamBlack
+H.titleHome.TextSize = 28
+H.titleHome.TextColor3 = Color3.fromRGB(230, 230, 245)
+H.titleHome.LayoutOrder = 1
+H.titleHome.Parent = H.homeScroll
+
+H.versionLabel = Instance.new("TextLabel")
+H.versionLabel.Size = UDim2.new(1, -20, 0, 22)
+H.versionLabel.BackgroundTransparency = 1
+H.versionLabel.Text = "Version: v38.70"
+H.versionLabel.Font = Enum.Font.GothamSemibold
+H.versionLabel.TextSize = 13
+H.versionLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
+H.versionLabel.LayoutOrder = 2
+H.versionLabel.Parent = H.homeScroll
+
+task.spawn(function()
+	local ok, ver = pcall(function()
+		return game:HttpGet("https://raw.githubusercontent.com/mecaniquedutrading33-blip/agora-admin-roblox-public/main/VERSION.txt?nocache=" .. tostring(tick()), true)
+	end)
+	if ok and ver then
+		ver = ver:gsub("%s+", "")
+		if #ver > 0 then
+			H.versionLabel.Text = "Version: " .. ver
+		end
+	end
+end)
+
+-- Discord button animated
+H.discordBtn = Instance.new("TextButton")
+H.discordBtn.Size = UDim2.new(1, -20, 0, 42)
+H.discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+H.discordBtn.Text = "Rejoindre le serveur Discord Agora"
+H.discordBtn.Font = Enum.Font.GothamBold
+H.discordBtn.TextSize = 13
+H.discordBtn.TextColor3 = Color3.new(1, 1, 1)
+H.discordBtn.BorderSizePixel = 0
+H.discordBtn.AutoButtonColor = false
+H.discordBtn.LayoutOrder = 3
+H.discordBtn.Parent = H.homeScroll
+createCorner(H.discordBtn, 10)
+
+H.discordShine = Instance.new("Frame")
+H.discordShine.Size = UDim2.new(0, 40, 1, 0)
+H.discordShine.Position = UDim2.new(0, -60, 0, 0)
+H.discordShine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+H.discordShine.BackgroundTransparency = 0.85
+H.discordShine.BorderSizePixel = 0
+H.discordShine.Rotation = 15
+H.discordShine.Parent = H.discordBtn
+
+H.shineCorner = Instance.new("UICorner")
+H.shineCorner.CornerRadius = UDim.new(0, 10)
+H.shineCorner.Parent = H.discordShine
+
+task.spawn(function()
+	while discordBtn and H.discordBtn.Parent do
+		H.discordShine.Position = UDim2.new(0, -60, 0, 0)
+		tween(discordShine, {Position = UDim2.new(1, 20, 0, 0)}, 0.8)
+		task.wait(4)
+	end
+end)
+
+H.discordBtn.MouseButton1Click:Connect(function()
+	local ok = pcall(function()
+		setclipboard(_G.AgoraDiscordURL)
+	end)
+	local original = H.discordBtn.Text
+	H.discordBtn.Text = ok and "Lien copié !" or "Impossible de copier"
+	task.wait(2)
+	H.discordBtn.Text = original
+end)
+
+-- Language selector FR/EN/RU
+H.langFrame = Instance.new("Frame")
+H.H.langFrame.Size = UDim2.new(1, -20, 0, 34)
+H.H.langFrame.BackgroundTransparency = 1
+H.H.langFrame.LayoutOrder = 4
+H.H.langFrame.Parent = H.homeScroll
+
+H.langLayout = Instance.new("UIListLayout")
+H.H.langLayout.FillDirection = Enum.FillDirection.Horizontal
+H.H.langLayout.Padding = UDim.new(0, 6)
+H.H.langLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+H.H.langLayout.Parent = langFrame
+
+local function makeLangBtn(code)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(0, 48, 1, 0)
+	b.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+	b.Text = code
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 13
+	b.TextColor3 = Color3.fromRGB(160, 160, 160)
+	b.BorderSizePixel = 0
+	b.AutoButtonColor = false
+	b.Parent = langFrame
+	createCorner(b, 6)
+	local function update()
+		if _G.AgoraLang == code then
+			b.BackgroundColor3 = Color3.fromRGB(80, 120, 255)
+			b.TextColor3 = Color3.new(1, 1, 1)
+		else
+			b.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+			b.TextColor3 = Color3.fromRGB(160, 160, 160)
+		end
+	end
+	b.MouseButton1Click:Connect(function()
+		_G.AgoraLang = code
+		update()
+	end)
+	update()
+	return b
+end
+
+makeLangBtn("FR")
+makeLangBtn("EN")
+makeLangBtn("RU")
+
+-- Changelog
+H.changelogLabel = Instance.new("TextLabel")
+H.changelogLabel.Size = UDim2.new(1, -20, 0, 22)
+H.changelogLabel.BackgroundTransparency = 1
+H.changelogLabel.Text = "Changelog"
+H.changelogLabel.Font = Enum.Font.GothamBold
+H.changelogLabel.TextSize = 14
+H.changelogLabel.TextColor3 = Color3.fromRGB(230, 230, 245)
+H.changelogLabel.LayoutOrder = 5
+H.changelogLabel.Parent = H.homeScroll
+
+H.changelogScroll = Instance.new("ScrollingFrame")
+H.changelogScroll.Size = UDim2.new(1, -20, 0, 180)
+H.changelogScroll.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+H.changelogScroll.BackgroundTransparency = 0.4
+H.changelogScroll.BorderSizePixel = 0
+H.changelogScroll.ScrollBarThickness = 4
+H.changelogScroll.LayoutOrder = 6
+H.changelogScroll.Parent = H.homeScroll
+H.changelogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+H.changelogScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+createCorner(H.changelogScroll, 8)
+
+H.changelogLayout = Instance.new("UIListLayout")
+H.changelogLayout.Padding = UDim.new(0, 4)
+H.changelogLayout.SortOrder = Enum.SortOrder.LayoutOrder
+H.changelogLayout.Parent = H.changelogScroll
+
+task.spawn(function()
+	while H.changelogScroll and H.changelogScroll.Parent do
+		for _, child in ipairs(H.changelogScroll:GetChildren()) do
+			if child:IsA("TextLabel") then child:Destroy() end
+		end
+		for i, msg in ipairs(_G.AgoraUpdates) do
+			local l = Instance.new("TextLabel")
+			l.Size = UDim2.new(1, -10, 0, 20)
+			l.BackgroundTransparency = 1
+			l.Text = "• " .. msg
+			l.Font = Enum.Font.Gotham
+			l.TextSize = 12
+			l.TextColor3 = Color3.fromRGB(180, 180, 200)
+			l.TextWrapped = true
+			l.LayoutOrder = i
+			l.Parent = H.changelogScroll
+		end
+		task.wait(2)
+	end
+end)
 
 -- ============= REGISTRY SEARCH + AUTOCOMPLETE =============
 -- WRAP dans local function + appel pour isoler les locals
@@ -602,7 +813,7 @@ local function _initRegistrySearch()
 	registrySearchBox.TextSize = 12
 	registrySearchBox.TextXAlignment = Enum.TextXAlignment.Center
 	registrySearchBox.ClearTextOnFocus = false
-	registrySearchBox.Parent = registryPage
+	registrySearchBox.Parent = P.registryPage
 	createCorner(registrySearchBox, 8)
 	createStroke(registrySearchBox, Color3.fromRGB(80, 80, 100), 1)
 
@@ -619,7 +830,7 @@ local function _initRegistrySearch()
 	registryClearBtn.Visible = false -- caché quand la searchBox est vide
 	registryClearBtn.ZIndex = registrySearchBox.ZIndex + 1
 	registryClearBtn.AutoButtonColor = true
-	registryClearBtn.Parent = registryPage
+	registryClearBtn.Parent = P.registryPage
 	createCorner(registryClearBtn, 11) -- rond
 	registryClearBtn.MouseButton1Click:Connect(function()
 		registrySearchBox.Text = ""
@@ -639,7 +850,7 @@ local function _initRegistrySearch()
 	suggestionsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 	suggestionsFrame.BorderSizePixel = 0
 	suggestionsFrame.Visible = false -- caché par défaut
-	suggestionsFrame.Parent = registryPage
+	suggestionsFrame.Parent = P.registryPage
 	createCorner(suggestionsFrame, 6)
 	createStroke(suggestionsFrame, Color3.fromRGB(70, 70, 100), 1)
 
@@ -822,76 +1033,76 @@ local function _initRegistrySearch()
 		end)
 	end)
 
-	-- Cliquer sur le frame parent (registryPage) en dehors de la search box
+	-- Cliquer sur le frame parent (P.registryPage) en dehors de la search box
 	-- cache les suggestions (pour pas qu'elles restent flottantes)
 end
 _initRegistrySearch()
 
 -- ============= REGISTRY SCROLL =============
--- registryScroll commence juste après la search box + un peu de gap pour les suggestions
-local registryScroll = Instance.new("ScrollingFrame")
-registryScroll.Size = UDim2.new(1, 0, 1, -40) -- 40px = search box (33) + gap (7)
-registryScroll.Position = UDim2.new(0, 0, 0, 40)
-registryScroll.BackgroundTransparency = 1
-registryScroll.ScrollBarThickness = 4
-registryScroll.BorderSizePixel = 0
-registryScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-registryScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
-registryScroll.Parent = registryPage
-createCorner(registryScroll, 4)
+-- S.registryScroll commence juste après la search box + un peu de gap pour les suggestions
+S.registryScroll = Instance.new("ScrollingFrame")
+S.registryScroll.Size = UDim2.new(1, 0, 1, -40) -- 40px = search box (33) + gap (7)
+S.registryScroll.Position = UDim2.new(0, 0, 0, 40)
+S.registryScroll.BackgroundTransparency = 1
+S.registryScroll.ScrollBarThickness = 4
+S.registryScroll.BorderSizePixel = 0
+S.registryScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+S.registryScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
+S.registryScroll.Parent = P.registryPage
+createCorner(S.registryScroll, 4)
 
 local registryLayout = Instance.new("UIListLayout")
 registryLayout.Padding = UDim.new(0, 6)
 registryLayout.SortOrder = Enum.SortOrder.LayoutOrder
-registryLayout.Parent = registryScroll
+registryLayout.Parent = S.registryScroll
 
 local registryPadding = Instance.new("UIPadding")
 registryPadding.PaddingTop = UDim.new(0, 4)
 registryPadding.PaddingBottom = UDim.new(0, 4)
 registryPadding.PaddingLeft = UDim.new(0, 6)
 registryPadding.PaddingRight = UDim.new(0, 6)
-registryPadding.Parent = registryScroll
+registryPadding.Parent = S.registryScroll
 
-local localScroll = Instance.new("ScrollingFrame")
-localScroll.Size = UDim2.new(1, 0, 1, 0)
-localScroll.BackgroundTransparency = 1
-localScroll.ScrollBarThickness = 4
-localScroll.BorderSizePixel = 0
-localScroll.CanvasSize = UDim2.new(0, 0, 0, 900)
-localScroll.Parent = localPage
+S.localScroll = Instance.new("ScrollingFrame")
+S.localScroll.Size = UDim2.new(1, 0, 1, 0)
+S.localScroll.BackgroundTransparency = 1
+S.localScroll.ScrollBarThickness = 4
+S.localScroll.BorderSizePixel = 0
+S.localScroll.CanvasSize = UDim2.new(0, 0, 0, 900)
+S.localScroll.Parent = P.localPage
 
 local localLayout = Instance.new("UIListLayout")
 localLayout.Padding = UDim.new(0, 6)
 localLayout.SortOrder = Enum.SortOrder.LayoutOrder
-localLayout.Parent = localScroll
+localLayout.Parent = S.localScroll
 
-local protectionsScroll = Instance.new("ScrollingFrame")
-protectionsScroll.Name = "ProtectionsScroll"
-protectionsScroll.Size = UDim2.new(1, 0, 1, 0)
-protectionsScroll.Position = UDim2.new(0, 0, 0, 0)
-protectionsScroll.BackgroundTransparency = 1
-protectionsScroll.ScrollBarThickness = 4
-protectionsScroll.BorderSizePixel = 0
-protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-protectionsScroll.Parent = protectionsPage
+S.protectionsScroll = Instance.new("ScrollingFrame")
+S.protectionsScroll.Name = "ProtectionsScroll"
+S.protectionsScroll.Size = UDim2.new(1, 0, 1, 0)
+S.protectionsScroll.Position = UDim2.new(0, 0, 0, 0)
+S.protectionsScroll.BackgroundTransparency = 1
+S.protectionsScroll.ScrollBarThickness = 4
+S.protectionsScroll.BorderSizePixel = 0
+S.protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+S.protectionsScroll.Parent = P.protectionsPage
 
 local protectionsLayout = Instance.new("UIListLayout")
 protectionsLayout.Padding = UDim.new(0, 6)
 protectionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-protectionsLayout.Parent = protectionsScroll
+protectionsLayout.Parent = S.protectionsScroll
 
 -- FIX: CanvasSize handler manquant + force remeasure après 1er render
 protectionsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, protectionsLayout.AbsoluteContentSize.Y + 10)
+	S.protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, protectionsLayout.AbsoluteContentSize.Y + 10)
 end)
 task.defer(function()
-	protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, protectionsLayout.AbsoluteContentSize.Y + 10)
+	S.protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, protectionsLayout.AbsoluteContentSize.Y + 10)
 end)
 
 local function reparentChildrenToLocalScroll()
-	for _, child in ipairs(localPage:GetChildren()) do
-		if child ~= localScroll then
-			child.Parent = localScroll
+	for _, child in ipairs(P.localPage:GetChildren()) do
+		if child ~= S.localScroll then
+			child.Parent = S.localScroll
 		end
 	end
 end
@@ -1291,7 +1502,7 @@ playerSearchBox.Font = Enum.Font.Gotham
 playerSearchBox.TextSize = 11
 playerSearchBox.TextXAlignment = Enum.TextXAlignment.Left
 playerSearchBox.ClearTextOnFocus = false
-playerSearchBox.Parent = playersPage
+playerSearchBox.Parent = P.playersPage
 createCorner(playerSearchBox, 6)
 createStroke(playerSearchBox, Color3.fromRGB(60, 60, 80), 1)
 
@@ -1308,7 +1519,7 @@ playerClearBtn.BorderSizePixel = 0
 playerClearBtn.Visible = false
 playerClearBtn.ZIndex = playerSearchBox.ZIndex + 1
 playerClearBtn.AutoButtonColor = true
-playerClearBtn.Parent = playersPage
+playerClearBtn.Parent = P.playersPage
 createCorner(playerClearBtn, 10)
 playerClearBtn.MouseButton1Click:Connect(function()
 	playerSearchBox.Text = ""
@@ -1319,21 +1530,22 @@ local psbPad = Instance.new("UIPadding")
 psbPad.PaddingLeft = UDim.new(0, 8)
 psbPad.Parent = playerSearchBox
 
--- playersScroll commence sous la searchBox de Joueurs
-local playersScroll = Instance.new("ScrollingFrame")
-playersScroll.Size = UDim2.new(1, -10, 1, -48)
-playersScroll.Position = UDim2.new(0, 5, 0, 40)
-playersScroll.BackgroundTransparency = 1
-playersScroll.ScrollBarThickness = 4
-playersScroll.BorderSizePixel = 0
-playersScroll.Parent = playersPage
+-- S.playersScroll commence sous la searchBox de Joueurs
+local S = {}
+S.playersScroll = Instance.new("ScrollingFrame")
+S.playersScroll.Size = UDim2.new(1, -10, 1, -48)
+S.playersScroll.Position = UDim2.new(0, 5, 0, 40)
+S.playersScroll.BackgroundTransparency = 1
+S.playersScroll.ScrollBarThickness = 4
+S.playersScroll.BorderSizePixel = 0
+S.playersScroll.Parent = P.playersPage
 
 -- Stats serveur déplacées vers l'onglet Extra (card "Stats serveur")
--- playersScroll prend maintenant toute la place disponible sous la searchBox
+-- S.playersScroll prend maintenant toute la place disponible sous la searchBox
 local playersLayout = Instance.new("UIListLayout")
 playersLayout.Padding = UDim.new(0, 6)
 playersLayout.SortOrder = Enum.SortOrder.LayoutOrder
-playersLayout.Parent = playersScroll
+playersLayout.Parent = S.playersScroll
 
 -- === CARTE "👑 MOI" (LocalPlayer) — auto-créée, toujours en haut ===
 ;(function(_createCorner, _createStroke)
@@ -1344,7 +1556,7 @@ playersLayout.Parent = playersScroll
 	myCard.BackgroundColor3 = Color3.fromRGB(45, 30, 70)
 	myCard.BorderSizePixel = 0
 	myCard.LayoutOrder = -100 -- toujours en premier
-	myCard.Parent = playersScroll
+	myCard.Parent = S.playersScroll
 	_createCorner(myCard, 8)
 	_createStroke(myCard, Color3.fromRGB(180, 130, 255), 1.5)
 
@@ -1515,7 +1727,7 @@ local function createPlayerEntry(plr)
 	card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 	card.BorderSizePixel = 0
 	card.LayoutOrder = plr.Name:byte(1)
-	card.Parent = playersScroll
+	card.Parent = S.playersScroll
 	createCorner(card, 10)
 	createStroke(card, Color3.fromRGB(45, 45, 55), 1)
 
@@ -2554,7 +2766,7 @@ local function addPlayerCard(plr)
 	if plr == LocalPlayer then return end
 	if playerCards[plr] and playerCards[plr].Parent then return end
 	createPlayerEntry(plr)
-	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
+	S.playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
 
 local function removePlayerCard(plr)
@@ -2567,7 +2779,7 @@ local function removePlayerCard(plr)
 		echoStatusLabel.Text = "Echo: aucun"
 		echoStatusLabel.TextColor3 = Color3.fromRGB(160, 160, 160)
 	end
-	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
+	S.playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
 
 local function refreshPlayersList()
@@ -2584,7 +2796,7 @@ local function refreshPlayersList()
 			createPlayerEntry(plr)
 		end
 	end
-	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
+	S.playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
 
 Players.PlayerAdded:Connect(function(plr)
@@ -2596,7 +2808,7 @@ Players.PlayerRemoving:Connect(function(plr)
 	removePlayerCard(plr)
 end)
 playersLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
+	S.playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end)
 refreshPlayersList()
 
@@ -2909,6 +3121,91 @@ local function matrixRain(parent, duration)
 			local speed = math.random(12, 35) / 10
 			tween(lbl, {Position = UDim2.new(lbl.Position.X.Scale, 0, 1.2, 0), TextTransparency = 1}, speed)
 			task.delay(speed + 0.1, function() if lbl then lbl:Destroy() end end)
+		end
+	end)
+end
+
+
+-- ============= TOAST NOTIFICATIONS =============
+local function showToast(message, color)
+	local toast = Instance.new("Frame")
+	toast.Size = UDim2.new(0, 240, 0, 44)
+	toast.Position = UDim2.new(1, -260, 1, -60)
+	toast.BackgroundColor3 = color or Color3.fromRGB(40, 40, 50)
+	toast.BorderSizePixel = 0
+	toast.Parent = screenGui
+	toast.ZIndex = 9998
+	createCorner(toast, 8)
+	createStroke(toast, Color3.fromRGB(80, 80, 90), 1)
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -16, 1, 0)
+	label.Position = UDim2.new(0, 8, 0, 0)
+	label.BackgroundTransparency = 1
+	label.Text = message
+	label.Font = Enum.Font.GothamSemibold
+	label.TextSize = 13
+	label.TextColor3 = Color3.fromRGB(230, 230, 245)
+	label.TextWrapped = true
+	label.Parent = toast
+
+	tween(toast, {Position = UDim2.new(1, -260, 1, -100)}, 0.25)
+	task.delay(4, function()
+		local ok, _ = pcall(function()
+			tween(toast, {Position = UDim2.new(1, 20, 1, -100), BackgroundTransparency = 1}, 0.25)
+			task.wait(0.3)
+			toast:Destroy()
+		end)
+		if not ok and toast then toast:Destroy() end
+	end)
+end
+
+-- ============= LOCAL TAB EXTRAS =============
+local N = {}
+
+local function _initLocalExtras()
+	-- Notifications join/leave
+	N.notifJoinLeaveSwitch = createSwitch(P.localPage, "Notif joueurs join/leave", 510, function(on)
+		N.notifJoinLeaveEnabled = on
+	end)
+	N.notifJoinLeaveSwitch.set(false)
+	N.notifJoinLeaveEnabled = false
+
+	Players.PlayerAdded:Connect(function(plr)
+		if N.notifJoinLeaveEnabled then
+			showToast(plr.Name .. " a rejoint", Color3.fromRGB(60, 190, 120))
+		end
+	end)
+	Players.PlayerRemoving:Connect(function(plr)
+		if N.notifJoinLeaveEnabled then
+			showToast(plr.Name .. " est parti", Color3.fromRGB(180, 60, 60))
+		end
+	end)
+
+	-- Suspected cheat heartbeat
+	N.suspectCheatSwitch = createSwitch(P.localPage, "Notif suspected cheat", 558, function(on)
+		N.suspectCheatEnabled = on
+	end)
+	N.suspectCheatSwitch.set(false)
+	N.suspectCheatEnabled = false
+
+	RunService.Heartbeat:Connect(function()
+		if not N.suspectCheatEnabled then return end
+		for _, plr in ipairs(Players:GetPlayers()) do
+			if plr == LocalPlayer then continue end
+			local char = plr.Character
+			if not char then continue end
+			local hum = char:FindFirstChildOfClass("Humanoid")
+			if not hum then continue end
+			local fast = false
+			local root = char:FindFirstChild("HumanoidRootPart")
+			if root and root:IsA("BasePart") then
+				fast = root.Velocity.Magnitude > 180
+			end
+			local overHealth = hum.Health > hum.MaxHealth * 1.5 + 10
+			if fast or overHealth then
+				showToast("Suspect: " .. plr.Name .. (fast and " vitesse" or " santé"), Color3.fromRGB(255, 140, 0))
+			end
 		end
 	end)
 end
@@ -3759,15 +4056,15 @@ local function createSlider(parent, labelText, yPos, min, max, default, callback
 	}
 end
 
-local flySwitch = createSwitch(movePage, "Fly", 10, function(on)
+local flySwitch = createSwitch(P.movePage, "Fly", 10, function(on)
 	if on then startFly() else stopFly() end
 end)
 
-local flySlider = createSlider(movePage, "Vitesse Fly", 52, 20, 500, flyState.speed, function(v)
+local flySlider = createSlider(P.movePage, "Vitesse Fly", 52, 20, 500, flyState.speed, function(v)
 	flyState.speed = math.floor(v)
 end, Color3.fromRGB(100, 180, 255))
 
-local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
+local noclipSwitch = createSwitch(P.movePage, "NoClip", 108, function(on)
 	noclipState.enabled = on
 	if not on then
 		updateCharacter()
@@ -3884,7 +4181,7 @@ local function computePathTo(targetPos)
 	return {}
 end
 
-local gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, function(on)
+local gotoWalkSwitch = createSwitch(P.movePage, "Go to Walk (click sol)", 150, function(on)
 	gotoWalkState.enabled = on
 	gotoWalkState.active = on
 	if not on then
@@ -3894,7 +4191,7 @@ local gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, fun
 	end
 end)
 
-createSwitch(movePage, "Saut infini", 192, function(on)
+createSwitch(P.movePage, "Saut infini", 192, function(on)
 	jumpState.infinite = on
 end)
 
@@ -3902,13 +4199,13 @@ local function refreshNoClipSwitch()
 	noclipSwitch.set(false)
 end
 
-local walkSlider = createSlider(movePage, "Vitesse marche", 234, 1, 250, 16, function(v)
+local walkSlider = createSlider(P.movePage, "Vitesse marche", 234, 1, 250, 16, function(v)
 	walkSpeedState.value = math.floor(v)
 	updateCharacter()
 	if humanoid then humanoid.WalkSpeed = walkSpeedState.value end
 end, Color3.fromRGB(255, 100, 100))
 
-local walkResetBtn = createButton(movePage, "Reset vitesse", 288, Color3.fromRGB(80, 80, 90), function()
+local walkResetBtn = createButton(P.movePage, "Reset vitesse", 288, Color3.fromRGB(80, 80, 90), function()
 	walkSpeedState.value = 16
 	walkSlider.set(16)
 	updateCharacter()
@@ -3924,7 +4221,7 @@ platformLabel.Font = Enum.Font.Gotham
 platformLabel.TextSize = 11
 platformLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 platformLabel.TextXAlignment = Enum.TextXAlignment.Left
-platformLabel.Parent = movePage
+platformLabel.Parent = P.movePage
 
 
 -- ============= LOCAL (ZERO-G + TIME + GRAVITY) =============
@@ -3935,7 +4232,7 @@ local localState = {
 	timeOfDay = 12,
 }
 
-local zeroGSwitch = createSwitch(localPage, "Zero Gravité", 10, function(on)
+local zeroGSwitch = createSwitch(P.localPage, "Zero Gravité", 10, function(on)
 	localState.zeroGravity = on
 	if on then
 		Workspace.Gravity = 0
@@ -3966,7 +4263,7 @@ gravityContainer.Size = UDim2.new(1, -16, 0, 86)
 gravityContainer.Position = UDim2.new(0, 8, 0, 56)
 gravityContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 gravityContainer.BorderSizePixel = 0
-gravityContainer.Parent = localPage
+gravityContainer.Parent = P.localPage
 createCorner(gravityContainer, 10)
 createStroke(gravityContainer, Color3.fromRGB(45, 45, 55), 1)
 
@@ -4049,13 +4346,13 @@ gravityInput.FocusLost:Connect(function(enterPressed)
 	setGravityExact(gravityInput.Text)
 end)
 
-local resetGravityBtn = createButton(localPage, "Reset gravité normale", 148, Color3.fromRGB(80, 80, 90), function()
+local resetGravityBtn = createButton(P.localPage, "Reset gravité normale", 148, Color3.fromRGB(80, 80, 90), function()
 	setGravityExact(196.2)
 end)
 resetGravityBtn.Size = UDim2.new(1, -16, 0, 30)
 resetGravityBtn.Position = UDim2.new(0, 8, 0, 148)
 
-local timeSwitch = createSwitch(localPage, "Temps custom", 200, function(on)
+local timeSwitch = createSwitch(P.localPage, "Temps custom", 200, function(on)
 	if on then
 		Lighting.TimeOfDay = string.format("%02d:00:00", localState.timeOfDay)
 	else
@@ -4063,18 +4360,29 @@ local timeSwitch = createSwitch(localPage, "Temps custom", 200, function(on)
 	end
 end)
 
-createSlider(localPage, "Heure du jour", 246, 0, 24, 12, function(v)
+createSlider(P.localPage, "Heure du jour", 246, 0, 24, 12, function(v)
 	localState.timeOfDay = math.floor(v)
 	Lighting.TimeOfDay = string.format("%02d:00:00", localState.timeOfDay)
 end, Color3.fromRGB(255, 180, 60))
 
-createSwitch(localPage, "Freeze temps", 292, function(on)
+local freezeTimeSwitch = createSwitch(P.localPage, "Freeze temps", 292, function(on)
 	if on then
 		Lighting.ClockTime = localState.timeOfDay
 	end
 end)
 
-createButton(localPage, "Reset monde", 348, Color3.fromRGB(80, 80, 90), function()
+-- Renforcement Temps custom / Freeze temps
+RunService.Heartbeat:Connect(function()
+	if timeSwitch.get() then
+		Lighting.TimeOfDay = string.format("%02d:00:00", localState.timeOfDay)
+	end
+	if freezeTimeSwitch.get() then
+		Lighting.ClockTime = localState.timeOfDay
+	end
+end)
+
+
+createButton(P.localPage, "Reset monde", 348, Color3.fromRGB(80, 80, 90), function()
 	Workspace.Gravity = localState.normalGravity
 	Lighting.TimeOfDay = "12:00:00"
 	zeroGSwitch.set(false)
@@ -4085,7 +4393,7 @@ end)
 
 -- Switch ESP Global dans l'onglet Local
 local globalESPEnabled = false
-local globalESPSwitch = createSwitch(localPage, "ESP Global", 404, function(on)
+local globalESPSwitch = createSwitch(P.localPage, "ESP Global", 404, function(on)
 	globalESPEnabled = on
 	espState.enabled = on
 	if on then
@@ -4096,7 +4404,7 @@ local globalESPSwitch = createSwitch(localPage, "ESP Global", 404, function(on)
 end)
 
 -- Switch ESP Chat Icons (icône 💬 sur ESP)
-createSwitch(localPage, "ESP Chat Icons", 462, function(on)
+createSwitch(P.localPage, "ESP Chat Icons", 462, function(on)
 	espState.chatIcons = on
 end)
 
@@ -4396,7 +4704,7 @@ autoClickContainer.Size = UDim2.new(1, -16, 0, 260)
 autoClickContainer.Position = UDim2.new(0, 8, 0, 460)
 autoClickContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 autoClickContainer.BorderSizePixel = 0
-autoClickContainer.Parent = localPage
+autoClickContainer.Parent = P.localPage
 createCorner(autoClickContainer, 10)
 createStroke(autoClickContainer, Color3.fromRGB(45, 45, 55), 1)
 
@@ -4779,7 +5087,7 @@ end)
 reparentChildrenToLocalScroll()
 
 -- Agrandit le scroll pour accueillir l'autoclicker
-localScroll.CanvasSize = UDim2.new(0, 0, 0, 900)
+S.localScroll.CanvasSize = UDim2.new(0, 0, 0, 900)
 
 -- Empêche le panel d'être poussé sous le chat au démarrage
 task.delay(0, function()
@@ -4992,28 +5300,28 @@ local fullbrightState = { enabled = false, old = {} }
 local clickTPState = { enabled = false }
 local hitboxState = { enabled = false }
 
--- FIX: extraPage overflow (17+ items Y=10..730 > panel height 520px). Wrap in ScrollingFrame.
-local extraScroll = Instance.new("ScrollingFrame")
-extraScroll.Name = "ExtraScroll"
-extraScroll.Size = UDim2.new(1, -10, 1, -10)
-extraScroll.Position = UDim2.new(0, 5, 0, 5)
-extraScroll.BackgroundTransparency = 1
-extraScroll.ScrollBarThickness = 4
-extraScroll.BorderSizePixel = 0
-extraScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-extraScroll.Parent = extraPage
+-- FIX: P.extraPage overflow (17+ items Y=10..730 > panel height 520px). Wrap in ScrollingFrame.
+S.extraScroll = Instance.new("ScrollingFrame")
+S.extraScroll.Name = "ExtraScroll"
+S.extraScroll.Size = UDim2.new(1, -10, 1, -10)
+S.extraScroll.Position = UDim2.new(0, 5, 0, 5)
+S.extraScroll.BackgroundTransparency = 1
+S.extraScroll.ScrollBarThickness = 4
+S.extraScroll.BorderSizePixel = 0
+S.extraScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+S.extraScroll.Parent = P.extraPage
 
 local extraLayout = Instance.new("UIListLayout")
 extraLayout.Padding = UDim.new(0, 6)
 extraLayout.SortOrder = Enum.SortOrder.LayoutOrder
 extraLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-extraLayout.Parent = extraScroll
+extraLayout.Parent = S.extraScroll
 
 extraLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	extraScroll.CanvasSize = UDim2.new(0, 0, 0, extraLayout.AbsoluteContentSize.Y + 10)
+	S.extraScroll.CanvasSize = UDim2.new(0, 0, 0, extraLayout.AbsoluteContentSize.Y + 10)
 end)
 task.defer(function()
-	extraScroll.CanvasSize = UDim2.new(0, 0, 0, extraLayout.AbsoluteContentSize.Y + 10)
+	S.extraScroll.CanvasSize = UDim2.new(0, 0, 0, extraLayout.AbsoluteContentSize.Y + 10)
 end)
 
 -- === Carte "Stats serveur" (6 stats en grille) — déplacée depuis Joueurs (trop large) ===
@@ -5026,7 +5334,7 @@ local function _initServerStatsCard()
 	statsCard.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 	statsCard.BorderSizePixel = 0
 	statsCard.LayoutOrder = 1 -- AVANT serverInfoCard (LayoutOrder 0 sera mis à 0 après)
-	statsCard.Parent = extraScroll
+	statsCard.Parent = S.extraScroll
 	createCorner(statsCard, 8)
 	createStroke(statsCard, Color3.fromRGB(80, 80, 120), 1)
 
@@ -5145,7 +5453,7 @@ local function _initServerInfoCard()
 	serverInfoCard.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 	serverInfoCard.BorderSizePixel = 0
 	serverInfoCard.LayoutOrder = 2 -- sous la carte "Stats serveur" (LayoutOrder 1)
-	serverInfoCard.Parent = extraScroll
+	serverInfoCard.Parent = S.extraScroll
 	createCorner(serverInfoCard, 8)
 	createStroke(serverInfoCard, Color3.fromRGB(80, 80, 120), 1)
 
@@ -5236,7 +5544,7 @@ local function _initAimbot()
 	aimbotCard.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 	aimbotCard.BorderSizePixel = 0
 	aimbotCard.LayoutOrder = 4 -- après serverInfoCard
-	aimbotCard.Parent = extraScroll
+	aimbotCard.Parent = S.extraScroll
 	createCorner(aimbotCard, 8)
 	createStroke(aimbotCard, Color3.fromRGB(180, 80, 80), 1)
 
@@ -5276,7 +5584,7 @@ local function _initAimbot()
 	local mainSwitchRow = Instance.new("Frame")
 	mainSwitchRow.Size = UDim2.new(1, 0, 0, 26)
 	mainSwitchRow.BackgroundTransparency = 1
-	mainSwitchRow.LayoutOrder = 2
+	mainSwitchRow.LayoutOrder = 3
 	mainSwitchRow.Parent = aimbotCard
 	local mainSwitchLabel = Instance.new("TextLabel")
 	mainSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
@@ -5302,7 +5610,7 @@ local function _initAimbot()
 	local clickSwitchRow = Instance.new("Frame")
 	clickSwitchRow.Size = UDim2.new(1, 0, 0, 26)
 	clickSwitchRow.BackgroundTransparency = 1
-	clickSwitchRow.LayoutOrder = 3
+	clickSwitchRow.LayoutOrder = 4
 	clickSwitchRow.Parent = aimbotCard
 	local clickSwitchLabel = Instance.new("TextLabel")
 	clickSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
@@ -5323,7 +5631,7 @@ local function _initAimbot()
 	local teamSwitchRow = Instance.new("Frame")
 	teamSwitchRow.Size = UDim2.new(1, 0, 0, 26)
 	teamSwitchRow.BackgroundTransparency = 1
-	teamSwitchRow.LayoutOrder = 4
+	teamSwitchRow.LayoutOrder = 5
 	teamSwitchRow.Parent = aimbotCard
 	local teamSwitchLabel = Instance.new("TextLabel")
 	teamSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
@@ -5344,7 +5652,7 @@ local function _initAimbot()
 	local distRow = Instance.new("Frame")
 	distRow.Size = UDim2.new(1, 0, 0, 30)
 	distRow.BackgroundTransparency = 1
-	distRow.LayoutOrder = 5
+	distRow.LayoutOrder = 6
 	distRow.Parent = aimbotCard
 	local distLabel = Instance.new("TextLabel")
 	distLabel.Size = UDim2.new(0.5, 0, 1, 0)
@@ -5379,7 +5687,7 @@ local function _initAimbot()
 	local fovRow = Instance.new("Frame")
 	fovRow.Size = UDim2.new(1, 0, 0, 30)
 	fovRow.BackgroundTransparency = 1
-	fovRow.LayoutOrder = 6
+	fovRow.LayoutOrder = 7
 	fovRow.Parent = aimbotCard
 	local fovLabel = Instance.new("TextLabel")
 	fovLabel.Size = UDim2.new(0.5, 0, 1, 0)
@@ -5420,7 +5728,7 @@ local function _initAimbot()
 	hintLabel.TextSize = 9
 	hintLabel.TextWrapped = true
 	hintLabel.TextXAlignment = Enum.TextXAlignment.Left
-	hintLabel.LayoutOrder = 7
+	hintLabel.LayoutOrder = 9
 	hintLabel.Parent = aimbotCard
 
 	-- Indicateur visuel : cercle rouge qui apparaît sur la cible actuelle
@@ -5449,7 +5757,7 @@ local function _initAimbot()
 	aimStatusLabel.Font = Enum.Font.Gotham
 	aimStatusLabel.TextSize = 10
 	aimStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-	aimStatusLabel.LayoutOrder = 8
+	aimStatusLabel.LayoutOrder = 2
 	aimStatusLabel.Parent = aimbotCard
 
 	-- Boucle aimbot sur RenderStepped
@@ -5528,7 +5836,7 @@ local function _initAimbot()
 end
 _initAimbot()
 
-local fullbrightSwitch = createSwitch(extraScroll, "Fullbright", 0, function(on)
+local fullbrightSwitch = createSwitch(S.extraScroll, "Fullbright", 0, function(on)
 	fullbrightState.enabled = on
 	if on then
 		fullbrightState.old.ambient = Lighting.Ambient
@@ -5547,11 +5855,11 @@ local fullbrightSwitch = createSwitch(extraScroll, "Fullbright", 0, function(on)
 	end
 end)
 
-local clickTPSwitch = createSwitch(extraScroll, "Click TP (Ctrl+clic)", 0, function(on)
+local clickTPSwitch = createSwitch(S.extraScroll, "Click TP (Ctrl+clic)", 0, function(on)
 	clickTPState.enabled = on
 end)
 
-local hitboxSwitch = createSwitch(extraScroll, "Hitbox expander", 0, function(on)
+local hitboxSwitch = createSwitch(S.extraScroll, "Hitbox expander", 0, function(on)
 	hitboxState.enabled = on
 	if not on then
 		for _, plr in ipairs(Players:GetPlayers()) do
@@ -5566,13 +5874,13 @@ local hitboxSwitch = createSwitch(extraScroll, "Hitbox expander", 0, function(on
 	end
 end)
 
-createButton(extraScroll, "Obtenir Ghost V4", 0, Color3.fromRGB(110, 60, 160), function()
+createButton(S.extraScroll, "Obtenir Ghost V4", 0, Color3.fromRGB(110, 60, 160), function()
 	giveGhostTool()
 end)
-createButton(extraScroll, "Obtenir Eleven Master", 0, Color3.fromRGB(60, 120, 160), function()
+createButton(S.extraScroll, "Obtenir Eleven Master", 0, Color3.fromRGB(60, 120, 160), function()
 	giveElevenTool()
 end)
-createButton(extraScroll, "Obtenir Spider Tool", 0, Color3.fromRGB(60, 160, 90), function()
+createButton(S.extraScroll, "Obtenir Spider Tool", 0, Color3.fromRGB(60, 160, 90), function()
 	giveSpiderTool()
 end)
 
@@ -5585,7 +5893,7 @@ end
 
 -- === FEATURES UNIVERSELLES (marchent sur tous les jeux Roblox) ===
 local fpsBoostState = { enabled = false, saved = {} }
-createSwitch(extraScroll, "FPS Boost (qualité↓)", 0, function(on)
+createSwitch(S.extraScroll, "FPS Boost (qualité↓)", 0, function(on)
 	fpsBoostState.enabled = on
 	if on then
 		fpsBoostState.saved = {
@@ -5606,12 +5914,12 @@ createSwitch(extraScroll, "FPS Boost (qualité↓)", 0, function(on)
 end)
 
 local antiVoidState = { enabled = false }
-createSwitch(extraScroll, "Anti-Void (y<-2000)", 0, function(on)
+createSwitch(S.extraScroll, "Anti-Void (y<-2000)", 0, function(on)
 	antiVoidState.enabled = on
 end)
 
 -- Rejoin le même serveur (universel)
-createButton(extraScroll, "Rejoindre ce serveur", 0, Color3.fromRGB(70, 130, 200), function()
+createButton(S.extraScroll, "Rejoindre ce serveur", 0, Color3.fromRGB(70, 130, 200), function()
 	pcall(function()
 		local TeleportService = game:GetService("TeleportService")
 		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
@@ -5620,7 +5928,7 @@ end)
 
 -- Bouton panique : ferme tout d'un coup (Shift+P)
 local panicEnabled = false
-createSwitch(extraScroll, "Bouton panique (Shift+P)", 0, function(on)
+createSwitch(S.extraScroll, "Bouton panique (Shift+P)", 0, function(on)
 	panicEnabled = on
 end)
 
@@ -5775,7 +6083,7 @@ local function createAntiSeatSitWatcher()
 end
 
 local function createProtectionSwitch(name, label, y)
-	return createSwitch(protectionsScroll, label, y, function(on)
+	return createSwitch(S.protectionsScroll, label, y, function(on)
 		protectionsState[name] = on
 		if name == "antiSeat" then
 			if on then
@@ -5939,7 +6247,7 @@ serverScroll.BackgroundTransparency = 1
 serverScroll.ScrollBarThickness = 4
 serverScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 serverScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
-serverScroll.Parent = remotesPage
+serverScroll.Parent = P.remotesPage
 createCorner(serverScroll, 4)
 
 local serverLayout = Instance.new("UIListLayout")
@@ -6291,7 +6599,7 @@ _wrapRemotes() -- Exécute le wrap (IIFE pattern pour limiter les 200 registers)
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
 local function buildRegistrySection(parentPage)
 	-- Refonte v38.14 : PAS de wrapper registryCard.
-	-- Tous les enfants (titre, subtitle, status, resultScroll) sont dans registryScroll DIRECTEMENT.
+	-- Tous les enfants (titre, subtitle, status, resultScroll) sont dans S.registryScroll DIRECTEMENT.
 	-- Chaque enfant a un LayoutOrder pour empiler verticalement via registryLayout (UIListLayout parent).
 	-- ResultScroll a une TAILLE FIXE (pas de scroll imbriqué foireux).
 
@@ -6305,7 +6613,7 @@ registryTitle.TextSize = 14
 registryTitle.TextColor3 = Color3.fromRGB(230, 230, 255)
 registryTitle.TextXAlignment = Enum.TextXAlignment.Left
 registryTitle.LayoutOrder = 1
-registryTitle.Parent = registryScroll
+registryTitle.Parent = S.registryScroll
 
 local registrySubtitle = Instance.new("TextLabel")
 registrySubtitle.Name = "RegistrySubtitle"
@@ -6317,7 +6625,7 @@ registrySubtitle.TextSize = 10
 registrySubtitle.TextColor3 = Color3.fromRGB(160, 160, 180)
 registrySubtitle.TextXAlignment = Enum.TextXAlignment.Left
 registrySubtitle.LayoutOrder = 2
-registrySubtitle.Parent = registryScroll
+registrySubtitle.Parent = S.registryScroll
 
 -- Label de statut (GLOBAL pour runRegistrySearch top-level)
 statusLbl = Instance.new("TextLabel")
@@ -6331,7 +6639,7 @@ statusLbl.TextColor3 = Color3.fromRGB(180, 180, 200)
 statusLbl.TextXAlignment = Enum.TextXAlignment.Left
 statusLbl.TextWrapped = true
 statusLbl.LayoutOrder = 3
-statusLbl.Parent = registryScroll
+statusLbl.Parent = S.registryScroll
 
 -- Scroll pour les résultats de recherche (taille FIXE, pas de scroll imbriqué)
 resultScroll = Instance.new("ScrollingFrame")
@@ -6343,7 +6651,7 @@ resultScroll.ScrollBarThickness = 6
 resultScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 resultScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 resultScroll.LayoutOrder = 4
-resultScroll.Parent = registryScroll
+resultScroll.Parent = S.registryScroll
 createCorner(resultScroll, 6)
 createStroke(resultScroll, Color3.fromRGB(60, 60, 80), 1)
 
@@ -7483,11 +7791,11 @@ function runRegistrySearch(query)
 		end
 
 end
--- Construit la section Registry dans l'onglet Registry (parentPage = registryPage)
--- Tout le contenu (searchBox, searchBtn, registryCard) est reparenté vers registryScroll à la fin
-buildRegistrySection(registryPage)
+-- Construit la section Registry dans l'onglet Registry (parentPage = P.registryPage)
+-- Tout le contenu (searchBox, searchBtn, registryCard) est reparenté vers S.registryScroll à la fin
+buildRegistrySection(P.registryPage)
 
--- Reparent: tous les enfants directs de registryPage (sauf registryScroll) vont dans registryScroll
+-- Reparent: tous les enfants directs de P.registryPage (sauf S.registryScroll) vont dans S.registryScroll
 -- Wrap dans une IIFE anonyme avec ';' pour économiser les registres du chunk
 ;(function(rp, rs, rl)
 	for _, child in ipairs(rp:GetChildren()) do
@@ -7499,9 +7807,9 @@ buildRegistrySection(registryPage)
 	rl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 		rs.CanvasSize = UDim2.new(0, 0, 0, rl.AbsoluteContentSize.Y + 10)
 	end)
-end)(registryPage, registryScroll, registryLayout)
+end)(P.registryPage, S.registryScroll, registryLayout)
 task.defer(function()
-	registryScroll.CanvasSize = UDim2.new(0, 0, 0, registryLayout.AbsoluteContentSize.Y + 10)
+	S.registryScroll.CanvasSize = UDim2.new(0, 0, 0, registryLayout.AbsoluteContentSize.Y + 10)
 end)
 
 -- (L'update des stats FPS/ping est maintenant dans la page Joueurs)
@@ -8008,7 +8316,7 @@ end)(mainFrame)
 		end)
 	end)
 	-- LAYER 2: switchTab Joueurs
-	pcall(function() _switchTab("Joueurs") end)
+	pcall(function() _switchTab("Home") end)
 	-- LAYER 3: fallback à 3s (au cas où)
 	task.delay(3, function()
 		pcall(function()
@@ -8016,7 +8324,7 @@ end)(mainFrame)
 				mainFrame.Visible = true
 			end
 			if _pages and _pages["Joueurs"] and not _pages["Joueurs"].Visible then
-				pcall(function() _switchTab("Joueurs") end)
+				pcall(function() _switchTab("Home") end)
 			end
 		end)
 	end)
