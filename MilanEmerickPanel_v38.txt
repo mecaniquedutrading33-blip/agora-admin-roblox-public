@@ -1602,6 +1602,32 @@ local function createPlayerEntry(plr)
 	statusLbl.TextXAlignment = Enum.TextXAlignment.Left
 	statusLbl.Parent = card
 
+	-- Chat badge (💬) when player recently spoke
+	local chatBadge = Instance.new("TextLabel")
+	chatBadge.Name = "ChatBadge"
+	chatBadge.Size = UDim2.new(0, 22, 0, 22)
+	chatBadge.Position = UDim2.new(0, 4, 0, 100)
+	chatBadge.BackgroundTransparency = 1
+	chatBadge.Text = "💬"
+	chatBadge.Font = Enum.Font.GothamBold
+	chatBadge.TextSize = 14
+	chatBadge.TextColor3 = Color3.fromRGB(255, 255, 255)
+	chatBadge.TextStrokeTransparency = 0.2
+	chatBadge.Visible = false
+	chatBadge.Parent = card
+	task.spawn(function()
+		while card and card.Parent do
+			local seen = false
+			if _G._chatSeenPlayers and _G._chatSeenPlayers[plr.UserId] then
+				seen = (tick() - _G._chatSeenPlayers[plr.UserId]) < 12
+			end
+			local espData = espState.individual[plr]
+			if espData then espData.canChat = seen end
+			chatBadge.Visible = seen
+			task.wait(0.5)
+		end
+	end)
+
 	local tpBtn = Instance.new("TextButton")
 	tpBtn.Size = UDim2.new(0, 54, 0, 24)
 	tpBtn.Position = UDim2.new(1, -128, 0, 26)
@@ -2192,6 +2218,39 @@ local function createPlayerEntry(plr)
 			createCorner(closeX, 6)
 			closeX.MouseButton1Click:Connect(function() win:Destroy() end)
 
+			-- Avertissement suspected-cheat (triangle rouge + label)
+			local warnFrame = Instance.new("Frame")
+			warnFrame.Name = "SuspectedCheat"
+			warnFrame.Size = UDim2.new(0, 130, 0, 22)
+			warnFrame.Position = UDim2.new(0, 10, 0, 4)
+			warnFrame.BackgroundColor3 = Color3.fromRGB(60, 20, 20)
+			warnFrame.BackgroundTransparency = 0.15
+			warnFrame.BorderSizePixel = 0
+			warnFrame.Parent = win
+			createCorner(warnFrame, 4)
+
+			local tri = Instance.new("TextLabel")
+			tri.Size = UDim2.new(0, 18, 1, 0)
+			tri.Position = UDim2.new(0, 4, 0, 0)
+			tri.BackgroundTransparency = 1
+			tri.Text = "▲"
+			tri.TextColor3 = Color3.fromRGB(255, 80, 80)
+			tri.Font = Enum.Font.GothamBold
+			tri.TextSize = 12
+			tri.TextXAlignment = Enum.TextXAlignment.Left
+			tri.Parent = warnFrame
+
+			local warnLbl = Instance.new("TextLabel")
+			warnLbl.Size = UDim2.new(1, -24, 1, 0)
+			warnLbl.Position = UDim2.new(0, 22, 0, 0)
+			warnLbl.BackgroundTransparency = 1
+			warnLbl.Text = "Suspected cheat"
+			warnLbl.TextColor3 = Color3.fromRGB(255, 120, 120)
+			warnLbl.Font = Enum.Font.GothamBold
+			warnLbl.TextSize = 11
+			warnLbl.TextXAlignment = Enum.TextXAlignment.Left
+			warnLbl.Parent = warnFrame
+
 			-- Contenu scrollable (permet beaucoup plus d'infos que le TextLabel fixe)
 			local scrollFrame = Instance.new("ScrollingFrame")
 			scrollFrame.Name = "InfoScroll"
@@ -2575,12 +2634,34 @@ TextChatService.MessageReceived:Connect(function(msg)
 end)
 
 
+-- CHAT TRACKER (for ESP chat icon + player card badge)
+_G._chatSeenPlayers = _G._chatSeenPlayers or {}
+local function markChat(userId)
+	_G._chatSeenPlayers[userId] = tick()
+end
+pcall(function()
+	TextChatService.MessageReceived:Connect(function(msg)
+		local src = msg.TextSource
+		if src then markChat(src.UserId) end
+	end)
+end)
+for _, plr in ipairs(Players:GetPlayers()) do
+	pcall(function()
+		plr.Chatted:Connect(function() markChat(plr.UserId) end)
+	end)
+end
+Players.PlayerAdded:Connect(function(plr)
+	pcall(function()
+		plr.Chatted:Connect(function() markChat(plr.UserId) end)
+	end)
+end)
+
 -- ============= ESP =============
 local espFolder = Instance.new("Folder")
 espFolder.Name = "PanelESP"
 espFolder.Parent = Workspace
 
-local espState = { enabled = false, individual = {} }
+local espState = { enabled = false, individual = {}, chatIcons = true }
 
 local function distanceColor(dist)
 	if dist < 50 then return Color3.fromRGB(80, 255, 120)
@@ -2590,7 +2671,7 @@ end
 
 local function ensureESPForPlayer(plr)
 	if espState.individual[plr] then return espState.individual[plr] end
-	local data = { hl = nil, bill = nil, label = nil, targetPart = nil, humanoid = nil }
+	local data = { hl = nil, bill = nil, label = nil, chatIcon = nil, targetPart = nil, humanoid = nil, canChat = false }
 	espState.individual[plr] = data
 	return data
 end
@@ -2631,6 +2712,18 @@ local function buildESP(plr)
 		data.label.TextColor3 = Color3.new(1, 1, 1)
 		data.label.TextStrokeTransparency = 0.3
 		data.label.Parent = data.bill
+
+		data.chatIcon = Instance.new("TextLabel")
+		data.chatIcon.Size = UDim2.new(0, 22, 0, 22)
+		data.chatIcon.Position = UDim2.new(1, -24, 0, -2)
+		data.chatIcon.BackgroundTransparency = 1
+		data.chatIcon.Text = "💬"
+		data.chatIcon.Font = Enum.Font.GothamBold
+		data.chatIcon.TextSize = 14
+		data.chatIcon.TextColor3 = Color3.new(1, 1, 1)
+		data.chatIcon.TextStrokeTransparency = 0.2
+		data.chatIcon.Visible = false
+		data.chatIcon.Parent = data.bill
 	end
 	data.targetPart = targetPart
 	data.humanoid = hum
@@ -2712,6 +2805,9 @@ RunService.RenderStepped:Connect(function()
 
 					data.label.Text = plr.Name .. " [" .. math.floor(dist) .. " studs] HP:" .. hp
 					data.label.TextColor3 = col
+				end
+				if data.chatIcon then
+					data.chatIcon.Visible = espState.chatIcons and (data.canChat == true)
 				end
 				if data.hl then
 					data.hl.FillColor = col
@@ -3996,6 +4092,11 @@ local globalESPSwitch = createSwitch(localPage, "ESP Global", 404, function(on)
 	else
 		clearESP()
 	end
+end)
+
+-- Switch ESP Chat Icons (icône 💬 sur ESP)
+createSwitch(localPage, "ESP Chat Icons", 462, function(on)
+	espState.chatIcons = on
 end)
 
 
