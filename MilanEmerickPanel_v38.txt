@@ -1235,6 +1235,7 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	knob.BackgroundColor3 = Color3.new(1, 1, 1)
 	knob.BorderSizePixel = 0
 	knob.Parent = track
+	knob.ZIndex = 6
 	createCorner(knob, 10)
 
 	local state = defaultOn or false
@@ -1251,14 +1252,14 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 		callback(state)
 	end
 
-	-- Zone de clic invisible par-dessus tout le switch
+	-- Zone de clic invisible par-dessus tout le switch (ZIndex 20 devant le label parent)
 	local hitbox = Instance.new("TextButton")
 	hitbox.Name = "SwitchHitbox"
 	hitbox.Size = UDim2.new(1, 0, 1, 0)
 	hitbox.BackgroundTransparency = 1
 	hitbox.Text = ""
 	hitbox.Parent = container
-	hitbox.ZIndex = 10
+	hitbox.ZIndex = 20
 
 	hitbox.MouseButton1Click:Connect(toggle)
 
@@ -3462,7 +3463,7 @@ local function stopFly()
 	flySwitch.set(false)
 	-- Active la grâce anti-TP pour réinitialiser la baseline sans bounce
 	if protectionsState then
-		protectionsState.antiTeleportGraceUntil = tick() + 0.4
+		protectionsState.antiTeleportGraceUntil = tick() + 0.8
 	end
 end
 
@@ -3777,7 +3778,7 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 		end
 		-- Active la grâce anti-TP après sortie du noclip
 		if protectionsState then
-			protectionsState.antiTeleportGraceUntil = tick() + 0.4
+			protectionsState.antiTeleportGraceUntil = tick() + 0.8
 		end
 	end
 end)
@@ -5269,6 +5270,8 @@ local function _initAimbot()
 	local aimbotEnabled = false
 	local aimbotAutoClick = false
 	local aimbotMaxDist = 300 -- studs (par défaut)
+	local aimbotFov = 90 -- degrés (par défaut)
+	local aimbotTeamCheck = false
 
 	local mainSwitchRow = Instance.new("Frame")
 	mainSwitchRow.Size = UDim2.new(1, 0, 0, 26)
@@ -5286,6 +5289,11 @@ local function _initAimbot()
 	mainSwitchLabel.Parent = mainSwitchRow
 	local mainSwitch = createSwitch(mainSwitchRow, "", 1, function(on)
 		aimbotEnabled = on
+		if not on then
+			aimStatusLabel.Text = "Aim inactif"
+			aimStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
+			if aimCircle.Visible then aimCircle.Visible = false end
+		end
 	end)
 	mainSwitch.Size = UDim2.new(0.3, -4, 1, 0)
 	mainSwitch.Position = UDim2.new(0.7, 4, 0, 0)
@@ -5299,7 +5307,7 @@ local function _initAimbot()
 	local clickSwitchLabel = Instance.new("TextLabel")
 	clickSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
 	clickSwitchLabel.BackgroundTransparency = 1
-	clickSwitchLabel.Text = "🎯 Clic auto sur cible"
+	clickSwitchLabel.Text = "Clic auto sur cible"
 	clickSwitchLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
 	clickSwitchLabel.Font = Enum.Font.Gotham
 	clickSwitchLabel.TextSize = 11
@@ -5311,16 +5319,37 @@ local function _initAimbot()
 	clickSwitch.Size = UDim2.new(0.3, -4, 1, 0)
 	clickSwitch.Position = UDim2.new(0.7, 4, 0, 0)
 
+	-- Toggle team-check
+	local teamSwitchRow = Instance.new("Frame")
+	teamSwitchRow.Size = UDim2.new(1, 0, 0, 26)
+	teamSwitchRow.BackgroundTransparency = 1
+	teamSwitchRow.LayoutOrder = 4
+	teamSwitchRow.Parent = aimbotCard
+	local teamSwitchLabel = Instance.new("TextLabel")
+	teamSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
+	teamSwitchLabel.BackgroundTransparency = 1
+	teamSwitchLabel.Text = "Ignorer coequipiers"
+	teamSwitchLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+	teamSwitchLabel.Font = Enum.Font.Gotham
+	teamSwitchLabel.TextSize = 11
+	teamSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
+	teamSwitchLabel.Parent = teamSwitchRow
+	local teamSwitch = createSwitch(teamSwitchRow, "", 1, function(on)
+		aimbotTeamCheck = on
+	end)
+	teamSwitch.Size = UDim2.new(0.3, -4, 1, 0)
+	teamSwitch.Position = UDim2.new(0.7, 4, 0, 0)
+
 	-- Slider de distance max (clic gauche = -25, clic droit = +25)
 	local distRow = Instance.new("Frame")
-	distRow.Size = UDim2.new(1, 0, 0, 26)
+	distRow.Size = UDim2.new(1, 0, 0, 30)
 	distRow.BackgroundTransparency = 1
-	distRow.LayoutOrder = 4
+	distRow.LayoutOrder = 5
 	distRow.Parent = aimbotCard
 	local distLabel = Instance.new("TextLabel")
 	distLabel.Size = UDim2.new(0.5, 0, 1, 0)
 	distLabel.BackgroundTransparency = 1
-	distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
+	distLabel.Text = "Distance max : " .. aimbotMaxDist .. " studs"
 	distLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
 	distLabel.Font = Enum.Font.Gotham
 	distLabel.TextSize = 11
@@ -5339,12 +5368,60 @@ local function _initAimbot()
 	createCorner(distSlider, 4)
 	distSlider.MouseButton1Click:Connect(function()
 		aimbotMaxDist = math.max(50, aimbotMaxDist - 25)
-		distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
+		distLabel.Text = "Distance max : " .. aimbotMaxDist .. " studs"
 	end)
 	distSlider.MouseButton2Click:Connect(function()
 		aimbotMaxDist = math.min(1000, aimbotMaxDist + 25)
-		distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
+		distLabel.Text = "Distance max : " .. aimbotMaxDist .. " studs"
 	end)
+
+	-- Slider FOV (angle max depuis le centre écran)
+	local fovRow = Instance.new("Frame")
+	fovRow.Size = UDim2.new(1, 0, 0, 30)
+	fovRow.BackgroundTransparency = 1
+	fovRow.LayoutOrder = 6
+	fovRow.Parent = aimbotCard
+	local fovLabel = Instance.new("TextLabel")
+	fovLabel.Size = UDim2.new(0.5, 0, 1, 0)
+	fovLabel.BackgroundTransparency = 1
+	fovLabel.Text = "FOV : " .. aimbotFov .. "°"
+	fovLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+	fovLabel.Font = Enum.Font.Gotham
+	fovLabel.TextSize = 11
+	fovLabel.TextXAlignment = Enum.TextXAlignment.Left
+	fovLabel.Parent = fovRow
+	local fovSlider = Instance.new("TextButton")
+	fovSlider.Size = UDim2.new(0.5, -4, 1, 0)
+	fovSlider.Position = UDim2.new(0.5, 4, 0, 0)
+	fovSlider.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+	fovSlider.BorderSizePixel = 0
+	fovSlider.Text = "—   +"
+	fovSlider.TextColor3 = Color3.fromRGB(180, 180, 220)
+	fovSlider.Font = Enum.Font.Gotham
+	fovSlider.TextSize = 10
+	fovSlider.Parent = fovRow
+	createCorner(fovSlider, 4)
+	fovSlider.MouseButton1Click:Connect(function()
+		aimbotFov = math.max(10, aimbotFov - 10)
+		fovLabel.Text = "FOV : " .. aimbotFov .. "°"
+	end)
+	fovSlider.MouseButton2Click:Connect(function()
+		aimbotFov = math.min(180, aimbotFov + 10)
+		fovLabel.Text = "FOV : " .. aimbotFov .. "°"
+	end)
+
+	-- Label explicatifs
+	local hintLabel = Instance.new("TextLabel")
+	hintLabel.Size = UDim2.new(1, 0, 0, 28)
+	hintLabel.BackgroundTransparency = 1
+	hintLabel.Text = "Mur = raycast. Invisible/Z<0 = ignore. Lissage 0.33."
+	hintLabel.TextColor3 = Color3.fromRGB(140, 140, 150)
+	hintLabel.Font = Enum.Font.Gotham
+	hintLabel.TextSize = 9
+	hintLabel.TextWrapped = true
+	hintLabel.TextXAlignment = Enum.TextXAlignment.Left
+	hintLabel.LayoutOrder = 7
+	hintLabel.Parent = aimbotCard
 
 	-- Indicateur visuel : cercle rouge qui apparaît sur la cible actuelle
 	local aimCircle = Instance.new("Frame")
@@ -5367,12 +5444,12 @@ local function _initAimbot()
 	local aimStatusLabel = Instance.new("TextLabel")
 	aimStatusLabel.Size = UDim2.new(1, 0, 0, 16)
 	aimStatusLabel.BackgroundTransparency = 1
-	aimStatusLabel.Text = "⏸ Aim inactif"
+	aimStatusLabel.Text = "Aim inactif"
 	aimStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
 	aimStatusLabel.Font = Enum.Font.Gotham
 	aimStatusLabel.TextSize = 10
 	aimStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-	aimStatusLabel.LayoutOrder = 5
+	aimStatusLabel.LayoutOrder = 8
 	aimStatusLabel.Parent = aimbotCard
 
 	-- Boucle aimbot sur RenderStepped
@@ -5388,30 +5465,40 @@ local function _initAimbot()
 			return
 		end
 		local bestTarget = nil
-		local bestDistFromCenter = math.huge
+		local bestScore = math.huge
 		local screenCenter = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
 		local myChar = localPlayer.Character
 		local myPos = myChar.HumanoidRootPart.Position
+		local myTeam = localPlayer.Team
 		for _, plr in ipairs(Players:GetPlayers()) do
 			if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
+				if aimbotTeamCheck and myTeam and plr.Team == myTeam then
+					continue
+				end
 				local targetHead = plr.Character.Head
 				local targetPos = targetHead.Position
-				if (targetPos - myPos).Magnitude <= aimbotMaxDist then
+				local dist3d = (targetPos - myPos).Magnitude
+				if dist3d <= aimbotMaxDist then
 					local screenPos, onScreen = cam:WorldToScreenPoint(targetPos)
 					if onScreen and screenPos.Z > 0 then
-						local origin = cam.CFrame.Position
-						local direction = (targetPos - origin)
-						local rayParams = RaycastParams.new()
-						rayParams.FilterDescendantsInstances = {myChar, plr.Character}
-						rayParams.FilterType = Enum.RaycastFilterType.Exclude
-						local result = workspace:Raycast(origin, direction, rayParams)
-						if result == nil then
-							local dx = screenPos.X - screenCenter.X
-							local dy = screenPos.Y - screenCenter.Y
-							local distFromCenter = math.sqrt(dx * dx + dy * dy)
-							if distFromCenter < bestDistFromCenter then
-								bestDistFromCenter = distFromCenter
-								bestTarget = {player = plr, head = targetHead, screen = Vector2.new(screenPos.X, screenPos.Y)}
+						local dx = screenPos.X - screenCenter.X
+						local dy = screenPos.Y - screenCenter.Y
+						local distFromCenter = math.sqrt(dx * dx + dy * dy)
+						local fovRad = math.rad(aimbotFov / 2)
+						local halfHeight = math.tan(fovRad) * (cam.ViewportSize.Y / 2)
+						if distFromCenter <= halfHeight then
+							local origin = cam.CFrame.Position
+							local direction = (targetPos - origin)
+							local rayParams = RaycastParams.new()
+							rayParams.FilterDescendantsInstances = {myChar, plr.Character}
+							rayParams.FilterType = Enum.RaycastFilterType.Exclude
+							local result = workspace:Raycast(origin, direction, rayParams)
+							if result == nil then
+								local score = distFromCenter + dist3d * 0.05
+								if score < bestScore then
+									bestScore = score
+									bestTarget = {player = plr, head = targetHead, screen = Vector2.new(screenPos.X, screenPos.Y), dist3d = dist3d}
+								end
 							end
 						end
 					end
@@ -5426,7 +5513,7 @@ local function _initAimbot()
 			pcall(function() mousemoverel(smoothX, smoothY) end)
 			aimCircle.Position = UDim2.new(0, bestTarget.screen.X - 30, 0, bestTarget.screen.Y - 30)
 			if not aimCircle.Visible then aimCircle.Visible = true end
-			aimStatusLabel.Text = "🎯 Verrouillé : " .. bestTarget.player.DisplayName .. " (dist: " .. math.floor(bestDistFromCenter) .. "px)"
+			aimStatusLabel.Text = "Verrouillé : " .. bestTarget.player.DisplayName .. " (" .. math.floor(bestTarget.dist3d) .. " studs, FOV ok)"
 			aimStatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 			if aimbotAutoClick and tick() - lastClickTick > 0.1 then
 				pcall(function() mouse1click() end)
@@ -5434,7 +5521,7 @@ local function _initAimbot()
 			end
 		else
 			if aimCircle.Visible then aimCircle.Visible = false end
-			aimStatusLabel.Text = "🔍 Aucune cible visible (hors portée ou derrière un mur)"
+			aimStatusLabel.Text = "Aucune cible visible (hors portee ou derriere un mur)"
 			aimStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
 		end
 	end)
@@ -5773,13 +5860,16 @@ RunService.Heartbeat:Connect(function()
 
 	if protectionsState.antiTeleport then
 		if isAntiTpSuspended() then
-			-- Gel : ne pas toucher aux références pendant fly/noclip
+			-- Mise à jour continue de la baseline pendant fly/noclip
+			-- pour ne pas se faire téléporter quand on arrête de voler
+			protectionsState.lastSafeCFrame = rootPart.CFrame
+			protectionsState.lastHrpPosition = pos
 		else
 			local last = protectionsState.lastHrpPosition
 			if last then
 				local flatDelta = Vector3.new(pos.X - last.X, 0, pos.Z - last.Z)
 				local dist = flatDelta.Magnitude + math.abs(pos.Y - last.Y) * 0.5
-				-- Grâce après fly : pendant 0.4s après la sortie de fly, on réinitialise la baseline au lieu de comparer
+				-- Grâce après fly : pendant 0.8s après la sortie de fly, on réinitialise la baseline au lieu de comparer
 				local graceUntil = protectionsState.antiTeleportGraceUntil or 0
 				if tick() < graceUntil then
 					protectionsState.lastSafeCFrame = rootPart.CFrame
