@@ -732,7 +732,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v38.97"
+	versionLabel.Text = "v38.98"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -6549,68 +6549,95 @@ _G._agoraRemoteSpy = {}
 _G._agoraFormatSpyArgs = nil
 
 ;(function()
-local function spyRemote(remote)
-	if not remote or not remote:IsA("RemoteEvent") and not remote:IsA("RemoteFunction") then return end
+-- Remote spy via hookmetamethod (works on executors) or namecall hook
+local spyData = _G._agoraRemoteSpy
+
+local function recordCall(remote, args)
+	if not remote then return end
 	local fullName = remote:GetFullName()
-	if _G._agoraRemoteSpy[fullName] then return end -- already hooked
-	_G._agoraRemoteSpy[fullName] = { lastArgs = nil, count = 0, lastTime = 0 }
-	
-	pcall(function()
-		local origFire = remote.FireServer
-		remote.FireServer = function(self, ...)
-			local args = {...}
-			_G._agoraRemoteSpy[fullName] = {
-				lastArgs = args,
-				count = (_G._agoraRemoteSpy[fullName] and _G._agoraRemoteSpy[fullName].count or 0) + 1,
-				lastTime = tick()
-			}
-			return origFire(self, ...)
-		end
-	end)
-	
-	pcall(function()
-		local origInvoke = remote.InvokeServer
-		remote.InvokeServer = function(self, ...)
-			local args = {...}
-			_G._agoraRemoteSpy[fullName] = {
-				lastArgs = args,
-				count = (_G._agoraRemoteSpy[fullName] and _G._agoraRemoteSpy[fullName].count or 0) + 1,
-				lastTime = tick()
-			}
-			return origInvoke(self, ...)
-		end
-	end)
+	if not spyData[fullName] then
+		spyData[fullName] = { lastArgs = nil, count = 0, lastTime = 0 }
+	end
+	spyData[fullName].lastArgs = args
+	spyData[fullName].count = spyData[fullName].count + 1
+	spyData[fullName].lastTime = tick()
 end
 
--- Spy all existing remotes
-task.spawn(function()
-	task.wait(2) -- wait for game to load
-	pcall(function()
-		for _, obj in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
-			if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-				spyRemote(obj)
+-- Method 1: hookmetamethod (best, works on most executors)
+local hooked = false
+pcall(function()
+	if hookmetamethod then
+		local oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+			local method = getnamecallmethod and getnamecallmethod() or ""
+			if method == "FireServer" and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
+				recordCall(self, {...})
+			elseif method == "InvokeServer" and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
+				recordCall(self, {...})
 			end
-		end
-		for _, obj in ipairs(workspace:GetDescendants()) do
-			if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-				spyRemote(obj)
-			end
-		end
-	end)
-	-- Hook new remotes added later
-	pcall(function()
-		game:GetService("ReplicatedStorage").DescendantAdded:Connect(function(obj)
-			if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-				spyRemote(obj)
-			end
+			return oldNamecall(self, ...)
 		end)
-		workspace.DescendantAdded:Connect(function(obj)
-			if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-				spyRemote(obj)
-			end
-		end)
-	end)
+		hooked = true
+	end
 end)
+
+-- Method 2: fallback via spy on specific remotes (if hookmetamethod not available)
+if not hooked then
+	local function spyRemote(remote)
+		if not remote then return end
+		if not remote:IsA("RemoteEvent") and not remote:IsA("RemoteFunction") then return end
+		local fullName = remote:GetFullName()
+		if spyData[fullName] and spyData[fullName].hooked then return end
+		spyData[fullName] = spyData[fullName] or { lastArgs = nil, count = 0, lastTime = 0, hooked = true }
+		
+		pcall(function()
+			local mt = getrawmetatable(remote)
+			if mt and mt.__index then
+				local oldIndex = mt.__index
+				-- Can't easily hook methods this way, but at least mark as known
+			end
+		end)
+		
+		-- Direct wrapper (may not work on all executors but worth trying)
+		pcall(function()
+			local origFire = remote.FireServer
+			if origFire then
+				remote.FireServer = function(self, ...)
+					recordCall(self, {...})
+					return origFire(self, ...)
+				end
+			end
+		end)
+		pcall(function()
+			local origInvoke = remote.InvokeServer
+			if origInvoke then
+				remote.InvokeServer = function(self, ...)
+					recordCall(self, {...})
+					return origInvoke(self, ...)
+				end
+			end
+		end)
+	end
+	
+	task.spawn(function()
+		task.wait(2)
+		pcall(function()
+			for _, obj in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then spyRemote(obj) end
+			end
+			for _, obj in ipairs(workspace:GetDescendants()) do
+				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then spyRemote(obj) end
+			end
+		end)
+		pcall(function()
+			game:GetService("ReplicatedStorage").DescendantAdded:Connect(function(obj)
+				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then spyRemote(obj) end
+			end)
+			workspace.DescendantAdded:Connect(function(obj)
+				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then spyRemote(obj) end
+			end)
+		end)
+	end)
+end
 
 -- Helper: format args for display
 local function formatSpyArgs(args)
@@ -7022,12 +7049,17 @@ local function _wrapRemotes()
 	task.defer(refreshRemotesList)
 	-- Auto-refresh every 5s to re-sort when args are intercepted
 	-- BUT skip refresh if user is typing in an argsBox
-	local function isAnyArgsBoxFocused()
+	-- Stop auto-refresh while user is typing in ANY TextBox
+	local function isAnyTextBoxFocused()
+		-- Check remotes search box
+		if remotesSearchBox:IsFocused() then return true end
+		-- Check all args boxes in remote cards
 		for _, child in ipairs(remoteListFrame:GetChildren()) do
 			if child:IsA("Frame") then
-				local argsBox = child:FindFirstChild("Row") and child.Row:FindFirstChild("ArgsBox")
-				if argsBox and argsBox:IsA("TextBox") and argsBox:IsFocused() then
-					return true
+				for _, desc in ipairs(child:GetDescendants()) do
+					if desc:IsA("TextBox") and desc:IsFocused() then
+						return true
+					end
 				end
 			end
 		end
@@ -7036,7 +7068,7 @@ local function _wrapRemotes()
 	task.spawn(function()
 		while serverScroll and serverScroll.Parent do
 			task.wait(5)
-			if not isAnyArgsBoxFocused() then
+			if not isAnyTextBoxFocused() then
 				refreshRemotesList()
 			end
 		end
