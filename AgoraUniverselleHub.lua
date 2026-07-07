@@ -732,7 +732,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v38.98"
+	versionLabel.Text = "v38.99"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -6564,15 +6564,18 @@ local function recordCall(remote, args)
 end
 
 -- Method 1: hookmetamethod (best, works on most executors)
+-- Optimized: check method name FIRST (string compare is cheap), skip IsA if not a remote method
 local hooked = false
 pcall(function()
 	if hookmetamethod then
 		local oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
 			local method = getnamecallmethod and getnamecallmethod() or ""
-			if method == "FireServer" and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
-				recordCall(self, {...})
-			elseif method == "InvokeServer" and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
-				recordCall(self, {...})
+			-- Fast path: only check IsA for FireServer/InvokeServer (avoids IsA on every namecall)
+			if method == "FireServer" or method == "InvokeServer" then
+				local className = typeof(self)
+				if className == "RemoteEvent" or className == "RemoteFunction" then
+					recordCall(self, {...})
+				end
 			end
 			return oldNamecall(self, ...)
 		end)
@@ -6877,15 +6880,9 @@ local function _wrapRemotes()
 		end
 	end
 	updateSpyInfo()
-	-- Refresh spy info every 3 seconds
-	task.spawn(function()
-		while card and card.Parent do
-			task.wait(3)
-			updateSpyInfo()
-		end
-	end)
+	-- Spy info updated by refreshRemotesList (no per-card loop to avoid lag)
 
-	-- Row: argsBox + fireBtn côte à côte
+	-- Row: argsBox + fireBtn cote a cote
 	local row = Instance.new("Frame")
 	row.Name = "Row"
 	row.Size = UDim2.new(1, 0, 0, 24)
@@ -7024,10 +7021,18 @@ local function _wrapRemotes()
 	end
 
 	-- Remplit la liste
-	local function refreshRemotesList()
+	local refreshLock = false
+	local function refreshRemotesList(force)
+		if refreshLock and not force then return end
+		refreshLock = true
+		-- Check if we already have cards (don't destroy if just updating)
+		local existingCards = {}
 		for _, child in ipairs(remoteListFrame:GetChildren()) do
-			if child:IsA("Frame") then child:Destroy() end
+			if child:IsA("Frame") then
+				existingCards[child.Name] = child
+			end
 		end
+		
 		local remotes = collectRemotes()
 		remoteCount.Text = "Remotes detectes : " .. #remotes
 		table.sort(remotes, function(a, b)
@@ -7040,9 +7045,42 @@ local function _wrapRemotes()
 			if aCount ~= bCount then return aCount > bCount end
 			return a.Name < b.Name
 		end)
-		for _, remote in ipairs(remotes) do
-			makeRemoteCard(remote)
+		
+		-- Only destroy+recreate if the remote list changed (new/removed remotes)
+		local needRebuild = force or #remotes ~= #existingCards
+		if not needRebuild then
+			-- Just update LayoutOrder for sorting + update spy labels
+			for i, remote in ipairs(remotes) do
+				local cardName = remote:GetFullName():gsub("[^%w]", "_")
+				local card = existingCards[cardName]
+				if card then
+					card.LayoutOrder = i
+					-- Update spy label
+					local spyLabel = card:FindFirstChild("SpyLabel")
+					if spyLabel then
+						local spyData = _G._agoraRemoteSpy and _G._agoraRemoteSpy[remote:GetFullName()]
+						if spyData and spyData.count > 0 then
+							local argsStr = _G._agoraFormatSpyArgs and _G._agoraFormatSpyArgs(spyData.lastArgs) or "(?)"
+							local ago = math.floor(tick() - spyData.lastTime)
+							spyLabel.Text = "Args detectes (" .. spyData.count .. "x, il y a " .. ago .. "s): " .. argsStr
+							spyLabel.TextColor3 = Color3.fromRGB(180, 220, 180)
+						else
+							spyLabel.Text = "En attente... (joue pour voir les args)"
+							spyLabel.TextColor3 = Color3.fromRGB(130, 130, 150)
+						end
+					end
+				end
+			end
+		else
+			-- Full rebuild (new remotes detected)
+			for _, child in ipairs(remoteListFrame:GetChildren()) do
+				if child:IsA("Frame") then child:Destroy() end
+			end
+			for _, remote in ipairs(remotes) do
+				makeRemoteCard(remote)
+			end
 		end
+		refreshLock = false
 	end
 
 	refreshRemotesBtn.MouseButton1Click:Connect(refreshRemotesList)
@@ -7067,7 +7105,7 @@ local function _wrapRemotes()
 	end
 	task.spawn(function()
 		while serverScroll and serverScroll.Parent do
-			task.wait(5)
+			task.wait(10)
 			if not isAnyTextBoxFocused() then
 				refreshRemotesList()
 			end
