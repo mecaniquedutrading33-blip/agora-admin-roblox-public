@@ -1016,17 +1016,19 @@ end
 
 	local function applyLanguage(langCode)
 		local t = translations[langCode] or translations.FR
-		-- Translate tab buttons
-		for name, btn in pairs(tabButtons) do
-			if t[name] then btn.Text = t[name] end
-		end
-		-- Translate Home elements
-		if t.discord then discordBtn.Text = t.discord end
-		if t.langue then langBtn.Text = "🌍 " .. (t.langue or "Langue") end
-		if t.nouveautes then changelogTitle.Text = t.nouveautes end
-		if t.utilisateurs then totalLabel.Text = (t.utilisateurs or "Utilisateurs") .. ": " .. tostring((_G._agoraStats and _G._agoraStats.totalUsers) or 0) end
-		if t.enLigne then onlineLabel.Text = (t.enLigne or "En ligne") .. ": " .. tostring((_G._agoraStats and _G._agoraStats.onlineUsers) or 0) end
-		if t.credits then credits.Text = t.credits end
+		pcall(function()
+			-- Translate tab buttons
+			for name, btn in pairs(tabButtons) do
+				if t[name] and btn then btn.Text = t[name] end
+			end
+			-- Translate Home elements
+			if t.discord and discordBtn then discordBtn.Text = t.discord end
+			if t.langue and langBtn then langBtn.Text = "🌍 " .. (t.langue or "Langue") end
+			if t.nouveautes and changelogTitle then changelogTitle.Text = t.nouveautes end
+			if t.utilisateurs and totalLabel then totalLabel.Text = (t.utilisateurs or "Utilisateurs") .. ": " .. tostring((_G._agoraStats and _G._agoraStats.totalUsers) or 0) end
+			if t.enLigne and onlineLabel then onlineLabel.Text = (t.enLigne or "En ligne") .. ": " .. tostring((_G._agoraStats and _G._agoraStats.onlineUsers) or 0) end
+			if t.credits and credits then credits.Text = t.credits end
+		end)
 	end
 
 	-- Apply language on load
