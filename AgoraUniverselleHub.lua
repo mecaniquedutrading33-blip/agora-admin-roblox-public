@@ -732,7 +732,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v38.95"
+	versionLabel.Text = "v38.96"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -776,10 +776,10 @@ end
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
-		"v38.95 — Compteurs live + tracking Supabase",
-		"+ Compteur utilisateurs total et en ligne (live, refresh 30s)",
-		"+ Tracking des lancements via Supabase",
-		"+ Stats visibles par tous les utilisateurs en temps reel",
+		"v38.96 — Remote Spy + compteurs live",
+		"+ Remote Spy: intercepte les args envoyes par le jeu",
+		"+ Chaque carte remote affiche les args detectes en temps reel",
+		"+ Compteur utilisateurs total et en ligne (live)",
 		"+ Menu langue en popup avec drapeaux",
 	}
 	
@@ -6498,6 +6498,108 @@ serverLayout.SortOrder = Enum.SortOrder.LayoutOrder
 serverLayout.Parent = serverScroll
 
 -- Wrap du contenu Remotes dans une fonction locale pour limiter les 200 registers
+-- ============= REMOTE SPY: intercepte les args envoyes par le jeu =============
+-- Hook FireServer/InvokeServer pour enregistrer les arguments
+_G._agoraRemoteSpy = {}
+_G._agoraFormatSpyArgs = nil
+
+;(function()
+local function spyRemote(remote)
+	if not remote or not remote:IsA("RemoteEvent") and not remote:IsA("RemoteFunction") then return end
+	local fullName = remote:GetFullName()
+	if _G._agoraRemoteSpy[fullName] then return end -- already hooked
+	_G._agoraRemoteSpy[fullName] = { lastArgs = nil, count = 0, lastTime = 0 }
+	
+	pcall(function()
+		local origFire = remote.FireServer
+		remote.FireServer = function(self, ...)
+			local args = {...}
+			_G._agoraRemoteSpy[fullName] = {
+				lastArgs = args,
+				count = (_G._agoraRemoteSpy[fullName] and _G._agoraRemoteSpy[fullName].count or 0) + 1,
+				lastTime = tick()
+			}
+			return origFire(self, ...)
+		end
+	end)
+	
+	pcall(function()
+		local origInvoke = remote.InvokeServer
+		remote.InvokeServer = function(self, ...)
+			local args = {...}
+			_G._agoraRemoteSpy[fullName] = {
+				lastArgs = args,
+				count = (_G._agoraRemoteSpy[fullName] and _G._agoraRemoteSpy[fullName].count or 0) + 1,
+				lastTime = tick()
+			}
+			return origInvoke(self, ...)
+		end
+	end)
+end
+
+-- Spy all existing remotes
+task.spawn(function()
+	task.wait(2) -- wait for game to load
+	pcall(function()
+		for _, obj in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+			if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+				spyRemote(obj)
+			end
+		end
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+				spyRemote(obj)
+			end
+		end
+	end)
+	-- Hook new remotes added later
+	pcall(function()
+		game:GetService("ReplicatedStorage").DescendantAdded:Connect(function(obj)
+			if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+				spyRemote(obj)
+			end
+		end)
+		workspace.DescendantAdded:Connect(function(obj)
+			if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+				spyRemote(obj)
+			end
+		end)
+	end)
+end)
+
+-- Helper: format args for display
+local function formatSpyArgs(args)
+	if not args or #args == 0 then return "(aucun)" end
+	local parts = {}
+	for i, v in ipairs(args) do
+		local t = typeof(v)
+		if t == "string" then
+			table.insert(parts, '"' .. v:sub(1, 50) .. (#v > 50 and "..." or "") .. '"')
+		elseif t == "number" then
+			table.insert(parts, tostring(v))
+		elseif t == "boolean" then
+			table.insert(parts, tostring(v))
+		elseif t == "nil" then
+			table.insert(parts, "nil")
+		elseif t == "Instance" then
+			table.insert(parts, "Instance:" .. (v and v.Name or "?"))
+		elseif t == "Vector3" then
+			table.insert(parts, "Vector3(" .. tostring(math.floor(v.X)) .. "," .. tostring(math.floor(v.Y)) .. "," .. tostring(math.floor(v.Z)) .. ")")
+		elseif t == "CFrame" then
+			table.insert(parts, "CFrame(...)")
+		elseif t == "table" then
+			local count = 0
+			for _ in pairs(v) do count = count + 1 end
+			table.insert(parts, "table{" .. count .. "}")
+		else
+			table.insert(parts, t)
+		end
+	end
+	return table.concat(parts, ", ")
+end
+_G._agoraFormatSpyArgs = formatSpyArgs
+end)()
+
 local function _wrapRemotes()
 	-- Avertissement en haut
 	local remoteWarn = Instance.new("Frame")
@@ -6662,6 +6764,45 @@ local function _wrapRemotes()
 	header.TextWrapped = true
 	header.LayoutOrder = 1
 	header.Parent = card
+
+	-- Spy info: montre les derniers args detectes
+	local spyLabel = Instance.new("TextLabel")
+	spyLabel.Name = "SpyLabel"
+	spyLabel.Size = UDim2.new(1, 0, 0, 0)
+	spyLabel.AutomaticSize = Enum.AutomaticSize.Y
+	spyLabel.BackgroundTransparency = 1
+	spyLabel.Text = ""
+	spyLabel.TextColor3 = Color3.fromRGB(180, 220, 180)
+	spyLabel.TextSize = 10
+	spyLabel.Font = Enum.Font.Code
+	spyLabel.TextWrapped = true
+	spyLabel.TextXAlignment = Enum.TextXAlignment.Left
+	spyLabel.TextYAlignment = Enum.TextYAlignment.Top
+	spyLabel.LayoutOrder = 1
+	spyLabel.Parent = card
+
+	-- Update spy info for this remote
+	local remoteFullName = remote:GetFullName()
+	local function updateSpyInfo()
+		local spyData = _G._agoraRemoteSpy and _G._agoraRemoteSpy[remoteFullName]
+		if spyData and spyData.count > 0 then
+			local argsStr = _G._agoraFormatSpyArgs and _G._agoraFormatSpyArgs(spyData.lastArgs) or "(?)"
+			local ago = math.floor(tick() - spyData.lastTime)
+			spyLabel.Text = "🔍 Args detectes (" .. spyData.count .. "x, il y a " .. ago .. "s): " .. argsStr
+			spyLabel.TextColor3 = Color3.fromRGB(180, 220, 180)
+		else
+			spyLabel.Text = "🔍 En attente d'interception... (joue normalement pour voir les args)"
+			spyLabel.TextColor3 = Color3.fromRGB(130, 130, 150)
+		end
+	end
+	updateSpyInfo()
+	-- Refresh spy info every 3 seconds
+	task.spawn(function()
+		while card and card.Parent do
+			task.wait(3)
+			updateSpyInfo()
+		end
+	end)
 
 	-- Row: argsBox + fireBtn côte à côte
 	local row = Instance.new("Frame")
