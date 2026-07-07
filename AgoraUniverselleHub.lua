@@ -732,7 +732,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.04"
+	versionLabel.Text = "v39.05"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -1075,12 +1075,12 @@ end
 	onlineLabel.Text = "En ligne: 0"
 	onlineLabel.Parent = statsBox
 
-	-- Tracker: envoyer le lancement + refresh les stats
+	-- Tracker: envoyer le lancement + refresh les stats (1 seul appel HTTP)
 	task.spawn(function()
-		local function fetchStats()
+		local function updateStats()
 			pcall(function()
-				local statsUrl = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?action=stats"
-				local resp = httpGet(statsUrl)
+				local url = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?action=launch&user=" .. HttpService:UrlEncode(LocalPlayer.Name) .. "&uid=" .. tostring(LocalPlayer.UserId)
+				local resp = httpGet(url)
 				if resp and resp ~= "" then
 					local parsed = nil
 					pcall(function() parsed = HttpService:JSONDecode(resp) end)
@@ -1094,26 +1094,13 @@ end
 			end)
 		end
 
-		-- Send launch tracking
-		pcall(function()
-			local trackUrl = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?action=launch"
-			local resp = httpGet(trackUrl)
-			if resp and resp ~= "" then
-				local parsed = nil
-				pcall(function() parsed = HttpService:JSONDecode(resp) end)
-				if parsed then
-					_G._agoraStats.totalLaunches = tonumber(parsed.total_launches) or 0
-					_G._agoraStats.onlineUsers = tonumber(parsed.online_users) or 0
-					totalLabel.Text = "Lancements: " .. tostring(_G._agoraStats.totalLaunches)
-					onlineLabel.Text = "En ligne: " .. tostring(_G._agoraStats.onlineUsers)
-				end
-			end
-		end)
+		-- Send launch tracking (inc + get stats in one call)
+		updateStats()
 
 		-- Refresh stats every 30 seconds
 		while homePage and homePage.Parent do
 			task.wait(30)
-			fetchStats()
+			updateStats()
 		end
 	end)
 
