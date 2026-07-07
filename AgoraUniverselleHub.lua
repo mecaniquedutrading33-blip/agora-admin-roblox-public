@@ -187,22 +187,6 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
 
--- Tracking: compter les lancements du panel via Supabase
-_G._agoraStats = { launches = 0, users = 0 }
-task.spawn(function()
-	pcall(function()
-		local trackUrl = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?action=track&user=" .. HttpService:UrlEncode(LocalPlayer.Name)
-		local resp = game:HttpGet(trackUrl)
-		if resp then
-			local parsed = HttpService:JSONDecode(resp)
-			if parsed then
-				_G._agoraStats.launches = tonumber(parsed.total_launches) or 0
-				_G._agoraStats.users = tonumber(parsed.unique_users) or 0
-			end
-		end
-	end)
-end)
-
 -- Mémoire client : sauvegarde persistante entre réouvertures du panel
 if not _G.PanelMemory then
 	_G.PanelMemory = { dontAskRestore = false, lastEchoPlayerName = nil }
@@ -680,13 +664,13 @@ end
 local function createTab(name)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0.115, -2, 1, 0)
-	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-	btn.Text = name
-	btn.Font = Enum.Font.GothamSemibold
-	btn.TextSize = 11
-	btn.TextColor3 = Color3.fromRGB(160, 160, 160)
-	btn.BorderSizePixel = 0
-	btn.AutoButtonColor = false
+		btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+		btn.Text = name
+		btn.Font = Enum.Font.GothamSemibold
+		btn.TextScaled = true
+		btn.TextColor3 = Color3.fromRGB(160, 160, 160)
+		btn.BorderSizePixel = 0
+		btn.AutoButtonColor = false
 	btn.Parent = tabHolder
 	createCorner(btn, 6)
 	btn.MouseButton1Click:Connect(function() switchTab(name) end)
@@ -706,77 +690,108 @@ end
 ;(function()
 	local homePage = createTab("Home")
 	
-	-- Logo / Titre
+	-- Fond sombre
+	local bgFrame = Instance.new("Frame")
+	bgFrame.Size = UDim2.new(1, 0, 1, 0)
+	bgFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	bgFrame.BorderSizePixel = 0
+	bgFrame.Parent = homePage
+	createCorner(bgFrame, 10)
+	
+	-- Logo / Titre centre
 	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(1, -20, 0, 40)
-	title.Position = UDim2.new(0, 10, 0, 15)
+	title.Size = UDim2.new(1, -20, 0, 36)
+	title.Position = UDim2.new(0, 10, 0, 20)
 	title.BackgroundTransparency = 1
-	title.Text = "Agora Universelle Hub"
-	title.Font = Enum.Font.GothamBold
-	title.TextSize = 28
-	title.TextColor3 = Color3.fromRGB(120, 140, 255)
-	title.TextWrapped = true
-	title.Parent = homePage
+	title.Text = "AGORA"
+	title.Font = Enum.Font.GothamBlack
+	title.TextSize = 32
+	title.TextColor3 = Color3.fromRGB(130, 150, 255)
+	title.Parent = bgFrame
+	
+	local subtitle = Instance.new("TextLabel")
+	subtitle.Size = UDim2.new(1, -20, 0, 20)
+	subtitle.Position = UDim2.new(0, 10, 0, 54)
+	subtitle.BackgroundTransparency = 1
+	subtitle.Text = "Universelle Hub"
+	subtitle.Font = Enum.Font.Gotham
+	subtitle.TextSize = 16
+	subtitle.TextColor3 = Color3.fromRGB(100, 100, 130)
+	subtitle.Parent = bgFrame
+	
+	-- Separateur
+	local sep1 = Instance.new("Frame")
+	sep1.Size = UDim2.new(0.8, 0, 0, 1)
+	sep1.Position = UDim2.new(0.1, 0, 0, 82)
+	sep1.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+	sep1.BorderSizePixel = 0
+	sep1.Parent = bgFrame
 	
 	-- Version
 	local versionLabel = Instance.new("TextLabel")
-	versionLabel.Size = UDim2.new(1, -20, 0, 20)
-	versionLabel.Position = UDim2.new(0, 10, 0, 58)
+	versionLabel.Size = UDim2.new(1, -20, 0, 18)
+	versionLabel.Position = UDim2.new(0, 10, 0, 90)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "Version 1.1.0"
+	versionLabel.Text = "v38.93"
 	versionLabel.Font = Enum.Font.GothamSemibold
-	versionLabel.TextSize = 13
+	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
-	versionLabel.Parent = homePage
+	versionLabel.TextXAlignment = Enum.TextXAlignment.Center
+	versionLabel.Parent = bgFrame
 	
 	-- Changelog box
 	local changelogBox = Instance.new("Frame")
-	changelogBox.Size = UDim2.new(1, -20, 0, 130)
-	changelogBox.Position = UDim2.new(0, 10, 0, 84)
-	changelogBox.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+	changelogBox.Size = UDim2.new(1, -30, 0, 140)
+	changelogBox.Position = UDim2.new(0, 15, 0, 118)
+	changelogBox.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
 	changelogBox.BorderSizePixel = 0
-	changelogBox.Parent = homePage
+	changelogBox.Parent = bgFrame
 	createCorner(changelogBox, 8)
 	
+	local changelogTitle = Instance.new("TextLabel")
+	changelogTitle.Size = UDim2.new(1, -10, 0, 20)
+	changelogTitle.Position = UDim2.new(0, 8, 0, 6)
+	changelogTitle.BackgroundTransparency = 1
+	changelogTitle.Text = "Nouveautes"
+	changelogTitle.Font = Enum.Font.GothamBold
+	changelogTitle.TextSize = 13
+	changelogTitle.TextColor3 = Color3.fromRGB(140, 160, 255)
+	changelogTitle.TextXAlignment = Enum.TextXAlignment.Left
+	changelogTitle.Parent = changelogBox
+	
 	local changelogScroll = Instance.new("ScrollingFrame")
-	changelogScroll.Size = UDim2.new(1, -10, 1, -10)
-	changelogScroll.Position = UDim2.new(0, 5, 0, 5)
+	changelogScroll.Size = UDim2.new(1, -10, 1, -30)
+	changelogScroll.Position = UDim2.new(0, 5, 0, 28)
 	changelogScroll.BackgroundTransparency = 1
 	changelogScroll.BorderSizePixel = 0
-	changelogScroll.ScrollBarThickness = 4
-	changelogScroll.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 100)
+	changelogScroll.ScrollBarThickness = 3
+	changelogScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 80)
 	changelogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	changelogScroll.CanvasSize = UDim2.new(0, 0, 0, 200)
 	changelogScroll.Parent = changelogBox
 	
 	local changelogLayout = Instance.new("UIListLayout")
 	changelogLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	changelogLayout.Padding = UDim.new(0, 4)
+	changelogLayout.Padding = UDim.new(0, 3)
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
-		"v1.0.0 — Creation d'Agora Universelle Hub",
-		"• Onglet Home avec changelog et lien Discord",
-		"• 8 onglets: Home, Joueurs, Move, Extra, Remotes, Registry, Local, Protections",
-		"• Boutons resize 0.115 pour fit 8 onglets",
-		"• Registry avec autocomplete + scan remotes",
-		"• Fly, Noclip, ESP, Aimbot, AutoClick",
-		"• Stats: FPS, Ping, Signal bars",
-		"• Systeme loadstring + Supabase auto-update",
-		"v1.1.0 — Tracking des lancements via Supabase",
-		"• Compteur de lancements dans l'onglet Home",
-		"• Nombre d'utilisateurs uniques affiche",
-		"• Stats en temps reel: +1 a chaque lancement",
+		"v38.93 — Fix texte boutons tab",
+		"+ TextScaled sur boutons tab (Protections deborde plus)",
+		"+ FPS/stats restent dans Extra, PAS dans Home",
+		"+ Fermeture panel (X ou long-press logo) eteint TOUT: fly, noclip, ESP, aimbot, protections, autoClick",
+		"+ Aimbot eteint au shutdown via _G._agoraAimbotEnabled",
+		"+ Bloc gravite wrappe en IIFE (libere des registres)",
 	}
 	
 	for i, entry in ipairs(changelogEntries) do
 		local line = Instance.new("TextLabel")
-		line.Size = UDim2.new(1, 0, 0, 18)
+		line.Size = UDim2.new(1, 0, 0, 16)
 		line.BackgroundTransparency = 1
 		line.Text = entry
 		line.Font = (i == 1) and Enum.Font.GothamSemibold or Enum.Font.Gotham
-		line.TextSize = (i == 1) and 13 or 11
-		line.TextColor3 = (i == 1) and Color3.fromRGB(100, 220, 120) or Color3.fromRGB(170, 170, 185)
+		line.TextSize = (i == 1) and 12 or 11
+		line.TextColor3 = (i == 1) and Color3.fromRGB(100, 220, 120) or Color3.fromRGB(150, 150, 165)
 		line.TextXAlignment = Enum.TextXAlignment.Left
 		line.LayoutOrder = i
 		line.Parent = changelogScroll
@@ -784,8 +799,8 @@ end
 	
 	-- Bouton Discord (copier le lien)
 	local discordBtn = Instance.new("TextButton")
-	discordBtn.Size = UDim2.new(0.6, 0, 0, 36)
-	discordBtn.Position = UDim2.new(0.2, 0, 0, 230)
+	discordBtn.Size = UDim2.new(0.7, 0, 0, 38)
+	discordBtn.Position = UDim2.new(0.15, 0, 0, 275)
 	discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
 	discordBtn.Text = "Rejoindre le Discord"
 	discordBtn.Font = Enum.Font.GothamBold
@@ -793,29 +808,29 @@ end
 	discordBtn.TextColor3 = Color3.new(1, 1, 1)
 	discordBtn.BorderSizePixel = 0
 	discordBtn.AutoButtonColor = true
-	discordBtn.Parent = homePage
+	discordBtn.Parent = bgFrame
 	createCorner(discordBtn, 8)
 	
 	local copyLabel = Instance.new("TextLabel")
-	copyLabel.Size = UDim2.new(1, 0, 0, 18)
-	copyLabel.Position = UDim2.new(0, 0, 1, 4)
+	copyLabel.Size = UDim2.new(1, 0, 0, 16)
+	copyLabel.Position = UDim2.new(0, 0, 1, 3)
 	copyLabel.BackgroundTransparency = 1
 	copyLabel.Text = ""
 	copyLabel.Font = Enum.Font.Gotham
-	copyLabel.TextSize = 11
+	copyLabel.TextSize = 10
 	copyLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
-	copyLabel.Parent = homePage
+	copyLabel.Parent = bgFrame
 	
 	discordBtn.MouseButton1Click:Connect(function()
 		pcall(function()
 			local link = "https://discord.gg/fVw2rzAMb"
 			local ok = pcall(function() setclipboard(link) end)
 			if ok then
-				copyLabel.Text = "Lien copie: " .. link
+				copyLabel.Text = "Lien copie dans le presse-papiers!"
 			else
 				ok = pcall(function() toclipboard(link) end)
 				if ok then
-					copyLabel.Text = "Lien copie: " .. link
+					copyLabel.Text = "Lien copie dans le presse-papiers!"
 				else
 					copyLabel.Text = "Lien: " .. link
 				end
@@ -829,120 +844,134 @@ end
 	discordBtn.MouseEnter:Connect(function() tween(discordBtn, {BackgroundColor3 = Color3.fromRGB(100, 115, 255)}, 0.15) end)
 	discordBtn.MouseLeave:Connect(function() tween(discordBtn, {BackgroundColor3 = Color3.fromRGB(88, 101, 242)}, 0.15) end)
 	
-	-- Stats rapide (FPS, ping, joueurs)
-	local statsFrame = Instance.new("Frame")
-	statsFrame.Size = UDim2.new(1, -20, 0, 50)
-	statsFrame.Position = UDim2.new(0, 10, 0, 280)
-	statsFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
-	statsFrame.BorderSizePixel = 0
-	statsFrame.Parent = homePage
-	createCorner(statsFrame, 8)
-	
-	local statsLayout = Instance.new("UIListLayout")
-	statsLayout.FillDirection = Enum.FillDirection.Horizontal
-	statsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	statsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-	statsLayout.Padding = UDim.new(0.1, 0)
-	statsLayout.Parent = statsFrame
-	
-	local function makeStat(label, getValue)
-		local stat = Instance.new("TextLabel")
-		stat.Size = UDim2.new(0, 120, 0, 36)
-		stat.BackgroundTransparency = 1
-		stat.Font = Enum.Font.GothamSemibold
-		stat.TextSize = 13
-		stat.TextColor3 = Color3.fromRGB(160, 180, 255)
-		stat.Text = label .. ": " .. getValue()
-		stat.Parent = statsFrame
-		return stat
+	-- === SELECTEUR DE LANGUE ===
+	local languages = {
+		{code = "FR", flag = "🇫🇷", name = "Français"},
+		{code = "EN", flag = "🇬🇧", name = "English"},
+		{code = "ES", flag = "🇪🇸", name = "Español"},
+		{code = "DE", flag = "🇩🇪", name = "Deutsch"},
+		{code = "IT", flag = "🇮🇹", name = "Italiano"},
+		{code = "PT", flag = "🇵🇹", name = "Português"},
+		{code = "RU", flag = "🇷🇺", name = "Русский"},
+		{code = "JP", flag = "🇯🇵", name = "日本語"},
+		{code = "ZH", flag = "🇨🇳", name = "中文"},
+		{code = "KR", flag = "🇰🇷", name = "한국어"},
+		{code = "AR", flag = "🇸🇦", name = "العربية"},
+		{code = "NL", flag = "🇳🇱", name = "Nederlands"},
+		{code = "PL", flag = "🇵🇱", name = "Polski"},
+		{code = "TR", flag = "🇹🇷", name = "Türkçe"},
+	}
+
+	local function loadLang()
+		local saved = nil
+		pcall(function()
+			saved = readfile("agora_lang.txt")
+		end)
+		if saved and saved ~= "" then
+			return saved
+		end
+		return _G._agoraLang or "FR"
 	end
-	
-	local fpsStat = makeStat("FPS", function() return "60" end)
-	local pingStat = makeStat("Ping", function() return "0ms" end)
-	local playerStat = makeStat("Joueurs", function() return "0" end)
-	
-	task.spawn(function()
-		local frames = 0
-		local lastTick = tick()
-		while homePage and homePage.Parent do
-			frames = frames + 1
-			local now = tick()
-			if now - lastTick >= 1 then
-				local fps = math.floor(frames / (now - lastTick))
-				frames = 0
-				lastTick = now
-				pcall(function()
-					fpsStat.Text = "FPS: " .. tostring(fps)
-					local ping = LocalPlayer:GetNetworkPing() * 1000
-					pingStat.Text = "Ping: " .. tostring(math.floor(ping)) .. "ms"
-					local count = 0
-					for _ in ipairs(Players:GetPlayers()) do count = count + 1 end
-					playerStat.Text = "Joueurs: " .. tostring(count)
-				end)
+
+	local function saveLang(code)
+		_G._agoraLang = code
+		pcall(function()
+			writefile("agora_lang.txt", code)
+		end)
+	end
+
+	local selectedLang = loadLang()
+	_G._agoraLang = selectedLang
+
+	local langLabel = Instance.new("TextLabel")
+	langLabel.Size = UDim2.new(1, -20, 0, 16)
+	langLabel.Position = UDim2.new(0, 10, 0, 323)
+	langLabel.BackgroundTransparency = 1
+	langLabel.Text = "Langue / Language"
+	langLabel.Font = Enum.Font.GothamSemibold
+	langLabel.TextSize = 11
+	langLabel.TextColor3 = Color3.fromRGB(140, 160, 255)
+	langLabel.TextXAlignment = Enum.TextXAlignment.Left
+	langLabel.Parent = bgFrame
+
+	local langScroll = Instance.new("ScrollingFrame")
+	langScroll.Size = UDim2.new(1, -20, 0, 36)
+	langScroll.Position = UDim2.new(0, 10, 0, 341)
+	langScroll.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
+	langScroll.BorderSizePixel = 0
+	langScroll.ScrollBarThickness = 3
+	langScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 80)
+	langScroll.CanvasSize = UDim2.new(0, 0, 0, 36)
+	langScroll.AutomaticCanvasSize = Enum.AutomaticSize.X
+	langScroll.ScrollingDirection = Enum.ScrollingDirection.X
+	langScroll.VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Bottom
+	langScroll.Parent = bgFrame
+	createCorner(langScroll, 6)
+
+	local langLayout = Instance.new("UIListLayout")
+	langLayout.FillDirection = Enum.FillDirection.Horizontal
+	langLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	langLayout.Padding = UDim.new(0, 6)
+	langLayout.Parent = langScroll
+
+	local langPad = Instance.new("UIPadding")
+	langPad.PaddingLeft = UDim.new(0, 6)
+	langPad.PaddingRight = UDim.new(0, 6)
+	langPad.PaddingTop = UDim.new(0, 4)
+	langPad.PaddingBottom = UDim.new(0, 4)
+	langPad.Parent = langScroll
+
+	local langButtons = {}
+	for _, lang in ipairs(languages) do
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(0, 58, 1, -8)
+		btn.BackgroundColor3 = (lang.code == selectedLang) and Color3.fromRGB(55, 90, 180) or Color3.fromRGB(35, 35, 45)
+		btn.Text = lang.flag .. " " .. lang.code
+		btn.Font = Enum.Font.GothamBold
+		btn.TextSize = 11
+		btn.TextColor3 = Color3.new(1, 1, 1)
+		btn.BorderSizePixel = 0
+		btn.LayoutOrder = _
+		btn.AutoButtonColor = true
+		btn.Parent = langScroll
+		createCorner(btn, 6)
+		langButtons[lang.code] = btn
+
+		btn.MouseButton1Click:Connect(function()
+			selectedLang = lang.code
+			saveLang(lang.code)
+			for code, b in pairs(langButtons) do
+				b.BackgroundColor3 = (code == lang.code) and Color3.fromRGB(55, 90, 180) or Color3.fromRGB(35, 35, 45)
 			end
-			task.wait(1)
-		end
-	end)
-	
-	-- Stats globales (lancements + utilisateurs uniques)
-	local globalStatsFrame = Instance.new("Frame")
-	globalStatsFrame.Size = UDim2.new(1, -20, 0, 50)
-	globalStatsFrame.Position = UDim2.new(0, 10, 0, 340)
-	globalStatsFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
-	globalStatsFrame.BorderSizePixel = 0
-	globalStatsFrame.Parent = homePage
-	createCorner(globalStatsFrame, 8)
-	
-	local globalStatsLayout = Instance.new("UIListLayout")
-	globalStatsLayout.FillDirection = Enum.FillDirection.Horizontal
-	globalStatsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	globalStatsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-	globalStatsLayout.Padding = UDim.new(0.1, 0)
-	globalStatsLayout.Parent = globalStatsFrame
-	
-	local launchStat = Instance.new("TextLabel")
-	launchStat.Size = UDim2.new(0, 140, 0, 36)
-	launchStat.BackgroundTransparency = 1
-	launchStat.Font = Enum.Font.GothamSemibold
-	launchStat.TextSize = 13
-	launchStat.TextColor3 = Color3.fromRGB(255, 180, 60)
-	launchStat.Text = "Lancements: ..."
-	launchStat.Parent = globalStatsFrame
-	
-	local userStat = Instance.new("TextLabel")
-	userStat.Size = UDim2.new(0, 140, 0, 36)
-	userStat.BackgroundTransparency = 1
-	userStat.Font = Enum.Font.GothamSemibold
-	userStat.TextSize = 13
-	userStat.TextColor3 = Color3.fromRGB(100, 220, 180)
-	userStat.Text = "Utilisateurs: ..."
-	userStat.Parent = globalStatsFrame
-	
-	task.spawn(function()
-		while homePage and homePage.Parent do
-			pcall(function()
-				local s = _G._agoraStats
-				if s and s.launches > 0 then
-					launchStat.Text = "Lancements: " .. tostring(s.launches)
-				end
-				if s and s.users > 0 then
-					userStat.Text = "Utilisateurs: " .. tostring(s.users)
-				end
-			end)
-			task.wait(2)
-		end
-	end)
-	
+			playSound(6042053626, 0.2)
+		end)
+	end
+
+	-- === CONTROLES AIMBOT DANS HOME ===
+	_G._agoraAimbotEnabled = _G._agoraAimbotEnabled or false
+	_G._agoraAimbotAutoClick = _G._agoraAimbotAutoClick or false
+	_G._agoraAimbotMaxDist = _G._agoraAimbotMaxDist or 300
+
+	local aimHomeSwitch = createSwitch(bgFrame, "Aimbot ON/OFF", 386, function(on)
+		_G._agoraAimbotEnabled = on
+	end, _G._agoraAimbotEnabled)
+	local autoClickSwitch = createSwitch(bgFrame, "Clic auto", 428, function(on)
+		_G._agoraAimbotAutoClick = on
+	end, _G._agoraAimbotAutoClick)
+	local aimDistSlider = createSlider(bgFrame, "Distance aimbot", 470, 50, 1000, _G._agoraAimbotMaxDist, function(v)
+		_G._agoraAimbotMaxDist = math.floor(v)
+	end, Color3.fromRGB(100, 180, 255), 0, 25)
+
 	-- Credits
 	local credits = Instance.new("TextLabel")
-	credits.Size = UDim2.new(1, -20, 0, 18)
-	credits.Position = UDim2.new(0, 10, 0, 400)
+	credits.Size = UDim2.new(1, -20, 0, 16)
+	credits.Position = UDim2.new(0, 10, 0, 535)
 	credits.BackgroundTransparency = 1
-	credits.Text = "Agora Universelle — Auto-update via Supabase"
+	credits.Text = "Agora Universelle"
 	credits.Font = Enum.Font.Gotham
-	credits.TextSize = 11
-	credits.TextColor3 = Color3.fromRGB(120, 120, 150)
-	credits.Parent = homePage
+	credits.TextSize = 10
+	credits.TextColor3 = Color3.fromRGB(80, 80, 100)
+	credits.Parent = bgFrame
 end)()
 
 local playersPage = createTab("Joueurs")
@@ -968,7 +997,6 @@ local function _initRegistrySearch()
 	registrySearchBox.TextSize = 12
 	registrySearchBox.TextXAlignment = Enum.TextXAlignment.Center
 	registrySearchBox.ClearTextOnFocus = false
-	registrySearchBox.LayoutOrder = -100 -- FORCER en haut du scroll après reparenting IIFE
 	registrySearchBox.Parent = registryPage
 	createCorner(registrySearchBox, 8)
 	createStroke(registrySearchBox, Color3.fromRGB(80, 80, 100), 1)
@@ -985,7 +1013,8 @@ local function _initRegistrySearch()
 	registryClearBtn.BorderSizePixel = 0
 	registryClearBtn.Visible = false -- caché quand la searchBox est vide
 	registryClearBtn.ZIndex = registrySearchBox.ZIndex + 1
-	registryClearBtn.Parent = registrySearchBox -- parenté sur la search box (overlay), pas registryPage (sinon reparenting IIFE le met dans le scroll)
+	registryClearBtn.AutoButtonColor = true
+	registryClearBtn.Parent = registryPage
 	createCorner(registryClearBtn, 11) -- rond
 	registryClearBtn.MouseButton1Click:Connect(function()
 		registrySearchBox.Text = ""
@@ -1005,7 +1034,6 @@ local function _initRegistrySearch()
 	suggestionsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 	suggestionsFrame.BorderSizePixel = 0
 	suggestionsFrame.Visible = false -- caché par défaut
-	suggestionsFrame.LayoutOrder = -99 -- juste sous la search box après reparenting IIFE
 	suggestionsFrame.Parent = registryPage
 	createCorner(suggestionsFrame, 6)
 	createStroke(suggestionsFrame, Color3.fromRGB(70, 70, 100), 1)
@@ -1342,6 +1370,7 @@ local minimized = false
 			if longPressProgress and longPressProgress.Parent then
 				longPressProgress:Destroy()
 			end
+			pcall(shutdownPanel)
 			btn.Visible = false
 			for _, gui in ipairs(game.Players.LocalPlayer.PlayerGui:GetChildren()) do
 				if gui.Name == "MilanEmerickPanel" or gui.Name == "AgoraAdminUniverselle" then
@@ -1570,6 +1599,13 @@ local function shutdownPanel()
 			platformState.part = nil
 		end
 	end
+	-- Aimbot shutdown
+	_G._agoraAimbotEnabled = false
+	-- Restore Lighting if fullbright was on
+	pcall(function()
+		Lighting.Ambient = Color3.fromRGB(128, 128, 128)
+		Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+	end)
 end
 
 local function createSwitch(parent, labelText, yPos, callback, defaultOn)
@@ -4439,6 +4475,7 @@ local zeroGSwitch = createSwitch(localPage, "Zero Gravité", 10, function(on)
 end)
 
 -- Conteneur gravité personnalisé (slider précis + input + reset)
+;(function()
 local gravityContainer = Instance.new("Frame")
 gravityContainer.Size = UDim2.new(1, -16, 0, 86)
 gravityContainer.Position = UDim2.new(0, 8, 0, 56)
@@ -4489,7 +4526,7 @@ gravityInput.Parent = gravityContainer
 createCorner(gravityInput, 6)
 createStroke(gravityInput, Color3.fromRGB(80, 80, 100), 1)
 
-local function setGravityExact(v)
+	_G._agoraSetGravityExact = function(v)
 	v = tonumber(v)
 	if not v then return end
 	v = math.clamp(math.floor(v + 0.5), 0, 300)
@@ -4509,7 +4546,7 @@ end
 gravityTrack.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		draggingGravity = true
-		setGravityExact(gravityFromX(input.Position.X))
+		_G._agoraSetGravityExact(gravityFromX(input.Position.X))
 	end
 end)
 UserInputService.InputEnded:Connect(function(input)
@@ -4519,19 +4556,20 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 UserInputService.InputChanged:Connect(function(input)
 	if draggingGravity and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		setGravityExact(gravityFromX(input.Position.X))
+		_G._agoraSetGravityExact(gravityFromX(input.Position.X))
 	end
 end)
 
 gravityInput.FocusLost:Connect(function(enterPressed)
-	setGravityExact(gravityInput.Text)
+	_G._agoraSetGravityExact(gravityInput.Text)
 end)
 
 local resetGravityBtn = createButton(localPage, "Reset gravité normale", 148, Color3.fromRGB(80, 80, 90), function()
-	setGravityExact(196.2)
+	_G._agoraSetGravityExact(196.2)
 end)
 resetGravityBtn.Size = UDim2.new(1, -16, 0, 30)
 resetGravityBtn.Position = UDim2.new(0, 8, 0, 148)
+end)()
 
 local timeSwitch = createSwitch(localPage, "Temps custom", 200, function(on)
 	if on then
@@ -4557,7 +4595,7 @@ createButton(localPage, "Reset monde", 348, Color3.fromRGB(80, 80, 90), function
 	Lighting.TimeOfDay = "12:00:00"
 	zeroGSwitch.set(false)
 	localState.customGravity = 196.2
-	setGravityExact(196.2)
+	_G._agoraSetGravityExact(196.2)
 	localState.timeOfDay = 12
 end)
 
@@ -5746,6 +5784,7 @@ local function _initAimbot()
 	aimbotTitle.Parent = aimbotCard
 
 	-- Toggle principal (aim ON/OFF)
+	_G._agoraAimbotEnabled = false
 	local aimbotEnabled = false
 	local aimbotAutoClick = false
 	local aimbotMaxDist = 300 -- studs (par défaut)
@@ -5779,6 +5818,7 @@ local function _initAimbot()
 	mainSwitchLabel.ZIndex = 4
 	local mainSwitch = createSwitch(mainSwitchRow, "", 0, function(on)
 		aimbotEnabled = on
+		_G._agoraAimbotEnabled = on
 	end)
 	mainSwitch.Size = UDim2.new(0.3, -4, 0.85, 0)
 	mainSwitch.Position = UDim2.new(0.7, 4, 0.075, 0)
