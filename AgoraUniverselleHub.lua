@@ -732,7 +732,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v38.96"
+	versionLabel.Text = "v38.97"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -776,11 +776,12 @@ end
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
-		"v38.96 — Remote Spy + compteurs live",
-		"+ Remote Spy: intercepte les args envoyes par le jeu",
-		"+ Chaque carte remote affiche les args detectes en temps reel",
-		"+ Compteur utilisateurs total et en ligne (live)",
-		"+ Menu langue en popup avec drapeaux",
+		"v38.97 — Tri remotes + traduction langue",
+		"+ Remotes interceptes tries en haut de la liste automatiquement",
+		"+ Auto-refresh de la liste remotes toutes les 5s",
+		"+ Detection amelioree (StarterGui, tous les joueurs, dedup)",
+		"+ Traduction des onglets et labels dans 14 langues",
+		"+ Changement de langue fonctionne maintenant",
 	}
 	
 	for i, entry in ipairs(changelogEntries) do
@@ -959,6 +960,7 @@ end
 			selectedLang = lang.code
 			saveLang(lang.code)
 			langBtn.Text = "🌍 " .. lang.name
+			if _G._agoraApplyLang then _G._agoraApplyLang(lang.code) end
 			-- Update highlight
 			for _, child in ipairs(langMenuScroll:GetChildren()) do
 				if child:IsA("TextButton") then
@@ -993,6 +995,47 @@ end
 		langMenu.Visible = not langMenu.Visible
 		playSound(6042053626, 0.2)
 	end)
+
+	-- === TRANSLATION SYSTEM ===
+	local translations = {
+		FR = { Home="Home", Joueurs="Joueurs", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registry", Local="Local", Protections="Protections", discord="Rejoindre le Discord", langue="Langue", nouveautes="Nouveautes", utilisateurs="Utilisateurs", enLigne="En ligne", credits="Agora Universelle" },
+		EN = { Home="Home", Joueurs="Players", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registry", Local="Local", Protections="Protections", discord="Join Discord", langue="Language", nouveautes="What's New", utilisateurs="Users", enLigne="Online", credits="Agora Universelle" },
+		ES = { Home="Inicio", Joueurs="Jugadores", Move="Mover", Extra="Extra", Remotes="Remotes", Registry="Registro", Local="Local", Protections="Proteccion", discord="Unirse a Discord", langue="Idioma", nouveautes="Novedades", utilisateurs="Usuarios", enLigne="En linea", credits="Agora Universelle" },
+		DE = { Home="Start", Joueurs="Spieler", Move="Bewegen", Extra="Extra", Remotes="Remotes", Registry="Register", Local="Lokal", Protections="Schutz", discord="Discord beitreten", langue="Sprache", nouveautes="Neuigkeiten", utilisateurs="Benutzer", enLigne="Online", credits="Agora Universelle" },
+		IT = { Home="Home", Joueurs="Giocatori", Move="Muovi", Extra="Extra", Remotes="Remotes", Registry="Registro", Local="Locale", Protections="Protezione", discord="Unisciti a Discord", langue="Lingua", nouveautes="Novita", utilisateurs="Utenti", enLigne="Online", credits="Agora Universelle" },
+		PT = { Home="Inicio", Joueurs="Jogadores", Move="Mover", Extra="Extra", Remotes="Remotes", Registry="Registro", Local="Local", Protections="Protecao", discord="Entrar no Discord", langue="Idioma", nouveautes="Novidades", usuarios="Usuarios", enLigne="Online", credits="Agora Universelle" },
+		RU = { Home="Главная", Joueurs="Игроки", Move="Движение", Extra="Доп", Remotes="Ремоуты", Registry="Реестр", Local="Локал", Protections="Защита", discord="Присоединиться к Discord", langue="Язык", nouveautes="Новое", utilisateurs="Пользователи", enLigne="Онлайн", credits="Agora Universelle" },
+		JP = { Home="ホーム", Joueurs="プレイヤー", Move="移動", Extra="エクストラ", Remotes="リモート", Registry="レジストリ", Local="ローカル", Protections="保護", discord="Discordに参加", langue="言語", nouveautes="新着", utilisateurs="ユーザー", enLigne="オンライン", credits="Agora Universelle" },
+		ZH = { Home="首页", Joueurs="玩家", Move="移动", Extra="额外", Remotes="远程", Registry="注册", Local="本地", Protections="保护", discord="加入Discord", langue="语言", nouveautes="新功能", utilisateurs="用户", enLigne="在线", credits="Agora Universelle" },
+		KR = { Home="홈", Joueurs="플레이어", Move="이동", Extra="추가", Remotes="리모트", Registry="레지스트리", Local="로컬", Protections="보호", discord="Discord 가입", langue="언어", nouveautes="새소식", utilisateurs="사용자", enLigne="온라인", credits="Agora Universelle" },
+		AR = { Home="الرئيسية", Joueurs="اللاعبون", Move="تحريك", Extra="إضافي", Remotes="ريموت", Registry="السجل", Local="محلي", Protections="حماية", discord="انضم إلى Discord", langue="اللغة", nouveautes="جديد", utilisateurs="المستخدمون", enLigne="متصل", credits="Agora Universelle" },
+		NL = { Home="Home", Joueurs="Spelers", Move="Bewegen", Extra="Extra", Remotes="Remotes", Registry="Register", Local="Lokaal", Protections="Bescherming", discord="Join Discord", langue="Taal", nouveautes="Nieuws", utilisateurs="Gebruikers", enLigne="Online", credits="Agora Universelle" },
+		PL = { Home="Home", Joueurs="Gracze", Move="Ruch", Extra="Extra", Remotes="Remotes", Registry="Rejestr", Local="Lokal", Protections="Ochrona", discord="Dolacz do Discord", langue="Jezyk", nouveautes="Nowosci", utilisateurs="Uzytkownicy", enLigne="Online", credits="Agora Universelle" },
+		TR = { Home="Ana Sayfa", Joueurs="Oyuncular", Move="Hareket", Extra="Ekstra", Remotes="Remoteler", Registry="Kayit", Local="Yerel", Protections="Koruma", discord="Discord'a Katil", langue="Dil", nouveautes="Yenilikler", utilisateurs="Kullanicilar", enLigne="Cevrimici", credits="Agora Universelle" },
+	}
+
+	local function applyLanguage(langCode)
+		local t = translations[langCode] or translations.FR
+		-- Translate tab buttons
+		for name, btn in pairs(tabButtons) do
+			if t[name] then btn.Text = t[name] end
+		end
+		-- Translate Home elements
+		if t.discord then discordBtn.Text = t.discord end
+		if t.langue then langBtn.Text = "🌍 " .. (t.langue or "Langue") end
+		if t.nouveautes then changelogTitle.Text = t.nouveautes end
+		if t.utilisateurs then totalLabel.Text = (t.utilisateurs or "Utilisateurs") .. ": " .. tostring(_G._agoraStats.totalUsers or 0) end
+		if t.enLigne then onlineLabel.Text = (t.enLigne or "En ligne") .. ": " .. tostring(_G._agoraStats.onlineUsers or 0) end
+		if t.credits then credits.Text = t.credits end
+	end
+
+	-- Apply language on load
+	applyLanguage(selectedLang)
+
+	-- Re-apply when language changes
+	-- We need to hook into the language button clicks
+	-- Since the lang menu buttons are created in a loop, we expose applyLanguage via _G
+	_G._agoraApplyLang = applyLanguage
 
 	-- === COMPTEURS LIVE (lancements + utilisateurs en ligne) ===
 	_G._agoraStats = { totalUsers = 0, onlineUsers = 0 }
@@ -6638,24 +6681,33 @@ local function _wrapRemotes()
 	-- Helpers: scanne tous les remotes du jeu
 	local function collectRemotes()
 		local remotes = {}
-		pcall(function()
-			for _, obj in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
-				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+		local seen = {}
+		local function addRemote(obj)
+			if obj and (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) then
+				local fn = obj:GetFullName()
+				if not seen[fn] then
+					seen[fn] = true
 					table.insert(remotes, obj)
+					pcall(spyRemote, obj) -- make sure it's spied
 				end
 			end
+		end
+		pcall(function()
+			for _, obj in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do addRemote(obj) end
 		end)
 		pcall(function()
-			for _, obj in ipairs(workspace:GetDescendants()) do
-				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-					table.insert(remotes, obj)
-				end
-			end
+			for _, obj in ipairs(workspace:GetDescendants()) do addRemote(obj) end
 		end)
 		pcall(function()
-			for _, obj in ipairs(game.Players.LocalPlayer:GetDescendants()) do
-				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-					table.insert(remotes, obj)
+			for _, obj in ipairs(game.Players.LocalPlayer:GetDescendants()) do addRemote(obj) end
+		end)
+		pcall(function()
+			for _, obj in ipairs(game:GetService("StarterGui"):GetDescendants()) do addRemote(obj) end
+		end)
+		pcall(function()
+			for _, obj in ipairs(game:GetService("Players"):GetChildren()) do
+				if obj:IsA("Player") then
+					for _, desc in ipairs(obj:GetDescendants()) do addRemote(desc) end
 				end
 			end
 		end)
@@ -6948,7 +7000,17 @@ local function _wrapRemotes()
 			if child:IsA("Frame") then child:Destroy() end
 		end
 		local remotes = collectRemotes()
-		remoteCount.Text = "Remotes détectés : " .. #remotes
+		remoteCount.Text = "Remotes detectes : " .. #remotes
+		table.sort(remotes, function(a, b)
+			local aSpy = _G._agoraRemoteSpy and _G._agoraRemoteSpy[a:GetFullName()]
+			local bSpy = _G._agoraRemoteSpy and _G._agoraRemoteSpy[b:GetFullName()]
+			local aCount = (aSpy and aSpy.count or 0)
+			local bCount = (bSpy and bSpy.count or 0)
+			if aCount > 0 and bCount == 0 then return true end
+			if aCount == 0 and bCount > 0 then return false end
+			if aCount ~= bCount then return aCount > bCount end
+			return a.Name < b.Name
+		end)
 		for _, remote in ipairs(remotes) do
 			makeRemoteCard(remote)
 		end
@@ -6956,6 +7018,13 @@ local function _wrapRemotes()
 
 	refreshRemotesBtn.MouseButton1Click:Connect(refreshRemotesList)
 	task.defer(refreshRemotesList)
+	-- Auto-refresh every 5s to re-sort when args are intercepted
+	task.spawn(function()
+		while serverScroll and serverScroll.Parent do
+			task.wait(5)
+			refreshRemotesList()
+		end
+	end)
 
 	-- Filtre de recherche: affiche/masque les cartes selon le texte
 	local function applyRemotesFilter()
