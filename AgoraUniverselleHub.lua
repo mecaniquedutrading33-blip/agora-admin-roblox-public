@@ -732,7 +732,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v38.93"
+	versionLabel.Text = "v38.94"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -776,12 +776,12 @@ end
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
-		"v38.93 — Fix texte boutons tab",
-		"+ TextScaled sur boutons tab (Protections deborde plus)",
-		"+ FPS/stats restent dans Extra, PAS dans Home",
-		"+ Fermeture panel (X ou long-press logo) eteint TOUT: fly, noclip, ESP, aimbot, protections, autoClick",
-		"+ Aimbot eteint au shutdown via _G._agoraAimbotEnabled",
-		"+ Bloc gravite wrappe en IIFE (libere des registres)",
+		"v38.94 — Home propre + menu langue",
+		"+ Section aimbot retirer du Home (reste dans Extra)",
+		"+ Menu langue en popup avec 🌍 + drapeaux + noms",
+		"+ 14 langues: FR, EN, ES, DE, IT, PT, RU, JP, ZH, KR, AR, NL, PL, TR",
+		"+ Langue persistante via writefile/readfile",
+		"+ Fermeture panel eteint TOUT (fly, ESP, aimbot, protections)",
 	}
 	
 	for i, entry in ipairs(changelogEntries) do
@@ -883,163 +883,122 @@ end
 	local selectedLang = loadLang()
 	_G._agoraLang = selectedLang
 
-	local langLabel = Instance.new("TextLabel")
-	langLabel.Size = UDim2.new(1, -20, 0, 16)
-	langLabel.Position = UDim2.new(0, 10, 0, 276)
-	langLabel.BackgroundTransparency = 1
-	langLabel.Text = "Langue / Language"
-	langLabel.Font = Enum.Font.GothamSemibold
-	langLabel.TextSize = 11
-	langLabel.TextColor3 = Color3.fromRGB(140, 160, 255)
-	langLabel.TextXAlignment = Enum.TextXAlignment.Left
-	langLabel.Parent = bgFrame
+	-- Bouton Langue avec menu popup
+	local langBtn = Instance.new("TextButton")
+	langBtn.Size = UDim2.new(0.7, 0, 0, 34)
+	langBtn.Position = UDim2.new(0.15, 0, 0, 275)
+	langBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
+	langBtn.Text = "🌍 Langue"
+	langBtn.Font = Enum.Font.GothamSemibold
+	langBtn.TextSize = 14
+	langBtn.TextColor3 = Color3.fromRGB(200, 210, 255)
+	langBtn.BorderSizePixel = 0
+	langBtn.AutoButtonColor = true
+	langBtn.Parent = bgFrame
+	createCorner(langBtn, 8)
 
-	local langScroll = Instance.new("ScrollingFrame")
-	langScroll.Size = UDim2.new(1, -20, 0, 32)
-	langScroll.Position = UDim2.new(0, 10, 0, 294)
-	langScroll.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
-	langScroll.BorderSizePixel = 0
-	langScroll.ScrollBarThickness = 3
-	langScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 80)
-	langScroll.CanvasSize = UDim2.new(0, 0, 0, 36)
-	langScroll.AutomaticCanvasSize = Enum.AutomaticSize.X
-	langScroll.ScrollingDirection = Enum.ScrollingDirection.X
-	langScroll.VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Right
-	langScroll.Parent = bgFrame
-	createCorner(langScroll, 6)
+	local langMenu = Instance.new("Frame")
+	langMenu.Size = UDim2.new(0, 200, 0, 280)
+	langMenu.Position = UDim2.new(0.5, -100, 0.5, -140)
+	langMenu.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	langMenu.BorderSizePixel = 0
+	langMenu.Visible = false
+	langMenu.ZIndex = 100
+	langMenu.Parent = bgFrame
+	createCorner(langMenu, 10)
 
-	local langLayout = Instance.new("UIListLayout")
-	langLayout.FillDirection = Enum.FillDirection.Horizontal
-	langLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	langLayout.Padding = UDim.new(0, 6)
-	langLayout.Parent = langScroll
+	local langMenuTitle = Instance.new("TextLabel")
+	langMenuTitle.Size = UDim2.new(1, -10, 0, 24)
+	langMenuTitle.Position = UDim2.new(0, 10, 0, 8)
+	langMenuTitle.BackgroundTransparency = 1
+	langMenuTitle.Text = "Choisir la langue"
+	langMenuTitle.Font = Enum.Font.GothamBold
+	langMenuTitle.TextSize = 14
+	langMenuTitle.TextColor3 = Color3.fromRGB(140, 160, 255)
+	langMenuTitle.TextXAlignment = Enum.TextXAlignment.Center
+	langMenuTitle.ZIndex = 101
+	langMenuTitle.Parent = langMenu
 
-	local langPad = Instance.new("UIPadding")
-	langPad.PaddingLeft = UDim.new(0, 6)
-	langPad.PaddingRight = UDim.new(0, 6)
-	langPad.PaddingTop = UDim.new(0, 4)
-	langPad.PaddingBottom = UDim.new(0, 4)
-	langPad.Parent = langScroll
+	local langMenuScroll = Instance.new("ScrollingFrame")
+	langMenuScroll.Size = UDim2.new(1, -10, 1, -40)
+	langMenuScroll.Position = UDim2.new(0, 5, 0, 34)
+	langMenuScroll.BackgroundTransparency = 1
+	langMenuScroll.BorderSizePixel = 0
+	langMenuScroll.ScrollBarThickness = 3
+	langMenuScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	langMenuScroll.CanvasSize = UDim2.new(0, 0, 0, 200)
+	langMenuScroll.ZIndex = 101
+	langMenuScroll.Parent = langMenu
 
-	local langButtons = {}
+	local langMenuLayout = Instance.new("UIListLayout")
+	langMenuLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	langMenuLayout.Padding = UDim.new(0, 4)
+	langMenuLayout.Parent = langMenuScroll
+
+	-- Find current language name for display
+	local currentLangName = "Français"
+	for _, l in ipairs(languages) do
+		if l.code == selectedLang then currentLangName = l.name break end
+	end
+	langBtn.Text = "🌍 " .. currentLangName
+
 	for _, lang in ipairs(languages) do
-		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(0, 58, 1, -8)
-		btn.BackgroundColor3 = (lang.code == selectedLang) and Color3.fromRGB(55, 90, 180) or Color3.fromRGB(35, 35, 45)
-		btn.Text = lang.flag .. " " .. lang.code
-		btn.Font = Enum.Font.GothamBold
-		btn.TextSize = 11
-		btn.TextColor3 = Color3.new(1, 1, 1)
-		btn.BorderSizePixel = 0
-		btn.LayoutOrder = _
-		btn.AutoButtonColor = true
-		btn.Parent = langScroll
-		createCorner(btn, 6)
-		langButtons[lang.code] = btn
+		local lBtn = Instance.new("TextButton")
+		lBtn.Size = UDim2.new(1, 0, 0, 30)
+		lBtn.BackgroundColor3 = (lang.code == selectedLang) and Color3.fromRGB(55, 90, 180) or Color3.fromRGB(30, 30, 40)
+		lBtn.Text = lang.flag .. "  " .. lang.name
+		lBtn.Font = Enum.Font.Gotham
+		lBtn.TextSize = 12
+		lBtn.TextColor3 = Color3.new(1, 1, 1)
+		lBtn.BorderSizePixel = 0
+		lBtn.LayoutOrder = _
+		lBtn.ZIndex = 101
+		lBtn.Parent = langMenuScroll
+		createCorner(lBtn, 6)
 
-		btn.MouseButton1Click:Connect(function()
+		lBtn.MouseButton1Click:Connect(function()
 			selectedLang = lang.code
 			saveLang(lang.code)
-			for code, b in pairs(langButtons) do
-				b.BackgroundColor3 = (code == lang.code) and Color3.fromRGB(55, 90, 180) or Color3.fromRGB(35, 35, 45)
+			langBtn.Text = "🌍 " .. lang.name
+			-- Update highlight
+			for _, child in ipairs(langMenuScroll:GetChildren()) do
+				if child:IsA("TextButton") then
+					child.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+				end
 			end
+			lBtn.BackgroundColor3 = Color3.fromRGB(55, 90, 180)
 			playSound(6042053626, 0.2)
+			task.wait(0.15)
+			langMenu.Visible = false
 		end)
 	end
 
-	-- === CONTROLES AIMBOT DANS HOME (boutons bruts, createSwitch pas encore defini) ===
-	_G._agoraAimbotEnabled = _G._agoraAimbotEnabled or false
-	_G._agoraAimbotAutoClick = _G._agoraAimbotAutoClick or false
-	_G._agoraAimbotMaxDist = _G._agoraAimbotMaxDist or 300
+	-- Close button for lang menu
+	local langCloseBtn = Instance.new("TextButton")
+	langCloseBtn.Size = UDim2.new(0, 24, 0, 24)
+	langCloseBtn.Position = UDim2.new(1, -28, 0, 4)
+	langCloseBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+	langCloseBtn.Text = "✕"
+	langCloseBtn.Font = Enum.Font.GothamBold
+	langCloseBtn.TextSize = 12
+	langCloseBtn.TextColor3 = Color3.new(1, 1, 1)
+	langCloseBtn.BorderSizePixel = 0
+	langCloseBtn.ZIndex = 102
+	langCloseBtn.Parent = langMenu
+	createCorner(langCloseBtn, 6)
+	langCloseBtn.MouseButton1Click:Connect(function()
+		langMenu.Visible = false
+	end)
 
-	-- Aimbot toggle
-	local aimBtn = Instance.new("TextButton")
-	aimBtn.Size = UDim2.new(1, -20, 0, 28)
-	aimBtn.Position = UDim2.new(0, 10, 0, 332)
-	aimBtn.BackgroundColor3 = _G._agoraAimbotEnabled and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(25, 25, 30)
-	aimBtn.Text = _G._agoraAimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
-	aimBtn.Font = Enum.Font.GothamSemibold
-	aimBtn.TextSize = 13
-	aimBtn.TextColor3 = Color3.new(1, 1, 1)
-	aimBtn.BorderSizePixel = 0
-	aimBtn.Parent = bgFrame
-	createCorner(aimBtn, 8)
-	aimBtn.MouseButton1Click:Connect(function()
-		_G._agoraAimbotEnabled = not _G._agoraAimbotEnabled
-		aimBtn.BackgroundColor3 = _G._agoraAimbotEnabled and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(25, 25, 30)
-		aimBtn.Text = _G._agoraAimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
+	langBtn.MouseButton1Click:Connect(function()
+		langMenu.Visible = not langMenu.Visible
 		playSound(6042053626, 0.2)
-	end)
-
-	-- AutoClick toggle
-	local acBtn = Instance.new("TextButton")
-	acBtn.Size = UDim2.new(1, -20, 0, 28)
-	acBtn.Position = UDim2.new(0, 10, 0, 363)
-	acBtn.BackgroundColor3 = _G._agoraAimbotAutoClick and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(25, 25, 30)
-	acBtn.Text = _G._agoraAimbotAutoClick and "Clic auto: ON" or "Clic auto: OFF"
-	acBtn.Font = Enum.Font.GothamSemibold
-	acBtn.TextSize = 13
-	acBtn.TextColor3 = Color3.new(1, 1, 1)
-	acBtn.BorderSizePixel = 0
-	acBtn.Parent = bgFrame
-	createCorner(acBtn, 8)
-	acBtn.MouseButton1Click:Connect(function()
-		_G._agoraAimbotAutoClick = not _G._agoraAimbotAutoClick
-		acBtn.BackgroundColor3 = _G._agoraAimbotAutoClick and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(25, 25, 30)
-		acBtn.Text = _G._agoraAimbotAutoClick and "Clic auto: ON" or "Clic auto: OFF"
-		playSound(6042053626, 0.2)
-	end)
-
-	-- Distance slider (boutons - / +)
-	local distRow = Instance.new("Frame")
-	distRow.Size = UDim2.new(1, -20, 0, 32)
-	distRow.Position = UDim2.new(0, 10, 0, 394)
-	distRow.BackgroundTransparency = 1
-	distRow.Parent = bgFrame
-	local distLabel2 = Instance.new("TextLabel")
-	distLabel2.Size = UDim2.new(0.6, 0, 1, 0)
-	distLabel2.BackgroundTransparency = 1
-	distLabel2.Text = "Distance: " .. tostring(_G._agoraAimbotMaxDist) .. " studs"
-	distLabel2.Font = Enum.Font.GothamSemibold
-	distLabel2.TextSize = 12
-	distLabel2.TextColor3 = Color3.fromRGB(200, 200, 220)
-	distLabel2.TextXAlignment = Enum.TextXAlignment.Left
-	distLabel2.Parent = distRow
-	local minusBtn = Instance.new("TextButton")
-	minusBtn.Size = UDim2.new(0.18, -2, 1, 0)
-	minusBtn.Position = UDim2.new(0.6, 2, 0, 0)
-	minusBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-	minusBtn.Text = "-"
-	minusBtn.Font = Enum.Font.GothamBold
-	minusBtn.TextSize = 16
-	minusBtn.TextColor3 = Color3.new(1, 1, 1)
-	minusBtn.BorderSizePixel = 0
-	minusBtn.Parent = distRow
-	createCorner(minusBtn, 6)
-	local plusBtn = Instance.new("TextButton")
-	plusBtn.Size = UDim2.new(0.18, -2, 1, 0)
-	plusBtn.Position = UDim2.new(0.82, 0, 0, 0)
-	plusBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-	plusBtn.Text = "+"
-	plusBtn.Font = Enum.Font.GothamBold
-	plusBtn.TextSize = 16
-	plusBtn.TextColor3 = Color3.new(1, 1, 1)
-	plusBtn.BorderSizePixel = 0
-	plusBtn.Parent = distRow
-	createCorner(plusBtn, 6)
-	minusBtn.MouseButton1Click:Connect(function()
-		_G._agoraAimbotMaxDist = math.max(50, _G._agoraAimbotMaxDist - 25)
-		distLabel2.Text = "Distance: " .. tostring(_G._agoraAimbotMaxDist) .. " studs"
-	end)
-	plusBtn.MouseButton1Click:Connect(function()
-		_G._agoraAimbotMaxDist = math.min(1000, _G._agoraAimbotMaxDist + 25)
-		distLabel2.Text = "Distance: " .. tostring(_G._agoraAimbotMaxDist) .. " studs"
 	end)
 
 	-- Credits
 	local credits = Instance.new("TextLabel")
 	credits.Size = UDim2.new(1, -20, 0, 16)
-	credits.Position = UDim2.new(0, 10, 0, 428)
+	credits.Position = UDim2.new(0, 10, 0, 320)
 	credits.BackgroundTransparency = 1
 	credits.Text = "Agora Universelle"
 	credits.Font = Enum.Font.Gotham
