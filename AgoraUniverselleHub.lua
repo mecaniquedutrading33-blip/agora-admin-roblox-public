@@ -1024,8 +1024,8 @@ end
 		if t.discord then discordBtn.Text = t.discord end
 		if t.langue then langBtn.Text = "🌍 " .. (t.langue or "Langue") end
 		if t.nouveautes then changelogTitle.Text = t.nouveautes end
-		if t.utilisateurs then totalLabel.Text = (t.utilisateurs or "Utilisateurs") .. ": " .. tostring(_G._agoraStats.totalUsers or 0) end
-		if t.enLigne then onlineLabel.Text = (t.enLigne or "En ligne") .. ": " .. tostring(_G._agoraStats.onlineUsers or 0) end
+		if t.utilisateurs then totalLabel.Text = (t.utilisateurs or "Utilisateurs") .. ": " .. tostring((_G._agoraStats and _G._agoraStats.totalUsers) or 0) end
+		if t.enLigne then onlineLabel.Text = (t.enLigne or "En ligne") .. ": " .. tostring((_G._agoraStats and _G._agoraStats.onlineUsers) or 0) end
 		if t.credits then credits.Text = t.credits end
 	end
 
