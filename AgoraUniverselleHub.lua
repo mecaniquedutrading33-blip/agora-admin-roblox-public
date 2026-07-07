@@ -760,7 +760,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.12"
+	versionLabel.Text = "v39.13"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -4517,61 +4517,89 @@ local function computePathTo(targetPos)
 	updateCharacter()
 	if not rootPart or not humanoid then return {} end
 
-	-- 1) Tentative avec PathfindingService Roblox (le plus fiable)
+	local myPos = rootPart.Position
 	local waypoints = {}
+
+	-- 1) PathfindingService Roblox (parametres ameliores: climb, spacing reduit)
 	local ok, pathOrErr = pcall(function()
 		local p = PathfindingService:CreatePath({
-			AgentRadius = 2,
-			AgentHeight = 5,
+			AgentRadius = 1.5,
+			AgentHeight = 4.5,
 			AgentCanJump = true,
-			AgentCanClimb = false,
-			WaypointSpacing = 4,
+			AgentCanClimb = true,
+			WaypointSpacing = 3,
+			Costs = { Climbing = 3, Jumping = 2 }
 		})
-		p:ComputeAsync(rootPart.Position, targetPos)
+		p:ComputeAsync(myPos, targetPos)
 		return p:GetWaypoints()
 	end)
 
 	if ok and pathOrErr and #pathOrErr > 0 then
 		for i, wp in ipairs(pathOrErr) do
-			if wp and wp.Position then
-				table.insert(waypoints, wp.Position)
-			end
+			if wp and wp.Position then table.insert(waypoints, wp.Position) end
 		end
-		-- On retire le waypoint 1 (position actuelle) pour éviter un MoveTo immédiat dans le vide
-		if #waypoints > 1 then
-			table.remove(waypoints, 1)
-		end
-		return waypoints
+		if #waypoints > 1 then table.remove(waypoints, 1) end
+		if #waypoints > 0 then return waypoints end
 	end
 
-	-- 2) Fallback : ligne droite + raycast pour éviter les murs
-	local function rayClear(a, b)
+	-- 2) Multi-hauteur raycast: cherche le meilleur chemin en testant differentes hauteurs
+	local function findClearPath(from, to)
+		local dir = to - from
+		local flatDir = Vector3.new(dir.X, 0, dir.Z)
+		local dist = flatDir.Magnitude
+		if dist < 0.5 then return to end
+		local unit = flatDir / dist
 		local params = RaycastParams.new()
 		params.FilterDescendantsInstances = {character}
 		params.FilterType = Enum.RaycastFilterType.Exclude
-		local dir = b - a
-		local dist = dir.Magnitude
-		if dist < 0.1 then return true end
-		local hit = Workspace:Raycast(a, dir.Unit * dist, params)
-		return hit == nil
-	end
-	if rayClear(rootPart.Position, targetPos) then
-		return { targetPos }
+		
+		local heights = {0, 1, 2, 3, 4, 5, 6, 8, 10}
+		local bestHeight = nil
+		local bestScore = math.huge
+		
+		for _, h in ipairs(heights) do
+			local origin = from + Vector3.new(0, h, 0)
+			local hit = Workspace:Raycast(origin, unit * (dist + 2), params)
+			if not hit then
+				local heightDiff = math.abs(h - math.max(0, to.Y - from.Y))
+				if heightDiff < bestScore then
+					bestScore = heightDiff
+					bestHeight = h
+				end
+			end
+		end
+		
+		if bestHeight then
+			local mid = from + unit * math.min(10, dist * 0.35)
+			return Vector3.new(mid.X, from.Y + bestHeight, mid.Z)
+		end
+		return nil
 	end
 
-	-- 3) Fallback final : petite étape devant, on laisse MoveTo gérer
-	local flat = Vector3.new(targetPos.X - rootPart.Position.X, 0, targetPos.Z - rootPart.Position.Z)
+	local mid = findClearPath(myPos, targetPos)
+	if mid then
+		local mid2 = findClearPath(mid, targetPos)
+		if mid2 then return {mid, mid2} end
+		return {mid}
+	end
+
+	-- 3) Fallback: step forward avec ajustement au sol
+	local flat = Vector3.new(targetPos.X - myPos.X, 0, targetPos.Z - myPos.Z)
 	if flat.Magnitude > 0.1 then
-		local mid = rootPart.Position + flat.Unit * math.min(8, flat.Magnitude * 0.5)
-		return { mid + Vector3.new(0, 2, 0) }
+		local step = myPos + flat.Unit * math.min(6, flat.Magnitude * 0.3)
+		local gParams = RaycastParams.new()
+		gParams.FilterDescendantsInstances = {character}
+		gParams.FilterType = Enum.RaycastFilterType.Exclude
+		local ground = Workspace:Raycast(step + Vector3.new(0, 10, 0), Vector3.new(0, -20, 0), gParams)
+		if ground then step = Vector3.new(step.X, ground.Position.Y + 2, step.Z) end
+		return { step }
 	end
 	return {}
 end
-
 local gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, function(on)
 	gotoWalkState.enabled = on
-	gotoWalkState.active = on
 	if not on then
+		gotoWalkState.active = false
 		gotoWalkState.target = nil
 		gotoWalkState.path = {}
 		clearWalkVisuals()
@@ -5617,9 +5645,20 @@ RunService.Stepped:Connect(function(_, dt)
 					humanoid.Jump = true
 				end
 				-- Si toujours bloque apres 2s, on recalcule le chemin
-				if tick() - gotoWalkState.stuckSince > 2.5 and gotoWalkState.target then
+				if tick() - gotoWalkState.stuckSince > 2 and gotoWalkState.target then
 					gotoWalkState.stuckSince = nil
+					-- Try to jump over obstacle first
+					pcall(function() humanoid.Jump = true end)
+					task.wait(0.2)
 					local newPath = computePathTo(gotoWalkState.target)
+					if not newPath or #newPath == 0 then
+						-- Wider search: try offsets around target
+						local offsets = {Vector3.new(4,0,0), Vector3.new(-4,0,0), Vector3.new(0,0,4), Vector3.new(0,0,-4), Vector3.new(4,0,4), Vector3.new(-4,0,-4)}
+						for _, off in ipairs(offsets) do
+							newPath = computePathTo(gotoWalkState.target + off)
+							if newPath and #newPath > 0 then break end
+						end
+					end
 					if newPath and #newPath > 0 then
 						gotoWalkState.path = newPath
 						visualizeWaypoints(newPath)
@@ -5635,8 +5674,6 @@ RunService.Stepped:Connect(function(_, dt)
 			table.remove(gotoWalkState.path, 1)
 			if #gotoWalkState.path == 0 then
 				gotoWalkState.target = nil
-				gotoWalkState.active = false
-				gotoWalkSwitch.set(false)
 				clearWalkVisuals()
 			else
 				humanoid:MoveTo(gotoWalkState.path[1])
