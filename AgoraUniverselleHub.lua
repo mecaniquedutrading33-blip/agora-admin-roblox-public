@@ -732,7 +732,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.08"
+	versionLabel.Text = "v39.09"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -7483,6 +7483,9 @@ local function renderResult(data, parent)
 	table.insert(lines, "  💱 Trades entrants  : " .. (data.tradesInbound or "Indisponible"))
 	table.insert(lines, "  💱 Trades sortants  : " .. (data.tradesOutbound or "Indisponible"))
 	table.insert(lines, "  💱 Trades actifs    : " .. (data.tradesActive or "Indisponible"))
+	table.insert(lines, "  💰 Robux            : " .. (data.robux or "Indisponible"))
+	local badgesText = joinOrIndi(data.badgesList, ", ", 10)
+	table.insert(lines, "  🏅 Badges           : " .. badgesText)
 	-- === LIVE (serveur actuel) : check via natives Roblox ===
 	table.insert(lines, "  ━━━━━━━━━━ LIVE (ce serveur) ━━━━━━━━━━")
 	if data.userId and Players then
@@ -8079,6 +8082,36 @@ function runRegistrySearch(query)
 					if r and r ~= "" then
 						local d2 = HttpService:JSONDecode(r)
 						if d2 and d2.count then data.tradesOutbound = d2.count end
+					end
+				end)
+				-- 6s) Robux (economy)
+				pcall(function()
+					local r = httpGet("https://economy.roblox.com/v1/users/" .. userId .. "/currency")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 and d2.robux then data.robux = d2.robux end
+					end
+				end)
+				-- 6t) Badges list (names)
+				pcall(function()
+					local r = httpGet("https://badges.roblox.com/v1/users/" .. userId .. "/badges?limit=20&sortOrder=Desc")
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 and d2.data and #d2.data > 0 then
+							data.badgesList = {}
+							for i, b in ipairs(d2.data) do
+								if i > 10 then break end
+								if b.name then table.insert(data.badgesList, b.name) end
+							end
+						end
+					end
+				end)
+				-- 6u) Description complete
+				pcall(function()
+					local r = httpGet("https://accountinformation.roblox.com/v1/description/" .. userId)
+					if r and r ~= "" then
+						local d2 = HttpService:JSONDecode(r)
+						if d2 and d2.description then data.blurb = d2.description end
 					end
 				end)
 				pcall(function()
