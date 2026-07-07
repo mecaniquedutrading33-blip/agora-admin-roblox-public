@@ -210,12 +210,12 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	char:WaitForChild("Humanoid")
 	task.wait(0.2)
 	updateCharacter()
-	if flyState.flying then
+	if flyState and flyState.flying then
 		stopFly()
 	end
-	if noclipState.enabled then
+	if noclipState and noclipState.enabled then
 		noclipState.enabled = false
-		refreshNoClipSwitch()
+		if refreshNoClipSwitch then refreshNoClipSwitch() end
 	end
 	if espState.enabled or globalESPEnabled then
 		refreshESP()
@@ -947,20 +947,94 @@ end
 		end)
 	end
 
-	-- === CONTROLES AIMBOT DANS HOME ===
+	-- === CONTROLES AIMBOT DANS HOME (boutons bruts, createSwitch pas encore defini) ===
 	_G._agoraAimbotEnabled = _G._agoraAimbotEnabled or false
 	_G._agoraAimbotAutoClick = _G._agoraAimbotAutoClick or false
 	_G._agoraAimbotMaxDist = _G._agoraAimbotMaxDist or 300
 
-	local aimHomeSwitch = createSwitch(bgFrame, "Aimbot ON/OFF", 386, function(on)
-		_G._agoraAimbotEnabled = on
-	end, _G._agoraAimbotEnabled)
-	local autoClickSwitch = createSwitch(bgFrame, "Clic auto", 428, function(on)
-		_G._agoraAimbotAutoClick = on
-	end, _G._agoraAimbotAutoClick)
-	local aimDistSlider = createSlider(bgFrame, "Distance aimbot", 470, 50, 1000, _G._agoraAimbotMaxDist, function(v)
-		_G._agoraAimbotMaxDist = math.floor(v)
-	end, Color3.fromRGB(100, 180, 255), 0, 25)
+	-- Aimbot toggle
+	local aimBtn = Instance.new("TextButton")
+	aimBtn.Size = UDim2.new(1, -20, 0, 32)
+	aimBtn.Position = UDim2.new(0, 10, 0, 386)
+	aimBtn.BackgroundColor3 = _G._agoraAimbotEnabled and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(25, 25, 30)
+	aimBtn.Text = _G._agoraAimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
+	aimBtn.Font = Enum.Font.GothamSemibold
+	aimBtn.TextSize = 13
+	aimBtn.TextColor3 = Color3.new(1, 1, 1)
+	aimBtn.BorderSizePixel = 0
+	aimBtn.Parent = bgFrame
+	createCorner(aimBtn, 8)
+	aimBtn.MouseButton1Click:Connect(function()
+		_G._agoraAimbotEnabled = not _G._agoraAimbotEnabled
+		aimBtn.BackgroundColor3 = _G._agoraAimbotEnabled and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(25, 25, 30)
+		aimBtn.Text = _G._agoraAimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
+		playSound(6042053626, 0.2)
+	end)
+
+	-- AutoClick toggle
+	local acBtn = Instance.new("TextButton")
+	acBtn.Size = UDim2.new(1, -20, 0, 32)
+	acBtn.Position = UDim2.new(0, 10, 0, 424)
+	acBtn.BackgroundColor3 = _G._agoraAimbotAutoClick and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(25, 25, 30)
+	acBtn.Text = _G._agoraAimbotAutoClick and "Clic auto: ON" or "Clic auto: OFF"
+	acBtn.Font = Enum.Font.GothamSemibold
+	acBtn.TextSize = 13
+	acBtn.TextColor3 = Color3.new(1, 1, 1)
+	acBtn.BorderSizePixel = 0
+	acBtn.Parent = bgFrame
+	createCorner(acBtn, 8)
+	acBtn.MouseButton1Click:Connect(function()
+		_G._agoraAimbotAutoClick = not _G._agoraAimbotAutoClick
+		acBtn.BackgroundColor3 = _G._agoraAimbotAutoClick and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(25, 25, 30)
+		acBtn.Text = _G._agoraAimbotAutoClick and "Clic auto: ON" or "Clic auto: OFF"
+		playSound(6042053626, 0.2)
+	end)
+
+	-- Distance slider (boutons - / +)
+	local distRow = Instance.new("Frame")
+	distRow.Size = UDim2.new(1, -20, 0, 32)
+	distRow.Position = UDim2.new(0, 10, 0, 462)
+	distRow.BackgroundTransparency = 1
+	distRow.Parent = bgFrame
+	local distLabel2 = Instance.new("TextLabel")
+	distLabel2.Size = UDim2.new(0.6, 0, 1, 0)
+	distLabel2.BackgroundTransparency = 1
+	distLabel2.Text = "Distance: " .. tostring(_G._agoraAimbotMaxDist) .. " studs"
+	distLabel2.Font = Enum.Font.GothamSemibold
+	distLabel2.TextSize = 12
+	distLabel2.TextColor3 = Color3.fromRGB(200, 200, 220)
+	distLabel2.TextXAlignment = Enum.TextXAlignment.Left
+	distLabel2.Parent = distRow
+	local minusBtn = Instance.new("TextButton")
+	minusBtn.Size = UDim2.new(0.18, -2, 1, 0)
+	minusBtn.Position = UDim2.new(0.6, 2, 0, 0)
+	minusBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+	minusBtn.Text = "-"
+	minusBtn.Font = Enum.Font.GothamBold
+	minusBtn.TextSize = 16
+	minusBtn.TextColor3 = Color3.new(1, 1, 1)
+	minusBtn.BorderSizePixel = 0
+	minusBtn.Parent = distRow
+	createCorner(minusBtn, 6)
+	local plusBtn = Instance.new("TextButton")
+	plusBtn.Size = UDim2.new(0.18, -2, 1, 0)
+	plusBtn.Position = UDim2.new(0.82, 0, 0, 0)
+	plusBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+	plusBtn.Text = "+"
+	plusBtn.Font = Enum.Font.GothamBold
+	plusBtn.TextSize = 16
+	plusBtn.TextColor3 = Color3.new(1, 1, 1)
+	plusBtn.BorderSizePixel = 0
+	plusBtn.Parent = distRow
+	createCorner(plusBtn, 6)
+	minusBtn.MouseButton1Click:Connect(function()
+		_G._agoraAimbotMaxDist = math.max(50, _G._agoraAimbotMaxDist - 25)
+		distLabel2.Text = "Distance: " .. tostring(_G._agoraAimbotMaxDist) .. " studs"
+	end)
+	plusBtn.MouseButton1Click:Connect(function()
+		_G._agoraAimbotMaxDist = math.min(1000, _G._agoraAimbotMaxDist + 25)
+		distLabel2.Text = "Distance: " .. tostring(_G._agoraAimbotMaxDist) .. " studs"
+	end)
 
 	-- Credits
 	local credits = Instance.new("TextLabel")
