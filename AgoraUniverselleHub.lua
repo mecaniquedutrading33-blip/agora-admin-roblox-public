@@ -732,7 +732,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v38.99"
+	versionLabel.Text = "v39.00"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -6563,25 +6563,42 @@ local function recordCall(remote, args)
 	spyData[fullName].lastTime = tick()
 end
 
--- Method 1: hookmetamethod (best, works on most executors)
--- Optimized: check method name FIRST (string compare is cheap), skip IsA if not a remote method
-local hooked = false
-pcall(function()
-	if hookmetamethod then
-		local oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-			local method = getnamecallmethod and getnamecallmethod() or ""
-			-- Fast path: only check IsA for FireServer/InvokeServer (avoids IsA on every namecall)
-			if method == "FireServer" or method == "InvokeServer" then
-				local className = typeof(self)
-				if className == "RemoteEvent" or className == "RemoteFunction" then
-					recordCall(self, {...})
+-- Spy is OFF by default to avoid lag. User enables it with the Spy button.
+local spyActive = false
+local oldNamecallRef = nil
+
+local function enableSpy()
+	if spyActive then return end
+	pcall(function()
+		if hookmetamethod then
+			oldNamecallRef = hookmetamethod(game, "__namecall", function(self, ...)
+				local method = getnamecallmethod and getnamecallmethod() or ""
+				if method == "FireServer" or method == "InvokeServer" then
+					local className = typeof(self)
+					if className == "RemoteEvent" or className == "RemoteFunction" then
+						recordCall(self, {...})
+					end
 				end
-			end
-			return oldNamecall(self, ...)
-		end)
-		hooked = true
-	end
-end)
+				return oldNamecallRef(self, ...)
+			end)
+			spyActive = true
+		end
+	end)
+end
+
+local function disableSpy()
+	if not spyActive or not oldNamecallRef then return end
+	pcall(function()
+		if hookmetamethod then
+			hookmetamethod(game, "__namecall", oldNamecallRef)
+		end
+	end)
+	spyActive = false
+end
+
+_G._agoraSpyOn = enableSpy
+_G._agoraSpyOff = disableSpy
+_G._agoraSpyActive = function() return spyActive end
 
 -- Method 2: fallback via spy on specific remotes (if hookmetamethod not available)
 if not hooked then
@@ -6766,9 +6783,35 @@ local function _wrapRemotes()
 	remoteCount.TextXAlignment = Enum.TextXAlignment.Left
 	remoteCount.Parent = remoteHeader
 
+	local spyToggleBtn = Instance.new("TextButton")
+	spyToggleBtn.Size = UDim2.new(0, 60, 0, 22)
+	spyToggleBtn.Position = UDim2.new(1, -96, 0, 5)
+	spyToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
+	spyToggleBtn.BorderSizePixel = 0
+	spyToggleBtn.Text = "Spy: OFF"
+	spyToggleBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+	spyToggleBtn.TextSize = 11
+	spyToggleBtn.Font = Enum.Font.GothamBold
+	spyToggleBtn.Parent = remoteHeader
+	createCorner(spyToggleBtn, 4)
+	spyToggleBtn.MouseButton1Click:Connect(function()
+		if _G._agoraSpyActive and _G._agoraSpyActive() then
+			_G._agoraSpyOff()
+			spyToggleBtn.Text = "Spy: OFF"
+			spyToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
+			spyToggleBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+		else
+			_G._agoraSpyOn()
+			spyToggleBtn.Text = "Spy: ON"
+			spyToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 60, 30)
+			spyToggleBtn.TextColor3 = Color3.fromRGB(100, 220, 100)
+		end
+		playSound(6042053626, 0.2)
+	end)
+
 	local refreshRemotesBtn = Instance.new("TextButton")
 	refreshRemotesBtn.Size = UDim2.new(0, 28, 0, 22)
-	refreshRemotesBtn.Position = UDim2.new(1, -36, 0, 5)
+	refreshRemotesBtn.Position = UDim2.new(1, -32, 0, 5)
 	refreshRemotesBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
 	refreshRemotesBtn.BorderSizePixel = 0
 	refreshRemotesBtn.Text = "↻"
