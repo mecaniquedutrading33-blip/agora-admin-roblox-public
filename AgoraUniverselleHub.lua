@@ -732,7 +732,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.02"
+	versionLabel.Text = "v39.03"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -1035,7 +1035,7 @@ end
 	applyLanguage(selectedLang)
 
 	-- Re-apply when language changes
-	-- We need to hook into the language button clicks
+
 	-- Since the lang menu buttons are created in a loop, we expose applyLanguage via _G
 	_G._agoraApplyLang = applyLanguage
 
@@ -6543,156 +6543,6 @@ serverLayout.SortOrder = Enum.SortOrder.LayoutOrder
 serverLayout.Parent = serverScroll
 
 -- Wrap du contenu Remotes dans une fonction locale pour limiter les 200 registers
--- ============= REMOTE SPY: intercepte les args envoyes par le jeu =============
--- Hook FireServer/InvokeServer pour enregistrer les arguments
-_G._agoraRemoteSpy = {}
-_G._agoraFormatSpyArgs = nil
-
-;(function()
--- Remote spy via hookmetamethod (works on executors) or namecall hook
-local spyData = _G._agoraRemoteSpy
-
-local function recordCall(remote, args)
-	if not remote then return end
-	local fullName = remote:GetFullName()
-	if not spyData[fullName] then
-		spyData[fullName] = { lastArgs = nil, count = 0, lastTime = 0 }
-	end
-	spyData[fullName].lastArgs = args
-	spyData[fullName].count = spyData[fullName].count + 1
-	spyData[fullName].lastTime = tick()
-end
-
--- Spy: hook installed ONLY when user clicks ON, removed (flag) when OFF
-local spyActive = false
-local spyHooked = false
-local oldNamecallRef = nil
-
-local function enableSpy()
-	if spyActive then return end
-	spyActive = true
-	-- Install hook only once (first time ON)
-	if not spyHooked then
-		pcall(function()
-			if hookmetamethod then
-				oldNamecallRef = hookmetamethod(game, "__namecall", function(self, ...)
-					if spyActive then
-						local method = getnamecallmethod and getnamecallmethod() or ""
-						if method == "FireServer" or method == "InvokeServer" then
-							local className = typeof(self)
-							if className == "RemoteEvent" or className == "RemoteFunction" then
-								recordCall(self, {...})
-							end
-						end
-					end
-					return oldNamecallRef(self, ...)
-				end)
-				spyHooked = true
-			end
-		end)
-	end
-end
-
-local function disableSpy()
-	spyActive = false
-end
-
-_G._agoraSpyOn = enableSpy
-_G._agoraSpyOff = disableSpy
-_G._agoraSpyActive = function() return spyActive end
-
--- Method 2: fallback via spy on specific remotes (if hookmetamethod not available)
-if not hooked then
-	local function spyRemote(remote)
-		if not remote then return end
-		if not remote:IsA("RemoteEvent") and not remote:IsA("RemoteFunction") then return end
-		local fullName = remote:GetFullName()
-		if spyData[fullName] and spyData[fullName].hooked then return end
-		spyData[fullName] = spyData[fullName] or { lastArgs = nil, count = 0, lastTime = 0, hooked = true }
-		
-		pcall(function()
-			local mt = getrawmetatable(remote)
-			if mt and mt.__index then
-				local oldIndex = mt.__index
-				-- Can't easily hook methods this way, but at least mark as known
-			end
-		end)
-		
-		-- Direct wrapper (may not work on all executors but worth trying)
-		pcall(function()
-			local origFire = remote.FireServer
-			if origFire then
-				remote.FireServer = function(self, ...)
-					recordCall(self, {...})
-					return origFire(self, ...)
-				end
-			end
-		end)
-		pcall(function()
-			local origInvoke = remote.InvokeServer
-			if origInvoke then
-				remote.InvokeServer = function(self, ...)
-					recordCall(self, {...})
-					return origInvoke(self, ...)
-				end
-			end
-		end)
-	end
-	
-	task.spawn(function()
-		task.wait(2)
-		pcall(function()
-			for _, obj in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
-				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then spyRemote(obj) end
-			end
-			for _, obj in ipairs(workspace:GetDescendants()) do
-				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then spyRemote(obj) end
-			end
-		end)
-		pcall(function()
-			game:GetService("ReplicatedStorage").DescendantAdded:Connect(function(obj)
-				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then spyRemote(obj) end
-			end)
-			workspace.DescendantAdded:Connect(function(obj)
-				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then spyRemote(obj) end
-			end)
-		end)
-	end)
-end
-
--- Helper: format args for display
-local function formatSpyArgs(args)
-	if not args or #args == 0 then return "(aucun)" end
-	local parts = {}
-	for i, v in ipairs(args) do
-		local t = typeof(v)
-		if t == "string" then
-			table.insert(parts, '"' .. v:sub(1, 50) .. (#v > 50 and "..." or "") .. '"')
-		elseif t == "number" then
-			table.insert(parts, tostring(v))
-		elseif t == "boolean" then
-			table.insert(parts, tostring(v))
-		elseif t == "nil" then
-			table.insert(parts, "nil")
-		elseif t == "Instance" then
-			table.insert(parts, "Instance:" .. (v and v.Name or "?"))
-		elseif t == "Vector3" then
-			table.insert(parts, "Vector3(" .. tostring(math.floor(v.X)) .. "," .. tostring(math.floor(v.Y)) .. "," .. tostring(math.floor(v.Z)) .. ")")
-		elseif t == "CFrame" then
-			table.insert(parts, "CFrame(...)")
-		elseif t == "table" then
-			local count = 0
-			for _ in pairs(v) do count = count + 1 end
-			table.insert(parts, "table{" .. count .. "}")
-		else
-			table.insert(parts, t)
-		end
-	end
-	return table.concat(parts, ", ")
-end
-_G._agoraFormatSpyArgs = formatSpyArgs
-end)()
-
 local function _wrapRemotes()
 	-- Avertissement en haut
 	local remoteWarn = Instance.new("Frame")
@@ -6738,7 +6588,7 @@ local function _wrapRemotes()
 				if not seen[fn] then
 					seen[fn] = true
 					table.insert(remotes, obj)
-					pcall(spyRemote, obj) -- make sure it's spied
+
 				end
 			end
 		end
@@ -6783,32 +6633,6 @@ local function _wrapRemotes()
 	remoteCount.Font = Enum.Font.GothamBold
 	remoteCount.TextXAlignment = Enum.TextXAlignment.Left
 	remoteCount.Parent = remoteHeader
-
-	local spyToggleBtn = Instance.new("TextButton")
-	spyToggleBtn.Size = UDim2.new(0, 60, 0, 22)
-	spyToggleBtn.Position = UDim2.new(1, -96, 0, 5)
-	spyToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
-	spyToggleBtn.BorderSizePixel = 0
-	spyToggleBtn.Text = "Spy: OFF"
-	spyToggleBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-	spyToggleBtn.TextSize = 11
-	spyToggleBtn.Font = Enum.Font.GothamBold
-	spyToggleBtn.Parent = remoteHeader
-	createCorner(spyToggleBtn, 4)
-	spyToggleBtn.MouseButton1Click:Connect(function()
-		if _G._agoraSpyActive and _G._agoraSpyActive() then
-			_G._agoraSpyOff()
-			spyToggleBtn.Text = "Spy: OFF"
-			spyToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
-			spyToggleBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-		else
-			_G._agoraSpyOn()
-			spyToggleBtn.Text = "Spy: ON"
-			spyToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 60, 30)
-			spyToggleBtn.TextColor3 = Color3.fromRGB(100, 220, 100)
-		end
-		playSound(6042053626, 0.2)
-	end)
 
 	local refreshRemotesBtn = Instance.new("TextButton")
 	refreshRemotesBtn.Size = UDim2.new(0, 28, 0, 22)
@@ -6892,39 +6716,6 @@ local function _wrapRemotes()
 	header.TextWrapped = true
 	header.LayoutOrder = 1
 	header.Parent = card
-
-	-- Spy info: montre les derniers args detectes
-	local spyLabel = Instance.new("TextLabel")
-	spyLabel.Name = "SpyLabel"
-	spyLabel.Size = UDim2.new(1, 0, 0, 0)
-	spyLabel.AutomaticSize = Enum.AutomaticSize.Y
-	spyLabel.BackgroundTransparency = 1
-	spyLabel.Text = ""
-	spyLabel.TextColor3 = Color3.fromRGB(180, 220, 180)
-	spyLabel.TextSize = 10
-	spyLabel.Font = Enum.Font.Code
-	spyLabel.TextWrapped = true
-	spyLabel.TextXAlignment = Enum.TextXAlignment.Left
-	spyLabel.TextYAlignment = Enum.TextYAlignment.Top
-	spyLabel.LayoutOrder = 1
-	spyLabel.Parent = card
-
-	-- Update spy info for this remote
-	local remoteFullName = remote:GetFullName()
-	local function updateSpyInfo()
-		local spyData = _G._agoraRemoteSpy and _G._agoraRemoteSpy[remoteFullName]
-		if spyData and spyData.count > 0 then
-			local argsStr = _G._agoraFormatSpyArgs and _G._agoraFormatSpyArgs(spyData.lastArgs) or "(?)"
-			local ago = math.floor(tick() - spyData.lastTime)
-			spyLabel.Text = "🔍 Args detectes (" .. spyData.count .. "x, il y a " .. ago .. "s): " .. argsStr
-			spyLabel.TextColor3 = Color3.fromRGB(180, 220, 180)
-		else
-			spyLabel.Text = "🔍 En attente d'interception... (joue normalement pour voir les args)"
-			spyLabel.TextColor3 = Color3.fromRGB(130, 130, 150)
-		end
-	end
-	updateSpyInfo()
-	-- Spy info updated by refreshRemotesList (no per-card loop to avoid lag)
 
 	-- Row: argsBox + fireBtn cote a cote
 	local row = Instance.new("Frame")
@@ -7080,39 +6871,19 @@ local function _wrapRemotes()
 		local remotes = collectRemotes()
 		remoteCount.Text = "Remotes detectes : " .. #remotes
 		table.sort(remotes, function(a, b)
-			local aSpy = _G._agoraRemoteSpy and _G._agoraRemoteSpy[a:GetFullName()]
-			local bSpy = _G._agoraRemoteSpy and _G._agoraRemoteSpy[b:GetFullName()]
-			local aCount = (aSpy and aSpy.count or 0)
-			local bCount = (bSpy and bSpy.count or 0)
-			if aCount > 0 and bCount == 0 then return true end
-			if aCount == 0 and bCount > 0 then return false end
-			if aCount ~= bCount then return aCount > bCount end
 			return a.Name < b.Name
 		end)
 		
 		-- Only destroy+recreate if the remote list changed (new/removed remotes)
 		local needRebuild = force or #remotes ~= #existingCards
 		if not needRebuild then
-			-- Just update LayoutOrder for sorting + update spy labels
+			-- Just update LayoutOrder for sorting
 			for i, remote in ipairs(remotes) do
 				local cardName = remote:GetFullName():gsub("[^%w]", "_")
 				local card = existingCards[cardName]
 				if card then
 					card.LayoutOrder = i
-					-- Update spy label
-					local spyLabel = card:FindFirstChild("SpyLabel")
-					if spyLabel then
-						local spyData = _G._agoraRemoteSpy and _G._agoraRemoteSpy[remote:GetFullName()]
-						if spyData and spyData.count > 0 then
-							local argsStr = _G._agoraFormatSpyArgs and _G._agoraFormatSpyArgs(spyData.lastArgs) or "(?)"
-							local ago = math.floor(tick() - spyData.lastTime)
-							spyLabel.Text = "Args detectes (" .. spyData.count .. "x, il y a " .. ago .. "s): " .. argsStr
-							spyLabel.TextColor3 = Color3.fromRGB(180, 220, 180)
-						else
-							spyLabel.Text = "En attente... (joue pour voir les args)"
-							spyLabel.TextColor3 = Color3.fromRGB(130, 130, 150)
-						end
-					end
+		
 				end
 			end
 		else
