@@ -150,20 +150,48 @@ local function playSound(id, vol)
 	end)
 end
 
--- Helper HTTP multi-exécuteur (essaie game:HttpGet, GetAsync, request/syn.request)
+-- Helper HTTP multi-exécuteur (essaie TOUTES les méthodes possibles)
 local function httpGet(url)
-	-- 1) game:HttpGet (Solara, etc.)
+	-- 1) game:HttpGet (Solara, Xeno, etc.)
 	local ok, r = pcall(function() return game:HttpGet(url) end)
 	if ok and r and r ~= "" then return r end
-	-- 2) HttpService:GetAsync (Studio-like)
+	-- 2) game:HttpGet avec no-cache
+	ok, r = pcall(function() return game:HttpGet(url, true) end)
+	if ok and r and r ~= "" then return r end
+	-- 3) HttpService:GetAsync (Studio-like)
 	ok, r = pcall(function() return HttpService:GetAsync(url) end)
 	if ok and r and r ~= "" then return r end
-	-- 3) request / syn.request (Synapse, Fluxus, etc.)
+	-- 4) HttpService:GetAsync avec no-cache
+	ok, r = pcall(function() return HttpService:GetAsync(url, true) end)
+	if ok and r and r ~= "" then return r end
+	-- 5) HttpService:RequestAsync (plus recent, supporte plus d'executeurs)
+	ok, r = pcall(function()
+		local resp = HttpService:RequestAsync({
+			Url = url,
+			Method = "GET",
+			Headers = {["Content-Type"] = "application/json"}
+		})
+		if resp and resp.Success and resp.Body then return resp.Body end
+	end)
+	if ok and r and r ~= "" then return r end
+	-- 6) request / syn.request (Synapse, Fluxus, Wave, etc.)
 	local req = (syn and syn.request) or (http and http.request) or http_request or request
 	if req then
 		ok, r = pcall(function() return req({Url=url, Method="GET"}).Body end)
 		if ok and r and r ~= "" then return r end
 	end
+	-- 7) request avec headers
+	if req then
+		ok, r = pcall(function() return req({
+			Url = url,
+			Method = "GET",
+			Headers = {["User-Agent"] = "Roblox/WinInet", ["Accept"] = "*/*"}
+		}).Body end)
+		if ok and r and r ~= "" then return r end
+	end
+	-- 8) HttpPost avec GET simule (certains executeurs acceptent)
+	ok, r = pcall(function() return game:HttpPost(url, "", true, "application/json") end)
+	if ok and r and r ~= "" then return r end
 	return nil
 end
 
@@ -732,7 +760,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.09"
+	versionLabel.Text = "v39.10"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
