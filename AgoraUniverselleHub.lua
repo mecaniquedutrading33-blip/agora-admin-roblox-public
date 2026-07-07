@@ -5910,8 +5910,32 @@ local function _initAimbot()
 
 	-- Slider de distance max (clic gauche = -25, clic droit = +25)
 	_G._agoraAimbotMaxDist = _G._agoraAimbotMaxDist or 300
-	local aimbotMaxDist = _G._agoraAimbotMaxDist
+	local aimbotMaxDist = _G._agoraAimbotMaxDist or 300
+	local distRow = Instance.new("Frame")
+	distRow.Size = UDim2.new(1, 0, 0, 26)
+	distRow.BackgroundTransparency = 1
+	distRow.LayoutOrder = 5
+	distRow.Parent = aimbotCard
+	local distLabel = Instance.new("TextLabel")
+	distLabel.Size = UDim2.new(0.5, 0, 1, 0)
+	distLabel.BackgroundTransparency = 1
 	distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
+	distLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+	distLabel.Font = Enum.Font.Gotham
+	distLabel.TextSize = 11
+	distLabel.TextXAlignment = Enum.TextXAlignment.Left
+	distLabel.Parent = distRow
+	local distSlider = Instance.new("TextButton")
+	distSlider.Size = UDim2.new(0.5, -4, 1, 0)
+	distSlider.Position = UDim2.new(0.5, 4, 0, 0)
+	distSlider.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+	distSlider.BorderSizePixel = 0
+	distSlider.Text = "—   +"
+	distSlider.TextColor3 = Color3.fromRGB(180, 180, 220)
+	distSlider.Font = Enum.Font.Gotham
+	distSlider.TextSize = 10
+	distSlider.Parent = distRow
+	createCorner(distSlider, 4)
 	distSlider.MouseButton1Click:Connect(function()
 		aimbotMaxDist = math.max(50, aimbotMaxDist - 25)
 		_G._agoraAimbotMaxDist = aimbotMaxDist
@@ -5958,7 +5982,7 @@ local function _initAimbot()
 	local localPlayer = Players.LocalPlayer
 	local lastClickTick = 0
 	local renderConn = RunService.RenderStepped:Connect(function()
-		if not aimbotEnabled then
+		if not _G._agoraAimbotEnabled then
 			if aimCircle.Visible then aimCircle.Visible = false end
 			return
 		end
@@ -5974,7 +5998,7 @@ local function _initAimbot()
 			if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
 				local targetHead = plr.Character.Head
 				local targetPos = targetHead.Position
-				if (targetPos - myPos).Magnitude <= aimbotMaxDist then
+				if (targetPos - myPos).Magnitude <= (_G._agoraAimbotMaxDist or 300) then
 					local screenPos, onScreen = cam:WorldToScreenPoint(targetPos)
 					if onScreen and screenPos.Z > 0 then
 						local origin = cam.CFrame.Position
@@ -6006,7 +6030,7 @@ local function _initAimbot()
 			if not aimCircle.Visible then aimCircle.Visible = true end
 			aimStatusLabel.Text = "🎯 Verrouillé : " .. bestTarget.player.DisplayName .. " (dist: " .. math.floor(bestDistFromCenter) .. "px)"
 			aimStatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-			if aimbotAutoClick and tick() - lastClickTick > 0.1 then
+			if _G._agoraAimbotAutoClick and tick() - lastClickTick > 0.1 then
 				pcall(function() mouse1click() end)
 				lastClickTick = tick()
 			end
