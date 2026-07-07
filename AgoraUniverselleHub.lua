@@ -732,7 +732,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.01"
+	versionLabel.Text = "v39.02"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -6563,30 +6563,34 @@ local function recordCall(remote, args)
 	spyData[fullName].lastTime = tick()
 end
 
--- Spy uses a flag, not unhook. Hook stays but skips recording when OFF.
+-- Spy: hook installed ONLY when user clicks ON, removed (flag) when OFF
 local spyActive = false
+local spyHooked = false
 local oldNamecallRef = nil
 
--- Install hook ONCE, use spyActive flag to enable/disable recording
-pcall(function()
-	if hookmetamethod then
-		oldNamecallRef = hookmetamethod(game, "__namecall", function(self, ...)
-			if spyActive then
-				local method = getnamecallmethod and getnamecallmethod() or ""
-				if method == "FireServer" or method == "InvokeServer" then
-					local className = typeof(self)
-					if className == "RemoteEvent" or className == "RemoteFunction" then
-						recordCall(self, {...})
+local function enableSpy()
+	if spyActive then return end
+	spyActive = true
+	-- Install hook only once (first time ON)
+	if not spyHooked then
+		pcall(function()
+			if hookmetamethod then
+				oldNamecallRef = hookmetamethod(game, "__namecall", function(self, ...)
+					if spyActive then
+						local method = getnamecallmethod and getnamecallmethod() or ""
+						if method == "FireServer" or method == "InvokeServer" then
+							local className = typeof(self)
+							if className == "RemoteEvent" or className == "RemoteFunction" then
+								recordCall(self, {...})
+							end
+						end
 					end
-				end
+					return oldNamecallRef(self, ...)
+				end)
+				spyHooked = true
 			end
-			return oldNamecallRef(self, ...)
 		end)
 	end
-end)
-
-local function enableSpy()
-	spyActive = true
 end
 
 local function disableSpy()
