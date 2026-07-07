@@ -701,7 +701,7 @@ end
 	-- Logo / Titre centre
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.new(1, -20, 0, 36)
-	title.Position = UDim2.new(0, 10, 0, 20)
+	title.Position = UDim2.new(0, 10, 0, 15)
 	title.BackgroundTransparency = 1
 	title.Text = "AGORA"
 	title.Font = Enum.Font.GothamBlack
@@ -711,7 +711,7 @@ end
 	
 	local subtitle = Instance.new("TextLabel")
 	subtitle.Size = UDim2.new(1, -20, 0, 20)
-	subtitle.Position = UDim2.new(0, 10, 0, 54)
+	subtitle.Position = UDim2.new(0, 10, 0, 48)
 	subtitle.BackgroundTransparency = 1
 	subtitle.Text = "Universelle Hub"
 	subtitle.Font = Enum.Font.Gotham
@@ -722,7 +722,7 @@ end
 	-- Separateur
 	local sep1 = Instance.new("Frame")
 	sep1.Size = UDim2.new(0.8, 0, 0, 1)
-	sep1.Position = UDim2.new(0.1, 0, 0, 82)
+	sep1.Position = UDim2.new(0.1, 0, 0, 76)
 	sep1.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
 	sep1.BorderSizePixel = 0
 	sep1.Parent = bgFrame
@@ -730,7 +730,7 @@ end
 	-- Version
 	local versionLabel = Instance.new("TextLabel")
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
-	versionLabel.Position = UDim2.new(0, 10, 0, 90)
+	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
 	versionLabel.Text = "v38.93"
 	versionLabel.Font = Enum.Font.GothamSemibold
@@ -741,8 +741,8 @@ end
 	
 	-- Changelog box
 	local changelogBox = Instance.new("Frame")
-	changelogBox.Size = UDim2.new(1, -30, 0, 140)
-	changelogBox.Position = UDim2.new(0, 15, 0, 118)
+	changelogBox.Size = UDim2.new(1, -30, 0, 125)
+	changelogBox.Position = UDim2.new(0, 15, 0, 105)
 	changelogBox.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
 	changelogBox.BorderSizePixel = 0
 	changelogBox.Parent = bgFrame
@@ -799,8 +799,8 @@ end
 	
 	-- Bouton Discord (copier le lien)
 	local discordBtn = Instance.new("TextButton")
-	discordBtn.Size = UDim2.new(0.7, 0, 0, 38)
-	discordBtn.Position = UDim2.new(0.15, 0, 0, 275)
+	discordBtn.Size = UDim2.new(0.7, 0, 0, 32)
+	discordBtn.Position = UDim2.new(0.15, 0, 0, 238)
 	discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
 	discordBtn.Text = "Rejoindre le Discord"
 	discordBtn.Font = Enum.Font.GothamBold
@@ -885,7 +885,7 @@ end
 
 	local langLabel = Instance.new("TextLabel")
 	langLabel.Size = UDim2.new(1, -20, 0, 16)
-	langLabel.Position = UDim2.new(0, 10, 0, 323)
+	langLabel.Position = UDim2.new(0, 10, 0, 276)
 	langLabel.BackgroundTransparency = 1
 	langLabel.Text = "Langue / Language"
 	langLabel.Font = Enum.Font.GothamSemibold
@@ -895,8 +895,8 @@ end
 	langLabel.Parent = bgFrame
 
 	local langScroll = Instance.new("ScrollingFrame")
-	langScroll.Size = UDim2.new(1, -20, 0, 36)
-	langScroll.Position = UDim2.new(0, 10, 0, 341)
+	langScroll.Size = UDim2.new(1, -20, 0, 32)
+	langScroll.Position = UDim2.new(0, 10, 0, 294)
 	langScroll.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
 	langScroll.BorderSizePixel = 0
 	langScroll.ScrollBarThickness = 3
@@ -954,8 +954,8 @@ end
 
 	-- Aimbot toggle
 	local aimBtn = Instance.new("TextButton")
-	aimBtn.Size = UDim2.new(1, -20, 0, 32)
-	aimBtn.Position = UDim2.new(0, 10, 0, 386)
+	aimBtn.Size = UDim2.new(1, -20, 0, 28)
+	aimBtn.Position = UDim2.new(0, 10, 0, 332)
 	aimBtn.BackgroundColor3 = _G._agoraAimbotEnabled and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(25, 25, 30)
 	aimBtn.Text = _G._agoraAimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
 	aimBtn.Font = Enum.Font.GothamSemibold
@@ -973,8 +973,8 @@ end
 
 	-- AutoClick toggle
 	local acBtn = Instance.new("TextButton")
-	acBtn.Size = UDim2.new(1, -20, 0, 32)
-	acBtn.Position = UDim2.new(0, 10, 0, 424)
+	acBtn.Size = UDim2.new(1, -20, 0, 28)
+	acBtn.Position = UDim2.new(0, 10, 0, 363)
 	acBtn.BackgroundColor3 = _G._agoraAimbotAutoClick and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(25, 25, 30)
 	acBtn.Text = _G._agoraAimbotAutoClick and "Clic auto: ON" or "Clic auto: OFF"
 	acBtn.Font = Enum.Font.GothamSemibold
@@ -993,7 +993,7 @@ end
 	-- Distance slider (boutons - / +)
 	local distRow = Instance.new("Frame")
 	distRow.Size = UDim2.new(1, -20, 0, 32)
-	distRow.Position = UDim2.new(0, 10, 0, 462)
+	distRow.Position = UDim2.new(0, 10, 0, 394)
 	distRow.BackgroundTransparency = 1
 	distRow.Parent = bgFrame
 	local distLabel2 = Instance.new("TextLabel")
@@ -1039,7 +1039,7 @@ end
 	-- Credits
 	local credits = Instance.new("TextLabel")
 	credits.Size = UDim2.new(1, -20, 0, 16)
-	credits.Position = UDim2.new(0, 10, 0, 535)
+	credits.Position = UDim2.new(0, 10, 0, 428)
 	credits.BackgroundTransparency = 1
 	credits.Text = "Agora Universelle"
 	credits.Font = Enum.Font.Gotham
