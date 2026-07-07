@@ -150,21 +150,15 @@ local function playSound(id, vol)
 	end)
 end
 
--- Helper HTTP multi-exécuteur (essaie TOUTES les méthodes possibles)
+-- Helper HTTP multi-executeur (essaie TOUTES les methodes possibles)
 local function httpGet(url)
-	-- 1) game:HttpGet (Solara, Xeno, etc.)
+	-- 1) game:HttpGet (Solara, Xeno, etc.) - le plus commun
 	local ok, r = pcall(function() return game:HttpGet(url) end)
 	if ok and r and r ~= "" then return r end
 	-- 2) game:HttpGet avec no-cache
 	ok, r = pcall(function() return game:HttpGet(url, true) end)
 	if ok and r and r ~= "" then return r end
-	-- 3) HttpService:GetAsync (Studio-like)
-	ok, r = pcall(function() return HttpService:GetAsync(url) end)
-	if ok and r and r ~= "" then return r end
-	-- 4) HttpService:GetAsync avec no-cache
-	ok, r = pcall(function() return HttpService:GetAsync(url, true) end)
-	if ok and r and r ~= "" then return r end
-	-- 5) HttpService:RequestAsync (plus recent, supporte plus d'executeurs)
+	-- 3) HttpService:RequestAsync (marche sur certains executeurs qui bloquent GetAsync)
 	ok, r = pcall(function()
 		local resp = HttpService:RequestAsync({
 			Url = url,
@@ -173,6 +167,12 @@ local function httpGet(url)
 		})
 		if resp and resp.Success and resp.Body then return resp.Body end
 	end)
+	if ok and r and r ~= "" then return r end
+	-- 4) HttpService:GetAsync (Studio-like)
+	ok, r = pcall(function() return HttpService:GetAsync(url) end)
+	if ok and r and r ~= "" then return r end
+	-- 5) HttpService:GetAsync avec no-cache
+	ok, r = pcall(function() return HttpService:GetAsync(url, true) end)
 	if ok and r and r ~= "" then return r end
 	-- 6) request / syn.request (Synapse, Fluxus, Wave, etc.)
 	local req = (syn and syn.request) or (http and http.request) or http_request or request
@@ -760,7 +760,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.10"
+	versionLabel.Text = "v39.12"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -1161,7 +1161,7 @@ local function _initRegistrySearch()
 	registrySearchBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 	registrySearchBox.BackgroundTransparency = 0.2
 	registrySearchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
-	registrySearchBox.PlaceholderText = "🔍 Rechercher un pseudo Roblox..."
+	registrySearchBox.PlaceholderText = "Rechercher un pseudo Roblox..."
 	registrySearchBox.Text = ""
 	registrySearchBox.Font = Enum.Font.Gotham
 	registrySearchBox.TextSize = 12
@@ -3102,7 +3102,7 @@ local function createPlayerEntry(plr)
 				end)
 				if not apiOk then
 					table.insert(extra, "---")
-					table.insert(extra, "⚠ APIs Roblox bloquées par l'exécuteur")
+					table.insert(extra, "! APIs Roblox bloquees par l'exécuteur")
 					table.insert(extra, "(présence, favoris, profil détaillés indisponibles)")
 				else
 					-- Présence actuelle : est-ce qu'il joue EN CE MOMENT à ce jeu précis ?
@@ -6132,7 +6132,7 @@ local function _initAimbot()
 			end
 		else
 			if aimCircle.Visible then aimCircle.Visible = false end
-			aimStatusLabel.Text = "🔍 Aucune cible visible (hors portée ou derrière un mur)"
+			aimStatusLabel.Text = "Aucune cible visible (hors portée ou derrière un mur)"
 			aimStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
 		end
 	end)
@@ -6573,7 +6573,7 @@ local function _wrapRemotes()
 	warnTitle.Size = UDim2.new(1, -16, 0, 22)
 	warnTitle.Position = UDim2.new(0, 8, 0, 6)
 	warnTitle.BackgroundTransparency = 1
-	warnTitle.Text = "⚠ ATTENTION — REMOTES DU JEU"
+	warnTitle.Text = "! ATTENTION - REMOTES DU JEU"
 	warnTitle.TextColor3 = Color3.fromRGB(255, 100, 100)
 	warnTitle.TextSize = 14
 	warnTitle.Font = Enum.Font.GothamBold
@@ -6654,9 +6654,9 @@ local function _wrapRemotes()
 	refreshRemotesBtn.Position = UDim2.new(1, -32, 0, 5)
 	refreshRemotesBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
 	refreshRemotesBtn.BorderSizePixel = 0
-	refreshRemotesBtn.Text = "↻"
+	refreshRemotesBtn.Text = "R"
 	refreshRemotesBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
-	refreshRemotesBtn.TextSize = 16
+	refreshRemotesBtn.TextSize = 14
 	refreshRemotesBtn.Font = Enum.Font.GothamBold
 	refreshRemotesBtn.Parent = remoteHeader
 	createCorner(refreshRemotesBtn, 4)
@@ -6667,7 +6667,7 @@ local function _wrapRemotes()
 	remotesSearchBox.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 	remotesSearchBox.BorderSizePixel = 0
 	remotesSearchBox.Text = ""
-	remotesSearchBox.PlaceholderText = "🔍 Filtrer les remotes par nom..."
+	remotesSearchBox.PlaceholderText = "Filtrer les remotes par nom..."
 	remotesSearchBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
 	remotesSearchBox.Font = Enum.Font.Gotham
 	remotesSearchBox.TextSize = 12
@@ -6915,32 +6915,7 @@ local function _wrapRemotes()
 
 	refreshRemotesBtn.MouseButton1Click:Connect(refreshRemotesList)
 	task.defer(refreshRemotesList)
-	-- Auto-refresh every 5s to re-sort when args are intercepted
-	-- BUT skip refresh if user is typing in an argsBox
-	-- Stop auto-refresh while user is typing in ANY TextBox
-	local function isAnyTextBoxFocused()
-		-- Check remotes search box
-		if remotesSearchBox:IsFocused() then return true end
-		-- Check all args boxes in remote cards
-		for _, child in ipairs(remoteListFrame:GetChildren()) do
-			if child:IsA("Frame") then
-				for _, desc in ipairs(child:GetDescendants()) do
-					if desc:IsA("TextBox") and desc:IsFocused() then
-						return true
-					end
-				end
-			end
-		end
-		return false
-	end
-	task.spawn(function()
-		while serverScroll and serverScroll.Parent do
-			task.wait(10)
-			if not isAnyTextBoxFocused() then
-				refreshRemotesList()
-			end
-		end
-	end)
+
 
 	-- Filtre de recherche: affiche/masque les cartes selon le texte
 	local function applyRemotesFilter()
@@ -7339,7 +7314,7 @@ local function renderResult(data, parent)
 		wLbl.Size = UDim2.new(1, -16, 1, 0)
 		wLbl.Position = UDim2.new(0, 8, 0, 0)
 		wLbl.BackgroundTransparency = 1
-		wLbl.Text = "⚠️  APIs Roblox bloquées par l'exécuteur — essaie Synapse X, Wave ou Fluxus pour voir les détails (jeux favoris, badges, groupes, etc.)"
+		wLbl.Text = "! APIs Roblox bloquees par l'exécuteur — essaie Synapse X, Wave ou Fluxus pour voir les détails (jeux favoris, badges, groupes, etc.)"
 		wLbl.Font = Enum.Font.GothamBold
 		wLbl.TextSize = 10
 		wLbl.TextColor3 = Color3.fromRGB(255, 200, 100)
@@ -7578,10 +7553,10 @@ local function renderResult(data, parent)
 			end
 		end)
 		if not liveFound then
-			table.insert(lines, "  ⚠ Pas dans ce serveur (vérification impossible)")
+			table.insert(lines, "  ! Pas dans ce serveur (vérification impossible)")
 		end
 	else
-		table.insert(lines, "  ⚠ userId manquant")
+		table.insert(lines, "  ! userId manquant")
 	end
 	table.insert(lines, "  👥 Amis (nb)        : " .. (data.friendCount or "Indisponible"))
 	table.insert(lines, "  👥 Top 5 amis       : " .. friendsText)
@@ -7818,6 +7793,38 @@ function runRegistrySearch(query)
 		-- 3) Avatar (via Players:GetUserThumbnailAsync, NATIF Roblox, pas besoin de HttpGet)
 		pcall(function()
 			data.avatarUrl = Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+		end)
+		
+		-- 3b) Native Roblox data (no HTTP needed - works on ALL executors)
+		pcall(function()
+			-- Get display name via native API
+			local name = Players:GetNameFromUserIdAsync(userId)
+			if name and name ~= "" then data.displayName = name end
+		end)
+		pcall(function()
+			-- Check if user is online on THIS server
+			local player = Players:GetPlayerByUserId(userId)
+			if player then
+				data.presenceType = 2 -- "En jeu"
+				data.presencePlaceId = tostring(game.PlaceId)
+				data.presenceLastLocation = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name or "?"
+				-- Get their friends list (native)
+				local friends = player:GetFriendsOnline()
+				if friends and #friends > 0 then
+					data.friendsList = {}
+					for i, f in ipairs(friends) do
+						if i > 5 then break end
+						table.insert(data.friendsList, f.Username or f.Name or "?")
+					end
+				end
+			end
+		end)
+		pcall(function()
+			-- Get account age in days (native)
+			local player = Players:GetPlayerByUserId(userId)
+			if player then
+				data.accountAgeDays = player.AccountAge
+			end
 		end)
 
 		-- 4) Friends count
@@ -8168,7 +8175,7 @@ function runRegistrySearch(query)
 					statusLbl.Text = "✅ " .. apiSuccessCount .. " APIs OK pour @" .. username
 					statusLbl.TextColor3 = Color3.fromRGB(120, 220, 140)
 				else
-					statusLbl.Text = "⚠ @" .. username .. " (ID:" .. userId .. ") — APIs externes bloquées par l'exécuteur. Lien : " .. data.profileUrl
+					statusLbl.Text = "! @" .. username .. " (ID:" .. userId .. ") — APIs externes bloquées par l'exécuteur. Lien : " .. data.profileUrl
 					statusLbl.TextColor3 = Color3.fromRGB(255, 180, 90)
 				end
 
