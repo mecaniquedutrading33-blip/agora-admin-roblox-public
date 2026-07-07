@@ -904,7 +904,7 @@ end
 	langScroll.CanvasSize = UDim2.new(0, 0, 0, 36)
 	langScroll.AutomaticCanvasSize = Enum.AutomaticSize.X
 	langScroll.ScrollingDirection = Enum.ScrollingDirection.X
-	langScroll.VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Bottom
+	langScroll.VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Right
 	langScroll.Parent = bgFrame
 	createCorner(langScroll, 6)
 
@@ -8491,4 +8491,4 @@ end)
 -- end) end)
 
 end
-_buildPanel()
+_buildPanel()
