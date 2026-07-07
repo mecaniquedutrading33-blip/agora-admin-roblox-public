@@ -5822,61 +5822,30 @@ local function _initAimbot()
 	end)
 	mainSwitch.Size = UDim2.new(0.3, -4, 0.85, 0)
 	mainSwitch.Position = UDim2.new(0.7, 4, 0.075, 0)
+	mainSwitch.set(_G._agoraAimbotEnabled)
 
 	-- Toggle auto-clic
-	local clickSwitchRow = Instance.new("Frame")
-	clickSwitchRow.Size = UDim2.new(1, 0, 0, 26)
-	clickSwitchRow.BackgroundTransparency = 1
-	clickSwitchRow.LayoutOrder = 4
-	clickSwitchRow.Parent = aimbotCard
-	local clickSwitchLabel = Instance.new("TextLabel")
-	clickSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
-	clickSwitchLabel.BackgroundTransparency = 1
-	clickSwitchLabel.Text = "🎯 Clic auto sur cible"
-	clickSwitchLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-	clickSwitchLabel.Font = Enum.Font.Gotham
-	clickSwitchLabel.TextSize = 11
-	clickSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
-	clickSwitchLabel.Parent = clickSwitchRow
-	clickSwitchLabel.ZIndex = 4
+	_G._agoraAimbotAutoClick = _G._agoraAimbotAutoClick or false
 	local clickSwitch = createSwitch(clickSwitchRow, "", 0, function(on)
 		aimbotAutoClick = on
+		_G._agoraAimbotAutoClick = on
 	end)
 	clickSwitch.Size = UDim2.new(0.3, -4, 0.85, 0)
 	clickSwitch.Position = UDim2.new(0.7, 4, 0.075, 0)
+	clickSwitch.set(_G._agoraAimbotAutoClick)
 
 	-- Slider de distance max (clic gauche = -25, clic droit = +25)
-	local distRow = Instance.new("Frame")
-	distRow.Size = UDim2.new(1, 0, 0, 26)
-	distRow.BackgroundTransparency = 1
-	distRow.LayoutOrder = 5
-	distRow.Parent = aimbotCard
-	local distLabel = Instance.new("TextLabel")
-	distLabel.Size = UDim2.new(0.5, 0, 1, 0)
-	distLabel.BackgroundTransparency = 1
+	_G._agoraAimbotMaxDist = _G._agoraAimbotMaxDist or 300
+	local aimbotMaxDist = _G._agoraAimbotMaxDist
 	distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
-	distLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-	distLabel.Font = Enum.Font.Gotham
-	distLabel.TextSize = 11
-	distLabel.TextXAlignment = Enum.TextXAlignment.Left
-	distLabel.Parent = distRow
-	local distSlider = Instance.new("TextButton")
-	distSlider.Size = UDim2.new(0.5, -4, 1, 0)
-	distSlider.Position = UDim2.new(0.5, 4, 0, 0)
-	distSlider.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-	distSlider.BorderSizePixel = 0
-	distSlider.Text = "—   +"
-	distSlider.TextColor3 = Color3.fromRGB(180, 180, 220)
-	distSlider.Font = Enum.Font.Gotham
-	distSlider.TextSize = 10
-	distSlider.Parent = distRow
-	createCorner(distSlider, 4)
 	distSlider.MouseButton1Click:Connect(function()
 		aimbotMaxDist = math.max(50, aimbotMaxDist - 25)
+		_G._agoraAimbotMaxDist = aimbotMaxDist
 		distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
 	end)
 	distSlider.MouseButton2Click:Connect(function()
 		aimbotMaxDist = math.min(1000, aimbotMaxDist + 25)
+		_G._agoraAimbotMaxDist = aimbotMaxDist
 		distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
 	end)
 
@@ -8522,4 +8491,4 @@ end)
 -- end) end)
 
 end
-_buildPanel()
+_buildPanel()
