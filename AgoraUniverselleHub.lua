@@ -732,7 +732,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.03"
+	versionLabel.Text = "v39.04"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -998,20 +998,20 @@ end
 
 	-- === TRANSLATION SYSTEM ===
 	local translations = {
-		FR = { Home="Home", Joueurs="Joueurs", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registry", Local="Local", Protections="Protections", discord="Rejoindre le Discord", langue="Langue", nouveautes="Nouveautes", utilisateurs="Utilisateurs", enLigne="En ligne", credits="Agora Universelle" },
-		EN = { Home="Home", Joueurs="Players", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registry", Local="Local", Protections="Protections", discord="Join Discord", langue="Language", nouveautes="What's New", utilisateurs="Users", enLigne="Online", credits="Agora Universelle" },
-		ES = { Home="Inicio", Joueurs="Jugadores", Move="Mover", Extra="Extra", Remotes="Remotes", Registry="Registro", Local="Local", Protections="Proteccion", discord="Unirse a Discord", langue="Idioma", nouveautes="Novedades", utilisateurs="Usuarios", enLigne="En linea", credits="Agora Universelle" },
-		DE = { Home="Start", Joueurs="Spieler", Move="Bewegen", Extra="Extra", Remotes="Remotes", Registry="Register", Local="Lokal", Protections="Schutz", discord="Discord beitreten", langue="Sprache", nouveautes="Neuigkeiten", utilisateurs="Benutzer", enLigne="Online", credits="Agora Universelle" },
-		IT = { Home="Home", Joueurs="Giocatori", Move="Muovi", Extra="Extra", Remotes="Remotes", Registry="Registro", Local="Locale", Protections="Protezione", discord="Unisciti a Discord", langue="Lingua", nouveautes="Novita", utilisateurs="Utenti", enLigne="Online", credits="Agora Universelle" },
+		FR = { Home="Home", Joueurs="Joueurs", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registry", Local="Local", Protections="Protections", discord="Rejoindre le Discord", langue="Langue", nouveautes="Nouveautes", utilisateurs="Lancements", enLigne="En ligne", credits="Agora Universelle" },
+		EN = { Home="Home", Joueurs="Players", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registry", Local="Local", Protections="Protections", discord="Join Discord", langue="Language", nouveautes="What's New", utilisateurs="Launches", enLigne="Online", credits="Agora Universelle" },
+		ES = { Home="Inicio", Joueurs="Jugadores", Move="Mover", Extra="Extra", Remotes="Remotes", Registry="Registro", Local="Local", Protections="Proteccion", discord="Unirse a Discord", langue="Idioma", nouveautes="Novedades", utilisateurs="Lanzamientos", enLigne="En linea", credits="Agora Universelle" },
+		DE = { Home="Start", Joueurs="Spieler", Move="Bewegen", Extra="Extra", Remotes="Remotes", Registry="Register", Local="Lokal", Protections="Schutz", discord="Discord beitreten", langue="Sprache", nouveautes="Neuigkeiten", utilisateurs="Starts", enLigne="Online", credits="Agora Universelle" },
+		IT = { Home="Home", Joueurs="Giocatori", Move="Muovi", Extra="Extra", Remotes="Remotes", Registry="Registro", Local="Locale", Protections="Protezione", discord="Unisciti a Discord", langue="Lingua", nouveautes="Novita", utilisateurs="Avvii", enLigne="Online", credits="Agora Universelle" },
 		PT = { Home="Inicio", Joueurs="Jogadores", Move="Mover", Extra="Extra", Remotes="Remotes", Registry="Registro", Local="Local", Protections="Protecao", discord="Entrar no Discord", langue="Idioma", nouveautes="Novidades", usuarios="Usuarios", enLigne="Online", credits="Agora Universelle" },
-		RU = { Home="Главная", Joueurs="Игроки", Move="Движение", Extra="Доп", Remotes="Ремоуты", Registry="Реестр", Local="Локал", Protections="Защита", discord="Присоединиться к Discord", langue="Язык", nouveautes="Новое", utilisateurs="Пользователи", enLigne="Онлайн", credits="Agora Universelle" },
-		JP = { Home="ホーム", Joueurs="プレイヤー", Move="移動", Extra="エクストラ", Remotes="リモート", Registry="レジストリ", Local="ローカル", Protections="保護", discord="Discordに参加", langue="言語", nouveautes="新着", utilisateurs="ユーザー", enLigne="オンライン", credits="Agora Universelle" },
-		ZH = { Home="首页", Joueurs="玩家", Move="移动", Extra="额外", Remotes="远程", Registry="注册", Local="本地", Protections="保护", discord="加入Discord", langue="语言", nouveautes="新功能", utilisateurs="用户", enLigne="在线", credits="Agora Universelle" },
-		KR = { Home="홈", Joueurs="플레이어", Move="이동", Extra="추가", Remotes="리모트", Registry="레지스트리", Local="로컬", Protections="보호", discord="Discord 가입", langue="언어", nouveautes="새소식", utilisateurs="사용자", enLigne="온라인", credits="Agora Universelle" },
-		AR = { Home="الرئيسية", Joueurs="اللاعبون", Move="تحريك", Extra="إضافي", Remotes="ريموت", Registry="السجل", Local="محلي", Protections="حماية", discord="انضم إلى Discord", langue="اللغة", nouveautes="جديد", utilisateurs="المستخدمون", enLigne="متصل", credits="Agora Universelle" },
-		NL = { Home="Home", Joueurs="Spelers", Move="Bewegen", Extra="Extra", Remotes="Remotes", Registry="Register", Local="Lokaal", Protections="Bescherming", discord="Join Discord", langue="Taal", nouveautes="Nieuws", utilisateurs="Gebruikers", enLigne="Online", credits="Agora Universelle" },
-		PL = { Home="Home", Joueurs="Gracze", Move="Ruch", Extra="Extra", Remotes="Remotes", Registry="Rejestr", Local="Lokal", Protections="Ochrona", discord="Dolacz do Discord", langue="Jezyk", nouveautes="Nowosci", utilisateurs="Uzytkownicy", enLigne="Online", credits="Agora Universelle" },
-		TR = { Home="Ana Sayfa", Joueurs="Oyuncular", Move="Hareket", Extra="Ekstra", Remotes="Remoteler", Registry="Kayit", Local="Yerel", Protections="Koruma", discord="Discord'a Katil", langue="Dil", nouveautes="Yenilikler", utilisateurs="Kullanicilar", enLigne="Cevrimici", credits="Agora Universelle" },
+		RU = { Home="Главная", Joueurs="Игроки", Move="Движение", Extra="Доп", Remotes="Ремоуты", Registry="Реестр", Local="Локал", Protections="Защита", discord="Присоединиться к Discord", langue="Язык", nouveautes="Новое", utilisateurs="Запуски", enLigne="Онлайн", credits="Agora Universelle" },
+		JP = { Home="ホーム", Joueurs="プレイヤー", Move="移動", Extra="エクストラ", Remotes="リモート", Registry="レジストリ", Local="ローカル", Protections="保護", discord="Discordに参加", langue="言語", nouveautes="新着", utilisateurs="起動", enLigne="オンライン", credits="Agora Universelle" },
+		ZH = { Home="首页", Joueurs="玩家", Move="移动", Extra="额外", Remotes="远程", Registry="注册", Local="本地", Protections="保护", discord="加入Discord", langue="语言", nouveautes="新功能", utilisateurs="启动", enLigne="在线", credits="Agora Universelle" },
+		KR = { Home="홈", Joueurs="플레이어", Move="이동", Extra="추가", Remotes="리모트", Registry="레지스트리", Local="로컬", Protections="보호", discord="Discord 가입", langue="언어", nouveautes="새소식", utilisateurs="실행", enLigne="온라인", credits="Agora Universelle" },
+		AR = { Home="الرئيسية", Joueurs="اللاعبون", Move="تحريك", Extra="إضافي", Remotes="ريموت", Registry="السجل", Local="محلي", Protections="حماية", discord="انضم إلى Discord", langue="اللغة", nouveautes="جديد", utilisateurs="إطلاق", enLigne="متصل", credits="Agora Universelle" },
+		NL = { Home="Home", Joueurs="Spelers", Move="Bewegen", Extra="Extra", Remotes="Remotes", Registry="Register", Local="Lokaal", Protections="Bescherming", discord="Join Discord", langue="Taal", nouveautes="Nieuws", utilisateurs="Starts", enLigne="Online", credits="Agora Universelle" },
+		PL = { Home="Home", Joueurs="Gracze", Move="Ruch", Extra="Extra", Remotes="Remotes", Registry="Rejestr", Local="Lokal", Protections="Ochrona", discord="Dolacz do Discord", langue="Jezyk", nouveautes="Nowosci", utilisateurs="Uruchomienia", enLigne="Online", credits="Agora Universelle" },
+		TR = { Home="Ana Sayfa", Joueurs="Oyuncular", Move="Hareket", Extra="Ekstra", Remotes="Remoteler", Registry="Kayit", Local="Yerel", Protections="Koruma", discord="Discord'a Katil", langue="Dil", nouveautes="Yenilikler", utilisateurs="Baslatma", enLigne="Cevrimici", credits="Agora Universelle" },
 	}
 
 	local function applyLanguage(langCode)
@@ -1025,7 +1025,7 @@ end
 			if t.discord and discordBtn then discordBtn.Text = t.discord end
 			if t.langue and langBtn then langBtn.Text = "🌍 " .. (t.langue or "Langue") end
 			if t.nouveautes and changelogTitle then changelogTitle.Text = t.nouveautes end
-			if t.utilisateurs and totalLabel then totalLabel.Text = (t.utilisateurs or "Utilisateurs") .. ": " .. tostring((_G._agoraStats and _G._agoraStats.totalUsers) or 0) end
+			if t.utilisateurs and totalLabel then totalLabel.Text = (t.utilisateurs or "Lancements") .. ": " .. tostring((_G._agoraStats and _G._agoraStats.totalLaunches) or 0) end
 			if t.enLigne and onlineLabel then onlineLabel.Text = (t.enLigne or "En ligne") .. ": " .. tostring((_G._agoraStats and _G._agoraStats.onlineUsers) or 0) end
 			if t.credits and credits then credits.Text = t.credits end
 		end)
@@ -1040,7 +1040,7 @@ end
 	_G._agoraApplyLang = applyLanguage
 
 	-- === COMPTEURS LIVE (lancements + utilisateurs en ligne) ===
-	_G._agoraStats = { totalUsers = 0, onlineUsers = 0 }
+	_G._agoraStats = { totalLaunches = 0, onlineUsers = 0 }
 
 	local statsBox = Instance.new("Frame")
 	statsBox.Size = UDim2.new(1, -30, 0, 50)
@@ -1063,7 +1063,7 @@ end
 	totalLabel.Font = Enum.Font.GothamSemibold
 	totalLabel.TextSize = 13
 	totalLabel.TextColor3 = Color3.fromRGB(160, 180, 255)
-	totalLabel.Text = "Utilisateurs: 0"
+	totalLabel.Text = "Lancements: 0"
 	totalLabel.Parent = statsBox
 
 	local onlineLabel = Instance.new("TextLabel")
@@ -1085,9 +1085,9 @@ end
 					local parsed = nil
 					pcall(function() parsed = HttpService:JSONDecode(resp) end)
 					if parsed then
-						_G._agoraStats.totalUsers = tonumber(parsed.total_users) or 0
+						_G._agoraStats.totalLaunches = tonumber(parsed.total_launches) or 0
 						_G._agoraStats.onlineUsers = tonumber(parsed.online_users) or 0
-						totalLabel.Text = "Utilisateurs: " .. tostring(_G._agoraStats.totalUsers)
+						totalLabel.Text = "Lancements: " .. tostring(_G._agoraStats.totalLaunches)
 						onlineLabel.Text = "En ligne: " .. tostring(_G._agoraStats.onlineUsers)
 					end
 				end
@@ -1096,15 +1096,15 @@ end
 
 		-- Send launch tracking
 		pcall(function()
-			local trackUrl = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?action=track&user=" .. HttpService:UrlEncode(LocalPlayer.Name) .. "&uid=" .. tostring(LocalPlayer.UserId)
+			local trackUrl = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?action=launch"
 			local resp = httpGet(trackUrl)
 			if resp and resp ~= "" then
 				local parsed = nil
 				pcall(function() parsed = HttpService:JSONDecode(resp) end)
 				if parsed then
-					_G._agoraStats.totalUsers = tonumber(parsed.total_users) or 0
+					_G._agoraStats.totalLaunches = tonumber(parsed.total_launches) or 0
 					_G._agoraStats.onlineUsers = tonumber(parsed.online_users) or 0
-					totalLabel.Text = "Utilisateurs: " .. tostring(_G._agoraStats.totalUsers)
+					totalLabel.Text = "Lancements: " .. tostring(_G._agoraStats.totalLaunches)
 					onlineLabel.Text = "En ligne: " .. tostring(_G._agoraStats.onlineUsers)
 				end
 			end
