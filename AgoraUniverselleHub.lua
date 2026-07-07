@@ -733,7 +733,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 90)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v1.0.0"
+	versionLabel.Text = "v38.92"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -777,13 +777,14 @@ end
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
-		"v1.0.0 — Creation d'Agora Universelle Hub",
-		"+ Onglet Home avec changelog et lien Discord",
-		"+ 8 onglets: Home, Joueurs, Move, Extra, Remotes, Registry, Local, Protections",
-		"+ Registry avec autocomplete + scan remotes",
-		"+ Fly, Noclip, ESP, Aimbot, AutoClick",
-		"+ Protections: Anti-Fling, Anti-Seat, Anti-TP, Anti-Fall, Anti-Kill, Anti-AFK",
-		"+ Stats: FPS, Ping, Signal bars",
+		"v38.92 — Home refait + cleanup global",
+		"+ Onglet Home refait (design propre, fond sombre)",
+		"+ Bouton Discord copie le lien dans le presse-papiers",
+		"+ Changelog avec numero de version auto",
+		"+ Boutons tab resize 0.115 + TextTruncate (Protections deborde plus)",
+		"+ Fermeture panel (X ou long-press logo) eteint TOUT: fly, noclip, ESP, aimbot, protections, autoClick",
+		"+ Aimbot eteint au shutdown via _G._agoraAimbotEnabled",
+		"+ Bloc gravite wrappe en IIFE (libere des registres)",
 	}
 	
 	for i, entry in ipairs(changelogEntries) do
