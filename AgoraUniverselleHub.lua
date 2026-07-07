@@ -663,7 +663,7 @@ end
 
 local function createTab(name)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0.135, -2, 1, 0)
+	btn.Size = UDim2.new(0.115, -2, 1, 0)
 	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 	btn.Text = name
 	btn.Font = Enum.Font.GothamSemibold
@@ -685,6 +685,196 @@ local function createTab(name)
 	tabButtons[name] = btn
 	return page
 end
+
+-- ============= Home TAB — IIFE pour 0 top-level local =============
+;(function()
+	local homePage = createTab("Home")
+	
+	-- Logo / Titre
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, -20, 0, 40)
+	title.Position = UDim2.new(0, 10, 0, 15)
+	title.BackgroundTransparency = 1
+	title.Text = "Agora Universelle Hub"
+	title.Font = Enum.Font.GothamBold
+	title.TextSize = 28
+	title.TextColor3 = Color3.fromRGB(120, 140, 255)
+	title.TextWrapped = true
+	title.Parent = homePage
+	
+	-- Version
+	local versionLabel = Instance.new("TextLabel")
+	versionLabel.Size = UDim2.new(1, -20, 0, 20)
+	versionLabel.Position = UDim2.new(0, 10, 0, 58)
+	versionLabel.BackgroundTransparency = 1
+	versionLabel.Text = "Version 1.0.0"
+	versionLabel.Font = Enum.Font.GothamSemibold
+	versionLabel.TextSize = 13
+	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
+	versionLabel.Parent = homePage
+	
+	-- Changelog box
+	local changelogBox = Instance.new("Frame")
+	changelogBox.Size = UDim2.new(1, -20, 0, 130)
+	changelogBox.Position = UDim2.new(0, 10, 0, 84)
+	changelogBox.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+	changelogBox.BorderSizePixel = 0
+	changelogBox.Parent = homePage
+	createCorner(changelogBox, 8)
+	
+	local changelogScroll = Instance.new("ScrollingFrame")
+	changelogScroll.Size = UDim2.new(1, -10, 1, -10)
+	changelogScroll.Position = UDim2.new(0, 5, 0, 5)
+	changelogScroll.BackgroundTransparency = 1
+	changelogScroll.BorderSizePixel = 0
+	changelogScroll.ScrollBarThickness = 4
+	changelogScroll.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 100)
+	changelogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	changelogScroll.CanvasSize = UDim2.new(0, 0, 0, 200)
+	changelogScroll.Parent = changelogBox
+	
+	local changelogLayout = Instance.new("UIListLayout")
+	changelogLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	changelogLayout.Padding = UDim.new(0, 4)
+	changelogLayout.Parent = changelogScroll
+	
+	local changelogEntries = {
+		"v1.0.0 — Creation d'Agora Universelle Hub",
+		"• Onglet Home avec changelog et lien Discord",
+		"• 8 onglets: Home, Joueurs, Move, Extra, Remotes, Registry, Local, Protections",
+		"• Boutons resize 0.115 pour fit 8 onglets",
+		"• Registry avec autocomplete + scan remotes",
+		"• Fly, Noclip, ESP, Aimbot, AutoClick",
+		"• Stats: FPS, Ping, Signal bars",
+		"• Systeme loadstring + Supabase auto-update",
+	}
+	
+	for i, entry in ipairs(changelogEntries) do
+		local line = Instance.new("TextLabel")
+		line.Size = UDim2.new(1, 0, 0, 18)
+		line.BackgroundTransparency = 1
+		line.Text = entry
+		line.Font = (i == 1) and Enum.Font.GothamSemibold or Enum.Font.Gotham
+		line.TextSize = (i == 1) and 13 or 11
+		line.TextColor3 = (i == 1) and Color3.fromRGB(100, 220, 120) or Color3.fromRGB(170, 170, 185)
+		line.TextXAlignment = Enum.TextXAlignment.Left
+		line.LayoutOrder = i
+		line.Parent = changelogScroll
+	end
+	
+	-- Bouton Discord (copier le lien)
+	local discordBtn = Instance.new("TextButton")
+	discordBtn.Size = UDim2.new(0.6, 0, 0, 36)
+	discordBtn.Position = UDim2.new(0.2, 0, 0, 230)
+	discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+	discordBtn.Text = "Rejoindre le Discord"
+	discordBtn.Font = Enum.Font.GothamBold
+	discordBtn.TextSize = 14
+	discordBtn.TextColor3 = Color3.new(1, 1, 1)
+	discordBtn.BorderSizePixel = 0
+	discordBtn.AutoButtonColor = true
+	discordBtn.Parent = homePage
+	createCorner(discordBtn, 8)
+	
+	local copyLabel = Instance.new("TextLabel")
+	copyLabel.Size = UDim2.new(1, 0, 0, 18)
+	copyLabel.Position = UDim2.new(0, 0, 1, 4)
+	copyLabel.BackgroundTransparency = 1
+	copyLabel.Text = ""
+	copyLabel.Font = Enum.Font.Gotham
+	copyLabel.TextSize = 11
+	copyLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
+	copyLabel.Parent = homePage
+	
+	discordBtn.MouseButton1Click:Connect(function()
+		pcall(function()
+			local link = "https://discord.gg/fVw2rzAMb"
+			local ok = pcall(function() setclipboard(link) end)
+			if ok then
+				copyLabel.Text = "Lien copie: " .. link
+			else
+				ok = pcall(function() toclipboard(link) end)
+				if ok then
+					copyLabel.Text = "Lien copie: " .. link
+				else
+					copyLabel.Text = "Lien: " .. link
+				end
+			end
+			playSound(6042053626, 0.3)
+		end)
+		task.delay(5, function()
+			pcall(function() copyLabel.Text = "" end)
+		end)
+	end)
+	discordBtn.MouseEnter:Connect(function() tween(discordBtn, {BackgroundColor3 = Color3.fromRGB(100, 115, 255)}, 0.15) end)
+	discordBtn.MouseLeave:Connect(function() tween(discordBtn, {BackgroundColor3 = Color3.fromRGB(88, 101, 242)}, 0.15) end)
+	
+	-- Stats rapide (FPS, ping, joueurs)
+	local statsFrame = Instance.new("Frame")
+	statsFrame.Size = UDim2.new(1, -20, 0, 50)
+	statsFrame.Position = UDim2.new(0, 10, 0, 280)
+	statsFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+	statsFrame.BorderSizePixel = 0
+	statsFrame.Parent = homePage
+	createCorner(statsFrame, 8)
+	
+	local statsLayout = Instance.new("UIListLayout")
+	statsLayout.FillDirection = Enum.FillDirection.Horizontal
+	statsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	statsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	statsLayout.Padding = UDim.new(0.1, 0)
+	statsLayout.Parent = statsFrame
+	
+	local function makeStat(label, getValue)
+		local stat = Instance.new("TextLabel")
+		stat.Size = UDim2.new(0, 120, 0, 36)
+		stat.BackgroundTransparency = 1
+		stat.Font = Enum.Font.GothamSemibold
+		stat.TextSize = 13
+		stat.TextColor3 = Color3.fromRGB(160, 180, 255)
+		stat.Text = label .. ": " .. getValue()
+		stat.Parent = statsFrame
+		return stat
+	end
+	
+	local fpsStat = makeStat("FPS", function() return "60" end)
+	local pingStat = makeStat("Ping", function() return "0ms" end)
+	local playerStat = makeStat("Joueurs", function() return "0" end)
+	
+	task.spawn(function()
+		local frames = 0
+		local lastTick = tick()
+		while homePage and homePage.Parent do
+			frames = frames + 1
+			local now = tick()
+			if now - lastTick >= 1 then
+				local fps = math.floor(frames / (now - lastTick))
+				frames = 0
+				lastTick = now
+				pcall(function()
+					fpsStat.Text = "FPS: " .. tostring(fps)
+					local ping = LocalPlayer:GetNetworkPing() * 1000
+					pingStat.Text = "Ping: " .. tostring(math.floor(ping)) .. "ms"
+					local count = 0
+					for _ in ipairs(Players:GetPlayers()) do count = count + 1 end
+					playerStat.Text = "Joueurs: " .. tostring(count)
+				end)
+			end
+			task.wait(1)
+		end
+	end)
+	
+	-- Credits
+	local credits = Instance.new("TextLabel")
+	credits.Size = UDim2.new(1, -20, 0, 18)
+	credits.Position = UDim2.new(0, 10, 0, 345)
+	credits.BackgroundTransparency = 1
+	credits.Text = "Agora Universelle — Auto-update via Supabase"
+	credits.Font = Enum.Font.Gotham
+	credits.TextSize = 11
+	credits.TextColor3 = Color3.fromRGB(120, 120, 150)
+	credits.Parent = homePage
+end)()
 
 local playersPage = createTab("Joueurs")
 local movePage = createTab("Move")
@@ -8188,15 +8378,15 @@ end)(mainFrame)
 		end)
 	end)
 	-- LAYER 2: switchTab Joueurs
-	pcall(function() _switchTab("Joueurs") end)
-	-- LAYER 3: fallback à 3s (au cas où)
-	task.delay(3, function()
-		pcall(function()
-			if mainFrame and not mainFrame.Visible then
-				mainFrame.Visible = true
-			end
-			if _pages and _pages["Joueurs"] and not _pages["Joueurs"].Visible then
-				pcall(function() _switchTab("Joueurs") end)
+	pcall(function() _switchTab("Home") end)
+		-- LAYER 3: fallback à 3s (au cas où)
+		task.delay(3, function()
+			pcall(function()
+				if mainFrame and not mainFrame.Visible then
+					mainFrame.Visible = true
+				end
+				if _pages and _pages["Home"] and not _pages["Home"].Visible then
+					pcall(function() _switchTab("Home") end)
 			end
 		end)
 	end)
@@ -8209,8 +8399,8 @@ task.delay(5, function()
 			warn("[AGORA] Fallback reveal: panel forcé visible")
 			mainFrame.Visible = true
 		end
-		if pages and pages["Joueurs"] and not pages["Joueurs"].Visible then
-			switchTab("Joueurs")
+		if pages and pages["Home"] and not pages["Home"].Visible then
+				switchTab("Home")
 		end
 	end)
 end)
