@@ -7021,10 +7021,24 @@ local function _wrapRemotes()
 	refreshRemotesBtn.MouseButton1Click:Connect(refreshRemotesList)
 	task.defer(refreshRemotesList)
 	-- Auto-refresh every 5s to re-sort when args are intercepted
+	-- BUT skip refresh if user is typing in an argsBox
+	local function isAnyArgsBoxFocused()
+		for _, child in ipairs(remoteListFrame:GetChildren()) do
+			if child:IsA("Frame") then
+				local argsBox = child:FindFirstChild("Row") and child.Row:FindFirstChild("ArgsBox")
+				if argsBox and argsBox:IsA("TextBox") and argsBox:IsFocused() then
+					return true
+				end
+			end
+		end
+		return false
+	end
 	task.spawn(function()
 		while serverScroll and serverScroll.Parent do
 			task.wait(5)
-			refreshRemotesList()
+			if not isAnyArgsBoxFocused() then
+				refreshRemotesList()
+			end
 		end
 	end)
 
