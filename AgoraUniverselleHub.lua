@@ -732,7 +732,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v38.94"
+	versionLabel.Text = "v38.95"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -776,12 +776,11 @@ end
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
-		"v38.94 — Home propre + menu langue",
-		"+ Section aimbot retirer du Home (reste dans Extra)",
-		"+ Menu langue en popup avec 🌍 + drapeaux + noms",
-		"+ 14 langues: FR, EN, ES, DE, IT, PT, RU, JP, ZH, KR, AR, NL, PL, TR",
-		"+ Langue persistante via writefile/readfile",
-		"+ Fermeture panel eteint TOUT (fly, ESP, aimbot, protections)",
+		"v38.95 — Compteurs live + tracking Supabase",
+		"+ Compteur utilisateurs total et en ligne (live, refresh 30s)",
+		"+ Tracking des lancements via Supabase",
+		"+ Stats visibles par tous les utilisateurs en temps reel",
+		"+ Menu langue en popup avec drapeaux",
 	}
 	
 	for i, entry in ipairs(changelogEntries) do
@@ -995,10 +994,88 @@ end
 		playSound(6042053626, 0.2)
 	end)
 
+	-- === COMPTEURS LIVE (lancements + utilisateurs en ligne) ===
+	_G._agoraStats = { totalUsers = 0, onlineUsers = 0 }
+
+	local statsBox = Instance.new("Frame")
+	statsBox.Size = UDim2.new(1, -30, 0, 50)
+	statsBox.Position = UDim2.new(0, 15, 0, 340)
+	statsBox.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
+	statsBox.BorderSizePixel = 0
+	statsBox.Parent = bgFrame
+	createCorner(statsBox, 8)
+
+	local statsLayout = Instance.new("UIListLayout")
+	statsLayout.FillDirection = Enum.FillDirection.Horizontal
+	statsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	statsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	statsLayout.Padding = UDim.new(0.05, 0)
+	statsLayout.Parent = statsBox
+
+	local totalLabel = Instance.new("TextLabel")
+	totalLabel.Size = UDim2.new(0, 160, 0, 36)
+	totalLabel.BackgroundTransparency = 1
+	totalLabel.Font = Enum.Font.GothamSemibold
+	totalLabel.TextSize = 13
+	totalLabel.TextColor3 = Color3.fromRGB(160, 180, 255)
+	totalLabel.Text = "Utilisateurs: 0"
+	totalLabel.Parent = statsBox
+
+	local onlineLabel = Instance.new("TextLabel")
+	onlineLabel.Size = UDim2.new(0, 160, 0, 36)
+	onlineLabel.BackgroundTransparency = 1
+	onlineLabel.Font = Enum.Font.GothamSemibold
+	onlineLabel.TextSize = 13
+	onlineLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
+	onlineLabel.Text = "En ligne: 0"
+	onlineLabel.Parent = statsBox
+
+	-- Tracker: envoyer le lancement + refresh les stats
+	task.spawn(function()
+		local function fetchStats()
+			pcall(function()
+				local statsUrl = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?action=stats"
+				local resp = httpGet(statsUrl)
+				if resp and resp ~= "" then
+					local parsed = nil
+					pcall(function() parsed = HttpService:JSONDecode(resp) end)
+					if parsed then
+						_G._agoraStats.totalUsers = tonumber(parsed.total_users) or 0
+						_G._agoraStats.onlineUsers = tonumber(parsed.online_users) or 0
+						totalLabel.Text = "Utilisateurs: " .. tostring(_G._agoraStats.totalUsers)
+						onlineLabel.Text = "En ligne: " .. tostring(_G._agoraStats.onlineUsers)
+					end
+				end
+			end)
+		end
+
+		-- Send launch tracking
+		pcall(function()
+			local trackUrl = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?action=track&user=" .. HttpService:UrlEncode(LocalPlayer.Name) .. "&uid=" .. tostring(LocalPlayer.UserId)
+			local resp = httpGet(trackUrl)
+			if resp and resp ~= "" then
+				local parsed = nil
+				pcall(function() parsed = HttpService:JSONDecode(resp) end)
+				if parsed then
+					_G._agoraStats.totalUsers = tonumber(parsed.total_users) or 0
+					_G._agoraStats.onlineUsers = tonumber(parsed.online_users) or 0
+					totalLabel.Text = "Utilisateurs: " .. tostring(_G._agoraStats.totalUsers)
+					onlineLabel.Text = "En ligne: " .. tostring(_G._agoraStats.onlineUsers)
+				end
+			end
+		end)
+
+		-- Refresh stats every 30 seconds
+		while homePage and homePage.Parent do
+			task.wait(30)
+			fetchStats()
+		end
+	end)
+
 	-- Credits
 	local credits = Instance.new("TextLabel")
 	credits.Size = UDim2.new(1, -20, 0, 16)
-	credits.Position = UDim2.new(0, 10, 0, 320)
+	credits.Position = UDim2.new(0, 10, 0, 400)
 	credits.BackgroundTransparency = 1
 	credits.Text = "Agora Universelle"
 	credits.Font = Enum.Font.Gotham
