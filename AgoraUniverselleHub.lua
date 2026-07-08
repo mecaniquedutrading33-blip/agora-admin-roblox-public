@@ -51,7 +51,7 @@ game = _game
 
 -- WRAP PANEL IN LOCAL FUNCTION to avoid Solara 200-register chunk limit
 local _agoraOk = true
-
+;(function()
 if not game then
 	warn("[AGORA] game est nil — exécuteur incompatible ou loadstring mal formé")
 	_agoraOk = false
@@ -1535,7 +1535,9 @@ local function _initRegistrySearch()
 	-- cache les suggestions (pour pas qu'elles restent flottantes)
 end
 _initRegistrySearch()
+end)()
 
+;(function()
 -- ============= REGISTRY SCROLL =============
 -- registryScroll commence juste après la search box + un peu de gap pour les suggestions
 local registryScroll = Instance.new("ScrollingFrame")
@@ -2002,7 +2004,9 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 end
 
 updateLoad(0.08, "Modules joueurs...")
-task.wait(0.05)
+end)()
+
+;(function()
 -- ============= JOUEURS =============
 local playerCards = {}
 local playerSearchQuery = "" -- query actuelle (vide = pas de filtre)
@@ -3482,7 +3486,9 @@ end)
 
 
 updateLoad(0.15, "ESP...")
-task.wait(0.05)
+end)()
+
+;(function()
 -- ============= ESP =============
 local espFolder = Instance.new("Folder")
 espFolder.Name = "PanelESP"
@@ -3704,7 +3710,9 @@ end)
 
 
 updateLoad(0.22, "Animations...")
-task.wait(0.05)
+end)()
+
+;(function()
 -- ============= ANIMATIONS =============
 local function typewriterEffect(label, text, speed)
 	speed = speed or 0.02
@@ -4275,7 +4283,9 @@ local function bootSequence(onComplete)
 end
 
 updateLoad(0.30, "Mouvement...")
-task.wait(0.05)
+end)()
+
+;(function()
 -- ============= MOVE =============
 local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
 local noclipState = { enabled = false }
@@ -5050,7 +5060,9 @@ chatIconsSwitch.set(true)
 
 
 updateLoad(0.40, "Auto Clicker...")
-task.wait(0.05)
+end)()
+
+;(function()
 -- ============= AUTO CLICKER =============
 local autoClickState = {
 	toolActive = false,   -- le switch (faux tool dans le backpack)
@@ -6012,7 +6024,9 @@ RunService.Stepped:Connect(function(_, dt)
 
 
 updateLoad(0.50, "Modules extra...")
-task.wait(0.05)
+end)()
+
+;(function()
 -- ============= EXTRA =============
 local fullbrightState = { enabled = false, old = {} }
 local clickTPState = { enabled = false }
@@ -6248,7 +6262,9 @@ end
 _initServerInfoCard()
 
 updateLoad(0.60, "Aimbot...")
-task.wait(0.05)
+end)()
+
+;(function()
 -- ============= AIMBOT =============
 -- Verrouille la souris sur la TÊTE du joueur le plus proche du CENTRE de l'écran
 -- - Filtre "pas à travers les murs" : raycast camera → head, vérifie qu'on touche le character
@@ -6647,7 +6663,9 @@ end)
 
 
 updateLoad(0.70, "Protections...")
-task.wait(0.05)
+end)()
+
+;(function()
 -- ============= PROTECTIONS =============
 local protectionsState = {
 	antiFling = false,
@@ -7281,7 +7299,9 @@ end
 _wrapRemotes() -- Exécute le wrap (IIFE pattern pour limiter les 200 registers)
 
 updateLoad(0.80, "Registry...")
-task.wait(0.05)
+end)()
+
+;(function()
 -- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
@@ -9057,7 +9077,9 @@ function giveSpiderTool()
 end
 
 updateLoad(0.90, "Chat commands...")
-task.wait(0.05)
+end)()
+
+;(function()
 -- ============= CHAT COMMANDS =============
 -- Wrap dans IIFE avec paramètres pour éviter la limite d'upvalues (200)
 ;(function(_fly, _noclip, _esp, _fullbright, _zeroG, _localPlayer)
@@ -9078,7 +9100,9 @@ task.wait(0.05)
 end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlayer)
 
 updateLoad(0.95, "Finalisation...")
-task.wait(0.05)
+end)()
+
+;(function()
 -- ============= CRÉDITS =============
 ;(function(_mainFrame)
 	local credits = Instance.new("TextLabel")
@@ -9138,3 +9162,4 @@ end)
 -- 	pcall(function() mainFrame.Visible = true end)
 -- 	switchTab("Joueurs")
 -- end) end)
+end)()
