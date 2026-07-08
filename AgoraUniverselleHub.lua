@@ -760,7 +760,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.13"
+	versionLabel.Text = "v39.14"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -5626,33 +5626,98 @@ RunService.Stepped:Connect(function(_, dt)
 	-- Go to Walk : deplace le humanoid vers chaque waypoint avec MoveTo + saut auto si bloque
 	if humanoid and rootPart and gotoWalkState.active and #gotoWalkState.path > 0 then
 		local wp = gotoWalkState.path[1]
-		local flatDist = Vector3.new(rootPart.Position.X - wp.X, 0, rootPart.Position.Z - wp.Z).Magnitude
-		-- Detection de blocage : vitesse reelle trop faible par rapport a la distance
+		local myPos = rootPart.Position
+		local flatDist = Vector3.new(myPos.X - wp.X, 0, myPos.Z - wp.Z).Magnitude
+		
+		-- === DETECTION DIMENSIONS PERSONNAGE ===
+		local charWidth = 2 -- largeur approximative du personnage (HumanoidRootPart size)
+		local charHeight = 5 -- hauteur approximative (tete + torse + jambes)
+		local crawlMode = false
+		
+		-- Raycast box pour verifier si on passe en hauteur
+		local function checkPassage(pos, height, width)
+			local params = RaycastParams.new()
+			params.FilterDescendantsInstances = {character}
+			params.FilterType = Enum.RaycastFilterType.Exclude
+			-- Check hauteur: raycast du sol vers le haut
+			local topHit = Workspace:Raycast(pos, Vector3.new(0, height, 0), params)
+			if topHit then
+				local clearance = (topHit.Position - pos).Y
+				if clearance < charHeight then
+					-- Trop bas pour marcher, verifie si on peut ramper
+					if clearance >= 1.5 then
+						crawlMode = true
+						return "crawl"
+					else
+						return "blocked"
+					end
+				end
+			end
+			-- Check largeur: raycast a gauche et droite
+			local leftHit = Workspace:Raycast(pos, Vector3.new(-width/2, 0, 0), params)
+			local rightHit = Workspace:Raycast(pos, Vector3.new(width/2, 0, 0), params)
+			if leftHit or rightHit then
+				return "tight"
+			end
+			return "clear"
+		end
+		
+		-- Verifie le passage au prochain waypoint
+		local passage = checkPassage(wp, charHeight, charWidth)
+		if passage == "crawl" then
+			-- Coucher le personnage (ramper)
+			pcall(function()
+				humanoid.HipHeight = 0
+				local root = rootPart
+				if root then
+					root.Size = Vector3.new(2, 1, 1)
+				end
+			end)
+		elseif passage == "clear" then
+			-- Restaurer la posture normale
+			pcall(function()
+				humanoid.HipHeight = 2
+				local root = rootPart
+				if root then
+					root.Size = Vector3.new(2, 5, 1)
+				end
+			end)
+		end
+		
+		-- === SAUT INTELLIGENT ===
+		-- Verifie si le prochain waypoint est plus haut que la position actuelle
+		local heightDiff = wp.Y - myPos.Y
+		if heightDiff > 2.5 and flatDist < 8 then
+			-- Le waypoint est plus haut et proche -> sauter
+			pcall(function()
+				humanoid.Jump = true
+			end)
+		end
+		-- Verifie aussi s'il y a un obstacle devant qui necessite un saut
+		local frontParams = RaycastParams.new()
+		frontParams.FilterDescendantsInstances = {character}
+		frontParams.FilterType = Enum.RaycastFilterType.Exclude
+		local frontRay = Workspace:Raycast(myPos, rootPart.CFrame.LookVector * 4, frontParams)
+		if frontRay and heightDiff > 0 then
+			-- Obstacle devant et on doit monter -> sauter
+			pcall(function()
+				humanoid.Jump = true
+			end)
+		end
+		
+		-- === DETECTION DE BLOCAGE ===
 		local vel = rootPart.AssemblyLinearVelocity
 		local flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
 		if flatDist > 3 and flatSpeed < 1 then
-			-- Bloque
 			if gotoWalkState.stuckSince == nil then gotoWalkState.stuckSince = tick() end
 			if tick() - gotoWalkState.stuckSince > 0.5 then
-				-- Raycast devant : si on touche un mur, on saute
-				local frontParams = RaycastParams.new()
-				frontParams.FilterDescendantsInstances = {character}
-				frontParams.FilterType = Enum.RaycastFilterType.Exclude
-				local frontRay = Workspace:Raycast(rootPart.Position, rootPart.CFrame.LookVector * 3, frontParams)
-				if frontRay then
-					humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-					task.wait(0.1)
-					humanoid.Jump = true
-				end
-				-- Si toujours bloque apres 2s, on recalcule le chemin
+				-- Sauter pour franchir l'obstacle
+				pcall(function() humanoid.Jump = true end)
+				-- Si toujours bloque apres 2s, recalcule
 				if tick() - gotoWalkState.stuckSince > 2 and gotoWalkState.target then
 					gotoWalkState.stuckSince = nil
-					-- Try to jump over obstacle first
-					pcall(function() humanoid.Jump = true end)
-					task.wait(0.2)
 					local newPath = computePathTo(gotoWalkState.target)
 					if not newPath or #newPath == 0 then
-						-- Wider search: try offsets around target
 						local offsets = {Vector3.new(4,0,0), Vector3.new(-4,0,0), Vector3.new(0,0,4), Vector3.new(0,0,-4), Vector3.new(4,0,4), Vector3.new(-4,0,-4)}
 						for _, off in ipairs(offsets) do
 							newPath = computePathTo(gotoWalkState.target + off)
@@ -5670,6 +5735,7 @@ RunService.Stepped:Connect(function(_, dt)
 		else
 			gotoWalkState.stuckSince = nil
 		end
+		
 		if flatDist < 3 then
 			table.remove(gotoWalkState.path, 1)
 			if #gotoWalkState.path == 0 then
@@ -5680,7 +5746,6 @@ RunService.Stepped:Connect(function(_, dt)
 				gotoWalkState.lastMoveTo = tick()
 			end
 		else
-			-- Re-emit MoveTo periodiquement car Roblox l'abandonne apres 8s
 			if tick() - (gotoWalkState.lastMoveTo or 0) > 4 then
 				humanoid:MoveTo(wp)
 				gotoWalkState.lastMoveTo = tick()
