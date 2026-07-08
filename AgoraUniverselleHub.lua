@@ -23,7 +23,7 @@ if not _game then
 	if ok and sharedGame then _game = sharedGame end
 end
 if not _game then
-	local ok, argGame = pcall(function() return nil end)
+	local ok, argGame = pcall(function() return ... end)
 	if ok and argGame and typeof(argGame) == "Instance" and argGame:IsA("DataModel") then _game = argGame end
 end
 if not _game then
