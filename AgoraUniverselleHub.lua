@@ -9141,4 +9141,4 @@ end)
 end
 -- Remove loading screen
 pcall(function() if loadingGui then loadingGui:Destroy() end end)
-_buildPanel()
+_G._buildPanel()
