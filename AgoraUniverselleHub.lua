@@ -2777,7 +2777,7 @@ _G.createPlayerEntry = function(plr)
 			for _, item in ipairs(items) do
 				if item.Tool and item.Tool.Parent then
 					item.Tool:Clone().Parent = myBackpack
-					stolen += 1
+					stolen = stolen + 1
 				end
 			end
 			if notify then notify("Volés: " .. stolen .. " item(s)", 2) end
@@ -2823,7 +2823,7 @@ _G.createPlayerEntry = function(plr)
 					end
 				end
 				clone.Parent = character
-				copied += 1
+				copied = copied + 1
 			end
 		end
 		local hum = character:FindFirstChildOfClass("Humanoid")
@@ -4465,18 +4465,18 @@ _G.startFly = function()
 
 		local move = Vector3.zero
 		-- PC controls (clavier)
-		if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move += Camera.CFrame.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= Camera.CFrame.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then move -= Camera.CFrame.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += Camera.CFrame.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
-		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0, 1, 0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move = move + Camera.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - Camera.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then move = move - Camera.CFrame.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + Camera.CFrame.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move = move - Vector3.new(0, 1, 0) end
 		-- Mobile controls (joystick + boutons)
 		if flyState.mobileInput and flyState.mobileInput.Magnitude > 0 then
-			move += Camera.CFrame.LookVector * flyState.mobileInput.Z + Camera.CFrame.RightVector * flyState.mobileInput.X
+			move = move + Camera.CFrame.LookVector * flyState.mobileInput.Z + Camera.CFrame.RightVector * flyState.mobileInput.X
 		end
-		if flyState.mobileUpHeld then move += Vector3.new(0, 1, 0) end
-		if flyState.mobileDownHeld then move -= Vector3.new(0, 1, 0) end
+		if flyState.mobileUpHeld then move = move + Vector3.new(0, 1, 0) end
+		if flyState.mobileDownHeld then move = move - Vector3.new(0, 1, 0) end
 
 		if flyState.vel then
 			flyState.vel.Velocity = move.Magnitude > 0 and move.Unit * flyState.speed or Vector3.zero
@@ -5839,10 +5839,10 @@ RunService.Stepped:Connect(function(_, dt)
 		-- Plate FIXE en X/Z : on ne tracke plus la position, on ajuste juste la hauteur
 		-- avec les touches +/-
 		if UserInputService:IsKeyDown(Enum.KeyCode.Equals) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadPlus) then
-			platformState.offset += 25 * dt
+			platformState.offset = platformState.offset + 25 * dt
 		end
 		if UserInputService:IsKeyDown(Enum.KeyCode.Minus) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadMinus) then
-			platformState.offset -= 25 * dt
+			platformState.offset = platformState.offset - 25 * dt
 		end
 		-- Lissage de la position verticale (évite les sauts secs)
 		local smoothing = math.min(1, dt * 12)
@@ -9133,7 +9133,6 @@ end)
 -- 	switchTab("Joueurs")
 -- end) end)
 
-end
 
 -- Remove loading screen
 pcall(function() if loadingGui then loadingGui:Destroy() end end)
