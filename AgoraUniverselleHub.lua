@@ -4827,7 +4827,8 @@ local function computePathTo(targetPos)
 		return { step }
 	end
 	return {}
-endlocal gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, function(on)
+end
+local gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, function(on)
 	gotoWalkState.enabled = on
 	if not on then
 		gotoWalkState.active = false
