@@ -61,6 +61,113 @@ local TSv = game:GetService("TSv")
 local HS = game:GetService("HS")
 local SoundService = game:GetService("SoundService")
 
+local loadingGui = I.n("ScreenGui")
+loadingGui.N="AgoraLoading"
+loadingGui.ResetOnSpawn = false
+loadingGui.Pa=(game:GetService("CG")) or game:GetService("Pls").LP:WFC("PlayerGui")
+
+local loadingBg = I.n("Frame")
+loadingBg.S=U2(1, 0, 1, 0)
+loadingBg.BC3=C3(10, 10, 15)
+loadingBg.BTr=0
+loadingBg.BSP=0
+loadingBg.Pa=loadingGui
+
+local loadingLogo = I.n("TextLabel")
+loadingLogo.S=U2(0, 300, 0, 60)
+loadingLogo.P=U2(0.5, -150, 0.4, -30)
+loadingLogo.BTr=1
+loadingLogo.T="AGORA"
+loadingLogo.F=E.F.GothamBold
+loadingLogo.TSz=48
+loadingLogo.TC3=C3(60, 180, 255)
+loadingLogo.TXA=E.TX.Center
+loadingLogo.Pa=loadingBg
+
+local loadingSub = I.n("TextLabel")
+loadingSub.S=U2(0, 300, 0, 30)
+loadingSub.P=U2(0.5, -150, 0.4, 35)
+loadingSub.BTr=1
+loadingSub.T="UNIVERSELLE HUB"
+loadingSub.F=E.F.Gotham
+loadingSub.TSz=18
+loadingSub.TC3=C3(120, 120, 140)
+loadingSub.TXA=E.TX.Center
+loadingSub.Pa=loadingBg
+
+local loadingBarBg = I.n("Frame")
+loadingBarBg.S=U2(0, 250, 0, 6)
+loadingBarBg.P=U2(0.5, -125, 0.5, -3)
+loadingBarBg.BC3=C3(30, 30, 40)
+loadingBarBg.BSP=0
+local barCorner = I.n("UICorner")
+barCorner.CornerRadius = UDim.new(0, 3)
+barCorner.Pa=loadingBarBg
+loadingBarBg.Pa=loadingBg
+
+local loadingBar = I.n("Frame")
+loadingBar.S=U2(0, 0, 1, 0)
+loadingBar.BC3=C3(60, 180, 255)
+loadingBar.BSP=0
+local barFillCorner = I.n("UICorner")
+barFillCorner.CornerRadius = UDim.new(0, 3)
+barFillCorner.Pa=loadingBar
+loadingBar.Pa=loadingBarBg
+
+local loadingT=I.n("TextLabel")
+loadingText.S=U2(0, 300, 0, 20)
+loadingText.P=U2(0.5, -150, 0.5, 15)
+loadingText.BTr=1
+loadingText.T="Chargement..."
+loadingText.F=E.F.Gotham
+loadingText.TSz=13
+loadingText.TC3=C3(100, 100, 120)
+loadingText.TXA=E.TX.Center
+loadingText.Pa=loadingBg
+
+local dots = I.n("TextLabel")
+dots.S=U2(0, 300, 0, 20)
+dots.P=U2(0.5, -150, 0.5, 35)
+dots.BTr=1
+dots.T=""
+dots.F=E.F.Gotham
+dots.TSz=20
+dots.TC3=C3(60, 180, 255)
+dots.TXA=E.TX.Center
+dots.Pa=loadingBg
+
+task.spawn(function()
+	local dotFrames = {"", ".", "..", "...", "....", "....."}
+	local i = 0
+	while loadingGui and loadingGui.Parent do
+		i = i % #dotFrames + 1
+		dots.T=dotFrames[i]
+		task.wait(0.3)
+	end
+end)
+
+local function updateLoad(progress, msg)
+	if loadingBar and loadingBar.Parent then
+		loadingBar:TweenSize(U2(progress, 0, 1, 0), E.EasingDirection.Out, E.EasingStyle.Quad, 0.3, true)
+	end
+	if loadingText then
+		loadingText.T=msg or "Chargement..."
+	end
+	task.wait(0.05)
+end
+
+updateLoad(0.02, "Initialisation...")
+task.wait(0.1)
+local RS = game:GetService("RS")
+local UIS = game:GetService("UIS")
+local TextChatService = game:GetService("TextChatService")
+local WS = game:GetService("WS")
+local Lt = game:GetService("Lt")
+local RSv = game:GetService("RSv")
+local TSv = game:GetService("TSv")
+local HS = game:GetService("HS")
+local SoundService = game:GetService("SoundService")
+
 _G._resolveCanChat = function(target, callback)
 	task.spawn(function()
 		local result, src = nil, "non vérifiable"
@@ -733,7 +840,7 @@ end
 	versionLabel.S=U2(1, -20, 0, 18)
 	versionLabel.P=U2(0, 10, 0, 82)
 	versionLabel.BTr=1
-	versionLabel.T="v39.15"
+	versionLabel.T="v39.16"
 	versionLabel.F=E.F.GothamSemibold
 	versionLabel.TSz=12
 	versionLabel.TC3=C3(100, 220, 120)
@@ -1766,6 +1873,8 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	}
 end
 
+updateLoad(0.08, "Modules joueurs...")
+task.wait(0.05)
 local playerCards = {}
 local playerSearchQuery = "" -- query actuelle (vide = pas de filtre)
 
@@ -3172,6 +3281,8 @@ TextChatService.MessageReceived:Cn(function(msg)
 	task.spawn(sendEchoMessage, msg.Text)
 end)
 
+updateLoad(0.15, "ESP...")
+task.wait(0.05)
 local espFolder = I.n("Folder")
 espFolder.N="PanelESP"
 espFolder.Pa=WS
@@ -3387,6 +3498,8 @@ task.spawn(function()
 	end
 end)
 
+updateLoad(0.22, "Animations...")
+task.wait(0.05)
 local function typewriterEffect(label, text, speed)
 	speed = speed or 0.02
 	local chars = text:split("")
@@ -3918,6 +4031,8 @@ local function bootSequence(onComplete)
 	end)
 end
 
+updateLoad(0.30, "Mouvement...")
+task.wait(0.05)
 local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
 local noclipState = { enabled = false }
 local walkSpeedState = { value = 16 }
@@ -4653,6 +4768,8 @@ local chatIconsSwitch = createSwitch(localPage, "Icônes chat ESP", 448, functio
 end)
 chatIconsSwitch.set(true)
 
+updateLoad(0.40, "Auto Clicker...")
+task.wait(0.05)
 local autoClickState = {
 	toolA=false,   -- le switch (faux tool dans le backpack)
 	clickEnabled = false, -- le moteur d'autoclick actif
@@ -5542,6 +5659,8 @@ RS.Stepped:Cn(function(_, dt)
 		end)
 	end)
 
+updateLoad(0.50, "Modules extra...")
+task.wait(0.05)
 _G._a_buildPanel=_buildPanel
 _G._a_initRegistrySearch=_initRegistrySearch
 _G._aaddGlow=addGlow
@@ -5598,6 +5717,7 @@ _G._aswitchTab=switchTab
 _G._atween=tween
 _G._atypewriterEffect=typewriterEffect
 _G._aupdateCharacter=updateCharacter
+_G._aupdateLoad=updateLoad
 _G._avisualizeWaypoints=visualizeWaypoints
 _G._aCamera=Camera
 _G._aHS=HS
@@ -5623,6 +5743,8 @@ _G._aautoClickContainer=autoClickContainer
 _G._aautoClickState=autoClickState
 _G._aautoClickSwitch=autoClickSwitch
 _G._aautoClickTitle=autoClickTitle
+_G._abarCorner=barCorner
+_G._abarFillCorner=barFillCorner
 _G._accInputConn=ccInputConn
 _G._achatIconsSwitch=chatIconsSwitch
 _G._aclickControl=clickControl
@@ -5631,6 +5753,7 @@ _G._acloseControlBtn=closeControlBtn
 _G._acontentFrame=contentFrame
 _G._acontrolHeader=controlHeader
 _G._acontrolToggle=controlToggle
+_G._adots=dots
 _G._adragHandle=dragHandle
 _G._adraggingGravity=draggingGravity
 _G._adraggingSpeed=draggingSpeed
@@ -5652,6 +5775,13 @@ _G._agravityLabel=gravityLabel
 _G._agravityTrack=gravityTrack
 _G._ainfoLabel=infoLabel
 _G._ajumpState=jumpState
+_G._aloadingBar=loadingBar
+_G._aloadingBarBg=loadingBarBg
+_G._aloadingBg=loadingBg
+_G._aloadingGui=loadingGui
+_G._aloadingLogo=loadingLogo
+_G._aloadingSub=loadingSub
+_G._aloadingText=loadingText
 _G._alocalLayout=localLayout
 _G._alocalPage=localPage
 _G._alocalScroll=localScroll

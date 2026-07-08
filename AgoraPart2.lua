@@ -233,6 +233,8 @@ local function _initServerInfoCard()
 end
 _initServerInfoCard()
 
+_G._aupdateLoad(0.60, "Aimbot...")
+task.wait(0.05)
 -- ============= AIMBOT =============
 -- Verrouille la souris sur la TÊTE du joueur le plus proche du CENTRE de l'écran
 -- - Filtre "pas à travers les murs" : raycast camera → head, vérifie qu'on touche le character
@@ -630,6 +632,8 @@ task.spawn(function()
 end)
 
 
+_G._aupdateLoad(0.70, "Protections...")
+task.wait(0.05)
 -- ============= PROTECTIONS =============
 local protectionsState = {
 	antiFling = false,
@@ -1262,6 +1266,8 @@ local function _wrapRemotes()
 end
 _wrapRemotes() -- Exécute le wrap (IIFE pattern pour limiter les 200 registers)
 
+_G._aupdateLoad(0.80, "Registry...")
+task.wait(0.05)
 -- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
@@ -3036,6 +3042,8 @@ function giveSpiderTool()
 	end)
 end
 
+_G._aupdateLoad(0.90, "Chat commands...")
+task.wait(0.05)
 -- ============= CHAT COMMANDS =============
 -- Wrap dans IIFE avec paramètres pour éviter la limite d'upvalues (200)
 ;(function(_fly, _noclip, _esp, _fullbright, _zeroG, _localPlayer)
@@ -3055,6 +3063,8 @@ end
 	end)
 end)(_G._aflySwitch, _G._anoclipSwitch, _G._aespState, fullbrightSwitch, _G._azeroGSwitch, LocalPlayer)
 
+_G._aupdateLoad(0.95, "Finalisation...")
+task.wait(0.05)
 -- ============= CRÉDITS =============
 ;(function(_mainFrame)
 	local credits = Instance.new("TextLabel")
@@ -3116,4 +3126,6 @@ end)
 -- end) end)
 
 end
+-- Remove loading screen
+pcall(function() if _G._aloadingGui then _G._aloadingGui:Destroy() end end)
 _G._a_buildPanel()
