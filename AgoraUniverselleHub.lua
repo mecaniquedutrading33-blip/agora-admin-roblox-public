@@ -50,7 +50,7 @@ end
 game = _game
 
 -- WRAP PANEL IN LOCAL FUNCTION to avoid Solara 200-register chunk limit
-local function _buildPanel()
+_G._buildPanel = function()
 if not game then
 	warn("[AGORA] game est nil — exécuteur incompatible ou loadstring mal formé")
 	return
@@ -157,7 +157,7 @@ task.spawn(function()
 end)
 
 -- Helper: update loading bar
-local function updateLoad(progress, msg)
+_G.updateLoad = function(progress, msg)
 	if loadingBar and loadingBar.Parent then
 		loadingBar:TweenSize(UDim2.new(progress, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
 	end
@@ -272,7 +272,7 @@ task.spawn(function()
 end)
 
 -- Wrapper de son multi-exécuteur (Solara, etc.) - pcall silencieux
-local function playSound(id, vol)
+_G.playSound = function(id, vol)
 	if not id then return end
 	pcall(function()
 		local s = Instance.new("Sound")
@@ -294,7 +294,7 @@ local function playSound(id, vol)
 end
 
 -- Helper HTTP multi-executeur (essaie TOUTES les methodes possibles)
-local function httpGet(url)
+_G.httpGet = function(url)
 	-- 1) game:HttpGet (Solara, Xeno, etc.) - le plus commun
 	local ok, r = pcall(function() return game:HttpGet(url) end)
 	if ok and r and r ~= "" then return r end
@@ -338,7 +338,7 @@ local function httpGet(url)
 	return nil
 end
 
-local function httpPost(url, body)
+_G.httpPost = function(url, body)
 	-- 1) game:HttpPostJSON / HttpGet avec body
 	local ok, r = pcall(function() return game:HttpGet(url, true, body) end)
 	if ok and r and r ~= "" then return r end
@@ -365,7 +365,7 @@ end
 local panelMemory = _G.PanelMemory
 
 local character, humanoid, rootPart
-local function updateCharacter()
+_G.updateCharacter = function()
 	character = LocalPlayer.Character
 	if character then
 		humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -393,7 +393,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	end
 end)
 
-local function getDeviceType()
+_G.getDeviceType = function()
 	if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
 		return "Mobile"
 	elseif UserInputService.GamepadEnabled then
@@ -403,14 +403,14 @@ local function getDeviceType()
 	end
 end
 
-local function createCorner(parent, radius)
+_G.createCorner = function(parent, radius)
 	local c = Instance.new("UICorner")
 	c.CornerRadius = UDim.new(0, radius or 6)
 	c.Parent = parent
 	return c
 end
 
-local function createStroke(parent, color, thickness)
+_G.createStroke = function(parent, color, thickness)
 	local s = Instance.new("UIStroke")
 	s.Color = color or Color3.fromRGB(60, 60, 60)
 	s.Thickness = thickness or 1
@@ -418,7 +418,7 @@ local function createStroke(parent, color, thickness)
 	return s
 end
 
-local function tween(obj, props, duration)
+_G.tween = function(obj, props, duration)
 	if not obj or not obj.Parent then return end
 	pcall(function()
 		TweenService:Create(obj, TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
@@ -699,7 +699,7 @@ titleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = topBar
 
-local function addGlow(frame)
+_G.addGlow = function(frame)
 	local glow = Instance.new("ImageLabel")
 	glow.Name = "Glow"
 	glow.Size = UDim2.new(1, 60, 1, 60)
@@ -751,7 +751,7 @@ minimizeBtn.BorderSizePixel = 0
 minimizeBtn.Parent = topBar
 createCorner(minimizeBtn, 8)
 
-local function makeIcon(btn, txt)
+_G.makeIcon = function(btn, txt)
 	local l = Instance.new("TextLabel")
 	l.Size = UDim2.new(1, 0, 1, 0)
 	l.BackgroundTransparency = 1
@@ -764,7 +764,7 @@ end
 
 makeIcon(closeBtn, "×")
 
-local function createButton(parent, text, yPos, color, callback)
+_G.createButton = function(parent, text, yPos, color, callback)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, -20, 0, 34)
 	btn.Position = UDim2.new(0, 10, 0, yPos)
@@ -817,7 +817,7 @@ local pages = {}
 local tabButtons = {}
 local activeTab = "Joueurs"
 
-local function switchTab(name)
+_G.switchTab = function(name)
 	activeTab = name
 	for n, page in pairs(pages) do
 		page.Visible = (n == name)
@@ -832,7 +832,7 @@ local function switchTab(name)
 	end
 end
 
-local function createTab(name)
+_G.createTab = function(name)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0.115, -2, 1, 0)
 		btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
@@ -1297,7 +1297,7 @@ local protectionsPage = createTab("Protections")
 
 -- ============= REGISTRY SEARCH + AUTOCOMPLETE =============
 -- WRAP dans local function + appel pour isoler les locals
-local function _initRegistrySearch()
+_G._initRegistrySearch = function()
 	local registrySearchBox = Instance.new("TextBox")
 	registrySearchBox.Size = UDim2.new(1, -10, 0, 28)
 	registrySearchBox.Position = UDim2.new(0, 5, 0, 5)
@@ -1598,7 +1598,7 @@ task.defer(function()
 	protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, protectionsLayout.AbsoluteContentSize.Y + 10)
 end)
 
-local function reparentChildrenToLocalScroll()
+_G.reparentChildrenToLocalScroll = function()
 	for _, child in ipairs(localPage:GetChildren()) do
 		if child ~= localScroll then
 			child.Parent = localScroll
@@ -1868,7 +1868,7 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- == SHUTDOWN ALL FEATURES ==
-local function shutdownPanel()
+_G.shutdownPanel = function()
 	if flyState and flyState.flying then stopFly() end
 	if noclipState and noclipState.enabled then
 		noclipState.enabled = false
@@ -1921,7 +1921,7 @@ local function shutdownPanel()
 	end)
 end
 
-local function createSwitch(parent, labelText, yPos, callback, defaultOn)
+_G.createSwitch = function(parent, labelText, yPos, callback, defaultOn)
 	local container = Instance.new("Frame")
 	container.Size = UDim2.new(1, -20, 0, 36)
 	container.Position = UDim2.new(0, 10, 0, yPos)
@@ -2190,7 +2190,7 @@ echoStatusLabel.Parent = mainFrame
 local selectedEchoPlayer = nil
 
 -- Pop-up de restauration du dernier joueur Echo
-local function showRestorePopup(lastName)
+_G.showRestorePopup = function(lastName)
 	if panelMemory.dontAskRestore then return end
 	if not lastName then return end
 	local current = Players:FindFirstChild(lastName)
@@ -2245,7 +2245,7 @@ local function showRestorePopup(lastName)
 	popup:TweenPosition(UDim2.new(0.5, -150, 0.5, -65), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.25, true)
 end
 
-local function createPlayerEntry(plr)
+_G.createPlayerEntry = function(plr)
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(1, -8, 0, 196)
 	card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
@@ -3395,14 +3395,14 @@ local function createPlayerEntry(plr)
 					return card
 					end
 
-local function addPlayerCard(plr)
+_G.addPlayerCard = function(plr)
 	if plr == LocalPlayer then return end
 	if playerCards[plr] and playerCards[plr].Parent then return end
 	createPlayerEntry(plr)
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
 
-local function removePlayerCard(plr)
+_G.removePlayerCard = function(plr)
 	if playerCards[plr] then
 		playerCards[plr]:Destroy()
 		playerCards[plr] = nil
@@ -3415,7 +3415,7 @@ local function removePlayerCard(plr)
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
 
-local function refreshPlayersList()
+_G.refreshPlayersList = function()
 	local existing = {}
 	for plr, card in pairs(playerCards) do
 		if card and card.Parent then
@@ -3462,7 +3462,7 @@ for plr, card in pairs(playerCards) do
 end
 
 -- ECHO CHAT
-local function sendEchoMessage(text)
+_G.sendEchoMessage = function(text)
 	local channels = TextChatService:FindFirstChild("TextChannels")
 	if not channels then return end
 	local general = channels:FindFirstChild("RBXGeneral")
@@ -3489,20 +3489,20 @@ espFolder.Parent = Workspace
 
 local espState = { enabled = false, individual = {}, chatIcons = true }
 
-local function distanceColor(dist)
+_G.distanceColor = function(dist)
 	if dist < 50 then return Color3.fromRGB(80, 255, 120)
 	elseif dist < 200 then return Color3.fromRGB(255, 200, 80)
 	else return Color3.fromRGB(255, 80, 80) end
 end
 
-local function ensureESPForPlayer(plr)
+_G.ensureESPForPlayer = function(plr)
 	if espState.individual[plr] then return espState.individual[plr] end
 	local data = { hl = nil, bill = nil, label = nil, targetPart = nil, humanoid = nil }
 	espState.individual[plr] = data
 	return data
 end
 
-local function buildESP(plr)
+_G.buildESP = function(plr)
 	local data = ensureESPForPlayer(plr)
 	local char = plr.Character
 	if not char then return end
@@ -3562,12 +3562,12 @@ local function buildESP(plr)
 	return data
 end
 
-local function clearESP()
+_G.clearESP = function()
 	for _, child in ipairs(espFolder:GetChildren()) do child:Destroy() end
 	espState.individual = {}
 end
 
-local function refreshESP()
+_G.refreshESP = function()
 	if not (espState.enabled or globalESPEnabled) then return end
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr ~= LocalPlayer then
@@ -3595,7 +3595,7 @@ function togglePlayerESP(plr)
 	end
 end
 
-local function blinkESP(plr, duration)
+_G.blinkESP = function(plr, duration)
 	duration = duration or 3
 	local data = ensureESPForPlayer(plr)
 	if not data.active then
@@ -3654,7 +3654,7 @@ RunService.RenderStepped:Connect(function()
 	end
 end)
 
-local function applyGlobalESPToPlayer(plr)
+_G.applyGlobalESPToPlayer = function(plr)
 	if plr == LocalPlayer then return end
 	if not plr.Character then return end
 	local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
@@ -3705,7 +3705,7 @@ end)
 updateLoad(0.22, "Animations...")
 task.wait(0.05)
 -- ============= ANIMATIONS =============
-local function typewriterEffect(label, text, speed)
+_G.typewriterEffect = function(label, text, speed)
 	speed = speed or 0.02
 	local chars = text:split("")
 	local current = ""
@@ -3717,7 +3717,7 @@ local function typewriterEffect(label, text, speed)
 end
 
 
-local function matrixRain(parent, duration)
+_G.matrixRain = function(parent, duration)
 	duration = duration or 1
 	local letters = {"0","1","/","\\","[","]","{","}","<",">","#","@","%","&","*","+","-","=","?","!"}
 	local startTime = tick()
@@ -3746,7 +3746,7 @@ local function matrixRain(parent, duration)
 	end)
 end
 
-local function bootSequence(onComplete)
+_G.bootSequence = function(onComplete)
 	-- BOOT ANIMATION v2 : "Genesis" - le panel s'assemble piece par piece avec effets cinematiques
 	-- Layer 1 boot-safe : pcall dans le task.spawn
 	local bootGui = Instance.new("ScreenGui")
@@ -4282,7 +4282,7 @@ local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
 local platformState = { enabled = false, part = nil, y = 0, offset = 0 }
 
-local function stopFly()
+_G.stopFly = function()
 	if not flyState.flying then return end
 	flyState.flying = false
 	if flyState.loop then flyState.loop:Disconnect() flyState.loop = nil end
@@ -4437,7 +4437,7 @@ end
 	_fly.isMobile = isMobile
 end)(flyState, screenGui)
 
-local function startFly()
+_G.startFly = function()
 	updateCharacter()
 	if flyState.flying or not rootPart then return end
 	flyState.flying = true
@@ -4489,7 +4489,7 @@ local function startFly()
 	end)
 end
 
-local function createSlider(parent, labelText, yPos, min, max, default, callback, color, decimals, step)
+_G.createSlider = function(parent, labelText, yPos, min, max, default, callback, color, decimals, step)
 	decimals = decimals or 0
 	step = step or nil
 	local function fmt(v)
@@ -4622,14 +4622,14 @@ local PathfindingService = game:GetService("PathfindingService")
 
 local gotoWalkState = { enabled = false, active = false, target = nil, path = {}, visuals = {}, lastClick = 0, lastMoveTo = nil, recompute = nil, busy = false }
 
-local function clearWalkVisuals()
+_G.clearWalkVisuals = function()
 	for _, v in ipairs(gotoWalkState.visuals) do
 		if v and v.Parent then v:Destroy() end
 	end
 	gotoWalkState.visuals = {}
 end
 
-local function visualizeWaypoints(waypoints)
+_G.visualizeWaypoints = function(waypoints)
 	clearWalkVisuals()
 	for i, wp in ipairs(waypoints) do
 		local dot = Instance.new("Part")
@@ -4664,7 +4664,7 @@ local function visualizeWaypoints(waypoints)
 end
 
 -- Calcule un trajet vers targetPos. Retourne une liste de waypoints (Vector3) ou {} si impossible.
-local function computePathTo(targetPos)
+_G.computePathTo = function(targetPos)
 	updateCharacter()
 	if not rootPart or not humanoid then return {} end
 
@@ -4842,7 +4842,7 @@ createSwitch(movePage, "Saut infini", 192, function(on)
 	jumpState.infinite = on
 end)
 
-local function refreshNoClipSwitch()
+_G.refreshNoClipSwitch = function()
 	noclipSwitch.set(false)
 end
 
@@ -4968,7 +4968,7 @@ createStroke(gravityInput, Color3.fromRGB(80, 80, 100), 1)
 end
 
 local draggingGravity = false
-local function gravityFromX(x)
+_G.gravityFromX = function(x)
 	local rel = math.clamp((x - gravityTrack.AbsolutePosition.X) / gravityTrack.AbsoluteSize.X, 0, 1)
 	return math.floor(rel * 300 + 0.5)
 end
@@ -5061,7 +5061,7 @@ local autoClickState = {
 	controlPos = nil,
 }
 
-local function setAutoClickSave()
+_G.setAutoClickSave = function()
 	if not autoClickState then return end
 	panelMemory.autoClick = {
 		pos = autoClickState.controlPos and {autoClickState.controlPos.X.Scale, autoClickState.controlPos.X.Offset, autoClickState.controlPos.Y.Scale, autoClickState.controlPos.Y.Offset},
@@ -5072,14 +5072,14 @@ local function setAutoClickSave()
 	end
 end
 
-local function removeFakeTool()
+_G.removeFakeTool = function()
 	if autoClickState.fakeTool and autoClickState.fakeTool.Parent then
 		autoClickState.fakeTool:Destroy()
 	end
 	autoClickState.fakeTool = nil
 end
 
-local function createFakeTool()
+_G.createFakeTool = function()
 	local backpack = LocalPlayer:FindFirstChild("Backpack")
 	if not backpack then return end
 	removeFakeTool()
@@ -5108,7 +5108,7 @@ local function createFakeTool()
 	return tool
 end
 
-local function stopAutoClickEngine()
+_G.stopAutoClickEngine = function()
 	autoClickState.clickEnabled = false
 	if autoClickState.activeThread then
 		autoClickState.activeThread = nil
@@ -5119,7 +5119,7 @@ local function stopAutoClickEngine()
 	pcall(hideMarker)
 end
 
-local function onToolDeactivated()
+_G.onToolDeactivated = function()
 	-- quand le tool est retiré de l'inventaire / personnage mort
 	stopAutoClickEngine()
 end
@@ -5168,7 +5168,7 @@ local acTarget = {
 end)()
 
 -- Met à jour la position FIXE = le curseur au moment de l'appel
-local function captureTargetFromCursor()
+_G.captureTargetFromCursor = function()
 	local mouse = LocalPlayer:GetMouse()
 	if not mouse then return false end
 	acTarget.captured = true
@@ -5180,7 +5180,7 @@ local function captureTargetFromCursor()
 end
 
 -- Trouve le bouton GUI au point (Vector2) en descendant l'arbre GUI
-local function findGuiButtonAt(point, root)
+_G.findGuiButtonAt = function(point, root)
 	if not root then return nil end
 	local best = nil
 	local function walk(obj)
@@ -5209,7 +5209,7 @@ local function findGuiButtonAt(point, root)
 end
 
 -- ClickDetector sous le point écran — raycast caméra vers l'arrière
-local function findClickDetectorAtScreen(point)
+_G.findClickDetectorAtScreen = function(point)
 	local camera = Workspace.CurrentCamera
 	if not camera then return nil end
 	local unit = camera:ScreenPointToRay(point.X, point.Y)
@@ -5229,7 +5229,7 @@ local function findClickDetectorAtScreen(point)
 end
 
 -- Un seul clic à la position FIXE acTarget (pas le curseur actuel)
-local function fireClickFixed(useNative)
+_G.fireClickFixed = function(useNative)
 	if not acTarget.captured then return false end
 	local pt = acTarget.position
 	local clicked = false
@@ -5317,7 +5317,7 @@ local function fireClickFixed(useNative)
 	return clicked
 end
 
-local function startAutoClickEngine()
+_G.startAutoClickEngine = function()
 	stopAutoClickEngine()
 	-- Auto-capture : si rien n'est capturé, on prend la position du curseur maintenant
 	if not acTarget.captured then
@@ -5390,11 +5390,11 @@ acMarkerStroke.Color = Color3.fromRGB(255, 200, 200)
 acMarkerStroke.Thickness = 1.5
 acMarkerStroke.Parent = acMarker
 
-local function showMarkerAt(screenPos)
+_G.showMarkerAt = function(screenPos)
 	acMarker.Visible = true
 	acMarker.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
 end
-local function hideMarker()
+_G.hideMarker = function()
 	acMarker.Visible = false
 end
 
@@ -5489,11 +5489,11 @@ speedFill.Parent = speedSliderTrack
 createCorner(speedFill, 3)
 
 local draggingSpeed = false
-local function speedFromX(x)
+_G.speedFromX = function(x)
 	local rel = math.clamp((x - speedSliderTrack.AbsolutePosition.X) / speedSliderTrack.AbsoluteSize.X, 0, 1)
 	return 0.001 + rel * 0.199
 end
-local function setSpeed(s)
+_G.setSpeed = function(s)
 	s = math.clamp(math.floor(s * 1000) / 1000, 0.001, 0.2)
 	autoClickState.speed = s
 	speedLabel.Text = "Vitesse : " .. s .. "s"
@@ -5677,7 +5677,7 @@ dragHandle.ZIndex = 125
 dragHandle.Parent = clickControl
 createCorner(dragHandle, 11)
 
-local function clampControl()
+_G.clampControl = function()
 	local s = screenGui.AbsoluteSize
 	local sz = clickControl.AbsoluteSize
 	local x = math.clamp(clickControl.AbsolutePosition.X, 0, math.max(0, s.X - sz.X))
@@ -6043,7 +6043,7 @@ end)
 
 -- === Carte "Stats serveur" (6 stats en grille) — déplacée depuis Joueurs (trop large) ===
 -- WRAP dans local function + appel pour isoler les locals
-local function _initServerStatsCard()
+_G._initServerStatsCard = function()
 	local statsCard = Instance.new("Frame")
 	statsCard.Name = "StatsCard"
 	statsCard.Size = UDim2.new(1, -10, 0, 0)
@@ -6162,7 +6162,7 @@ _initServerStatsCard()
 
 -- === Carte "Infos serveur" (Créateur du jeu) — déplacée depuis Joueurs (était trop large) ===
 -- WRAP dans local function + appel pour isoler les locals (réduit les 200 registres)
-local function _initServerInfoCard()
+_G._initServerInfoCard = function()
 	local serverInfoCard = Instance.new("Frame")
 	serverInfoCard.Name = "ServerInfoCard"
 	serverInfoCard.Size = UDim2.new(1, -10, 0, 0)
@@ -6255,7 +6255,7 @@ task.wait(0.05)
 -- - Pas de visée amis (seulement les joueurs, pas le local player)
 -- - Option clic auto : mouse1click à chaque frame sur la cible
 -- Wrap dans local function + appel pour isoler les locals (limite 200 registers)
-local function _initAimbot()
+_G._initAimbot = function()
 	local aimbotCard = Instance.new("Frame")
 	aimbotCard.Name = "AimbotCard"
 	aimbotCard.Size = UDim2.new(1, -10, 0, 0)
@@ -6685,7 +6685,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	end
 end)
 
-local function neutralizeSeat(seat)
+_G.neutralizeSeat = function(seat)
 	if not seat then return end
 	if seat:IsA("Seat") or seat:IsA("VehicleSeat") then
 		seat.Disabled = true
@@ -6694,7 +6694,7 @@ local function neutralizeSeat(seat)
 	end
 end
 
-local function restoreSeat(seat)
+_G.restoreSeat = function(seat)
 	if not seat then return end
 	if (seat:IsA("Seat") or seat:IsA("VehicleSeat")) and seat:GetAttribute("Neutralized") then
 		seat.Disabled = false
@@ -6703,7 +6703,7 @@ local function restoreSeat(seat)
 	end
 end
 
-local function createAntiSeatSitWatcher()
+_G.createAntiSeatSitWatcher = function()
 	local function onCharacter(char)
 		local hum = char:FindFirstChildOfClass("Humanoid")
 		if not hum then
@@ -6727,7 +6727,7 @@ local function createAntiSeatSitWatcher()
 	return LocalPlayer.CharacterAdded:Connect(onCharacter)
 end
 
-local function createProtectionSwitch(name, label, y)
+_G.createProtectionSwitch = function(name, label, y)
 	return createSwitch(protectionsScroll, label, y, function(on)
 		protectionsState[name] = on
 		if name == "antiSeat" then
@@ -6900,7 +6900,7 @@ serverLayout.SortOrder = Enum.SortOrder.LayoutOrder
 serverLayout.Parent = serverScroll
 
 -- Wrap du contenu Remotes dans une fonction locale pour limiter les 200 registers
-local function _wrapRemotes()
+_G._wrapRemotes = function()
 	-- Avertissement en haut
 	local remoteWarn = Instance.new("Frame")
 	remoteWarn.Size = UDim2.new(1, -8, 0, 60)
@@ -7284,7 +7284,7 @@ task.wait(0.05)
 -- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
-local function buildRegistrySection(parentPage)
+_G.buildRegistrySection = function(parentPage)
 	-- Refonte v38.14 : PAS de wrapper registryCard.
 	-- Tous les enfants (titre, subtitle, status, resultScroll) sont dans registryScroll DIRECTEMENT.
 	-- Chaque enfant a un LayoutOrder pour empiler verticalement via registryLayout (UIListLayout parent).
@@ -7348,7 +7348,7 @@ resultLayout.SortOrder = Enum.SortOrder.LayoutOrder
 resultLayout.Parent = resultScroll
 
 -- Helper: join a list into a string with separator, or "Indisponible" if empty
-local function joinOrIndi(list, sep, max)
+_G.joinOrIndi = function(list, sep, max)
 	if not list or type(list) ~= "table" or #list == 0 then
 		return "Indisponible"
 	end
@@ -7560,7 +7560,7 @@ end
 
 -- Affiche un résultat (un compte) — UNE seule grosse bulle unie, sans RichText/HTML
 -- Apparition ligne par ligne (typewriter) pour faciliter la lecture
-local function renderResult(data, parent)
+_G.renderResult = function(data, parent)
 	-- Grosse carte unie
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(1, -8, 0, 0) -- hauteur auto, ajustée après
