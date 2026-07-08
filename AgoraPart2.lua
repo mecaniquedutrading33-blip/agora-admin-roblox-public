@@ -4861,7 +4861,6 @@ end)
 -- 	switchTab("Joueurs")
 -- end) end)
 
-end
 
 -- Remove loading screen
 pcall(function() if loadingGui then loadingGui:Destroy() end end)
