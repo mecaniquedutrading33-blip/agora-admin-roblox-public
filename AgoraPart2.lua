@@ -16,7 +16,7 @@ _G.stopFly = function()
 	flyState.mobileDownHeld = false
 	flyState.mobileStickId = nil
 	if flyState.showMobileUi then flyState.showMobileUi(false) end
-	updateCharacter()
+	_G.updateCharacter(()
 	if humanoid then humanoid.PlatformStand = false end
 	flySwitch.set(false)
 	-- Active la grâce anti-TP pour réinitialiser la baseline sans bounce
@@ -161,7 +161,7 @@ end
 end)(flyState, screenGui)
 
 _G.startFly = function()
-	updateCharacter()
+	_G.updateCharacter(()
 	if flyState.flying or not rootPart then return end
 	flyState.flying = true
 
@@ -184,7 +184,7 @@ _G.startFly = function()
 	end
 
 	flyState.loop = RunService.RenderStepped:Connect(function()
-		updateCharacter()
+		_G.updateCharacter(()
 		if not flyState.flying or not rootPart or not rootPart.Parent then return end
 		-- Re-attach body movers if rootPart changed (respawn)
 		if flyState.gyro and flyState.gyro.Parent ~= rootPart then flyState.gyro.Parent = rootPart end
@@ -225,8 +225,8 @@ _G.createSlider = function(parent, labelText, yPos, min, max, default, callback,
 	container.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 	container.BorderSizePixel = 0
 	container.Parent = parent
-	createCorner(container, 8)
-	createStroke(container, Color3.fromRGB(45, 45, 55), 1)
+	_G.createCorner((container, 8)
+	_G.createStroke((container, Color3.fromRGB(45, 45, 55), 1)
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, -10, 0, 18)
@@ -245,7 +245,7 @@ _G.createSlider = function(parent, labelText, yPos, min, max, default, callback,
 	track.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 	track.BorderSizePixel = 0
 	track.Parent = container
-	createCorner(track, 3)
+	_G.createCorner((track, 3)
 
 	-- Bouton invisible par-dessus le track pour capter TOUS les clics (sinon certains
 	-- clics sur le container parent sont perdus → le slider "marche mal")
@@ -264,7 +264,7 @@ _G.createSlider = function(parent, labelText, yPos, min, max, default, callback,
 	fill.BackgroundColor3 = color or Color3.fromRGB(80, 150, 255)
 	fill.BorderSizePixel = 0
 	fill.Parent = track
-	createCorner(fill, 3)
+	_G.createCorner((fill, 3)
 
 	local value = default
 	local draggingSlider = false
@@ -328,7 +328,7 @@ end, Color3.fromRGB(100, 180, 255))
 local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 	noclipState.enabled = on
 	if not on then
-		updateCharacter()
+		_G.updateCharacter(()
 		if character then
 			for _, p in ipairs(character:GetDescendants()) do
 				if p:IsA("BasePart") then p.CanCollide = true end
@@ -353,7 +353,7 @@ _G.clearWalkVisuals = function()
 end
 
 _G.visualizeWaypoints = function(waypoints)
-	clearWalkVisuals()
+	_G.clearWalkVisuals(()
 	for i, wp in ipairs(waypoints) do
 		local dot = Instance.new("Part")
 		dot.Anchored = true
@@ -388,7 +388,7 @@ end
 
 -- Calcule un trajet vers targetPos. Retourne une liste de waypoints (Vector3) ou {} si impossible.
 _G.computePathTo = function(targetPos)
-	updateCharacter()
+	_G.updateCharacter(()
 	if not rootPart or not humanoid then return {} end
 
 	local myPos = rootPart.Position
@@ -557,11 +557,11 @@ local gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, fun
 		gotoWalkState.active = false
 		gotoWalkState.target = nil
 		gotoWalkState.path = {}
-		clearWalkVisuals()
+		_G.clearWalkVisuals(()
 	end
 end)
 
-createSwitch(movePage, "Saut infini", 192, function(on)
+_G.createSwitch((movePage, "Saut infini", 192, function(on)
 	jumpState.infinite = on
 end)
 
@@ -571,14 +571,14 @@ end
 
 local walkSlider = createSlider(movePage, "Vitesse marche", 234, 1, 250, 16, function(v)
 	walkSpeedState.value = math.floor(v)
-	updateCharacter()
+	_G.updateCharacter(()
 	if humanoid then humanoid.WalkSpeed = walkSpeedState.value end
 end, Color3.fromRGB(255, 100, 100))
 
 local walkResetBtn = createButton(movePage, "Reset vitesse", 288, Color3.fromRGB(80, 80, 90), function()
 	walkSpeedState.value = 16
 	walkSlider.set(16)
-	updateCharacter()
+	_G.updateCharacter(()
 	if humanoid then humanoid.WalkSpeed = 16 end
 end)
 
@@ -635,8 +635,8 @@ gravityContainer.Position = UDim2.new(0, 8, 0, 56)
 gravityContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 gravityContainer.BorderSizePixel = 0
 gravityContainer.Parent = localPage
-createCorner(gravityContainer, 10)
-createStroke(gravityContainer, Color3.fromRGB(45, 45, 55), 1)
+_G.createCorner((gravityContainer, 10)
+_G.createStroke((gravityContainer, Color3.fromRGB(45, 45, 55), 1)
 
 local gravityLabel = Instance.new("TextLabel")
 gravityLabel.Size = UDim2.new(1, -10, 0, 18)
@@ -655,14 +655,14 @@ gravityTrack.Position = UDim2.new(0, 8, 0, 30)
 gravityTrack.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 gravityTrack.BorderSizePixel = 0
 gravityTrack.Parent = gravityContainer
-createCorner(gravityTrack, 3)
+_G.createCorner((gravityTrack, 3)
 
 local gravityFill = Instance.new("Frame")
 gravityFill.Size = UDim2.new(196.2 / 300, 0, 1, 0)
 gravityFill.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
 gravityFill.BorderSizePixel = 0
 gravityFill.Parent = gravityTrack
-createCorner(gravityFill, 3)
+_G.createCorner((gravityFill, 3)
 
 local gravityInput = Instance.new("TextBox")
 gravityInput.Size = UDim2.new(0, 80, 0, 22)
@@ -676,8 +676,8 @@ gravityInput.TextSize = 12
 gravityInput.TextXAlignment = Enum.TextXAlignment.Center
 gravityInput.ClearTextOnFocus = true
 gravityInput.Parent = gravityContainer
-createCorner(gravityInput, 6)
-createStroke(gravityInput, Color3.fromRGB(80, 80, 100), 1)
+_G.createCorner((gravityInput, 6)
+_G.createStroke((gravityInput, Color3.fromRGB(80, 80, 100), 1)
 
 	_G._agoraSetGravityExact = function(v)
 	v = tonumber(v)
@@ -732,18 +732,18 @@ local timeSwitch = createSwitch(localPage, "Temps custom", 200, function(on)
 	end
 end)
 
-createSlider(localPage, "Heure du jour", 246, 0, 24, 12, function(v)
+_G.createSlider((localPage, "Heure du jour", 246, 0, 24, 12, function(v)
 	localState.timeOfDay = math.floor(v)
 	Lighting.TimeOfDay = string.format("%02d:00:00", localState.timeOfDay)
 end, Color3.fromRGB(255, 180, 60))
 
-createSwitch(localPage, "Freeze temps", 292, function(on)
+_G.createSwitch((localPage, "Freeze temps", 292, function(on)
 	if on then
 		Lighting.ClockTime = localState.timeOfDay
 	end
 end)
 
-createButton(localPage, "Reset monde", 348, Color3.fromRGB(80, 80, 90), function()
+_G.createButton((localPage, "Reset monde", 348, Color3.fromRGB(80, 80, 90), function()
 	Workspace.Gravity = localState.normalGravity
 	Lighting.TimeOfDay = "12:00:00"
 	zeroGSwitch.set(false)
@@ -758,9 +758,9 @@ local globalESPSwitch = createSwitch(localPage, "ESP Global", 404, function(on)
 	globalESPEnabled = on
 	espState.enabled = on
 	if on then
-		refreshESP()
+		_G.refreshESP(()
 	else
-		clearESP()
+		_G.clearESP(()
 	end
 end)
 
@@ -771,7 +771,7 @@ end)
 chatIconsSwitch.set(true)
 
 
-updateLoad(0.40, "Auto Clicker...")
+_G.updateLoad((0.40, "Auto Clicker...")
 task.wait(0.05)
 -- ============= AUTO CLICKER =============
 local autoClickState = {
@@ -805,7 +805,7 @@ end
 _G.createFakeTool = function()
 	local backpack = LocalPlayer:FindFirstChild("Backpack")
 	if not backpack then return end
-	removeFakeTool()
+	_G.removeFakeTool(()
 	local tool = Instance.new("Tool")
 	tool.Name = "AutoClicker_Tool"
 	tool.RequiresHandle = false
@@ -844,7 +844,7 @@ end
 
 _G.onToolDeactivated = function()
 	-- quand le tool est retiré de l'inventaire / personnage mort
-	stopAutoClickEngine()
+	_G.stopAutoClickEngine(()
 end
 
 local VirtualInputManager
@@ -1041,7 +1041,7 @@ _G.fireClickFixed = function(useNative)
 end
 
 _G.startAutoClickEngine = function()
-	stopAutoClickEngine()
+	_G.stopAutoClickEngine(()
 	-- Auto-capture : si rien n'est capturé, on prend la position du curseur maintenant
 	if not acTarget.captured then
 		if not captureTargetFromCursor() then return end
@@ -1057,7 +1057,7 @@ _G.startAutoClickEngine = function()
 	local useNative = (acTarget.targetType ~= "gui")
 	task.spawn(function()
 		while autoClickState.clickEnabled and autoClickState.activeThread == threadId do
-			fireClickFixed(useNative)
+			_G.fireClickFixed((useNative)
 			task.wait(interval)
 		end
 	end)
@@ -1069,8 +1069,8 @@ autoClickContainer.Position = UDim2.new(0, 8, 0, 460)
 autoClickContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 autoClickContainer.BorderSizePixel = 0
 autoClickContainer.Parent = localPage
-createCorner(autoClickContainer, 10)
-createStroke(autoClickContainer, Color3.fromRGB(45, 45, 55), 1)
+_G.createCorner((autoClickContainer, 10)
+_G.createStroke((autoClickContainer, Color3.fromRGB(45, 45, 55), 1)
 
 local autoClickTitle = Instance.new("TextLabel")
 autoClickTitle.Size = UDim2.new(1, -10, 0, 18)
@@ -1106,7 +1106,7 @@ acMarker.Visible = false
 acMarker.ZIndex = 130
 acMarker.AnchorPoint = Vector2.new(0.5, 0.5)
 acMarker.Parent = screenGui
-createCorner(acMarker, 7)
+_G.createCorner((acMarker, 7)
 
 local acMarkerStroke = Instance.new("UIStroke")
 acMarkerStroke.Color = Color3.fromRGB(255, 200, 200)
@@ -1135,10 +1135,10 @@ local autoClickSwitch = createSwitch(autoClickContainer, "Activer (touche G) - o
 		-- Plus de fake tool : on ouvre juste le mini panel flottant
 		clickControl.Visible = true
 	else
-		stopAutoClickEngine()
+		_G.stopAutoClickEngine(()
 		clickControl.Visible = false
 	end
-	setAutoClickSave()
+	_G.setAutoClickSave(()
 end)
 
 -- Raccourci touche G : toggle le mini panel d'autoclick (pas besoin de tool !)
@@ -1175,15 +1175,15 @@ for i, m in ipairs(modeOrder) do
 	btn.BorderSizePixel = 0
 	btn.AutoButtonColor = false
 	btn.Parent = modeFrame
-	createCorner(btn, 6)
+	_G.createCorner((btn, 6)
 	modeBtns[m] = btn
 	btn.MouseButton1Click:Connect(function()
 		acTarget.targetType = m
 		for _, b in pairs(modeBtns) do tween(b, {BackgroundColor3 = Color3.fromRGB(45, 45, 55)}, 0.1) end
-		tween(btn, {BackgroundColor3 = Color3.fromRGB(60, 120, 200)}, 0.1)
+		_G.tween((btn, {BackgroundColor3 = Color3.fromRGB(60, 120, 200)}, 0.1)
 	end)
 end
-tween(modeBtns["any"], {BackgroundColor3 = Color3.fromRGB(60, 120, 200)}, 0)
+_G.tween((modeBtns["any"], {BackgroundColor3 = Color3.fromRGB(60, 120, 200)}, 0)
 
 local speedLabel = Instance.new("TextLabel")
 speedLabel.Size = UDim2.new(1, -10, 0, 16)
@@ -1202,14 +1202,14 @@ speedSliderTrack.Position = UDim2.new(0, 8, 0, 152)
 speedSliderTrack.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 speedSliderTrack.BorderSizePixel = 0
 speedSliderTrack.Parent = autoClickContainer
-createCorner(speedSliderTrack, 3)
+_G.createCorner((speedSliderTrack, 3)
 
 local speedFill = Instance.new("Frame")
 speedFill.Size = UDim2.new(0.5, 0, 1, 0)
 speedFill.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
 speedFill.BorderSizePixel = 0
 speedFill.Parent = speedSliderTrack
-createCorner(speedFill, 3)
+_G.createCorner((speedFill, 3)
 
 local draggingSpeed = false
 _G.speedFromX = function(x)
@@ -1222,14 +1222,14 @@ _G.setSpeed = function(s)
 	speedLabel.Text = "Vitesse : " .. s .. "s"
 	speedFill.Size = UDim2.new((s - 0.001) / 0.199, 0, 1, 0)
 	if autoClickState.clickEnabled then startAutoClickEngine() end
-	setAutoClickSave()
+	_G.setAutoClickSave(()
 end
-setSpeed(0.05)
+_G.setSpeed((0.05)
 
 speedSliderTrack.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		draggingSpeed = true
-		setSpeed(speedFromX(input.Position.X))
+		_G.setSpeed((speedFromX(input.Position.X))
 	end
 end)
 UserInputService.InputEnded:Connect(function(input)
@@ -1239,7 +1239,7 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 UserInputService.InputChanged:Connect(function(input)
 	if draggingSpeed and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		setSpeed(speedFromX(input.Position.X))
+		_G.setSpeed((speedFromX(input.Position.X))
 	end
 end)
 
@@ -1256,8 +1256,8 @@ clickControl.Parent = screenGui
 clickControl.Active = true
 clickControl.Visible = false
 -- PAS de Draggable Roblox (entre en conflit avec le drag manuel sur controlHeader)
-createCorner(clickControl, 12)
-createStroke(clickControl, Color3.fromRGB(80, 80, 100), 1)
+_G.createCorner((clickControl, 12)
+_G.createStroke((clickControl, Color3.fromRGB(80, 80, 100), 1)
 
 local controlHeader = Instance.new("TextButton")
 controlHeader.AutoButtonColor = false
@@ -1318,10 +1318,10 @@ execBtn.TextColor3 = Color3.new(1, 1, 1)
 execBtn.BorderSizePixel = 0
 execBtn.AutoButtonColor = false
 execBtn.Parent = clickControl
-createCorner(execBtn, 6)
+_G.createCorner((execBtn, 6)
 execBtn.MouseButton1Click:Connect(function()
-	captureTargetFromCursor()
-	fireClickFixed(true)
+	_G.captureTargetFromCursor(()
+	_G.fireClickFixed((true)
 end)
 
 local multiBtn = Instance.new("TextButton")
@@ -1336,9 +1336,9 @@ multiBtn.TextColor3 = Color3.new(1, 1, 1)
 multiBtn.BorderSizePixel = 0
 multiBtn.AutoButtonColor = false
 multiBtn.Parent = clickControl
-createCorner(multiBtn, 6)
+_G.createCorner((multiBtn, 6)
 multiBtn.MouseButton1Click:Connect(function()
-	captureTargetFromCursor()
+	_G.captureTargetFromCursor(()
 	for i = 1, 5 do
 		task.delay((i - 1) * 0.01, function() fireClickFixed(true) end)
 	end
@@ -1356,15 +1356,15 @@ toggleClickBtn.TextColor3 = Color3.new(1, 1, 1)
 toggleClickBtn.BorderSizePixel = 0
 toggleClickBtn.AutoButtonColor = false
 toggleClickBtn.Parent = clickControl
-createCorner(toggleClickBtn, 6)
+_G.createCorner((toggleClickBtn, 6)
 toggleClickBtn.MouseButton1Click:Connect(function()
 	if autoClickState.clickEnabled then
-		stopAutoClickEngine()
+		_G.stopAutoClickEngine(()
 		toggleClickBtn.Text = "Demarrer AutoClick"
 		toggleClickBtn.BackgroundColor3 = Color3.fromRGB(60, 160, 90)
 	else
-		captureTargetFromCursor()
-		startAutoClickEngine()
+		_G.captureTargetFromCursor(()
+		_G.startAutoClickEngine(()
 		toggleClickBtn.Text = "Arreter AutoClick"
 		toggleClickBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
 	end
@@ -1398,7 +1398,7 @@ dragHandle.TextSize = 14
 dragHandle.TextColor3 = Color3.fromRGB(200, 200, 220)
 dragHandle.ZIndex = 125
 dragHandle.Parent = clickControl
-createCorner(dragHandle, 11)
+_G.createCorner((dragHandle, 11)
 
 _G.clampControl = function()
 	local s = screenGui.AbsoluteSize
@@ -1424,14 +1424,14 @@ if panelMemory.autoClick and panelMemory.autoClick.pos then
 	clickControl.Position = UDim2.new(p[1], p[2], p[3], p[4])
 end
 if panelMemory.autoClick and panelMemory.autoClick.speed then
-	setSpeed(panelMemory.autoClick.speed)
+	_G.setSpeed((panelMemory.autoClick.speed)
 end
 if panelMemory.autoClick and panelMemory.autoClick.targetType then
 	local saved = panelMemory.autoClick.targetType
 	if modes[saved] then
 		acTarget.targetType = saved
 		for _, b in pairs(modeBtns) do tween(b, {BackgroundColor3 = Color3.fromRGB(45, 45, 55)}, 0.1) end
-		tween(modeBtns[saved], {BackgroundColor3 = Color3.fromRGB(60, 120, 200)}, 0.1)
+		_G.tween((modeBtns[saved], {BackgroundColor3 = Color3.fromRGB(60, 120, 200)}, 0.1)
 	end
 elseif panelMemory.autoClick and panelMemory.autoClick.mode then
 	local saved = panelMemory.autoClick.mode
@@ -1439,16 +1439,16 @@ elseif panelMemory.autoClick and panelMemory.autoClick.mode then
 	if modes[saved] then
 		acTarget.targetType = saved
 		for _, b in pairs(modeBtns) do tween(b, {BackgroundColor3 = Color3.fromRGB(45, 45, 55)}, 0.1) end
-		tween(modeBtns[saved], {BackgroundColor3 = Color3.fromRGB(60, 120, 200)}, 0.1)
+		_G.tween((modeBtns[saved], {BackgroundColor3 = Color3.fromRGB(60, 120, 200)}, 0.1)
 	end
 end
 
 clickControl:GetPropertyChangedSignal("Position"):Connect(function()
 	autoClickState.controlPos = clickControl.Position
-	setAutoClickSave()
+	_G.setAutoClickSave(()
 end)
 -- Déplace tous les contrôles locaux dans la scrollview
-reparentChildrenToLocalScroll()
+_G.reparentChildrenToLocalScroll(()
 
 -- Agrandit le scroll pour accueillir l'autoclicker
 localScroll.CanvasSize = UDim2.new(0, 0, 0, 900)
@@ -1488,9 +1488,9 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 	if gpe then return end
 	if input.KeyCode == Enum.KeyCode.E then
 		if flyState.flying then
-			stopFly()
+			_G.stopFly(()
 		else
-			startFly()
+			_G.startFly(()
 		end
 	end
 	if input.KeyCode == Enum.KeyCode.F10 then
@@ -1557,7 +1557,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 end)
 
 RunService.Stepped:Connect(function(_, dt)
-	updateCharacter()
+	_G.updateCharacter(()
 	if noclipState.enabled and character then
 		for _, p in ipairs(character:GetDescendants()) do
 			if p:IsA("BasePart") then p.CanCollide = false end
@@ -1683,7 +1683,7 @@ RunService.Stepped:Connect(function(_, dt)
 					end
 					if newPath and #newPath > 0 then
 						gotoWalkState.path = newPath
-						visualizeWaypoints(newPath)
+						_G.visualizeWaypoints((newPath)
 						humanoid:MoveTo(newPath[1])
 						gotoWalkState.lastMoveTo = tick()
 					end
@@ -1697,7 +1697,7 @@ RunService.Stepped:Connect(function(_, dt)
 			table.remove(gotoWalkState.path, 1)
 			if #gotoWalkState.path == 0 then
 				gotoWalkState.target = nil
-				clearWalkVisuals()
+				_G.clearWalkVisuals(()
 			else
 				humanoid:MoveTo(gotoWalkState.path[1])
 				gotoWalkState.lastMoveTo = tick()
@@ -1733,7 +1733,7 @@ RunService.Stepped:Connect(function(_, dt)
 	end)
 
 
-updateLoad(0.50, "Modules extra...")
+_G.updateLoad((0.50, "Modules extra...")
 task.wait(0.05)
 -- ============= EXTRA =============
 local fullbrightState = { enabled = false, old = {} }
@@ -1775,8 +1775,8 @@ _G._initServerStatsCard = function()
 	statsCard.BorderSizePixel = 0
 	statsCard.LayoutOrder = 1 -- AVANT serverInfoCard (LayoutOrder 0 sera mis à 0 après)
 	statsCard.Parent = extraScroll
-	createCorner(statsCard, 8)
-	createStroke(statsCard, Color3.fromRGB(80, 80, 120), 1)
+	_G.createCorner((statsCard, 8)
+	_G.createStroke((statsCard, Color3.fromRGB(80, 80, 120), 1)
 
 	local statsPadding = Instance.new("UIPadding")
 	statsPadding.PaddingTop = UDim.new(0, 8)
@@ -1816,7 +1816,7 @@ _G._initServerStatsCard = function()
 		cell.BorderSizePixel = 0
 		cell.LayoutOrder = layoutOrder
 		cell.Parent = parent
-		createCorner(cell, 6)
+		_G.createCorner((cell, 6)
 
 		local label = Instance.new("TextLabel")
 		label.Size = UDim2.new(1, -8, 0, 12)
@@ -1881,7 +1881,7 @@ _G._initServerStatsCard = function()
 		end
 	end)
 end
-_initServerStatsCard()
+_G._initServerStatsCard(()
 
 -- === Carte "Infos serveur" (Créateur du jeu) — déplacée depuis Joueurs (était trop large) ===
 -- WRAP dans local function + appel pour isoler les locals (réduit les 200 registres)
@@ -1894,8 +1894,8 @@ _G._initServerInfoCard = function()
 	serverInfoCard.BorderSizePixel = 0
 	serverInfoCard.LayoutOrder = 2 -- sous la carte "Stats serveur" (LayoutOrder 1)
 	serverInfoCard.Parent = extraScroll
-	createCorner(serverInfoCard, 8)
-	createStroke(serverInfoCard, Color3.fromRGB(80, 80, 120), 1)
+	_G.createCorner((serverInfoCard, 8)
+	_G.createStroke((serverInfoCard, Color3.fromRGB(80, 80, 120), 1)
 
 	local serverInfoPadding = Instance.new("UIPadding")
 	serverInfoPadding.PaddingTop = UDim.new(0, 8)
@@ -1967,9 +1967,9 @@ _G._initServerInfoCard = function()
 		end
 	end)
 end
-_initServerInfoCard()
+_G._initServerInfoCard(()
 
-updateLoad(0.60, "Aimbot...")
+_G.updateLoad((0.60, "Aimbot...")
 task.wait(0.05)
 -- ============= AIMBOT =============
 -- Verrouille la souris sur la TÊTE du joueur le plus proche du CENTRE de l'écran
@@ -1987,8 +1987,8 @@ _G._initAimbot = function()
 	aimbotCard.BorderSizePixel = 0
 	aimbotCard.LayoutOrder = 4 -- après serverInfoCard
 	aimbotCard.Parent = extraScroll
-	createCorner(aimbotCard, 8)
-	createStroke(aimbotCard, Color3.fromRGB(180, 80, 80), 1)
+	_G.createCorner((aimbotCard, 8)
+	_G.createStroke((aimbotCard, Color3.fromRGB(180, 80, 80), 1)
 
 	-- UIListLayout OBLIGATOIRE pour que les enfants se positionnent en colonne
 	-- Sans ça, les enfants s'empilent tous à (0,0) et se chevauchent
@@ -2094,7 +2094,7 @@ _G._initAimbot = function()
 	distSlider.Font = Enum.Font.Gotham
 	distSlider.TextSize = 10
 	distSlider.Parent = distRow
-	createCorner(distSlider, 4)
+	_G.createCorner((distSlider, 4)
 	distSlider.MouseButton1Click:Connect(function()
 		aimbotMaxDist = math.max(50, aimbotMaxDist - 25)
 		_G._agoraAimbotMaxDist = aimbotMaxDist
@@ -2200,7 +2200,7 @@ _G._initAimbot = function()
 		end
 	end)
 end
-_initAimbot()
+_G._initAimbot(()
 
 local fullbrightSwitch = createSwitch(extraScroll, "Fullbright", 0, function(on)
 	fullbrightState.enabled = on
@@ -2240,13 +2240,13 @@ local hitboxSwitch = createSwitch(extraScroll, "Hitbox expander", 0, function(on
 	end
 end)
 
-createButton(extraScroll, "Obtenir Ghost V4", 0, Color3.fromRGB(110, 60, 160), function()
+_G.createButton((extraScroll, "Obtenir Ghost V4", 0, Color3.fromRGB(110, 60, 160), function()
 	giveGhostTool()
 end)
-createButton(extraScroll, "Obtenir Eleven Master", 0, Color3.fromRGB(60, 120, 160), function()
+_G.createButton((extraScroll, "Obtenir Eleven Master", 0, Color3.fromRGB(60, 120, 160), function()
 	giveElevenTool()
 end)
-createButton(extraScroll, "Obtenir Spider Tool", 0, Color3.fromRGB(60, 160, 90), function()
+_G.createButton((extraScroll, "Obtenir Spider Tool", 0, Color3.fromRGB(60, 160, 90), function()
 	giveSpiderTool()
 end)
 
@@ -2259,7 +2259,7 @@ end
 
 -- === FEATURES UNIVERSELLES (marchent sur tous les jeux Roblox) ===
 local fpsBoostState = { enabled = false, saved = {} }
-createSwitch(extraScroll, "FPS Boost (qualité↓)", 0, function(on)
+_G.createSwitch((extraScroll, "FPS Boost (qualité↓)", 0, function(on)
 	fpsBoostState.enabled = on
 	if on then
 		fpsBoostState.saved = {
@@ -2280,12 +2280,12 @@ createSwitch(extraScroll, "FPS Boost (qualité↓)", 0, function(on)
 end)
 
 local antiVoidState = { enabled = false }
-createSwitch(extraScroll, "Anti-Void (y<-2000)", 0, function(on)
+_G.createSwitch((extraScroll, "Anti-Void (y<-2000)", 0, function(on)
 	antiVoidState.enabled = on
 end)
 
 -- Rejoin le même serveur (universel)
-createButton(extraScroll, "Rejoindre ce serveur", 0, Color3.fromRGB(70, 130, 200), function()
+_G.createButton((extraScroll, "Rejoindre ce serveur", 0, Color3.fromRGB(70, 130, 200), function()
 	pcall(function()
 		local TeleportService = game:GetService("TeleportService")
 		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
@@ -2294,7 +2294,7 @@ end)
 
 -- Bouton panique : ferme tout d'un coup (Shift+P)
 local panicEnabled = false
-createSwitch(extraScroll, "Bouton panique (Shift+P)", 0, function(on)
+_G.createSwitch((extraScroll, "Bouton panique (Shift+P)", 0, function(on)
 	panicEnabled = on
 end)
 
@@ -2311,7 +2311,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 
 	if input.UserInputType == Enum.UserInputType.MouseButton1 and clickTPState.enabled then
 		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.RightControl) then
-			updateCharacter()
+			_G.updateCharacter(()
 			if Mouse.Hit and rootPart then
 				rootPart.CFrame = Mouse.Hit + Vector3.new(0, 3, 0)
 			end
@@ -2328,7 +2328,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 		gotoWalkState.busy = true
 		task.spawn(function()
 			local ok, err = pcall(function()
-				updateCharacter()
+				_G.updateCharacter(()
 				if not Mouse or not Mouse.Hit then return end
 				local targetPos = Mouse.Hit.Position + Vector3.new(0, 3, 0)
 				gotoWalkState.target = targetPos
@@ -2339,7 +2339,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 					humanoid:MoveTo(waypoints[1])
 					gotoWalkState.lastMoveTo = tick()
 				end
-				visualizeWaypoints(waypoints)
+				_G.visualizeWaypoints((waypoints)
 			end)
 			if not ok and err then
 				warn("[GoToWalk] " .. tostring(err))
@@ -2368,7 +2368,7 @@ task.spawn(function()
 end)
 
 
-updateLoad(0.70, "Protections...")
+_G.updateLoad((0.70, "Protections...")
 task.wait(0.05)
 -- ============= PROTECTIONS =============
 local protectionsState = {
@@ -2390,7 +2390,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	local hum = char:WaitForChild("Humanoid")
 	hum.Died:Connect(function()
 		if not protectionsState.antiKill then return end
-		updateCharacter()
+		_G.updateCharacter(()
 		if rootPart then
 			protectionsState.antiKillSavedCFrame = rootPart.CFrame
 		end
@@ -2464,11 +2464,11 @@ _G.createProtectionSwitch = function(name, label, y)
 					protectionsState.antiSeatSitWatcher = nil
 				end
 				for _, obj in ipairs(Workspace:GetDescendants()) do
-					neutralizeSeat(obj)
+					_G.neutralizeSeat((obj)
 				end
 				protectionsState.antiSeatWatcher = Workspace.DescendantAdded:Connect(function(obj)
 					if obj:IsA("Seat") or obj:IsA("VehicleSeat") then
-						neutralizeSeat(obj)
+						_G.neutralizeSeat((obj)
 					end
 				end)
 				protectionsState.antiSeatSitWatcher = createAntiSeatSitWatcher()
@@ -2483,12 +2483,12 @@ _G.createProtectionSwitch = function(name, label, y)
 				end
 				-- Restaurer TOUS les sièges neutralisés pour qu'on puisse se rassoir
 				for _, obj in ipairs(Workspace:GetDescendants()) do
-					restoreSeat(obj)
+					_G.restoreSeat((obj)
 				end
 			end
 		end
 		if name == "antiTeleport" and on then
-			updateCharacter()
+			_G.updateCharacter(()
 			if rootPart then
 				protectionsState.lastSafeCFrame = rootPart.CFrame
 				protectionsState.lastHrpPosition = rootPart.Position
@@ -2497,15 +2497,15 @@ _G.createProtectionSwitch = function(name, label, y)
 	end)
 end
 
-createProtectionSwitch("antiFling", "Anti Fling", 10)
-createProtectionSwitch("antiSeat", "Anti Seat", 52)
-createProtectionSwitch("antiTeleport", "Anti Teleport", 94)
-createProtectionSwitch("antiFall", "Anti Fall", 136)
-createProtectionSwitch("antiKill", "Anti Kill / Spawn TP", 178)
-createProtectionSwitch("antiAFK", "Anti AFK (5 min)", 220)
+_G.createProtectionSwitch(("antiFling", "Anti Fling", 10)
+_G.createProtectionSwitch(("antiSeat", "Anti Seat", 52)
+_G.createProtectionSwitch(("antiTeleport", "Anti Teleport", 94)
+_G.createProtectionSwitch(("antiFall", "Anti Fall", 136)
+_G.createProtectionSwitch(("antiKill", "Anti Kill / Spawn TP", 178)
+_G.createProtectionSwitch(("antiAFK", "Anti AFK (5 min)", 220)
 
 RunService.Heartbeat:Connect(function()
-	updateCharacter()
+	_G.updateCharacter(()
 	if not rootPart or not humanoid then return end
 
 	local pos = rootPart.Position
@@ -2584,7 +2584,7 @@ task.spawn(function()
 		if protectionsState.antiAFK then
 			local now = tick()
 			if now - protectionsState.antiAFKLastAction >= 300 then
-				updateCharacter()
+				_G.updateCharacter(()
 				if humanoid then
 					humanoid:Move(Vector3.new(0.1, 0, 0), false)
 					task.wait(0.15)
@@ -2615,7 +2615,7 @@ serverScroll.ScrollBarThickness = 4
 serverScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 serverScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
 serverScroll.Parent = remotesPage
-createCorner(serverScroll, 4)
+_G.createCorner((serverScroll, 4)
 
 local serverLayout = Instance.new("UIListLayout")
 serverLayout.Padding = UDim.new(0, 6)
@@ -2631,8 +2631,8 @@ _G._wrapRemotes = function()
 	remoteWarn.BorderSizePixel = 0
 	remoteWarn.LayoutOrder = -100
 	remoteWarn.Parent = serverScroll
-	createCorner(remoteWarn, 6)
-	createStroke(remoteWarn, Color3.fromRGB(220, 80, 80), 1.5)
+	_G.createCorner((remoteWarn, 6)
+	_G.createStroke((remoteWarn, Color3.fromRGB(220, 80, 80), 1.5)
 
 	local warnTitle = Instance.new("TextLabel")
 	warnTitle.Size = UDim2.new(1, -16, 0, 22)
@@ -2701,7 +2701,7 @@ _G._wrapRemotes = function()
 	remoteHeader.BorderSizePixel = 0
 	remoteHeader.LayoutOrder = -50
 	remoteHeader.Parent = serverScroll
-	createCorner(remoteHeader, 4)
+	_G.createCorner((remoteHeader, 4)
 
 	local remoteCount = Instance.new("TextLabel")
 	remoteCount.Size = UDim2.new(1, -50, 1, 0)
@@ -2724,7 +2724,7 @@ _G._wrapRemotes = function()
 	refreshRemotesBtn.TextSize = 14
 	refreshRemotesBtn.Font = Enum.Font.GothamBold
 	refreshRemotesBtn.Parent = remoteHeader
-	createCorner(refreshRemotesBtn, 4)
+	_G.createCorner((refreshRemotesBtn, 4)
 
 	-- Barre de recherche pour filtrer les remotes par nom
 	local remotesSearchBox = Instance.new("TextBox")
@@ -2740,8 +2740,8 @@ _G._wrapRemotes = function()
 	remotesSearchBox.ClearTextOnFocus = false
 	remotesSearchBox.LayoutOrder = -40
 	remotesSearchBox.Parent = serverScroll
-	createCorner(remotesSearchBox, 6)
-	createStroke(remotesSearchBox, Color3.fromRGB(60, 60, 80), 1)
+	_G.createCorner((remotesSearchBox, 6)
+	_G.createStroke((remotesSearchBox, Color3.fromRGB(60, 60, 80), 1)
 
 	-- Container des cartes de remotes
 	local remoteListFrame = Instance.new("Frame")
@@ -2766,8 +2766,8 @@ _G._wrapRemotes = function()
 	card.BorderSizePixel = 0
 	card.LayoutOrder = 1
 	card.Parent = remoteListFrame
-	createCorner(card, 6)
-	createStroke(card, isFunction and Color3.fromRGB(255, 180, 80) or Color3.fromRGB(80, 180, 255), 1)
+	_G.createCorner((card, 6)
+	_G.createStroke((card, isFunction and Color3.fromRGB(255, 180, 80) or Color3.fromRGB(80, 180, 255), 1)
 	local cardPadding = Instance.new("UIPadding")
 	cardPadding.PaddingTop = UDim.new(0, 6)
 	cardPadding.PaddingBottom = UDim.new(0, 6)
@@ -2819,7 +2819,7 @@ _G._wrapRemotes = function()
 	argsBox.TextXAlignment = Enum.TextXAlignment.Left
 	argsBox.ClearTextOnFocus = false
 	argsBox.Parent = row
-	createCorner(argsBox, 4)
+	_G.createCorner((argsBox, 4)
 
 	local fireBtn = Instance.new("TextButton")
 	fireBtn.Name = "FireBtn"
@@ -2833,7 +2833,7 @@ _G._wrapRemotes = function()
 	fireBtn.TextSize = 12
 	fireBtn.Font = Enum.Font.GothamBold
 	fireBtn.Parent = row
-	createCorner(fireBtn, 4)
+	_G.createCorner((fireBtn, 4)
 
 	local resultLbl = Instance.new("TextLabel")
 	resultLbl.Name = "ResultLbl"
@@ -3000,9 +3000,9 @@ _G._wrapRemotes = function()
 	end
 	remotesSearchBox:GetPropertyChangedSignal("Text"):Connect(applyRemotesFilter)
 end
-_wrapRemotes() -- Exécute le wrap (IIFE pattern pour limiter les 200 registers)
+_G._wrapRemotes(() -- Exécute le wrap (IIFE pattern pour limiter les 200 registers)
 
-updateLoad(0.80, "Registry...")
+_G.updateLoad((0.80, "Registry...")
 task.wait(0.05)
 -- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
@@ -3062,8 +3062,8 @@ resultScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 resultScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 resultScroll.LayoutOrder = 4
 resultScroll.Parent = registryScroll
-createCorner(resultScroll, 6)
-createStroke(resultScroll, Color3.fromRGB(60, 60, 80), 1)
+_G.createCorner((resultScroll, 6)
+_G.createStroke((resultScroll, Color3.fromRGB(60, 60, 80), 1)
 
 local resultLayout = Instance.new("UIListLayout")
 resultLayout.Padding = UDim.new(0, 6)
@@ -3147,8 +3147,8 @@ do
 		card.BorderSizePixel = 0
 		card.ZIndex = 51
 		card.Parent = overlay
-		createCorner(card, 10)
-		createStroke(card, Color3.fromRGB(120, 80, 255), 2)
+		_G.createCorner((card, 10)
+		_G.createStroke((card, Color3.fromRGB(120, 80, 255), 2)
 		local title = Instance.new("TextLabel")
 		title.Size = UDim2.new(1, 0, 0, 26)
 		title.BackgroundTransparency = 1
@@ -3181,7 +3181,7 @@ do
 		tagInput.ClearTextOnFocus = false
 		tagInput.ZIndex = 52
 		tagInput.Parent = card
-		createCorner(tagInput, 6)
+		_G.createCorner((tagInput, 6)
 		local listLabel = Instance.new("TextLabel")
 		listLabel.Size = UDim2.new(1, -16, 0, 50)
 		listLabel.Position = UDim2.new(0, 8, 0, 80)
@@ -3218,7 +3218,7 @@ do
 		addBtn.BorderSizePixel = 0
 		addBtn.ZIndex = 52
 		addBtn.Parent = card
-		createCorner(addBtn, 6)
+		_G.createCorner((addBtn, 6)
 		addBtn.MouseButton1Click:Connect(function()
 			if addTagToUser(userId, tagInput.Text) then tagInput.Text = "" ; refreshList() end
 		end)
@@ -3233,7 +3233,7 @@ do
 		removeBtn.BorderSizePixel = 0
 		removeBtn.ZIndex = 52
 		removeBtn.Parent = card
-		createCorner(removeBtn, 6)
+		_G.createCorner((removeBtn, 6)
 		removeBtn.MouseButton1Click:Connect(function()
 			local tags = getUserTags(userId)
 			if #tags > 0 then removeTagFromUser(userId, tags[#tags]) ; refreshList() end
@@ -3254,7 +3254,7 @@ do
 		closeBtn.BorderSizePixel = 0
 		closeBtn.ZIndex = 52
 		closeBtn.Parent = card
-		createCorner(closeBtn, 15)
+		_G.createCorner((closeBtn, 15)
 		closeBtn.MouseButton1Click:Connect(function() closeTagPopup() end)
 		_tagPopup = overlay
 	end
@@ -3291,8 +3291,8 @@ _G.renderResult = function(data, parent)
 	card.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 	card.BorderSizePixel = 0
 	card.Parent = parent
-	createCorner(card, 8)
-	createStroke(card, Color3.fromRGB(60, 60, 90), 1)
+	_G.createCorner((card, 8)
+	_G.createStroke((card, Color3.fromRGB(60, 60, 90), 1)
 
 	-- Badges VERIFIED / PREMIUM / BANNED en haut à droite de la carte
 	_=(function()
@@ -3314,7 +3314,7 @@ _G.renderResult = function(data, parent)
 			v.TextColor3 = Color3.fromRGB(220, 240, 255)
 			v.ZIndex = 5
 			v.Parent = card
-			createCorner(v, 4)
+			_G.createCorner((v, 4)
 		end
 		if hasPremium then
 			local p = Instance.new("TextLabel")
@@ -3329,7 +3329,7 @@ _G.renderResult = function(data, parent)
 			p.TextColor3 = Color3.fromRGB(60, 40, 0)
 			p.ZIndex = 5
 			p.Parent = card
-			createCorner(p, 4)
+			_G.createCorner((p, 4)
 		end
 		if isBanned then
 			local b = Instance.new("TextLabel")
@@ -3344,7 +3344,7 @@ _G.renderResult = function(data, parent)
 			b.TextColor3 = Color3.fromRGB(255, 220, 220)
 			b.ZIndex = 5
 			b.Parent = card
-			createCorner(b, 4)
+			_G.createCorner((b, 4)
 		end
 	end)()
 
@@ -3375,8 +3375,8 @@ _G.renderResult = function(data, parent)
 		warnBar.BorderSizePixel = 0
 		warnBar.LayoutOrder = 0
 		warnBar.Parent = card
-		createCorner(warnBar, 6)
-		createStroke(warnBar, Color3.fromRGB(255, 150, 50), 1.2)
+		_G.createCorner((warnBar, 6)
+		_G.createStroke((warnBar, Color3.fromRGB(255, 150, 50), 1.2)
 		local wLbl = Instance.new("TextLabel")
 		wLbl.Size = UDim2.new(1, -16, 1, 0)
 		wLbl.Position = UDim2.new(0, 8, 0, 0)
@@ -3432,8 +3432,8 @@ _G.renderResult = function(data, parent)
 	avatarHolder.BorderSizePixel = 0
 	avatarHolder.LayoutOrder = 2
 	avatarHolder.Parent = contentRow
-	createCorner(avatarHolder, 8)
-	createStroke(avatarHolder, Color3.fromRGB(120, 80, 255), 1.5)
+	_G.createCorner((avatarHolder, 8)
+	_G.createStroke((avatarHolder, Color3.fromRGB(120, 80, 255), 1.5)
 
 	-- Label "Chargement..." par-dessus tant que la photo n'est pas prête
 	local avatarLoading = Instance.new("TextLabel")
@@ -3459,7 +3459,7 @@ _G.renderResult = function(data, parent)
 	avatarImg.Image = "" -- sera rempli après chargement
 	avatarImg.ZIndex = 2
 	avatarImg.Parent = avatarHolder
-	createCorner(avatarImg, 6)
+	_G.createCorner((avatarImg, 6)
 
 	-- Construire la liste des lignes (une par champ)
 	local friendsText = joinOrIndi(data.friendsList, ", ", 5)
@@ -3718,7 +3718,7 @@ _G.renderResult = function(data, parent)
 			btn.ZIndex = 6
 			btn.AutoButtonColor = true
 			btn.Parent = actionsRow
-			createCorner(btn, 6)
+			_G.createCorner((btn, 6)
 			if onClick then btn.MouseButton1Click:Connect(onClick) end
 			return btn
 		end
@@ -4290,7 +4290,7 @@ function runRegistrySearch(query)
 					data.deviceHint = detectLocalDevice()
 				end
 
-				renderResult(data, resultScroll)
+				_G.renderResult((data, resultScroll)
 
 			end)
 		end
@@ -4298,7 +4298,7 @@ function runRegistrySearch(query)
 end
 -- Construit la section Registry dans l'onglet Registry (parentPage = registryPage)
 -- Tout le contenu (searchBox, searchBtn, registryCard) est reparenté vers registryScroll à la fin
-buildRegistrySection(registryPage)
+_G.buildRegistrySection((registryPage)
 
 -- Reparent: tous les enfants directs de registryPage (sauf registryScroll) vont dans registryScroll
 -- Wrap dans une IIFE anonyme avec ';' pour économiser les registres du chunk
@@ -4778,7 +4778,7 @@ function giveSpiderTool()
 	end)
 end
 
-updateLoad(0.90, "Chat commands...")
+_G.updateLoad((0.90, "Chat commands...")
 task.wait(0.05)
 -- ============= CHAT COMMANDS =============
 -- Wrap dans IIFE avec paramètres pour éviter la limite d'upvalues (200)
@@ -4799,7 +4799,7 @@ task.wait(0.05)
 	end)
 end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlayer)
 
-updateLoad(0.95, "Finalisation...")
+_G.updateLoad((0.95, "Finalisation...")
 task.wait(0.05)
 -- ============= CRÉDITS =============
 ;(function(_mainFrame)
@@ -4850,7 +4850,7 @@ task.delay(5, function()
 			mainFrame.Visible = true
 		end
 		if pages and pages["Home"] and not pages["Home"].Visible then
-				switchTab("Home")
+				_G.switchTab(("Home")
 		end
 	end)
 end)
@@ -4861,6 +4861,7 @@ end)
 -- 	switchTab("Joueurs")
 -- end) end)
 
+end
 
 -- Remove loading screen
 pcall(function() if loadingGui then loadingGui:Destroy() end end)
