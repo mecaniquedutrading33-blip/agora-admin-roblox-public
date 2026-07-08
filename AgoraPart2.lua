@@ -1,9 +1,10 @@
+
 -- ============= EXTRA =============
 local fullbrightState = { enabled = false, old = {} }
 local clickTPState = { enabled = false }
 local hitboxState = { enabled = false }
 
--- FIX: extraPage overflow (17+ items Y=10..730 > panel height 520px). Wrap in ScrollingFrame.
+-- FIX: _G._aextraPage overflow (17+ items Y=10..730 > panel height 520px). Wrap in ScrollingFrame.
 local extraScroll = Instance.new("ScrollingFrame")
 extraScroll.Name = "ExtraScroll"
 extraScroll.Size = UDim2.new(1, -10, 1, -10)
@@ -38,8 +39,8 @@ local function _initServerStatsCard()
 	statsCard.BorderSizePixel = 0
 	statsCard.LayoutOrder = 1 -- AVANT serverInfoCard (LayoutOrder 0 sera mis à 0 après)
 	statsCard.Parent = extraScroll
-	createCorner(statsCard, 8)
-	createStroke(statsCard, Color3.fromRGB(80, 80, 120), 1)
+	_G._acreateCorner(statsCard, 8)
+	_G._acreateStroke(statsCard, Color3.fromRGB(80, 80, 120), 1)
 
 	local statsPadding = Instance.new("UIPadding")
 	statsPadding.PaddingTop = UDim.new(0, 8)
@@ -79,7 +80,7 @@ local function _initServerStatsCard()
 		cell.BorderSizePixel = 0
 		cell.LayoutOrder = layoutOrder
 		cell.Parent = parent
-		createCorner(cell, 6)
+		_G._acreateCorner(cell, 6)
 
 		local label = Instance.new("TextLabel")
 		label.Size = UDim2.new(1, -8, 0, 12)
@@ -119,7 +120,7 @@ local function _initServerStatsCard()
 	local _fps = 60
 	local _lastFrame = tick()
 	pcall(function()
-		RunService.RenderStepped:Connect(function()
+		_G._aRunService.RenderStepped:Connect(function()
 			local now = tick()
 			local dt = now - _lastFrame
 			_lastFrame = now
@@ -131,9 +132,9 @@ local function _initServerStatsCard()
 	task.spawn(function()
 		while task.wait(1) do
 			pcall(function()
-				statPlayers.Text = tostring(#Players:GetPlayers()) .. "/" .. tostring(Players.MaxPlayers)
+				stat_G._aPlayers.Text = tostring(#_G._aPlayers:Get_G._aPlayers()) .. "/" .. tostring(_G._aPlayers.MaxPlayers)
 				statFPS.Text = tostring(math.floor(_fps))
-				local ping = LocalPlayer:GetNetworkPing() * 1000
+				local ping = _G._aLocalPlayer:GetNetworkPing() * 1000
 				statPing.Text = string.format("%.0f ms", ping)
 				statTime.Text = os.date("%H:%M:%S")
 				local okJ, jobId = pcall(function() return game.JobId end)
@@ -157,8 +158,8 @@ local function _initServerInfoCard()
 	serverInfoCard.BorderSizePixel = 0
 	serverInfoCard.LayoutOrder = 2 -- sous la carte "Stats serveur" (LayoutOrder 1)
 	serverInfoCard.Parent = extraScroll
-	createCorner(serverInfoCard, 8)
-	createStroke(serverInfoCard, Color3.fromRGB(80, 80, 120), 1)
+	_G._acreateCorner(serverInfoCard, 8)
+	_G._acreateStroke(serverInfoCard, Color3.fromRGB(80, 80, 120), 1)
 
 	local serverInfoPadding = Instance.new("UIPadding")
 	serverInfoPadding.PaddingTop = UDim.new(0, 8)
@@ -248,8 +249,8 @@ local function _initAimbot()
 	aimbotCard.BorderSizePixel = 0
 	aimbotCard.LayoutOrder = 4 -- après serverInfoCard
 	aimbotCard.Parent = extraScroll
-	createCorner(aimbotCard, 8)
-	createStroke(aimbotCard, Color3.fromRGB(180, 80, 80), 1)
+	_G._acreateCorner(aimbotCard, 8)
+	_G._acreateStroke(aimbotCard, Color3.fromRGB(180, 80, 80), 1)
 
 	-- UIListLayout OBLIGATOIRE pour que les enfants se positionnent en colonne
 	-- Sans ça, les enfants s'empilent tous à (0,0) et se chevauchent
@@ -310,7 +311,7 @@ local function _initAimbot()
 	mainSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
 	mainSwitchLabel.Parent = mainSwitchRow
 	mainSwitchLabel.ZIndex = 4
-	local mainSwitch = createSwitch(mainSwitchRow, "", 0, function(on)
+	local mainSwitch = _G._acreateSwitch(mainSwitchRow, "", 0, function(on)
 		aimbotEnabled = on
 		_G._agoraAimbotEnabled = on
 	end)
@@ -320,7 +321,7 @@ local function _initAimbot()
 
 	-- Toggle auto-clic
 	_G._agoraAimbotAutoClick = _G._agoraAimbotAutoClick or false
-	local clickSwitch = createSwitch(clickSwitchRow, "", 0, function(on)
+	local clickSwitch = _G._acreateSwitch(clickSwitchRow, "", 0, function(on)
 		aimbotAutoClick = on
 		_G._agoraAimbotAutoClick = on
 	end)
@@ -355,7 +356,7 @@ local function _initAimbot()
 	distSlider.Font = Enum.Font.Gotham
 	distSlider.TextSize = 10
 	distSlider.Parent = distRow
-	createCorner(distSlider, 4)
+	_G._acreateCorner(distSlider, 4)
 	distSlider.MouseButton1Click:Connect(function()
 		aimbotMaxDist = math.max(50, aimbotMaxDist - 25)
 		_G._agoraAimbotMaxDist = aimbotMaxDist
@@ -399,9 +400,9 @@ local function _initAimbot()
 
 	-- Boucle aimbot sur RenderStepped
 	local cam = workspace.CurrentCamera
-	local localPlayer = Players.LocalPlayer
+	local localPlayer = _G._aPlayers.LocalPlayer
 	local lastClickTick = 0
-	local renderConn = RunService.RenderStepped:Connect(function()
+	local renderConn = _G._aRunService.RenderStepped:Connect(function()
 		if not _G._agoraAimbotEnabled then
 			if aimCircle.Visible then aimCircle.Visible = false end
 			return
@@ -414,7 +415,7 @@ local function _initAimbot()
 		local screenCenter = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
 		local myChar = localPlayer.Character
 		local myPos = myChar.HumanoidRootPart.Position
-		for _, plr in ipairs(Players:GetPlayers()) do
+		for _, plr in ipairs(_G._aPlayers:Get_G._aPlayers()) do
 			if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
 				local targetHead = plr.Character.Head
 				local targetPos = targetHead.Position
@@ -463,34 +464,34 @@ local function _initAimbot()
 end
 _initAimbot()
 
-local fullbrightSwitch = createSwitch(extraScroll, "Fullbright", 0, function(on)
+local fullbrightSwitch = _G._acreateSwitch(extraScroll, "Fullbright", 0, function(on)
 	fullbrightState.enabled = on
 	if on then
-		fullbrightState.old.ambient = Lighting.Ambient
-		fullbrightState.old.outdoor = Lighting.OutdoorAmbient
-		fullbrightState.old.brightness = Lighting.Brightness
-		fullbrightState.old.time = Lighting.ClockTime
-		Lighting.Ambient = Color3.new(1, 1, 1)
-		Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
-		Lighting.Brightness = 2
-		Lighting.ClockTime = 14
+		fullbrightState.old.ambient = _G._aLighting.Ambient
+		fullbrightState.old.outdoor = _G._aLighting.OutdoorAmbient
+		fullbrightState.old.brightness = _G._aLighting.Brightness
+		fullbrightState.old.time = _G._aLighting.ClockTime
+		_G._aLighting.Ambient = Color3.new(1, 1, 1)
+		_G._aLighting.OutdoorAmbient = Color3.new(1, 1, 1)
+		_G._aLighting.Brightness = 2
+		_G._aLighting.ClockTime = 14
 	else
-		Lighting.Ambient = fullbrightState.old.ambient or Lighting.Ambient
-		Lighting.OutdoorAmbient = fullbrightState.old.outdoor or Lighting.OutdoorAmbient
-		Lighting.Brightness = fullbrightState.old.brightness or Lighting.Brightness
-		Lighting.ClockTime = fullbrightState.old.time or Lighting.ClockTime
+		_G._aLighting.Ambient = fullbrightState.old.ambient or _G._aLighting.Ambient
+		_G._aLighting.OutdoorAmbient = fullbrightState.old.outdoor or _G._aLighting.OutdoorAmbient
+		_G._aLighting.Brightness = fullbrightState.old.brightness or _G._aLighting.Brightness
+		_G._aLighting.ClockTime = fullbrightState.old.time or _G._aLighting.ClockTime
 	end
 end)
 
-local clickTPSwitch = createSwitch(extraScroll, "Click TP (Ctrl+clic)", 0, function(on)
+local clickTPSwitch = _G._acreateSwitch(extraScroll, "Click TP (Ctrl+clic)", 0, function(on)
 	clickTPState.enabled = on
 end)
 
-local hitboxSwitch = createSwitch(extraScroll, "Hitbox expander", 0, function(on)
+local hitboxSwitch = _G._acreateSwitch(extraScroll, "Hitbox expander", 0, function(on)
 	hitboxState.enabled = on
 	if not on then
-		for _, plr in ipairs(Players:GetPlayers()) do
-			if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+		for _, plr in ipairs(_G._aPlayers:Get_G._aPlayers()) do
+			if plr ~= _G._aLocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
 				local hrp = plr.Character.HumanoidRootPart
 				hrp.Size = Vector3.new(2, 2, 1)
 				hrp.Transparency = 1
@@ -501,13 +502,13 @@ local hitboxSwitch = createSwitch(extraScroll, "Hitbox expander", 0, function(on
 	end
 end)
 
-createButton(extraScroll, "Obtenir Ghost V4", 0, Color3.fromRGB(110, 60, 160), function()
+_G._acreateButton(extraScroll, "Obtenir Ghost V4", 0, Color3.fromRGB(110, 60, 160), function()
 	giveGhostTool()
 end)
-createButton(extraScroll, "Obtenir Eleven Master", 0, Color3.fromRGB(60, 120, 160), function()
+_G._acreateButton(extraScroll, "Obtenir Eleven Master", 0, Color3.fromRGB(60, 120, 160), function()
 	giveElevenTool()
 end)
-createButton(extraScroll, "Obtenir Spider Tool", 0, Color3.fromRGB(60, 160, 90), function()
+_G._acreateButton(extraScroll, "Obtenir Spider Tool", 0, Color3.fromRGB(60, 160, 90), function()
 	giveSpiderTool()
 end)
 
@@ -520,33 +521,33 @@ end
 
 -- === FEATURES UNIVERSELLES (marchent sur tous les jeux Roblox) ===
 local fpsBoostState = { enabled = false, saved = {} }
-createSwitch(extraScroll, "FPS Boost (qualité↓)", 0, function(on)
+_G._acreateSwitch(extraScroll, "FPS Boost (qualité↓)", 0, function(on)
 	fpsBoostState.enabled = on
 	if on then
 		fpsBoostState.saved = {
 			quality = UserSettings().GameSettings.SavedQualityLevel,
-			meshDetail = Workspace.StreamingMinRadius,
-			partCap = Workspace.PartMaterialOptions and 0 or 0,
+			meshDetail = _G._aWorkspace.StreamingMinRadius,
+			partCap = _G._aWorkspace.PartMaterialOptions and 0 or 0,
 		}
 		pcall(function() UserSettings().GameSettings.SavedQualityLevel = Enum.SavedQualitySetting.QualityLevel1 end)
 		pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
-		pcall(function() Lighting.GlobalShadows = false end)
-		pcall(function() Lighting.FogEnd = 9e9 end)
-		pcall(function() Lighting.Technology = Enum.Technology.Compatibility end)
+		pcall(function() _G._aLighting.GlobalShadows = false end)
+		pcall(function() _G._aLighting.FogEnd = 9e9 end)
+		pcall(function() _G._aLighting.Technology = Enum.Technology.Compatibility end)
 	else
 		pcall(function() UserSettings().GameSettings.SavedQualityLevel = fpsBoostState.saved.quality or Enum.SavedQualitySetting.Automatic end)
 		pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic end)
-		pcall(function() Lighting.GlobalShadows = true end)
+		pcall(function() _G._aLighting.GlobalShadows = true end)
 	end
 end)
 
 local antiVoidState = { enabled = false }
-createSwitch(extraScroll, "Anti-Void (y<-2000)", 0, function(on)
+_G._acreateSwitch(extraScroll, "Anti-Void (y<-2000)", 0, function(on)
 	antiVoidState.enabled = on
 end)
 
 -- Rejoin le même serveur (universel)
-createButton(extraScroll, "Rejoindre ce serveur", 0, Color3.fromRGB(70, 130, 200), function()
+_G._acreateButton(extraScroll, "Rejoindre ce serveur", 0, Color3.fromRGB(70, 130, 200), function()
 	pcall(function()
 		local TeleportService = game:GetService("TeleportService")
 		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
@@ -555,57 +556,57 @@ end)
 
 -- Bouton panique : ferme tout d'un coup (Shift+P)
 local panicEnabled = false
-createSwitch(extraScroll, "Bouton panique (Shift+P)", 0, function(on)
+_G._acreateSwitch(extraScroll, "Bouton panique (Shift+P)", 0, function(on)
 	panicEnabled = on
 end)
 
-UserInputService.InputBegan:Connect(function(input, gpe)
+_G._aUserInputService.InputBegan:Connect(function(input, gpe)
 	if gpe then return end
 
 	-- Bouton panique : Shift+P = fermeture instantanée et indétectable
 	if panicEnabled and input.KeyCode == Enum.KeyCode.P
-		and (UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)) then
-		pcall(shutdownPanel)
-		if screenGui then screenGui:Destroy() end
+		and (_G._aUserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or _G._aUserInputService:IsKeyDown(Enum.KeyCode.RightShift)) then
+		pcall(_G._ashutdownPanel)
+		if _G._ascreenGui then _G._ascreenGui:Destroy() end
 		return
 	end
 
 	if input.UserInputType == Enum.UserInputType.MouseButton1 and clickTPState.enabled then
-		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.RightControl) then
-			updateCharacter()
-			if Mouse.Hit and rootPart then
-				rootPart.CFrame = Mouse.Hit + Vector3.new(0, 3, 0)
+		if _G._aUserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or _G._aUserInputService:IsKeyDown(Enum.KeyCode.RightControl) then
+			_G._aupdateCharacter()
+			if _G._aMouse.Hit and rootPart then
+				rootPart.CFrame = _G._aMouse.Hit + Vector3.new(0, 3, 0)
 			end
 		end
 	end
 
 	-- Go to Walk : click sol = calcul d'itinéraire et marche auto
-	if input.UserInputType == Enum.UserInputType.MouseButton1 and gotoWalkState.enabled then
+	if input.UserInputType == Enum.UserInputType.MouseButton1 and _G._agotoWalkState.enabled then
 		local now = tick()
-		if now - gotoWalkState.lastClick < 0.25 then return end
-		gotoWalkState.lastClick = now
+		if now - _G._agotoWalkState.lastClick < 0.25 then return end
+		_G._agotoWalkState.lastClick = now
 
-		if gotoWalkState.busy then return end
-		gotoWalkState.busy = true
+		if _G._agotoWalkState.busy then return end
+		_G._agotoWalkState.busy = true
 		task.spawn(function()
 			local ok, err = pcall(function()
-				updateCharacter()
-				if not Mouse or not Mouse.Hit then return end
-				local targetPos = Mouse.Hit.Position + Vector3.new(0, 3, 0)
-				gotoWalkState.target = targetPos
-				local waypoints = computePathTo(targetPos)
-				gotoWalkState.path = waypoints
-				gotoWalkState.active = #waypoints > 0
+				_G._aupdateCharacter()
+				if not _G._aMouse or not _G._aMouse.Hit then return end
+				local targetPos = _G._aMouse.Hit.Position + Vector3.new(0, 3, 0)
+				_G._agotoWalkState.target = targetPos
+				local waypoints = _G._acomputePathTo(targetPos)
+				_G._agotoWalkState.path = waypoints
+				_G._agotoWalkState.active = #waypoints > 0
 				if #waypoints > 0 and humanoid then
 					humanoid:MoveTo(waypoints[1])
-					gotoWalkState.lastMoveTo = tick()
+					_G._agotoWalkState.lastMoveTo = tick()
 				end
-				visualizeWaypoints(waypoints)
+				_G._avisualizeWaypoints(waypoints)
 			end)
 			if not ok and err then
 				warn("[GoToWalk] " .. tostring(err))
 			end
-			gotoWalkState.busy = false
+			_G._agotoWalkState.busy = false
 		end)
 	end
 end)
@@ -613,8 +614,8 @@ end)
 task.spawn(function()
 	while task.wait(0.4) do
 		if hitboxState.enabled then
-			for _, plr in ipairs(Players:GetPlayers()) do
-				if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+			for _, plr in ipairs(_G._aPlayers:Get_G._aPlayers()) do
+				if plr ~= _G._aLocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
 					local hrp = plr.Character.HumanoidRootPart
 					if hrp.Size.X ~= 15 then
 						hrp.Size = Vector3.new(15, 15, 15)
@@ -645,11 +646,11 @@ local protectionsState = {
 	lastHrpPosition = nil,
 }
 
-LocalPlayer.CharacterAdded:Connect(function(char)
+_G._aLocalPlayer.CharacterAdded:Connect(function(char)
 	local hum = char:WaitForChild("Humanoid")
 	hum.Died:Connect(function()
 		if not protectionsState.antiKill then return end
-		updateCharacter()
+		_G._aupdateCharacter()
 		if rootPart then
 			protectionsState.antiKillSavedCFrame = rootPart.CFrame
 		end
@@ -703,14 +704,14 @@ local function createAntiSeatSitWatcher()
 			if con then con:Disconnect() end
 		end)
 	end
-	if LocalPlayer.Character then
-		task.spawn(onCharacter, LocalPlayer.Character)
+	if _G._aLocalPlayer.Character then
+		task.spawn(onCharacter, _G._aLocalPlayer.Character)
 	end
-	return LocalPlayer.CharacterAdded:Connect(onCharacter)
+	return _G._aLocalPlayer.CharacterAdded:Connect(onCharacter)
 end
 
 local function createProtectionSwitch(name, label, y)
-	return createSwitch(protectionsScroll, label, y, function(on)
+	return _G._acreateSwitch(_G._aprotectionsScroll, label, y, function(on)
 		protectionsState[name] = on
 		if name == "antiSeat" then
 			if on then
@@ -722,10 +723,10 @@ local function createProtectionSwitch(name, label, y)
 					protectionsState.antiSeatSitWatcher:Disconnect()
 					protectionsState.antiSeatSitWatcher = nil
 				end
-				for _, obj in ipairs(Workspace:GetDescendants()) do
+				for _, obj in ipairs(_G._aWorkspace:GetDescendants()) do
 					neutralizeSeat(obj)
 				end
-				protectionsState.antiSeatWatcher = Workspace.DescendantAdded:Connect(function(obj)
+				protectionsState.antiSeatWatcher = _G._aWorkspace.DescendantAdded:Connect(function(obj)
 					if obj:IsA("Seat") or obj:IsA("VehicleSeat") then
 						neutralizeSeat(obj)
 					end
@@ -741,13 +742,13 @@ local function createProtectionSwitch(name, label, y)
 					protectionsState.antiSeatSitWatcher = nil
 				end
 				-- Restaurer TOUS les sièges neutralisés pour qu'on puisse se rassoir
-				for _, obj in ipairs(Workspace:GetDescendants()) do
+				for _, obj in ipairs(_G._aWorkspace:GetDescendants()) do
 					restoreSeat(obj)
 				end
 			end
 		end
 		if name == "antiTeleport" and on then
-			updateCharacter()
+			_G._aupdateCharacter()
 			if rootPart then
 				protectionsState.lastSafeCFrame = rootPart.CFrame
 				protectionsState.lastHrpPosition = rootPart.Position
@@ -763,8 +764,8 @@ createProtectionSwitch("antiFall", "Anti Fall", 136)
 createProtectionSwitch("antiKill", "Anti Kill / Spawn TP", 178)
 createProtectionSwitch("antiAFK", "Anti AFK (5 min)", 220)
 
-RunService.Heartbeat:Connect(function()
-	updateCharacter()
+_G._aRunService.Heartbeat:Connect(function()
+	_G._aupdateCharacter()
 	if not rootPart or not humanoid then return end
 
 	local pos = rootPart.Position
@@ -790,7 +791,7 @@ RunService.Heartbeat:Connect(function()
 	-- On fige le lastSafeCFrame pendant le fly et on donne une grâce de 0.4s après
 	-- l'arrêt du fly pour réinitialiser la baseline avant de comparer les deltas.
 	local function isAntiTpSuspended()
-		return flyState.flying or noclipState.enabled
+		return _G._aflyState.flying or _G._anoclipState.enabled
 	end
 
 	if protectionsState.antiTeleport then
@@ -843,7 +844,7 @@ task.spawn(function()
 		if protectionsState.antiAFK then
 			local now = tick()
 			if now - protectionsState.antiAFKLastAction >= 300 then
-				updateCharacter()
+				_G._aupdateCharacter()
 				if humanoid then
 					humanoid:Move(Vector3.new(0.1, 0, 0), false)
 					task.wait(0.15)
@@ -855,10 +856,10 @@ task.spawn(function()
 	end
 end)
 
-Lighting:GetPropertyChangedSignal("Ambient"):Connect(function()
+_G._aLighting:GetPropertyChangedSignal("Ambient"):Connect(function()
 	if fullbrightState.enabled then
-		Lighting.Ambient = Color3.new(1, 1, 1)
-		Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+		_G._aLighting.Ambient = Color3.new(1, 1, 1)
+		_G._aLighting.OutdoorAmbient = Color3.new(1, 1, 1)
 	end
 end)
 
@@ -874,7 +875,7 @@ serverScroll.ScrollBarThickness = 4
 serverScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 serverScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
 serverScroll.Parent = remotesPage
-createCorner(serverScroll, 4)
+_G._acreateCorner(serverScroll, 4)
 
 local serverLayout = Instance.new("UIListLayout")
 serverLayout.Padding = UDim.new(0, 6)
@@ -890,8 +891,8 @@ local function _wrapRemotes()
 	remoteWarn.BorderSizePixel = 0
 	remoteWarn.LayoutOrder = -100
 	remoteWarn.Parent = serverScroll
-	createCorner(remoteWarn, 6)
-	createStroke(remoteWarn, Color3.fromRGB(220, 80, 80), 1.5)
+	_G._acreateCorner(remoteWarn, 6)
+	_G._acreateStroke(remoteWarn, Color3.fromRGB(220, 80, 80), 1.5)
 
 	local warnTitle = Instance.new("TextLabel")
 	warnTitle.Size = UDim2.new(1, -16, 0, 22)
@@ -938,7 +939,7 @@ local function _wrapRemotes()
 			for _, obj in ipairs(workspace:GetDescendants()) do addRemote(obj) end
 		end)
 		pcall(function()
-			for _, obj in ipairs(game.Players.LocalPlayer:GetDescendants()) do addRemote(obj) end
+			for _, obj in ipairs(game._G._aPlayers._G._aLocalPlayer:GetDescendants()) do addRemote(obj) end
 		end)
 		pcall(function()
 			for _, obj in ipairs(game:GetService("StarterGui"):GetDescendants()) do addRemote(obj) end
@@ -960,7 +961,7 @@ local function _wrapRemotes()
 	remoteHeader.BorderSizePixel = 0
 	remoteHeader.LayoutOrder = -50
 	remoteHeader.Parent = serverScroll
-	createCorner(remoteHeader, 4)
+	_G._acreateCorner(remoteHeader, 4)
 
 	local remoteCount = Instance.new("TextLabel")
 	remoteCount.Size = UDim2.new(1, -50, 1, 0)
@@ -983,7 +984,7 @@ local function _wrapRemotes()
 	refreshRemotesBtn.TextSize = 14
 	refreshRemotesBtn.Font = Enum.Font.GothamBold
 	refreshRemotesBtn.Parent = remoteHeader
-	createCorner(refreshRemotesBtn, 4)
+	_G._acreateCorner(refreshRemotesBtn, 4)
 
 	-- Barre de recherche pour filtrer les remotes par nom
 	local remotesSearchBox = Instance.new("TextBox")
@@ -999,8 +1000,8 @@ local function _wrapRemotes()
 	remotesSearchBox.ClearTextOnFocus = false
 	remotesSearchBox.LayoutOrder = -40
 	remotesSearchBox.Parent = serverScroll
-	createCorner(remotesSearchBox, 6)
-	createStroke(remotesSearchBox, Color3.fromRGB(60, 60, 80), 1)
+	_G._acreateCorner(remotesSearchBox, 6)
+	_G._acreateStroke(remotesSearchBox, Color3.fromRGB(60, 60, 80), 1)
 
 	-- Container des cartes de remotes
 	local remoteListFrame = Instance.new("Frame")
@@ -1025,8 +1026,8 @@ local function _wrapRemotes()
 	card.BorderSizePixel = 0
 	card.LayoutOrder = 1
 	card.Parent = remoteListFrame
-	createCorner(card, 6)
-	createStroke(card, isFunction and Color3.fromRGB(255, 180, 80) or Color3.fromRGB(80, 180, 255), 1)
+	_G._acreateCorner(card, 6)
+	_G._acreateStroke(card, isFunction and Color3.fromRGB(255, 180, 80) or Color3.fromRGB(80, 180, 255), 1)
 	local cardPadding = Instance.new("UIPadding")
 	cardPadding.PaddingTop = UDim.new(0, 6)
 	cardPadding.PaddingBottom = UDim.new(0, 6)
@@ -1078,7 +1079,7 @@ local function _wrapRemotes()
 	argsBox.TextXAlignment = Enum.TextXAlignment.Left
 	argsBox.ClearTextOnFocus = false
 	argsBox.Parent = row
-	createCorner(argsBox, 4)
+	_G._acreateCorner(argsBox, 4)
 
 	local fireBtn = Instance.new("TextButton")
 	fireBtn.Name = "FireBtn"
@@ -1092,7 +1093,7 @@ local function _wrapRemotes()
 	fireBtn.TextSize = 12
 	fireBtn.Font = Enum.Font.GothamBold
 	fireBtn.Parent = row
-	createCorner(fireBtn, 4)
+	_G._acreateCorner(fireBtn, 4)
 
 	local resultLbl = Instance.new("TextLabel")
 	resultLbl.Name = "ResultLbl"
@@ -1266,8 +1267,8 @@ _wrapRemotes() -- Exécute le wrap (IIFE pattern pour limiter les 200 registers)
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
 local function buildRegistrySection(parentPage)
 	-- Refonte v38.14 : PAS de wrapper registryCard.
-	-- Tous les enfants (titre, subtitle, status, resultScroll) sont dans registryScroll DIRECTEMENT.
-	-- Chaque enfant a un LayoutOrder pour empiler verticalement via registryLayout (UIListLayout parent).
+	-- Tous les enfants (titre, subtitle, status, resultScroll) sont dans _G._aregistryScroll DIRECTEMENT.
+	-- Chaque enfant a un LayoutOrder pour empiler verticalement via _G._aregistryLayout (UIListLayout parent).
 	-- ResultScroll a une TAILLE FIXE (pas de scroll imbriqué foireux).
 
 local registryTitle = Instance.new("TextLabel")
@@ -1319,8 +1320,8 @@ resultScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 resultScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 resultScroll.LayoutOrder = 4
 resultScroll.Parent = registryScroll
-createCorner(resultScroll, 6)
-createStroke(resultScroll, Color3.fromRGB(60, 60, 80), 1)
+_G._acreateCorner(resultScroll, 6)
+_G._acreateStroke(resultScroll, Color3.fromRGB(60, 60, 80), 1)
 
 local resultLayout = Instance.new("UIListLayout")
 resultLayout.Padding = UDim.new(0, 6)
@@ -1404,8 +1405,8 @@ do
 		card.BorderSizePixel = 0
 		card.ZIndex = 51
 		card.Parent = overlay
-		createCorner(card, 10)
-		createStroke(card, Color3.fromRGB(120, 80, 255), 2)
+		_G._acreateCorner(card, 10)
+		_G._acreateStroke(card, Color3.fromRGB(120, 80, 255), 2)
 		local title = Instance.new("TextLabel")
 		title.Size = UDim2.new(1, 0, 0, 26)
 		title.BackgroundTransparency = 1
@@ -1438,7 +1439,7 @@ do
 		tagInput.ClearTextOnFocus = false
 		tagInput.ZIndex = 52
 		tagInput.Parent = card
-		createCorner(tagInput, 6)
+		_G._acreateCorner(tagInput, 6)
 		local listLabel = Instance.new("TextLabel")
 		listLabel.Size = UDim2.new(1, -16, 0, 50)
 		listLabel.Position = UDim2.new(0, 8, 0, 80)
@@ -1475,7 +1476,7 @@ do
 		addBtn.BorderSizePixel = 0
 		addBtn.ZIndex = 52
 		addBtn.Parent = card
-		createCorner(addBtn, 6)
+		_G._acreateCorner(addBtn, 6)
 		addBtn.MouseButton1Click:Connect(function()
 			if addTagToUser(userId, tagInput.Text) then tagInput.Text = "" ; refreshList() end
 		end)
@@ -1490,7 +1491,7 @@ do
 		removeBtn.BorderSizePixel = 0
 		removeBtn.ZIndex = 52
 		removeBtn.Parent = card
-		createCorner(removeBtn, 6)
+		_G._acreateCorner(removeBtn, 6)
 		removeBtn.MouseButton1Click:Connect(function()
 			local tags = getUserTags(userId)
 			if #tags > 0 then removeTagFromUser(userId, tags[#tags]) ; refreshList() end
@@ -1500,30 +1501,30 @@ do
 				if addTagToUser(userId, tagInput.Text) then tagInput.Text = "" ; refreshList() end
 			end
 		end)
-		local closeBtn = Instance.new("TextButton")
-		closeBtn.Size = UDim2.new(0, 30, 0, 30)
-		closeBtn.Position = UDim2.new(1, -36, 0, 6)
-		closeBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-		closeBtn.Text = "X"
-		closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-		closeBtn.Font = Enum.Font.GothamBold
-		closeBtn.TextSize = 14
-		closeBtn.BorderSizePixel = 0
-		closeBtn.ZIndex = 52
-		closeBtn.Parent = card
-		createCorner(closeBtn, 15)
-		closeBtn.MouseButton1Click:Connect(function() closeTagPopup() end)
+		local _G._acloseBtn = Instance.new("TextButton")
+		_G._acloseBtn.Size = UDim2.new(0, 30, 0, 30)
+		_G._acloseBtn.Position = UDim2.new(1, -36, 0, 6)
+		_G._acloseBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+		_G._acloseBtn.Text = "X"
+		_G._acloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		_G._acloseBtn.Font = Enum.Font.GothamBold
+		_G._acloseBtn.TextSize = 14
+		_G._acloseBtn.BorderSizePixel = 0
+		_G._acloseBtn.ZIndex = 52
+		_G._acloseBtn.Parent = card
+		_G._acreateCorner(_G._acloseBtn, 15)
+		_G._acloseBtn.MouseButton1Click:Connect(function() closeTagPopup() end)
 		_tagPopup = overlay
 	end
 
 	-- === DÉTECTION APPAREIL (seulement pour le local player) ===
 	function detectLocalDevice()
 		local ok, result = pcall(function()
-			local touchOn = UserInputService.TouchEnabled
-			local kbOn = UserInputService.KeyboardEnabled
-			local mouseOn = UserInputService.MouseEnabled
-			local gamepadOn = UserInputService.GamepadEnabled
-			local vrOn = UserInputService.VREnabled
+			local touchOn = _G._aUserInputService.TouchEnabled
+			local kbOn = _G._aUserInputService.KeyboardEnabled
+			local mouseOn = _G._aUserInputService.MouseEnabled
+			local gamepadOn = _G._aUserInputService.GamepadEnabled
+			local vrOn = _G._aUserInputService.VREnabled
 			if vrOn then return "🥽 VR (casque)"
 			elseif gamepadOn and not kbOn and not mouseOn then return "🎮 Console (manette)"
 			elseif touchOn and not kbOn and not mouseOn then return "📱 Mobile (tactile)"
@@ -1548,8 +1549,8 @@ local function renderResult(data, parent)
 	card.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 	card.BorderSizePixel = 0
 	card.Parent = parent
-	createCorner(card, 8)
-	createStroke(card, Color3.fromRGB(60, 60, 90), 1)
+	_G._acreateCorner(card, 8)
+	_G._acreateStroke(card, Color3.fromRGB(60, 60, 90), 1)
 
 	-- Badges VERIFIED / PREMIUM / BANNED en haut à droite de la carte
 	;(function()
@@ -1571,7 +1572,7 @@ local function renderResult(data, parent)
 			v.TextColor3 = Color3.fromRGB(220, 240, 255)
 			v.ZIndex = 5
 			v.Parent = card
-			createCorner(v, 4)
+			_G._acreateCorner(v, 4)
 		end
 		if hasPremium then
 			local p = Instance.new("TextLabel")
@@ -1586,7 +1587,7 @@ local function renderResult(data, parent)
 			p.TextColor3 = Color3.fromRGB(60, 40, 0)
 			p.ZIndex = 5
 			p.Parent = card
-			createCorner(p, 4)
+			_G._acreateCorner(p, 4)
 		end
 		if isBanned then
 			local b = Instance.new("TextLabel")
@@ -1601,7 +1602,7 @@ local function renderResult(data, parent)
 			b.TextColor3 = Color3.fromRGB(255, 220, 220)
 			b.ZIndex = 5
 			b.Parent = card
-			createCorner(b, 4)
+			_G._acreateCorner(b, 4)
 		end
 	end)()
 
@@ -1632,8 +1633,8 @@ local function renderResult(data, parent)
 		warnBar.BorderSizePixel = 0
 		warnBar.LayoutOrder = 0
 		warnBar.Parent = card
-		createCorner(warnBar, 6)
-		createStroke(warnBar, Color3.fromRGB(255, 150, 50), 1.2)
+		_G._acreateCorner(warnBar, 6)
+		_G._acreateStroke(warnBar, Color3.fromRGB(255, 150, 50), 1.2)
 		local wLbl = Instance.new("TextLabel")
 		wLbl.Size = UDim2.new(1, -16, 1, 0)
 		wLbl.Position = UDim2.new(0, 8, 0, 0)
@@ -1689,8 +1690,8 @@ local function renderResult(data, parent)
 	avatarHolder.BorderSizePixel = 0
 	avatarHolder.LayoutOrder = 2
 	avatarHolder.Parent = contentRow
-	createCorner(avatarHolder, 8)
-	createStroke(avatarHolder, Color3.fromRGB(120, 80, 255), 1.5)
+	_G._acreateCorner(avatarHolder, 8)
+	_G._acreateStroke(avatarHolder, Color3.fromRGB(120, 80, 255), 1.5)
 
 	-- Label "Chargement..." par-dessus tant que la photo n'est pas prête
 	local avatarLoading = Instance.new("TextLabel")
@@ -1716,7 +1717,7 @@ local function renderResult(data, parent)
 	avatarImg.Image = "" -- sera rempli après chargement
 	avatarImg.ZIndex = 2
 	avatarImg.Parent = avatarHolder
-	createCorner(avatarImg, 6)
+	_G._acreateCorner(avatarImg, 6)
 
 	-- Construire la liste des lignes (une par champ)
 	local friendsText = joinOrIndi(data.friendsList, ", ", 5)
@@ -1815,10 +1816,10 @@ local function renderResult(data, parent)
 	table.insert(lines, "  🏅 Badges           : " .. badgesText)
 	-- === LIVE (serveur actuel) : check via natives Roblox ===
 	table.insert(lines, "  ━━━━━━━━━━ LIVE (ce serveur) ━━━━━━━━━━")
-	if data.userId and Players then
+	if data.userId and _G._aPlayers then
 		local liveFound = false
 		pcall(function()
-			local target = Players:GetPlayerByUserId(data.userId)
+			local target = _G._aPlayers:GetPlayerByUserId(data.userId)
 			if target then
 				liveFound = true
 				local _ageDays = target.AccountAge or 0
@@ -1829,7 +1830,7 @@ local function renderResult(data, parent)
 				local _ping = "?"
 				pcall(function() _ping = tostring(math.floor((target.GetNetworkPing and target:GetNetworkPing() or 0) * 1000)) .. " ms" end)
 				local _loaded = (target.HasAppearanceLoaded and "Oui") or "Non"
-				local _isFriend = (target.IsFriendsWith and LocalPlayer and target:IsFriendsWith(LocalPlayer.UserId)) and "Oui" or "Non"
+				local _isFriend = (target.IsFriendsWith and _G._aLocalPlayer and target:IsFriendsWith(_G._aLocalPlayer.UserId)) and "Oui" or "Non"
 				local _charOk = target.Character ~= nil
 				local _humOk = _charOk and target.Character:FindFirstChildOfClass("Humanoid") ~= nil
 				local _hp = "?"
@@ -1921,7 +1922,7 @@ local function renderResult(data, parent)
 	end)
 
 	-- === Charger la photo thumbnail dans l'ImageLabel ===
-	-- Approche : URL Roblox directe (marche même quand Players:GetUserThumbnailAsync bloque)
+	-- Approche : URL Roblox directe (marche même quand _G._aPlayers:GetUserThumbnailAsync bloque)
 	-- Format: http://www.roblox.com/Thumbs/Avatar.ashx?x=150&y=150&userId={userId}
 	if data.userId then
 		local userId = data.userId
@@ -1975,7 +1976,7 @@ local function renderResult(data, parent)
 			btn.ZIndex = 6
 			btn.AutoButtonColor = true
 			btn.Parent = actionsRow
-			createCorner(btn, 6)
+			_G._acreateCorner(btn, 6)
 			if onClick then btn.MouseButton1Click:Connect(onClick) end
 			return btn
 		end
@@ -2027,10 +2028,10 @@ function runRegistrySearch(query)
 	end
 
 	task.spawn(function()
-		-- 1) Résoudre username -> userId via Players:GetUserIdFromNameAsync (NATUREL Roblox, pas d'API externe)
+		-- 1) Résoudre username -> userId via _G._aPlayers:GetUserIdFromNameAsync (NATUREL Roblox, pas d'API externe)
 		local userId, displayName, username
 		local ok, uid = pcall(function()
-			return Players:GetUserIdFromNameAsync(query)
+			return _G._aPlayers:GetUserIdFromNameAsync(query)
 		end)
 		if not ok or not uid or uid == 0 then
 			-- Pas trouvé : on peut quand même afficher le userId si l'user tape un nombre
@@ -2069,9 +2070,9 @@ function runRegistrySearch(query)
 		}
 		-- 2) Profil détaillé (helper multi-exécuteur : HttpGet, GetAsync, syn.request)
 		pcall(function()
-			local r = httpGet("https://users.roblox.com/v1/users/" .. userId)
+			local r = _G._ahttpGet("https://users.roblox.com/v1/users/" .. userId)
 			if r and r ~= "" then
-				local d2 = HttpService:JSONDecode(r)
+				local d2 = _G._aHttpService:JSONDecode(r)
 				if d2 then
 									data.created = d2.created
 									data.isBanned = d2.isBanned
@@ -2114,20 +2115,20 @@ function runRegistrySearch(query)
 			end
 		end)
 
-		-- 3) Avatar (via Players:GetUserThumbnailAsync, NATIF Roblox, pas besoin de HttpGet)
+		-- 3) Avatar (via _G._aPlayers:GetUserThumbnailAsync, NATIF Roblox, pas besoin de HttpGet)
 		pcall(function()
-			data.avatarUrl = Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+			data.avatarUrl = _G._aPlayers:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
 		end)
 		
 		-- 3b) Native Roblox data (no HTTP needed - works on ALL executors)
 		pcall(function()
 			-- Get display name via native API
-			local name = Players:GetNameFromUserIdAsync(userId)
+			local name = _G._aPlayers:GetNameFromUserIdAsync(userId)
 			if name and name ~= "" then data.displayName = name end
 		end)
 		pcall(function()
 			-- Check if user is online on THIS server
-			local player = Players:GetPlayerByUserId(userId)
+			local player = _G._aPlayers:GetPlayerByUserId(userId)
 			if player then
 				data.presenceType = 2 -- "En jeu"
 				data.presencePlaceId = tostring(game.PlaceId)
@@ -2145,7 +2146,7 @@ function runRegistrySearch(query)
 		end)
 		pcall(function()
 			-- Get account age in days (native)
-			local player = Players:GetPlayerByUserId(userId)
+			local player = _G._aPlayers:GetPlayerByUserId(userId)
 			if player then
 				data.accountAgeDays = player.AccountAge
 			end
@@ -2153,18 +2154,18 @@ function runRegistrySearch(query)
 
 		-- 4) Friends count
 		pcall(function()
-			local r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/friends/count")
+			local r = _G._ahttpGet("https://friends.roblox.com/v1/users/" .. userId .. "/friends/count")
 			if r and r ~= "" then
-				local d2 = HttpService:JSONDecode(r)
+				local d2 = _G._aHttpService:JSONDecode(r)
 				if d2 and d2.count then data.friendCount = d2.count end
 			end
 		end)
 
 		-- 5) Groupes
 		pcall(function()
-			local r = httpGet("https://users.roblox.com/v1/users/" .. userId .. "/groups")
+			local r = _G._ahttpGet("https://users.roblox.com/v1/users/" .. userId .. "/groups")
 			if r and r ~= "" then
-				local d2 = HttpService:JSONDecode(r)
+				local d2 = _G._aHttpService:JSONDecode(r)
 				if d2 and d2.data and #d2.data > 0 then
 					data.groups = {}
 					for i, g in ipairs(d2.data) do
@@ -2179,9 +2180,9 @@ function runRegistrySearch(query)
 
 		-- 6) Jeux
 			pcall(function()
-				local r = httpGet("https://games.roblox.com/v2/users/" .. userId .. "/games?sortOrder=Desc&limit=5")
+				local r = _G._ahttpGet("https://games.roblox.com/v2/users/" .. userId .. "/games?sortOrder=Desc&limit=5")
 				if r and r ~= "" then
-					local d2 = HttpService:JSONDecode(r)
+					local d2 = _G._aHttpService:JSONDecode(r)
 					if d2 and d2.data and #d2.data > 0 then
 						data.games = {}
 						for i, g in ipairs(d2.data) do
@@ -2194,9 +2195,9 @@ function runRegistrySearch(query)
 
 			-- 6b) Jeux favoris
 			pcall(function()
-				local r = httpGet("https://games.roblox.com/v1/users/" .. userId .. "/favorite/games?sortOrder=Desc&limit=5")
+				local r = _G._ahttpGet("https://games.roblox.com/v1/users/" .. userId .. "/favorite/games?sortOrder=Desc&limit=5")
 				if r and r ~= "" then
-					local d2 = HttpService:JSONDecode(r)
+					local d2 = _G._aHttpService:JSONDecode(r)
 					if d2 and d2.data and #d2.data > 0 then
 						data.favGames = {}
 						for i, g in ipairs(d2.data) do
@@ -2209,7 +2210,7 @@ function runRegistrySearch(query)
 
 			-- 6c) Premium (via API Roblox)
 			pcall(function()
-				local r = httpGet("https://premiumfeatures.roblox.com/v1/users/" .. userId .. "/validate-membership")
+				local r = _G._ahttpGet("https://premiumfeatures.roblox.com/v1/users/" .. userId .. "/validate-membership")
 				if r and r ~= "" then
 					local isPremium = (r == "true")
 					data.isPremium = isPremium
@@ -2218,35 +2219,35 @@ function runRegistrySearch(query)
 
 			-- 6d) Badges count
 			pcall(function()
-				local r = httpGet("https://badges.roblox.com/v1/users/" .. userId .. "/badges?limit=1&sortOrder=Desc")
+				local r = _G._ahttpGet("https://badges.roblox.com/v1/users/" .. userId .. "/badges?limit=1&sortOrder=Desc")
 				if r and r ~= "" then
-					local d2 = HttpService:JSONDecode(r)
+					local d2 = _G._aHttpService:JSONDecode(r)
 					if d2 and d2.data then data.badgeCount = #d2.data end
 				end
 			end)
 
 			-- 6e) Followers / Following count
 			pcall(function()
-				local r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/followings/count")
+				local r = _G._ahttpGet("https://friends.roblox.com/v1/users/" .. userId .. "/followings/count")
 				if r and r ~= "" then
-					local d2 = HttpService:JSONDecode(r)
+					local d2 = _G._aHttpService:JSONDecode(r)
 					if d2 and d2.count then data.followingCount = d2.count end
 				end
 			end)
 			pcall(function()
-				local r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/followers/count")
+				local r = _G._ahttpGet("https://friends.roblox.com/v1/users/" .. userId .. "/followers/count")
 				if r and r ~= "" then
-					local d2 = HttpService:JSONDecode(r)
+					local d2 = _G._aHttpService:JSONDecode(r)
 					if d2 and d2.count then data.followerCount = d2.count end
 				end
 			end)
 
 			-- 6f) Présence en temps réel (en ligne / en jeu / au studio)
 			pcall(function()
-				local body = HttpService:JSONEncode({userIds = {userId}})
-				local r = httpGet("https://presence.roblox.com/v1/presence/users?userIds=" .. tostring(userId))
+				local body = _G._aHttpService:JSONEncode({userIds = {userId}})
+				local r = _G._ahttpGet("https://presence.roblox.com/v1/presence/users?userIds=" .. tostring(userId))
 				if r and r ~= "" then
-					local d = HttpService:JSONDecode(r)
+					local d = _G._aHttpService:JSONDecode(r)
 					if d and d.userPresences and d.userPresences[1] then
 						local p = d.userPresences[1]
 						data.presenceType = p.userPresenceType
@@ -2260,9 +2261,9 @@ function runRegistrySearch(query)
 
 			-- 6g) Avatar items (ce qu'il porte)
 				pcall(function()
-					local r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/avatar")
+					local r = _G._ahttpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/avatar")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 then
 							data.avatarHatCount = d2.numHats or 0
 							data.avatarBody = d2.bodyColors and "Personnalisé" or "Classique"
@@ -2272,9 +2273,9 @@ function runRegistrySearch(query)
 
 				-- 6h) Currently wearing (accessoires actuellement équipés)
 				pcall(function()
-					local r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/currently-wearing")
+					local r = _G._ahttpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/currently-wearing")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 and d2.assetIds then
 							data.wearingCount = #d2.assetIds
 						end
@@ -2283,9 +2284,9 @@ function runRegistrySearch(query)
 
 				-- 6i) Tenues (outfits)
 				pcall(function()
-					local r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/outfits?page=1&itemsPerPage=10&isEditable=false")
+					local r = _G._ahttpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/outfits?page=1&itemsPerPage=10&isEditable=false")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 and d2.data and #d2.data > 0 then
 							data.outfits = {}
 							for i, o in ipairs(d2.data) do
@@ -2298,9 +2299,9 @@ function runRegistrySearch(query)
 
 				-- 6j) Historique des usernames (avec dates)
 				pcall(function()
-					local r = httpGet("https://users.roblox.com/v1/users/" .. userId .. "/username-history?limit=10&sortOrder=Desc")
+					local r = _G._ahttpGet("https://users.roblox.com/v1/users/" .. userId .. "/username-history?limit=10&sortOrder=Desc")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 and d2.data and #d2.data > 0 then
 							data.usernameHistory = {}
 							for i, h in ipairs(d2.data) do
@@ -2319,9 +2320,9 @@ function runRegistrySearch(query)
 
 				-- 6k) Groupes avec RÔLE (top 5)
 				pcall(function()
-					local r = httpGet("https://groups.roblox.com/v2/users/" .. userId .. "/groups/roles?includeLocked=true")
+					local r = _G._ahttpGet("https://groups.roblox.com/v2/users/" .. userId .. "/groups/roles?includeLocked=true")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 and d2.data and #d2.data > 0 then
 							data.groupsWithRole = {}
 							for i, g in ipairs(d2.data) do
@@ -2335,9 +2336,9 @@ function runRegistrySearch(query)
 
 				-- 6l) Amis (top 5)
 				pcall(function()
-					local r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/friends?page=1&itemsPerPage=5")
+					local r = _G._ahttpGet("https://friends.roblox.com/v1/users/" .. userId .. "/friends?page=1&itemsPerPage=5")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 and d2.data and #d2.data > 0 then
 							data.friendsList = {}
 							for i, f in ipairs(d2.data) do
@@ -2358,10 +2359,10 @@ function runRegistrySearch(query)
 					data.inventory = {}
 					for _, atype in ipairs(assetTypes) do
 						local ok, r = pcall(function()
-							return httpGet("https://inventory.roblox.com/v2/users/" .. userId .. "/inventory/" .. atype .. "?page=1&itemsPerPage=1&sortOrder=Desc")
+							return _G._ahttpGet("https://inventory.roblox.com/v2/users/" .. userId .. "/inventory/" .. atype .. "?page=1&itemsPerPage=1&sortOrder=Desc")
 						end)
 						if ok and r and r ~= "" then
-							local d2 = HttpService:JSONDecode(r)
+							local d2 = _G._aHttpService:JSONDecode(r)
 							if d2 and d2.totalCount then
 								data.inventory[atype] = d2.totalCount
 							end
@@ -2371,9 +2372,9 @@ function runRegistrySearch(query)
 
 				-- 6n) Last online timestamp
 				pcall(function()
-					local r = httpGet("https://presence.roblox.com/v1/presence/last-online?userId=" .. tostring(userId))
+					local r = _G._ahttpGet("https://presence.roblox.com/v1/presence/last-online?userId=" .. tostring(userId))
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 and d2.lastOnline then
 							data.lastOnline = d2.lastOnline
 							-- Format epoch ISO
@@ -2391,9 +2392,9 @@ function runRegistrySearch(query)
 
 				-- 6o) Email vérifié / statut 2FA
 				pcall(function()
-					local r = httpGet("https://accountinformation.roblox.com/v1/users/" .. userId .. "/email")
+					local r = _G._ahttpGet("https://accountinformation.roblox.com/v1/users/" .. userId .. "/email")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 then
 							data.hasEmail = d2.emailAddress and d2.emailAddress ~= "" or false
 							data.emailVerified = d2.verified or false
@@ -2403,9 +2404,9 @@ function runRegistrySearch(query)
 
 				-- 6p) Premium subscription details (date d'expiration)
 				pcall(function()
-					local r = httpGet("https://billing.roblox.com/v1/users/" .. userId .. "/subscription")
+					local r = _G._ahttpGet("https://billing.roblox.com/v1/users/" .. userId .. "/subscription")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 and d2.expirationDate then
 							data.premiumUntil = d2.expirationDate
 						end
@@ -2421,41 +2422,41 @@ function runRegistrySearch(query)
 
 				-- 6r) Trade activity (counts)
 				pcall(function()
-					local r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trade-privacy")
+					local r = _G._ahttpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trade-privacy")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 then
 							data.tradePrivacy = d2.tradePrivacy
 						end
 					end
 				end)
 				pcall(function()
-					local r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/inbound/count")
+					local r = _G._ahttpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/inbound/count")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 and d2.count then data.tradesInbound = d2.count end
 					end
 				end)
 				pcall(function()
-					local r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/outbound/count")
+					local r = _G._ahttpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/outbound/count")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 and d2.count then data.tradesOutbound = d2.count end
 					end
 				end)
 				-- 6s) Robux (economy)
 				pcall(function()
-					local r = httpGet("https://economy.roblox.com/v1/users/" .. userId .. "/currency")
+					local r = _G._ahttpGet("https://economy.roblox.com/v1/users/" .. userId .. "/currency")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 and d2.robux then data.robux = d2.robux end
 					end
 				end)
 				-- 6t) Badges list (names)
 				pcall(function()
-					local r = httpGet("https://badges.roblox.com/v1/users/" .. userId .. "/badges?limit=20&sortOrder=Desc")
+					local r = _G._ahttpGet("https://badges.roblox.com/v1/users/" .. userId .. "/badges?limit=20&sortOrder=Desc")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 and d2.data and #d2.data > 0 then
 							data.badgesList = {}
 							for i, b in ipairs(d2.data) do
@@ -2467,16 +2468,16 @@ function runRegistrySearch(query)
 				end)
 				-- 6u) Description complete
 				pcall(function()
-					local r = httpGet("https://accountinformation.roblox.com/v1/description/" .. userId)
+					local r = _G._ahttpGet("https://accountinformation.roblox.com/v1/description/" .. userId)
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 and d2.description then data.blurb = d2.description end
 					end
 				end)
 				pcall(function()
-					local r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/active/count")
+					local r = _G._ahttpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/active/count")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						local d2 = _G._aHttpService:JSONDecode(r)
 						if d2 and d2.count then data.tradesActive = d2.count end
 					end
 				end)
@@ -2543,7 +2544,7 @@ function runRegistrySearch(query)
 				-- === DÉTECTION APPAREIL (seulement pour le local player) ===
 				-- Roblox n'expose pas le device des autres joueurs au LocalScript
 				-- On peut détecter le nôtre via UserInputService
-				if userId and Players.LocalPlayer and userId == Players.LocalPlayer.UserId then
+				if userId and _G._aPlayers.LocalPlayer and userId == _G._aPlayers._G._aLocalPlayer.UserId then
 					data.deviceHint = detectLocalDevice()
 				end
 
@@ -2554,10 +2555,10 @@ function runRegistrySearch(query)
 
 end
 -- Construit la section Registry dans l'onglet Registry (parentPage = registryPage)
--- Tout le contenu (searchBox, searchBtn, registryCard) est reparenté vers registryScroll à la fin
-buildRegistrySection(registryPage)
+-- Tout le contenu (searchBox, searchBtn, registryCard) est reparenté vers _G._aregistryScroll à la fin
+buildRegistrySection(_G._aregistryPage)
 
--- Reparent: tous les enfants directs de registryPage (sauf registryScroll) vont dans registryScroll
+-- Reparent: tous les enfants directs de _G._aregistryPage (sauf registryScroll) vont dans registryScroll
 -- Wrap dans une IIFE anonyme avec ';' pour économiser les registres du chunk
 ;(function(rp, rs, rl)
 	for _, child in ipairs(rp:GetChildren()) do
@@ -2572,32 +2573,32 @@ buildRegistrySection(registryPage)
 	rl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 		rs.CanvasSize = UDim2.new(0, 0, 0, rl.AbsoluteContentSize.Y + 10)
 	end)
-end)(registryPage, registryScroll, registryLayout)
+end)(_G._aregistryPage, _G._aregistryScroll, registryLayout)
 task.defer(function()
-	registryScroll.CanvasSize = UDim2.new(0, 0, 0, registryLayout.AbsoluteContentSize.Y + 10)
+	_G._aregistryScroll.CanvasSize = UDim2.new(0, 0, 0, _G._aregistryLayout.AbsoluteContentSize.Y + 10)
 end)
 
 -- (L'update des stats FPS/ping est maintenant dans la page Joueurs)
 
 function giveGhostTool()
-	if LocalPlayer.Backpack:FindFirstChild("Invisible_V4") or (character and character:FindFirstChild("Invisible_V4")) then return end
-	for _, v in ipairs(LocalPlayer.PlayerGui:GetChildren()) do
+	if _G._aLocalPlayer.Backpack:FindFirstChild("Invisible_V4") or (character and character:FindFirstChild("Invisible_V4")) then return end
+	for _, v in ipairs(_G._aLocalPlayer.PlayerGui:GetChildren()) do
 		if v:IsA("ScreenGui") and (v.Name:find("Chronos") or v.Name:find("Ghost")) then v:Destroy() end
 	end
 
 	local tool = Instance.new("Tool")
 	tool.Name = "Invisible_V4"
 	tool.RequiresHandle = false
-	tool.Parent = LocalPlayer:WaitForChild("Backpack")
+	tool.Parent = _G._aLocalPlayer:WaitForChild("Backpack")
 
 	local isInvisible = false
 	local ghostChar = nil
 	local ghostConn = nil
-	local ghostMouse = LocalPlayer:GetMouse()
+	local ghostMouse = _G._aLocalPlayer:Get_G._aMouse()
 	local OFFSET_UNDER = -30
 
 	local function remoteClick()
-		local target = ghostMouse.Target
+		local target = ghost_G._aMouse.Target
 		if target then
 			local detector = target:FindFirstChildOfClass("ClickDetector") or (target.Parent and target.Parent:FindFirstChildOfClass("ClickDetector"))
 			if detector then pcall(function() fireclickdetector(detector) end) end
@@ -2605,7 +2606,7 @@ function giveGhostTool()
 	end
 
 	tool.Activated:Connect(function()
-		local char = LocalPlayer.Character
+		local char = _G._aLocalPlayer.Character
 		if not char then return end
 		if not isInvisible then
 			isInvisible = true
@@ -2625,14 +2626,14 @@ function giveGhostTool()
 			local targetCf = char:GetPivot() * CFrame.new(0, OFFSET_UNDER, 0)
 			for _ = 1, 3 do
 				char:PivotTo(targetCf)
-				RunService.Heartbeat:Wait()
+				_G._aRunService.Heartbeat:Wait()
 			end
 			if char.PrimaryPart then char.PrimaryPart.Anchored = true end
 			for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
-			Camera.CameraSubject = gh
-			ghostConn = RunService.RenderStepped:Connect(function()
-				if isInvisible and ghostChar and LocalPlayer.Character then
-					local realHum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+			_G._aCamera.CameraSubject = gh
+			ghostConn = _G._aRunService.RenderStepped:Connect(function()
+				if isInvisible and ghostChar and _G._aLocalPlayer.Character then
+					local realHum = _G._aLocalPlayer.Character:FindFirstChildOfClass("Humanoid")
 					local ghostHum = ghostChar:FindFirstChildOfClass("Humanoid")
 					if realHum and ghostHum then
 						ghostHum:Move(realHum.MoveDirection, false)
@@ -2652,14 +2653,14 @@ function giveGhostTool()
 				end
 				for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = true end end
 				char:PivotTo(lastPos)
-				Camera.CameraSubject = char:FindFirstChildOfClass("Humanoid")
+				_G._aCamera.CameraSubject = char:FindFirstChildOfClass("Humanoid")
 				ghostChar:Destroy()
 				ghostChar = nil
 			end
 		end
 	end)
 
-	UserInputService.InputBegan:Connect(function(input, gpe)
+	_G._aUserInputService.InputBegan:Connect(function(input, gpe)
 		if not gpe and isInvisible and input.UserInputType == Enum.UserInputType.MouseButton1 then
 			remoteClick()
 		end
@@ -2667,7 +2668,7 @@ function giveGhostTool()
 end
 
 function giveElevenTool()
-	if LocalPlayer.Backpack:FindFirstChild("Eleven_Master_PZ70") or (character and character:FindFirstChild("Eleven_Master_PZ70")) then return end
+	if _G._aLocalPlayer.Backpack:FindFirstChild("Eleven_Master_PZ70") or (character and character:FindFirstChild("Eleven_Master_PZ70")) then return end
 	local tool = Instance.new("Tool")
 	tool.Name = "Eleven_Master_PZ70"
 	tool.RequiresHandle = true
@@ -2677,7 +2678,7 @@ function giveElevenTool()
 	h.Transparency = 1
 	h.CanCollide = false
 	h.Parent = tool
-	tool.Parent = LocalPlayer:WaitForChild("Backpack")
+	tool.Parent = _G._aLocalPlayer:WaitForChild("Backpack")
 
 	local targetPart = nil
 	local bp, bg = nil, nil
@@ -2688,14 +2689,14 @@ function giveElevenTool()
 	local ghostActive = false
 	local ghostChar = nil
 	local ghostConn = nil
-	local eMouse = LocalPlayer:GetMouse()
+	local eMouse = _G._aLocalPlayer:Get_G._aMouse()
 	local heldConn = nil
 
 	local function isPlayerPart(part)
 		if not part then return false end
 		local model = part:FindFirstAncestorOfClass("Model")
 		if model then
-			for _, plr in ipairs(Players:GetPlayers()) do
+			for _, plr in ipairs(_G._aPlayers:Get_G._aPlayers()) do
 				if plr.Character == model then return true end
 			end
 		end
@@ -2703,7 +2704,7 @@ function giveElevenTool()
 	end
 
 	local function findTarget()
-		local tgt = eMouse.Target
+		local tgt = e_G._aMouse.Target
 		if tgt and tgt:IsA("BasePart") and not tgt.Anchored and not isPlayerPart(tgt) then
 			local model = tgt:FindFirstAncestorOfClass("Model")
 			if model then
@@ -2726,28 +2727,28 @@ function giveElevenTool()
 		if bg then bg:Destroy() bg = nil end
 		targetPart = nil
 		rotationMode = false
-		LocalPlayer.CameraMaxZoomDistance = 100
-		LocalPlayer.CameraMinZoomDistance = 0.5
+		_G._aLocalPlayer.CameraMaxZoomDistance = 100
+		_G._aLocalPlayer.CameraMinZoomDistance = 0.5
 	end
 
-	RunService.RenderStepped:Connect(function()
+	_G._aRunService.RenderStepped:Connect(function()
 		if active and targetPart and bp then
 			if not targetPart.Parent then cleanupHolding() return end
-			LocalPlayer.CameraMaxZoomDistance = lockedZoom
-			LocalPlayer.CameraMinZoomDistance = lockedZoom
+			_G._aLocalPlayer.CameraMaxZoomDistance = lockedZoom
+			_G._aLocalPlayer.CameraMinZoomDistance = lockedZoom
 			if not rotationMode then
-				local ray = eMouse.UnitRay
+				local ray = e_G._aMouse.UnitRay
 				bp.Position = ray.Origin + ray.Direction * distance
 				bp.P = 20000
 				bp.MaxForce = Vector3.one * math.huge
 			end
 		elseif active then
-			LocalPlayer.CameraMaxZoomDistance = 100
-			LocalPlayer.CameraMinZoomDistance = 0.5
+			_G._aLocalPlayer.CameraMaxZoomDistance = 100
+			_G._aLocalPlayer.CameraMinZoomDistance = 0.5
 		end
 	end)
 
-	eMouse.Button1Down:Connect(function()
+	e_G._aMouse.Button1Down:Connect(function()
 		if active then
 			if targetPart then
 				cleanupHolding()
@@ -2759,8 +2760,8 @@ function giveElevenTool()
 				targetPart.Anchored = false
 				targetPart.CanCollide = false
 				targetPart.CanTouch = false
-				local r = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-				if r then lockedZoom = (Camera.CFrame.Position - r.Position).Magnitude end
+				local r = _G._aLocalPlayer.Character and _G._aLocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+				if r then lockedZoom = (_G._aCamera.CFrame.Position - r.Position).Magnitude end
 				bp = Instance.new("BodyPosition", targetPart)
 				bp.MaxForce = Vector3.one * math.huge
 				bp.P = 20000
@@ -2773,7 +2774,7 @@ function giveElevenTool()
 				bg.CFrame = targetPart.CFrame
 				-- anti-ownership steal
 				if targetPart:IsA("BasePart") then
-					pcall(function() targetPart:SetNetworkOwner(LocalPlayer) end)
+					pcall(function() targetPart:SetNetworkOwner(_G._aLocalPlayer) end)
 				end
 				-- reset collisions si le part est détruit/reparenté
 				heldConn = targetPart.AncestryChanged:Connect(function(_, newParent)
@@ -2783,15 +2784,15 @@ function giveElevenTool()
 		end
 	end)
 
-	eMouse.Button1Up:Connect(function()
+	e_G._aMouse.Button1Up:Connect(function()
 		cleanupHolding()
 	end)
 
-	UserInputService.InputBegan:Connect(function(input, processed)
+	_G._aUserInputService.InputBegan:Connect(function(input, processed)
 		if processed then return end
 		if input.KeyCode == Enum.KeyCode.Nine then
 			ghostActive = not ghostActive
-			local char = LocalPlayer.Character
+			local char = _G._aLocalPlayer.Character
 			local root = char and char:FindFirstChild("HumanoidRootPart")
 			if not char or not root then return end
 			if ghostActive then
@@ -2803,13 +2804,13 @@ function giveElevenTool()
 				end
 				ghostChar.Parent = Workspace
 				root.Anchored = true
-				ghostConn = RunService.RenderStepped:Connect(function()
+				ghostConn = _G._aRunService.RenderStepped:Connect(function()
 					if ghostChar and char:FindFirstChildOfClass("Humanoid") then
 						local gcHum = ghostChar:FindFirstChildOfClass("Humanoid")
 						if gcHum then
 							gcHum:Move(char.Humanoid.MoveDirection, false)
 							if char.Humanoid.Jump then gcHum.Jump = true end
-							Camera.CameraSubject = gcHum
+							_G._aCamera.CameraSubject = gcHum
 							for _, part in ipairs(ghostChar:GetDescendants()) do
 								if part:IsA("BasePart") then part.CanCollide = false end
 							end
@@ -2821,7 +2822,7 @@ function giveElevenTool()
 				if ghostChar then
 					root.Anchored = false
 					root.CFrame = ghostChar:FindFirstChild("HumanoidRootPart") and ghostChar.HumanoidRootPart.CFrame or root.CFrame
-					Camera.CameraSubject = char:FindFirstChildOfClass("Humanoid")
+					_G._aCamera.CameraSubject = char:FindFirstChildOfClass("Humanoid")
 					ghostChar:Destroy()
 					ghostChar = nil
 				end
@@ -2837,13 +2838,13 @@ function giveElevenTool()
 		end
 	end)
 
-	eMouse.WheelForward:Connect(function()
+	e_G._aMouse.WheelForward:Connect(function()
 		if active and targetPart then
 			if rotationMode and bg then bg.CFrame = bg.CFrame * CFrame.Angles(math.rad(15), 0, 0)
 			else distance = math.clamp(distance + 5, 5, 300) end
 		end
 	end)
-	eMouse.WheelBackward:Connect(function()
+	e_G._aMouse.WheelBackward:Connect(function()
 		if active and targetPart then
 			if rotationMode and bg then bg.CFrame = bg.CFrame * CFrame.Angles(math.rad(-15), 0, 0)
 			else distance = math.clamp(distance - 5, 5, 300) end
@@ -2857,12 +2858,12 @@ function giveElevenTool()
 	end)
 end
 function giveSpiderTool()
-	if LocalPlayer.Backpack:FindFirstChild("SpiderTool") or (character and character:FindFirstChild("SpiderTool")) then return end
+	if _G._aLocalPlayer.Backpack:FindFirstChild("SpiderTool") or (character and character:FindFirstChild("SpiderTool")) then return end
 
 	local tool = Instance.new("Tool")
 	tool.Name = "SpiderTool"
 	tool.RequiresHandle = false
-	tool.Parent = LocalPlayer:WaitForChild("Backpack")
+	tool.Parent = _G._aLocalPlayer:WaitForChild("Backpack")
 
 	local connection = nil
 	local jumpConnection = nil
@@ -2873,7 +2874,7 @@ function giveSpiderTool()
 	local bodyVelocity, bodyGyro, attachment = nil, nil, nil
 
 	tool.Equipped:Connect(function()
-		local char = LocalPlayer.Character
+		local char = _G._aLocalPlayer.Character
 		if not char then return end
 		local root = char:WaitForChild("HumanoidRootPart")
 		local hum = char:WaitForChild("Humanoid")
@@ -2900,7 +2901,7 @@ function giveSpiderTool()
 		params.FilterDescendantsInstances = {char, tool}
 		params.FilterType = Enum.RaycastFilterType.Exclude
 
-		jumpConnection = UserInputService.JumpRequest:Connect(function()
+		jumpConnection = _G._aUserInputService.JumpRequest:Connect(function()
 			if isClimbing and not jumpCooldown then
 				jumpCooldown = true
 				isClimbing = false
@@ -2913,7 +2914,7 @@ function giveSpiderTool()
 			end
 		end)
 
-		connection = RunService.RenderStepped:Connect(function(deltaTime)
+		connection = _G._aRunService.RenderStepped:Connect(function(deltaTime)
 			if jumpCooldown then
 				hum.AutoRotate = true
 				return
@@ -2924,13 +2925,13 @@ function giveSpiderTool()
 			local up = root.CFrame.UpVector
 			local right = root.CFrame.RightVector
 
-			local rayForward = Workspace:Raycast(pos, look * 4.5, params)
-			local rayBackward = Workspace:Raycast(pos, -look * 4.5, params)
-			local rayDown = Workspace:Raycast(pos, -up * 8, params)
-			local rayOuterFwd = Workspace:Raycast(pos + look * 3.5, (-up * 3 - look * 2).Unit * 12, params)
-			local rayOuterBack = Workspace:Raycast(pos - look * 3.5, (-up * 3 + look * 2).Unit * 12, params)
-			local rayOuterRight = Workspace:Raycast(pos + right * 3.5, (-up * 3 - right * 2).Unit * 12, params)
-			local rayOuterLeft = Workspace:Raycast(pos - right * 3.5, (-up * 3 + right * 2).Unit * 12, params)
+			local rayForward = _G._aWorkspace:Raycast(pos, look * 4.5, params)
+			local rayBackward = _G._aWorkspace:Raycast(pos, -look * 4.5, params)
+			local rayDown = _G._aWorkspace:Raycast(pos, -up * 8, params)
+			local rayOuterFwd = _G._aWorkspace:Raycast(pos + look * 3.5, (-up * 3 - look * 2).Unit * 12, params)
+			local rayOuterBack = _G._aWorkspace:Raycast(pos - look * 3.5, (-up * 3 + look * 2).Unit * 12, params)
+			local rayOuterRight = _G._aWorkspace:Raycast(pos + right * 3.5, (-up * 3 - right * 2).Unit * 12, params)
+			local rayOuterLeft = _G._aWorkspace:Raycast(pos - right * 3.5, (-up * 3 + right * 2).Unit * 12, params)
 
 			local hitNormal, hitPosition, isAttached = Vector3.new(0, 1, 0), pos, false
 
@@ -3014,7 +3015,7 @@ function giveSpiderTool()
 		isClimbing = false
 		jumpCooldown = false
 		smoothedNormal = Vector3.new(0, 1, 0)
-		local char = LocalPlayer.Character
+		local char = _G._aLocalPlayer.Character
 		local hum = char and char:FindFirstChildOfClass("Humanoid")
 		local root = char and char:FindFirstChild("HumanoidRootPart")
 		if hum then
@@ -3044,15 +3045,15 @@ end
 		elseif m == ";unfly" then _fly.set(false)
 		elseif m == ";noclip" then _noclip.set(true)
 		elseif m == ";unnoclip" then _noclip.set(false)
-		elseif m == ";esp" then _esp.enabled = true refreshESP()
-		elseif m == ";unesp" then _esp.enabled = false clearESP()
+		elseif m == ";esp" then _esp.enabled = true _G._arefreshESP()
+		elseif m == ";unesp" then _esp.enabled = false _G._aclearESP()
 		elseif m == ";fullbright" then _fullbright.set(true)
 		elseif m == ";unfullbright" then _fullbright.set(false)
 		elseif m == ";zerog" then _zeroG.set(true)
 		elseif m == ";unzerog" then _zeroG.set(false)
 		end
 	end)
-end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlayer)
+end)(_G._aflySwitch, _G._anoclipSwitch, _G._aespState, fullbrightSwitch, _G._azeroGSwitch, LocalPlayer)
 
 -- ============= CRÉDITS =============
 ;(function(_mainFrame)
@@ -3065,54 +3066,54 @@ end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlay
 	credits.TextSize = 11
 	credits.TextColor3 = Color3.fromRGB(140, 140, 180)
 	credits.Parent = _mainFrame
-end)(mainFrame)
+end)(_G._amainFrame)
 
 -- BOOT SAFE 3 LAYERS:
 -- Layer 1: reveal immédiat à 0.5s (filet de sécurité absolu)
 -- Layer 2: reveal à 3s si pas encore visible (fallback)
--- Layer 3: switchTab après reveal (parse-time IIFE) + bootSequence call explicite
-;(function(_pages, _switchTab)
+-- Layer 3: _G._aswitchTab après reveal (parse-time IIFE) + _G._abootSequence call explicite
+;(function(__G._apages, _switchTab)
 	-- LAYER 1: reveal immédiat à 0.5s
 	task.delay(0.5, function()
 		pcall(function()
-			if mainFrame and not mainFrame.Visible then
-				mainFrame.Visible = true
+			if _G._amainFrame and not _G._amainFrame.Visible then
+				_G._amainFrame.Visible = true
 			end
 		end)
 	end)
-	-- LAYER 2: switchTab Joueurs
-	pcall(function() _switchTab("Home") end)
+	-- LAYER 2: _G._aswitchTab Joueurs
+	pcall(function() __G._aswitchTab("Home") end)
 		-- LAYER 3: fallback à 3s (au cas où)
 		task.delay(3, function()
 			pcall(function()
-				if mainFrame and not mainFrame.Visible then
-					mainFrame.Visible = true
+				if _G._amainFrame and not _G._amainFrame.Visible then
+					_G._amainFrame.Visible = true
 				end
 				if _pages and _pages["Home"] and not _pages["Home"].Visible then
-					pcall(function() _switchTab("Home") end)
+					pcall(function() __G._aswitchTab("Home") end)
 			end
 		end)
 	end)
-end)(pages, switchTab)
+end)(_G._apages, switchTab)
 
 -- FALLBACK absolu: si l'intro n'a jamais révélé le panel, le forcer visible + onglet Joueurs après 5s
 task.delay(5, function()
 	pcall(function()
-		if mainFrame and not mainFrame.Visible then
+		if _G._amainFrame and not _G._amainFrame.Visible then
 			warn("[AGORA] Fallback reveal: panel forcé visible")
-			mainFrame.Visible = true
+			_G._amainFrame.Visible = true
 		end
-		if pages and pages["Home"] and not pages["Home"].Visible then
-				switchTab("Home")
+		if _G._apages and pages["Home"] and not pages["Home"].Visible then
+				_G._aswitchTab("Home")
 		end
 	end)
 end)
 
 -- Lancer l'intro cinéma si on veut (désactivée par défaut car elle bloque le fallback)
--- pcall(function() bootSequence(function()
--- 	pcall(function() mainFrame.Visible = true end)
--- 	switchTab("Joueurs")
+-- pcall(function() _G._abootSequence(function()
+-- 	pcall(function() _G._amainFrame.Visible = true end)
+-- 	_G._aswitchTab("Joueurs")
 -- end) end)
 
 end
-_buildPanel()
+_G._a_buildPanel()

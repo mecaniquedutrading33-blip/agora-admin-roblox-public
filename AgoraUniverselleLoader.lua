@@ -1,34 +1,19 @@
--- Agora Universelle Hub - Loader (v39.15)
--- Ce loader charge le panel en 2 parties pour eviter les limites de taille des executeurs
-
-local function loadPart(url)
-	local ok, code = pcall(function() return game:HttpGet(url) end)
-	if ok and code and #code > 100 then return code end
-	-- Fallback
-	ok, code = pcall(function() return HttpService:GetAsync(url) end)
-	if ok and code and #code > 100 then return code end
-	return nil
+-- Agora Universelle Hub - Loader v5
+local B="https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file="
+local C="&_="..math.random(100000,999999)
+local function L(u)
+	local o,c=pcall(function()return game:HttpGet(u)end)
+	if o and c and #c>100 then
+		local f,e=loadstring(c)
+		if f then
+			local o2,e2=pcall(f)
+			if not o2 then warn("[A]"..tostring(e2))end
+			return o2
+		else warn("[A]ls:"..tostring(e))end
+	end
+	return false
 end
-
-local BASE = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file="
-local nocache = "&_=" .. math.random(100000, 999999)
-
-local part1 = loadPart(BASE .. "AgoraPart1.lua" .. nocache)
-if not part1 then
-	warn("[AGORA] Erreur: impossible de charger la partie 1")
-	return
-end
-
-local part2 = loadPart(BASE .. "AgoraPart2.lua" .. nocache)
-if not part2 then
-	warn("[AGORA] Erreur: impossible de charger la partie 2")
-	return
-end
-
-local fullCode = part1 .. "\n" .. part2
-local ok, err = pcall(loadstring, fullCode)
-if ok then
-	err() -- execute
-else
-	warn("[AGORA] Erreur loadstring: " .. tostring(err))
-end
+local o1=L(B.."AgoraPart1.lua"..C)
+if not o1 then warn("[A]P1 fail");return end
+local o2=L(B.."AgoraPart2.lua"..C)
+if not o2 then warn("[A]P2 fail")end
