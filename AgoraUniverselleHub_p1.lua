@@ -84,6 +84,7 @@ loadingLogo.Text = "AGORA"
 loadingLogo.Font = Enum.Font.GothamBold
 loadingLogo.TextSize = 48
 loadingLogo.TextColor3 = Color3.fromRGB(60, 180, 255)
+loadingLogo.TextTransparency = 1
 loadingLogo.TextXAlignment = Enum.TextXAlignment.Center
 loadingLogo.Parent = loadingBg
 
@@ -95,6 +96,7 @@ loadingSub.Text = "UNIVERSELLE HUB"
 loadingSub.Font = Enum.Font.Gotham
 loadingSub.TextSize = 18
 loadingSub.TextColor3 = Color3.fromRGB(120, 120, 140)
+loadingSub.TextTransparency = 1
 loadingSub.TextXAlignment = Enum.TextXAlignment.Center
 loadingSub.Parent = loadingBg
 
@@ -125,18 +127,18 @@ loadingText.Text = "Chargement..."
 loadingText.Font = Enum.Font.Gotham
 loadingText.TextSize = 13
 loadingText.TextColor3 = Color3.fromRGB(100, 100, 120)
+loadingText.TextTransparency = 1
 loadingText.TextXAlignment = Enum.TextXAlignment.Center
 loadingText.Parent = loadingBg
 
 -- Loading dots animation
 local dots = Instance.new("TextLabel")
 dots.Size = UDim2.new(0, 300, 0, 20)
-dots.Position = UDim2.new(0.5, -150, 0.5, 35)
-dots.BackgroundTransparency = 1
 dots.Text = ""
 dots.Font = Enum.Font.Gotham
 dots.TextSize = 20
 dots.TextColor3 = Color3.fromRGB(60, 180, 255)
+dots.TextTransparency = 1
 dots.TextXAlignment = Enum.TextXAlignment.Center
 dots.Parent = loadingBg
 
