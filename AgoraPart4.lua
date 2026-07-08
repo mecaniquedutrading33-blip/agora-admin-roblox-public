@@ -1,5 +1,5 @@
 -- ============= CHAT COMMANDS =============
-function AgoraBuild_CHAT_COMMANDS()
+function _G.AgoraBuild_CHAT_COMMANDS()
 -- ============= CHAT COMMANDS =============
 -- Wrap dans IIFE avec paramètres pour éviter la limite d'upvalues (200)
 do (function(_fly, _noclip, _esp, _fullbright, _zeroG, _localPlayer)
@@ -24,7 +24,7 @@ task.wait(0.05)
 end
 
 -- ============= CRÉDITS =============
-function AgoraBuild_CREDITS()
+function _G.AgoraBuild_CREDITS()
 -- ============= CRÉDITS =============
 do (function(_mainFrame)
 	local credits = Instance.new("TextLabel")

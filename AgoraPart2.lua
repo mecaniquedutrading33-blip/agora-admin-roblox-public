@@ -1,5 +1,5 @@
 -- ============= REGISTRY SCROLL =============
-function AgoraBuild_REGISTRY_SCROLL()
+function _G.AgoraBuild_REGISTRY_SCROLL()
 -- ============= REGISTRY SCROLL =============
 -- registryScroll commence juste après la search box + un peu de gap pour les suggestions
 registryScroll = Instance.new("ScrollingFrame")
@@ -470,7 +470,7 @@ task.wait(0.05)
 end
 
 -- ============= JOUEURS =============
-function AgoraBuild_JOUEURS()
+function _G.AgoraBuild_JOUEURS()
 -- ============= JOUEURS =============
 playerCards = {}
 playerSearchQuery = "" -- query actuelle (vide = pas de filtre)
@@ -1954,7 +1954,7 @@ task.wait(0.05)
 end
 
 -- ============= ESP =============
-function AgoraBuild_ESP()
+function _G.AgoraBuild_ESP()
 -- ============= ESP =============
 espFolder = Instance.new("Folder")
 espFolder.Name = "PanelESP"
@@ -2180,7 +2180,7 @@ task.wait(0.05)
 end
 
 -- ============= ANIMATIONS =============
-function AgoraBuild_ANIMATIONS()
+function _G.AgoraBuild_ANIMATIONS()
 -- ============= ANIMATIONS =============
 function typewriterEffect(label, text, speed)
 	speed = speed or 0.02
@@ -2755,7 +2755,7 @@ task.wait(0.05)
 end
 
 -- ============= MOVE =============
-function AgoraBuild_MOVE()
+function _G.AgoraBuild_MOVE()
 -- ============= MOVE =============
 flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
 noclipState = { enabled = false }

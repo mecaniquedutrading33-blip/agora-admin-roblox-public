@@ -1,5 +1,5 @@
 -- ============= AUTO CLICKER =============
-function AgoraBuild_AUTO_CLICKER()
+function _G.AgoraBuild_AUTO_CLICKER()
 -- ============= AUTO CLICKER =============
 autoClickState = {
 	toolActive = false,   -- le switch (faux tool dans le backpack)
@@ -965,7 +965,7 @@ task.wait(0.05)
 end
 
 -- ============= EXTRA =============
-function AgoraBuild_EXTRA()
+function _G.AgoraBuild_EXTRA()
 -- ============= EXTRA =============
 fullbrightState = { enabled = false, old = {} }
 clickTPState = { enabled = false }
@@ -1205,7 +1205,7 @@ task.wait(0.05)
 end
 
 -- ============= AIMBOT =============
-function AgoraBuild_AIMBOT()
+function _G.AgoraBuild_AIMBOT()
 -- ============= AIMBOT =============
 -- Verrouille la souris sur la TÊTE du joueur le plus proche du CENTRE de l'écran
 -- - Filtre "pas à travers les murs" : raycast camera → head, vérifie qu'on touche le character
@@ -1608,7 +1608,7 @@ task.wait(0.05)
 end
 
 -- ============= PROTECTIONS =============
-function AgoraBuild_PROTECTIONS()
+function _G.AgoraBuild_PROTECTIONS()
 -- ============= PROTECTIONS =============
 protectionsState = {
 	antiFling = false,
@@ -2246,7 +2246,7 @@ task.wait(0.05)
 end
 
 -- ============= REGISTRE DES COMPTES ROBLOX =============
-function AgoraBuild_REGISTRE_DES_COMPTES_ROBLOX()
+function _G.AgoraBuild_REGISTRE_DES_COMPTES_ROBLOX()
 -- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)

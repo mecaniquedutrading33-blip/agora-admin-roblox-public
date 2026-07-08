@@ -1,7 +1,7 @@
 -- Agora Hub [UNIVERSELLE] - Panel Roblox universel
 -- LocalScript dans StarterPlayerScripts ou exécuteur
 
-local SETTINGS = {
+SETTINGS = {
 	SpiderSpeed = 16,
 	SpiderHoverDistance = 2.6,
 	SpiderNetworkCompensation = 0.8,
@@ -53,7 +53,7 @@ game = _game
 
 
 -- === COORDINATOR ===
-function _buildPanel()
+_G._buildPanel = function()
 if not game then
 	warn("[AGORA] game est nil — exécuteur incompatible ou loadstring mal formé")
 	return
@@ -1540,18 +1540,18 @@ _initRegistrySearch()
 
 
 	-- Call section builders
-	AgoraBuild_REGISTRY_SCROLL()
-	AgoraBuild_JOUEURS()
-	AgoraBuild_ESP()
-	AgoraBuild_ANIMATIONS()
-	AgoraBuild_MOVE()
-	AgoraBuild_AUTO_CLICKER()
-	AgoraBuild_EXTRA()
-	AgoraBuild_AIMBOT()
-	AgoraBuild_PROTECTIONS()
-	AgoraBuild_REGISTRE_DES_COMPTES_ROBLOX()
-	AgoraBuild_CHAT_COMMANDS()
-	AgoraBuild_CREDITS()
+	_G.AgoraBuild_REGISTRY_SCROLL()
+	_G.AgoraBuild_JOUEURS()
+	_G.AgoraBuild_ESP()
+	_G.AgoraBuild_ANIMATIONS()
+	_G.AgoraBuild_MOVE()
+	_G.AgoraBuild_AUTO_CLICKER()
+	_G.AgoraBuild_EXTRA()
+	_G.AgoraBuild_AIMBOT()
+	_G.AgoraBuild_PROTECTIONS()
+	_G.AgoraBuild_REGISTRE_DES_COMPTES_ROBLOX()
+	_G.AgoraBuild_CHAT_COMMANDS()
+	_G.AgoraBuild_CREDITS()
 end
 
 
