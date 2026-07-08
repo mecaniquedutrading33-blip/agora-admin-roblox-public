@@ -440,7 +440,7 @@ mainFrame.Position = UDim2.new(0.5, -230, 0.5, -260)
 mainFrame.Visible = false  -- Sera révélé après l'intro
 -- S'assure que le panel reste visible et ne se fait pas pousser par le chat au démarrage
 task.delay(0, function()
-	local function clampFrame()
+	_G.clampFrame = function()
 
 ;(function()
 		local abs = mainFrame.AbsoluteSize
