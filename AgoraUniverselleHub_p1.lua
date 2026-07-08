@@ -152,10 +152,11 @@ task.spawn(function()
 end)
 
 -- Helper: update loading bar
-_G.updateLoad = function(progress, msg)
+local function updateLoad(progress, msg)
 	if loadingBar and loadingBar.Parent then
 		loadingBar:TweenSize(UDim2.new(progress, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
 	end
+_G.updateLoad = updateLoad
 	if loadingText then
 		loadingText.Text = msg or "Chargement..."
 	end
@@ -176,7 +177,7 @@ local HttpService = game:GetService("HttpService")
 local SoundService = game:GetService("SoundService")
 
 -- Helper multi-fallback pour vérifier si un joueur peut chatter (client-only, pas d'accès serveur)
-_G._resolveCanChat = function(target, callback)
+local function _resolveCanChat(target, callback)
 	task.spawn(function()
 		local result, src = nil, "non vérifiable"
 		local uid = (typeof(target) == "Instance" and target:IsA("Player") and target.UserId) or tonumber(target)
@@ -189,6 +190,7 @@ _G._resolveCanChat = function(target, callback)
 				if ok and r ~= nil then
 					result, src = r, "CanTalkWithMe"
 				end
+_G._resolveCanChat = _resolveCanChat
 			end
 		end
 
@@ -267,7 +269,7 @@ task.spawn(function()
 end)
 
 -- Wrapper de son multi-exécuteur (Solara, etc.) - pcall silencieux
-_G.playSound = function(id, vol)
+local function playSound(id, vol)
 	if not id then return end
 	pcall(function()
 		local s = Instance.new("Sound")
@@ -281,6 +283,7 @@ _G.playSound = function(id, vol)
 				s:Play()
 			end)
 		end
+_G.playSound = playSound
 		local len = (s.TimeLength and s.TimeLength > 0) and s.TimeLength or 3
 		task.delay(len + 0.2, function()
 			pcall(function() s:Destroy() end)
@@ -289,7 +292,7 @@ _G.playSound = function(id, vol)
 end
 
 -- Helper HTTP multi-executeur (essaie TOUTES les methodes possibles)
-_G.httpGet = function(url)
+local function httpGet(url)
 	-- 1) game:HttpGet (Solara, Xeno, etc.) - le plus commun
 	local ok, r = pcall(function() return game:HttpGet(url) end)
 	if ok and r and r ~= "" then return r end
@@ -318,6 +321,7 @@ _G.httpGet = function(url)
 		ok, r = pcall(function() return req({Url=url, Method="GET"}).Body end)
 		if ok and r and r ~= "" then return r end
 	end
+_G.httpGet = httpGet
 	-- 7) request avec headers
 	if req then
 		ok, r = pcall(function() return req({
@@ -333,7 +337,7 @@ _G.httpGet = function(url)
 	return nil
 end
 
-_G.httpPost = function(url, body)
+local function httpPost(url, body)
 	-- 1) game:HttpPostJSON / HttpGet avec body
 	local ok, r = pcall(function() return game:HttpGet(url, true, body) end)
 	if ok and r and r ~= "" then return r end
@@ -346,6 +350,7 @@ _G.httpPost = function(url, body)
 		ok, r = pcall(function() return req({Url=url, Method="POST", Body=body, Headers={["Content-Type"]="application/json"}}).Body end)
 		if ok and r and r ~= "" then return r end
 	end
+_G.httpPost = httpPost
 	return nil
 end
 
@@ -360,7 +365,7 @@ end
 local panelMemory = _G.PanelMemory
 
 local character, humanoid, rootPart
-_G.updateCharacter = function()
+local function updateCharacter()
 	character = LocalPlayer.Character
 	if character then
 		humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -368,6 +373,7 @@ _G.updateCharacter = function()
 	else
 		humanoid, rootPart = nil, nil
 	end
+_G.updateCharacter = updateCharacter
 end
 
 updateCharacter()
@@ -388,7 +394,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	end
 end)
 
-_G.getDeviceType = function()
+local function getDeviceType()
 	if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
 		return "Mobile"
 	elseif UserInputService.GamepadEnabled then
@@ -396,29 +402,33 @@ _G.getDeviceType = function()
 	else
 		return "PC"
 	end
+_G.getDeviceType = getDeviceType
 end
 
-_G.createCorner = function(parent, radius)
+local function createCorner(parent, radius)
 	local c = Instance.new("UICorner")
 	c.CornerRadius = UDim.new(0, radius or 6)
 	c.Parent = parent
 	return c
 end
+_G.createCorner = createCorner
 
-_G.createStroke = function(parent, color, thickness)
+local function createStroke(parent, color, thickness)
 	local s = Instance.new("UIStroke")
 	s.Color = color or Color3.fromRGB(60, 60, 60)
 	s.Thickness = thickness or 1
 	s.Parent = parent
 	return s
 end
+_G.createStroke = createStroke
 
-_G.tween = function(obj, props, duration)
+local function tween(obj, props, duration)
 	if not obj or not obj.Parent then return end
 	pcall(function()
 		TweenService:Create(obj, TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
 	end)
 end
+_G.tween = tween
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MilanEmerickPanel"
@@ -694,7 +704,7 @@ titleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = topBar
 
-_G.addGlow = function(frame)
+local function addGlow(frame)
 	local glow = Instance.new("ImageLabel")
 	glow.Name = "Glow"
 	glow.Size = UDim2.new(1, 60, 1, 60)
@@ -707,6 +717,7 @@ _G.addGlow = function(frame)
 	glow.Parent = frame
 	return glow
 end
+_G.addGlow = addGlow
 
 local mainGlow = addGlow(mainFrame)
 
@@ -746,7 +757,7 @@ minimizeBtn.BorderSizePixel = 0
 minimizeBtn.Parent = topBar
 createCorner(minimizeBtn, 8)
 
-_G.makeIcon = function(btn, txt)
+local function makeIcon(btn, txt)
 	local l = Instance.new("TextLabel")
 	l.Size = UDim2.new(1, 0, 1, 0)
 	l.BackgroundTransparency = 1
@@ -756,10 +767,11 @@ _G.makeIcon = function(btn, txt)
 	l.TextColor3 = Color3.new(1, 1, 1)
 	l.Parent = btn
 end
+_G.makeIcon = makeIcon
 
 makeIcon(closeBtn, "×")
 
-_G.createButton = function(parent, text, yPos, color, callback)
+local function createButton(parent, text, yPos, color, callback)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, -20, 0, 34)
 	btn.Position = UDim2.new(0, 10, 0, yPos)
@@ -780,6 +792,7 @@ _G.createButton = function(parent, text, yPos, color, callback)
 	end)
 	return btn
 end
+_G.createButton = createButton
 
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1, -20, 0, 34)
@@ -812,13 +825,14 @@ local pages = {}
 local tabButtons = {}
 local activeTab = "Joueurs"
 
-_G.switchTab = function(name)
+local function switchTab(name)
 	activeTab = name
 	for n, page in pairs(pages) do
 		page.Visible = (n == name)
 		if n == name then
 			tween(page, {BackgroundTransparency = 1}, 0)
 		end
+_G.switchTab = switchTab
 	end
 	for n, btn in pairs(tabButtons) do
 		local active = (n == name)
@@ -827,7 +841,7 @@ _G.switchTab = function(name)
 	end
 end
 
-_G.createTab = function(name)
+local function createTab(name)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0.115, -2, 1, 0)
 		btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
@@ -851,6 +865,7 @@ _G.createTab = function(name)
 	tabButtons[name] = btn
 	return page
 end
+_G.createTab = createTab
 
 -- ============= Home TAB — IIFE pour 0 top-level local =============
 _=(function()
@@ -1292,7 +1307,7 @@ local protectionsPage = createTab("Protections")
 
 -- ============= REGISTRY SEARCH + AUTOCOMPLETE =============
 -- WRAP dans local function + appel pour isoler les locals
-_G._initRegistrySearch = function()
+local function _initRegistrySearch()
 	local registrySearchBox = Instance.new("TextBox")
 	registrySearchBox.Size = UDim2.new(1, -10, 0, 28)
 	registrySearchBox.Position = UDim2.new(0, 5, 0, 5)
@@ -1390,6 +1405,7 @@ _G._initRegistrySearch = function()
 		if string.sub(name, 1, #query) == query then
 			return 1000 - #name -- plus court = mieux
 		end
+_G._initRegistrySearch = _initRegistrySearch
 
 		-- Sous-string match = bon score
 		local sPos = string.find(name, query, 1, true)
@@ -1593,13 +1609,14 @@ task.defer(function()
 	protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, protectionsLayout.AbsoluteContentSize.Y + 10)
 end)
 
-_G.reparentChildrenToLocalScroll = function()
+local function reparentChildrenToLocalScroll()
 	for _, child in ipairs(localPage:GetChildren()) do
 		if child ~= localScroll then
 			child.Parent = localScroll
 			if child:IsA("GuiObject") and child.LayoutOrder == 0 then
 				child.LayoutOrder = (#localScroll:GetChildren() - 1)
 			end
+_G.reparentChildrenToLocalScroll = reparentChildrenToLocalScroll
 		end
 	end
 end
@@ -1863,7 +1880,7 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- == SHUTDOWN ALL FEATURES ==
-_G.shutdownPanel = function()
+local function shutdownPanel()
 	if flyState and flyState.flying then stopFly() end
 	if noclipState and noclipState.enabled then
 		noclipState.enabled = false
@@ -1872,6 +1889,7 @@ _G.shutdownPanel = function()
 			for _, p in ipairs(character:GetDescendants()) do
 				if p:IsA("BasePart") then p.CanCollide = true end
 			end
+_G.shutdownPanel = shutdownPanel
 		end
 	end
 	if globalESPSwitch and globalESPSwitch.get and globalESPSwitch.get() then
@@ -1916,7 +1934,7 @@ _G.shutdownPanel = function()
 	end)
 end
 
-_G.createSwitch = function(parent, labelText, yPos, callback, defaultOn)
+local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	local container = Instance.new("Frame")
 	container.Size = UDim2.new(1, -20, 0, 36)
 	container.Position = UDim2.new(0, 10, 0, yPos)
@@ -1962,6 +1980,7 @@ _G.createSwitch = function(parent, labelText, yPos, callback, defaultOn)
 		tween(track, {BackgroundColor3 = state and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(60, 60, 70)}, dur)
 		tween(knob, {Position = state and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)}, dur)
 	end
+_G.createSwitch = createSwitch
 	update(false)
 
 	local function toggle()
@@ -2185,7 +2204,7 @@ echoStatusLabel.Parent = mainFrame
 local selectedEchoPlayer = nil
 
 -- Pop-up de restauration du dernier joueur Echo
-_G.showRestorePopup = function(lastName)
+local function showRestorePopup(lastName)
 	if panelMemory.dontAskRestore then return end
 	if not lastName then return end
 	local current = Players:FindFirstChild(lastName)
@@ -2521,6 +2540,7 @@ _G.createPlayerEntry = function(plr)
 		if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and rootPart then
 			rootPart.CFrame = plr.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
 		end
+_G.showRestorePopup = showRestorePopup
 	end)
 
 	specBtn.MouseButton1Click:Connect(function()
@@ -3390,18 +3410,20 @@ _G.createPlayerEntry = function(plr)
 					return card
 					end
 
-_G.addPlayerCard = function(plr)
+local function addPlayerCard(plr)
 	if plr == LocalPlayer then return end
 	if playerCards[plr] and playerCards[plr].Parent then return end
 	createPlayerEntry(plr)
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
+_G.addPlayerCard = addPlayerCard
 
-_G.removePlayerCard = function(plr)
+local function removePlayerCard(plr)
 	if playerCards[plr] then
 		playerCards[plr]:Destroy()
 		playerCards[plr] = nil
 	end
+_G.removePlayerCard = removePlayerCard
 	if selectedEchoPlayer == plr then
 		selectedEchoPlayer = nil
 		echoStatusLabel.Text = "Echo: aucun"
@@ -3410,7 +3432,7 @@ _G.removePlayerCard = function(plr)
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
 
-_G.refreshPlayersList = function()
+local function refreshPlayersList()
 	local existing = {}
 	for plr, card in pairs(playerCards) do
 		if card and card.Parent then
@@ -3418,6 +3440,7 @@ _G.refreshPlayersList = function()
 		else
 			playerCards[plr] = nil
 		end
+_G.refreshPlayersList = refreshPlayersList
 	end
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr ~= LocalPlayer and not existing[plr] then
@@ -3457,13 +3480,14 @@ for plr, card in pairs(playerCards) do
 end
 
 -- ECHO CHAT
-_G.sendEchoMessage = function(text)
+local function sendEchoMessage(text)
 	local channels = TextChatService:FindFirstChild("TextChannels")
 	if not channels then return end
 	local general = channels:FindFirstChild("RBXGeneral")
 	if not general then return end
 	pcall(function() general:SendAsync(text) end)
 end
+_G.sendEchoMessage = sendEchoMessage
 
 TextChatService.MessageReceived:Connect(function(msg)
 	if not selectedEchoPlayer then return end
@@ -3484,20 +3508,22 @@ espFolder.Parent = Workspace
 
 local espState = { enabled = false, individual = {}, chatIcons = true }
 
-_G.distanceColor = function(dist)
+local function distanceColor(dist)
 	if dist < 50 then return Color3.fromRGB(80, 255, 120)
 	elseif dist < 200 then return Color3.fromRGB(255, 200, 80)
 	else return Color3.fromRGB(255, 80, 80) end
 end
+_G.distanceColor = distanceColor
 
-_G.ensureESPForPlayer = function(plr)
+local function ensureESPForPlayer(plr)
 	if espState.individual[plr] then return espState.individual[plr] end
 	local data = { hl = nil, bill = nil, label = nil, targetPart = nil, humanoid = nil }
 	espState.individual[plr] = data
 	return data
 end
+_G.ensureESPForPlayer = ensureESPForPlayer
 
-_G.buildESP = function(plr)
+local function buildESP(plr)
 	local data = ensureESPForPlayer(plr)
 	local char = plr.Character
 	if not char then return end
@@ -3515,6 +3541,7 @@ _G.buildESP = function(plr)
 		data.hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 		data.hl.Parent = espFolder
 	end
+_G.buildESP = buildESP
 
 	if data.bill and data.bill.Adornee ~= targetPart then data.bill:Destroy() data.bill = nil end
 	if not data.bill or not data.bill.Parent then
@@ -3557,12 +3584,13 @@ _G.buildESP = function(plr)
 	return data
 end
 
-_G.clearESP = function()
+local function clearESP()
 	for _, child in ipairs(espFolder:GetChildren()) do child:Destroy() end
 	espState.individual = {}
 end
+_G.clearESP = clearESP
 
-_G.refreshESP = function()
+local function refreshESP()
 	if not (espState.enabled or globalESPEnabled) then return end
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr ~= LocalPlayer then
@@ -3572,6 +3600,7 @@ _G.refreshESP = function()
 				if data.hl then data.hl.Enabled = true end
 				if data.bill then data.bill.Enabled = true end
 			end
+_G.refreshESP = refreshESP
 		end
 	end
 end
@@ -3590,7 +3619,7 @@ function togglePlayerESP(plr)
 	end
 end
 
-_G.blinkESP = function(plr, duration)
+local function blinkESP(plr, duration)
 	duration = duration or 3
 	local data = ensureESPForPlayer(plr)
 	if not data.active then
@@ -3599,6 +3628,7 @@ _G.blinkESP = function(plr, duration)
 		if data.hl then data.hl.Enabled = true end
 		if data.bill then data.bill.Enabled = true end
 	end
+_G.blinkESP = blinkESP
 	data.blink = true
 	task.delay(duration, function()
 		if data then data.blink = false end
@@ -3649,7 +3679,7 @@ RunService.RenderStepped:Connect(function()
 	end
 end)
 
-_G.applyGlobalESPToPlayer = function(plr)
+local function applyGlobalESPToPlayer(plr)
 	if plr == LocalPlayer then return end
 	if not plr.Character then return end
 	local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
@@ -3663,6 +3693,7 @@ _G.applyGlobalESPToPlayer = function(plr)
 		if data.hl then data.hl.Enabled = true end
 		if data.bill then data.bill.Enabled = true end
 	end
+_G.applyGlobalESPToPlayer = applyGlobalESPToPlayer
 end
 
 for _, plr in ipairs(Players:GetPlayers()) do
@@ -3700,7 +3731,7 @@ end)
 updateLoad(0.22, "Animations...")
 task.wait(0.05)
 -- ============= ANIMATIONS =============
-_G.typewriterEffect = function(label, text, speed)
+local function typewriterEffect(label, text, speed)
 	speed = speed or 0.02
 	local chars = text:split("")
 	local current = ""
@@ -3709,10 +3740,11 @@ _G.typewriterEffect = function(label, text, speed)
 		label.Text = current
 		task.wait(speed)
 	end
+_G.typewriterEffect = typewriterEffect
 end
 
 
-_G.matrixRain = function(parent, duration)
+local function matrixRain(parent, duration)
 	duration = duration or 1
 	local letters = {"0","1","/","\\","[","]","{","}","<",">","#","@","%","&","*","+","-","=","?","!"}
 	local startTime = tick()
@@ -3722,6 +3754,7 @@ _G.matrixRain = function(parent, duration)
 			con:Disconnect()
 			return
 		end
+_G.matrixRain = matrixRain
 		for i = 1, 8 do
 			local lbl = Instance.new("TextLabel")
 			lbl.Size = UDim2.new(0, 12, 0, 16)
@@ -3741,7 +3774,7 @@ _G.matrixRain = function(parent, duration)
 	end)
 end
 
-_G.bootSequence = function(onComplete)
+local function bootSequence(onComplete)
 	-- BOOT ANIMATION v2 : "Genesis" - le panel s'assemble piece par piece avec effets cinematiques
 	-- Layer 1 boot-safe : pcall dans le task.spawn
 	local bootGui = Instance.new("ScreenGui")
@@ -3794,6 +3827,7 @@ _G.bootSequence = function(onComplete)
 		p.Parent = backdrop
 		table.insert(particles, p)
 	end
+_G.bootSequence = bootSequence
 
 	-- Titre principal - glitch + typewriter
 	local title = Instance.new("TextLabel")
@@ -4277,7 +4311,7 @@ local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
 local platformState = { enabled = false, part = nil, y = 0, offset = 0 }
 
-_G.stopFly = function()
+local function stopFly()
 	if not flyState.flying then return end
 	flyState.flying = false
 	if flyState.loop then flyState.loop:Disconnect() flyState.loop = nil end
@@ -4295,6 +4329,7 @@ _G.stopFly = function()
 	if protectionsState then
 		protectionsState.antiTeleportGraceUntil = tick() + 0.4
 	end
+_G.stopFly = stopFly
 end
 
 -- ============= FLY MOBILE JOYSTICK (auto-show on touch devices) =============
@@ -4432,7 +4467,7 @@ end
 	_fly.isMobile = isMobile
 end)(flyState, screenGui)
 
-_G.startFly = function()
+local function startFly()
 	updateCharacter()
 	if flyState.flying or not rootPart then return end
 	flyState.flying = true
@@ -4454,6 +4489,7 @@ _G.startFly = function()
 	if flyState.isMobile and flyState.isMobile() and flyState.showMobileUi then
 		flyState.showMobileUi(true)
 	end
+_G.startFly = startFly
 
 	flyState.loop = RunService.RenderStepped:Connect(function()
 		updateCharacter()
@@ -4484,13 +4520,14 @@ _G.startFly = function()
 	end)
 end
 
-_G.createSlider = function(parent, labelText, yPos, min, max, default, callback, color, decimals, step)
+local function createSlider(parent, labelText, yPos, min, max, default, callback, color, decimals, step)
 	decimals = decimals or 0
 	step = step or nil
 	local function fmt(v)
 		local mult = 10 ^ decimals
 		return math.floor(v * mult + 0.5) / mult
 	end
+_G.createSlider = createSlider
 	local container = Instance.new("Frame")
 	container.Size = UDim2.new(1, -16, 0, 50)
 	container.Position = UDim2.new(0, 8, 0, yPos)
@@ -4617,14 +4654,15 @@ local PathfindingService = game:GetService("PathfindingService")
 
 local gotoWalkState = { enabled = false, active = false, target = nil, path = {}, visuals = {}, lastClick = 0, lastMoveTo = nil, recompute = nil, busy = false }
 
-_G.clearWalkVisuals = function()
+local function clearWalkVisuals()
 	for _, v in ipairs(gotoWalkState.visuals) do
 		if v and v.Parent then v:Destroy() end
 	end
+_G.clearWalkVisuals = clearWalkVisuals
 	gotoWalkState.visuals = {}
 end
 
-_G.visualizeWaypoints = function(waypoints)
+local function visualizeWaypoints(waypoints)
 	clearWalkVisuals()
 	for i, wp in ipairs(waypoints) do
 		local dot = Instance.new("Part")
@@ -4651,6 +4689,7 @@ _G.visualizeWaypoints = function(waypoints)
 				seg.Size = Vector3.new(0.15, 0.15, 0.1)
 				seg.CFrame = CFrame.new((prev + wp) / 2)
 			end
+_G.visualizeWaypoints = visualizeWaypoints
 			seg.Color = Color3.fromRGB(200, 200, 255)
 			seg.Parent = Workspace
 			table.insert(gotoWalkState.visuals, seg)
@@ -4659,7 +4698,7 @@ _G.visualizeWaypoints = function(waypoints)
 end
 
 -- Calcule un trajet vers targetPos. Retourne une liste de waypoints (Vector3) ou {} si impossible.
-_G.computePathTo = function(targetPos)
+local function computePathTo(targetPos)
 	updateCharacter()
 	if not rootPart or not humanoid then return {} end
 
@@ -4678,6 +4717,7 @@ _G.computePathTo = function(targetPos)
 		local hit = Workspace:Raycast(from, dir.Unit * dist, params)
 		return hit == nil
 	end
+_G.computePathTo = computePathTo
 
 	-- Helper: find best height for a direction
 	local function findBestHeight(from, dir, dist)
@@ -4837,9 +4877,10 @@ createSwitch(movePage, "Saut infini", 192, function(on)
 	jumpState.infinite = on
 end)
 
-_G.refreshNoClipSwitch = function()
+local function refreshNoClipSwitch()
 	noclipSwitch.set(false)
 end
+_G.refreshNoClipSwitch = refreshNoClipSwitch
 
 local walkSlider = createSlider(movePage, "Vitesse marche", 234, 1, 250, 16, function(v)
 	walkSpeedState.value = math.floor(v)
@@ -4951,7 +4992,7 @@ gravityInput.Parent = gravityContainer
 createCorner(gravityInput, 6)
 createStroke(gravityInput, Color3.fromRGB(80, 80, 100), 1)
 
-	_G._agoraSetGravityExact = function(v)
+local function _agoraSetGravityExact(v)
 	v = tonumber(v)
 	if not v then return end
 	v = math.clamp(math.floor(v + 0.5), 0, 300)
@@ -4961,12 +5002,14 @@ createStroke(gravityInput, Color3.fromRGB(80, 80, 100), 1)
 	gravityInput.Text = tostring(v)
 	gravityFill.Size = UDim2.new(v / 300, 0, 1, 0)
 end
+_G._agoraSetGravityExact = _agoraSetGravityExact
 
 local draggingGravity = false
-_G.gravityFromX = function(x)
+local function gravityFromX(x)
 	local rel = math.clamp((x - gravityTrack.AbsolutePosition.X) / gravityTrack.AbsoluteSize.X, 0, 1)
 	return math.floor(rel * 300 + 0.5)
 end
+_G.gravityFromX = gravityFromX
 
 gravityTrack.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
