@@ -50,10 +50,10 @@ end
 game = _game
 
 -- WRAP PANEL IN LOCAL FUNCTION to avoid Solara 200-register chunk limit
-local function _buildPanel()
-if not game then
+local _agoraOk = true
+
 	warn("[AGORA] game est nil — exécuteur incompatible ou loadstring mal formé")
-	return
+	_agoraOk = false
 end
 
 -- === LOADING SCREEN ===

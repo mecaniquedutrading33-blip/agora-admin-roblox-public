@@ -1,4 +1,5 @@
 ;(function()
+-- ============= MOVE =============
 local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
 local noclipState = { enabled = false }
 local walkSpeedState = { value = 16 }
@@ -776,6 +777,7 @@ task.wait(0.05)
 end)()
 
 ;(function()
+-- ============= AUTO CLICKER =============
 local autoClickState = {
 	toolActive = false,   -- le switch (faux tool dans le backpack)
 	clickEnabled = false, -- le moteur d'autoclick actif
@@ -1736,10 +1738,11 @@ RunService.Stepped:Connect(function(_, dt)
 
 
 updateLoad(0.50, "Modules extra...")
-task.wait(0.05)
 end)()
 
 ;(function()
+task.wait(0.05)
+-- ============= EXTRA =============
 local fullbrightState = { enabled = false, old = {} }
 local clickTPState = { enabled = false }
 local hitboxState = { enabled = false }
@@ -1974,10 +1977,11 @@ end
 _initServerInfoCard()
 
 updateLoad(0.60, "Aimbot...")
-task.wait(0.05)
 end)()
 
 ;(function()
+task.wait(0.05)
+-- ============= AIMBOT =============
 -- Verrouille la souris sur la TÊTE du joueur le plus proche du CENTRE de l'écran
 -- - Filtre "pas à travers les murs" : raycast camera → head, vérifie qu'on touche le character
 -- - Filtre "à l'écran" : WorldToScreenPoint.Z > 0 et X/Y dans les bornes
@@ -2375,10 +2379,11 @@ end)
 
 
 updateLoad(0.70, "Protections...")
-task.wait(0.05)
 end)()
 
 ;(function()
+task.wait(0.05)
+-- ============= PROTECTIONS =============
 local protectionsState = {
 	antiFling = false,
 	antiSeat = false,
@@ -3011,10 +3016,11 @@ end
 _wrapRemotes() -- Exécute le wrap (IIFE pattern pour limiter les 200 registers)
 
 updateLoad(0.80, "Registry...")
-task.wait(0.05)
 end)()
 
 ;(function()
+task.wait(0.05)
+-- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
 local function buildRegistrySection(parentPage)
@@ -4789,10 +4795,11 @@ function giveSpiderTool()
 end
 
 updateLoad(0.90, "Chat commands...")
-task.wait(0.05)
 end)()
 
 ;(function()
+task.wait(0.05)
+-- ============= CHAT COMMANDS =============
 -- Wrap dans IIFE avec paramètres pour éviter la limite d'upvalues (200)
 ;(function(_fly, _noclip, _esp, _fullbright, _zeroG, _localPlayer)
 	_localPlayer.Chatted:Connect(function(msg)
@@ -4810,12 +4817,12 @@ end)()
 		end
 	end)
 end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlayer)
-
-updateLoad(0.95, "Finalisation...")
-task.wait(0.05)
 end)()
 
 ;(function()
+updateLoad(0.95, "Finalisation...")
+task.wait(0.05)
+-- ============= CRÉDITS =============
 ;(function(_mainFrame)
 	local credits = Instance.new("TextLabel")
 	credits.Size = UDim2.new(1, 0, 0, 18)
@@ -4876,7 +4883,7 @@ end)
 -- end) end)
 
 end
+
 -- Remove loading screen
 pcall(function() if loadingGui then loadingGui:Destroy() end end)
-_buildPanel()
 end)()
