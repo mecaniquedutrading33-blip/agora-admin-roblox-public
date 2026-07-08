@@ -462,7 +462,7 @@ createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 
 -- ===== INTRO CINÉMA : "Agora Hub" puis TAMPON "UNIVERSELLE" BOUM =====
 -- Backdrop full screen noir pour masquer le panel pendant l'intro
-;(function()
+_=(function()
 	local _mainFrame = mainFrame
 	local _screenGui = screenGui
 	local _LocalPlayer = LocalPlayer
@@ -651,7 +651,7 @@ createCorner(topBar, 14)
 createStroke(topBar, Color3.fromRGB(80, 80, 100), 0.8)
 
 -- Logo à gauche du titre + badge "UNIVERSELLE" penché (mini) à droite du titre
-;(function()
+_=(function()
 	local _topBar = topBar
 	local _createCorner = createCorner
 	local _createStroke = createStroke
@@ -858,7 +858,7 @@ _G.createTab = function(name)
 end
 
 -- ============= Home TAB — IIFE pour 0 top-level local =============
-;(function()
+_=(function()
 	local homePage = createTab("Home")
 	
 	-- Fond sombre
@@ -1646,7 +1646,7 @@ local ccInputConn = UserInputService.InputChanged:Connect(function(input)
 end)
 
 local minimized = false
-;(function()
+_=(function()
 	local _createCorner = createCorner
 	local _tween = tween
 	local _contentFrame = contentFrame
@@ -4905,7 +4905,7 @@ local zeroGSwitch = createSwitch(localPage, "Zero Gravité", 10, function(on)
 end)
 
 -- Conteneur gravité personnalisé (slider précis + input + reset)
-;(function()
+_=(function()
 local gravityContainer = Instance.new("Frame")
 gravityContainer.Size = UDim2.new(1, -16, 0, 86)
 gravityContainer.Position = UDim2.new(0, 8, 0, 56)
@@ -5141,7 +5141,7 @@ local acTarget = {
 }
 
 -- Fonctions marker autoclick: définies inline ci-dessous
-;(function()
+_=(function()
 	function destroyAutoClickMarker()
 		if acTarget.markerPart and acTarget.markerPart.Parent then
 			pcall(function() acTarget.markerPart:Destroy() end)
@@ -7572,7 +7572,7 @@ _G.renderResult = function(data, parent)
 	createStroke(card, Color3.fromRGB(60, 60, 90), 1)
 
 	-- Badges VERIFIED / PREMIUM / BANNED en haut à droite de la carte
-	;(function()
+	_=(function()
 		local hasVerified = data.isVerified == true
 		local hasPremium = data.isPremium == true
 		local isBanned = data.isBanned == true
