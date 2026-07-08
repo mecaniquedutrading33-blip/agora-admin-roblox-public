@@ -441,8 +441,6 @@ task.delay(0, function()
 		local y = math.clamp(mainFrame.AbsolutePosition.Y, 0, math.max(0, scr.Y - abs.Y))
 		mainFrame.Position = UDim2.new(0, x, 0, y)
 	end
-
-;(function()
 	clampFrame()
 	task.wait(0.1)
 	clampFrame()
@@ -456,6 +454,8 @@ mainFrame.ZIndex = 1
 createCorner(mainFrame, 14)
 createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 
+
+;(function()
 -- ===== INTRO CINÉMA : "Agora Hub" puis TAMPON "UNIVERSELLE" BOUM =====
 -- Backdrop full screen noir pour masquer le panel pendant l'intro
 ;(function()
@@ -1537,9 +1537,7 @@ local registryScroll = Instance.new("ScrollingFrame")
 registryScroll.Size = UDim2.new(1, 0, 1, -40) -- 40px = search box (33) + gap (7)
 registryScroll.Position = UDim2.new(0, 0, 0, 40)
 registryScroll.BackgroundTransparency = 1
-end)()
-
-;(function()
+registryScroll.ScrollBarThickness = 4
 registryScroll.BorderSizePixel = 0
 registryScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 registryScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
@@ -1552,7 +1550,9 @@ registryLayout.SortOrder = Enum.SortOrder.LayoutOrder
 registryLayout.Parent = registryScroll
 
 local registryPadding = Instance.new("UIPadding")
-registryPadding.PaddingTop = UDim.new(0, 4)
+end)()
+
+;(function()
 registryPadding.PaddingBottom = UDim.new(0, 4)
 registryPadding.PaddingLeft = UDim.new(0, 6)
 registryPadding.PaddingRight = UDim.new(0, 6)
@@ -2006,9 +2006,7 @@ local playerSearchQuery = "" -- query actuelle (vide = pas de filtre)
 
 -- searchBox de Joueurs = FILTRE LOCAL de la liste des joueurs connectés
 -- (la recherche officielle par username Roblox reste dans Registry)
-end)()
-
-;(function()
+local playerSearchBox = Instance.new("TextBox")
 playerSearchBox.Size = UDim2.new(1, -10, 0, 26)
 playerSearchBox.Position = UDim2.new(0, 5, 0, 8)
 playerSearchBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
@@ -2021,7 +2019,9 @@ playerSearchBox.TextSize = 11
 playerSearchBox.TextXAlignment = Enum.TextXAlignment.Left
 playerSearchBox.ClearTextOnFocus = false
 playerSearchBox.Parent = playersPage
-createCorner(playerSearchBox, 6)
+end)()
+
+;(function()
 createStroke(playerSearchBox, Color3.fromRGB(60, 60, 80), 1)
 
 -- Bouton X pour effacer le filtre Joueurs
@@ -2253,9 +2253,6 @@ _G.createPlayerEntry = function(plr)
 	card.LayoutOrder = plr.Name:byte(1)
 	card.Parent = playersScroll
 	createCorner(card, 10)
-end)()
-
-;(function()
 	createStroke(card, Color3.fromRGB(45, 45, 55), 1)
 
 	local nameLbl = Instance.new("TextLabel")
@@ -2268,7 +2265,9 @@ end)()
 	nameLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
 	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
 	nameLbl.Parent = card
+end)()
 
+;(function()
 	-- Badge chat activé sur le joueur — à GAUCHE haut, jamais sur les boutons
 	local playerChatBadge = Instance.new("TextLabel")
 	playerChatBadge.Name = "PlayerChatBadge"
@@ -3406,9 +3405,6 @@ _G.addPlayerCard = function(plr)
 end
 
 _G.removePlayerCard = function(plr)
-end)()
-
-;(function()
 	if playerCards[plr] then
 		playerCards[plr]:Destroy()
 		playerCards[plr] = nil
@@ -3422,6 +3418,9 @@ end)()
 end
 
 _G.refreshPlayersList = function()
+end)()
+
+;(function()
 	local existing = {}
 	for plr, card in pairs(playerCards) do
 		if card and card.Parent then
@@ -3494,9 +3493,7 @@ espFolder.Name = "PanelESP"
 espFolder.Parent = Workspace
 
 local espState = { enabled = false, individual = {}, chatIcons = true }
-end)()
 
-;(function()
 _G.distanceColor = function(dist)
 	if dist < 50 then return Color3.fromRGB(80, 255, 120)
 	elseif dist < 200 then return Color3.fromRGB(255, 200, 80)
@@ -3509,7 +3506,9 @@ _G.ensureESPForPlayer = function(plr)
 	espState.individual[plr] = data
 	return data
 end
+end)()
 
+;(function()
 _G.buildESP = function(plr)
 	local data = ensureESPForPlayer(plr)
 	local char = plr.Character
@@ -3718,9 +3717,7 @@ _G.typewriterEffect = function(label, text, speed)
 	local chars = text:split("")
 	local current = ""
 	for i = 1, #chars do
-end)()
-
-;(function()
+		current = current .. chars[i]
 		label.Text = current
 		task.wait(speed)
 	end
@@ -3733,6 +3730,9 @@ _G.matrixRain = function(parent, duration)
 	local startTime = tick()
 	local con
 	con = RunService.RenderStepped:Connect(function()
+end)()
+
+;(function()
 		if tick() - startTime > duration then
 			con:Disconnect()
 			return
