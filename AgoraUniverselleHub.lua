@@ -10,13 +10,35 @@ local SETTINGS = {
 	SpiderTransitionSpeed = 15
 }
 
--- SAFEGUARD EXECUTEUR: certains loadstring ne passent pas 'game' en global #1
--- On récupère game via getfenv ou le premier argument de loadstring
+-- SAFEGUARD EXECUTEUR: certains loadstring ne passent pas 'game' en global
+-- On recupere game via getfenv, shared, ou le premier argument de loadstring
 if not game then
 	local ok, envGame = pcall(function() return getfenv().game end)
 	if ok and envGame then
 		game = envGame
 	end
+end
+if not game then
+	local ok, sharedGame = pcall(function() return shared and shared.game end)
+	if ok and sharedGame then
+		game = sharedGame
+	end
+end
+if not game then
+	-- Dernier recours: chercher dans tous les environnements
+	for i = 0, 10 do
+		local ok, env = pcall(function() return getfenv(i) end)
+		if ok and env then
+			local ok2, g = pcall(function() return env.game end)
+			if ok2 and g then
+				game = g
+				break
+			end
+		end
+	end
+end
+if not game then
+	return
 end
 
 -- WRAP PANEL IN LOCAL FUNCTION to avoid Solara 200-register chunk limit
