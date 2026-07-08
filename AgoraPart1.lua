@@ -1,3 +1,4 @@
+(function()
 -- Agora Hub [UNIVERSELLE] - Panel Roblox universel
 -- LocalScript dans StarterPlayerScripts ou exécuteur
 
@@ -4270,3 +4271,4 @@ end
 
 updateLoad(0.30, "Mouvement...")
 task.wait(0.05)
+end)()
