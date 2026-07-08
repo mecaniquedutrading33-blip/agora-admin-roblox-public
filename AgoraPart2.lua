@@ -138,14 +138,14 @@ end
 			return
 		end
 		-- Convert position relative to joystick base
-		local base = _fly.mobileBase
+		_G.base = _fly.mobileBase
 		if not base or not _fly.mobileKnob then return end
-		local center = base.AbsolutePosition + base.AbsoluteSize / 2
-		local radius = base.AbsoluteSize.X / 2
-		local delta = input.Position - center
-		local dist = math.min(delta.Magnitude, radius)
-		local dir = delta.Magnitude > 0 and delta.Unit or Vector2.new(0, 0)
-		local knobOffset = dir * dist
+		_G.center = base.AbsolutePosition + base.AbsoluteSize / 2
+		_G.radius = base.AbsoluteSize.X / 2
+		_G.delta = input.Position - center
+		_G.dist = math.min(delta.Magnitude, radius)
+		_G.dir = delta.Magnitude > 0 and delta.Unit or Vector2.new(0, 0)
+		_G.knobOffset = dir * dist
 		_fly.mobileKnob.Position = UDim2.new(0.5, knobOffset.X - 25, 0.5, knobOffset.Y - 25)
 		-- Normalized input for camera-relative direction (-1..1)
 		_fly.mobileInput = Vector3.new(dir.X, 0, dir.Y)
@@ -191,7 +191,7 @@ _G.startFly = function()
 		if flyState.vel and flyState.vel.Parent ~= rootPart then flyState.vel.Parent = rootPart end
 		if flyState.gyro then flyState.gyro.CFrame = Camera.CFrame end
 
-		local move = Vector3.zero
+		_G.move = Vector3.zero
 		-- PC controls (clavier)
 		if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move += Camera.CFrame.LookVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= Camera.CFrame.LookVector end
@@ -216,10 +216,10 @@ _G.createSlider = function(parent, labelText, yPos, min, max, default, callback,
 	decimals = decimals or 0
 	step = step or nil
 	local function fmt(v)
-		local mult = 10 ^ decimals
+		_G.mult = 10 ^ decimals
 		return math.floor(v * mult + 0.5) / mult
 	end
-	local container = Instance.new("Frame")
+	_G.container = Instance.new("Frame")
 	container.Size = UDim2.new(1, -16, 0, 50)
 	container.Position = UDim2.new(0, 8, 0, yPos)
 	container.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
@@ -228,7 +228,7 @@ _G.createSlider = function(parent, labelText, yPos, min, max, default, callback,
 	createCorner(container, 8)
 	createStroke(container, Color3.fromRGB(45, 45, 55), 1)
 
-	local label = Instance.new("TextLabel")
+	_G.label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, -10, 0, 18)
 	label.Position = UDim2.new(0, 8, 0, 4)
 	label.BackgroundTransparency = 1
@@ -239,7 +239,7 @@ _G.createSlider = function(parent, labelText, yPos, min, max, default, callback,
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.Parent = container
 
-	local track = Instance.new("Frame")
+	_G.track = Instance.new("Frame")
 	track.Size = UDim2.new(1, -16, 0, 6)
 	track.Position = UDim2.new(0, 8, 0, 30)
 	track.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
@@ -249,7 +249,7 @@ _G.createSlider = function(parent, labelText, yPos, min, max, default, callback,
 
 	-- Bouton invisible par-dessus le track pour capter TOUS les clics (sinon certains
 	-- clics sur le container parent sont perdus → le slider "marche mal")
-	local hitButton = Instance.new("TextButton")
+	_G.hitButton = Instance.new("TextButton")
 	hitButton.Size = UDim2.new(1, 0, 0, 24)
 	hitButton.Position = UDim2.new(0, 0, 0, 21)
 	hitButton.BackgroundTransparency = 1
@@ -259,17 +259,17 @@ _G.createSlider = function(parent, labelText, yPos, min, max, default, callback,
 	hitButton.ZIndex = 10
 	hitButton.Parent = container
 
-	local fill = Instance.new("Frame")
+	_G.fill = Instance.new("Frame")
 	fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
 	fill.BackgroundColor3 = color or Color3.fromRGB(80, 150, 255)
 	fill.BorderSizePixel = 0
 	fill.Parent = track
 	createCorner(fill, 3)
 
-	local value = default
-	local draggingSlider = false
+	_G.value = default
+	_G.draggingSlider = false
 	local function setFromInput(x)
-		local rel = math.clamp((x - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+		_G.rel = math.clamp((x - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
 		value = min + rel * (max - min)
 		if step and step > 0 then
 			value = math.round(value / step) * step
@@ -309,7 +309,7 @@ _G.createSlider = function(parent, labelText, yPos, min, max, default, callback,
 			v = math.clamp(v, min, max)
 			if step and step > 0 then v = math.round(v / step) * step end
 			value = fmt(v)
-			local rel = (v - min) / (max - min)
+			_G.rel = (v - min) / (max - min)
 			fill.Size = UDim2.new(rel, 0, 1, 0)
 			label.Text = labelText .. ": " .. value
 			callback(v)
@@ -317,15 +317,15 @@ _G.createSlider = function(parent, labelText, yPos, min, max, default, callback,
 	}
 end
 
-local flySwitch = createSwitch(movePage, "Fly", 10, function(on)
+_G.flySwitch = createSwitch(movePage, "Fly", 10, function(on)
 	if on then startFly() else stopFly() end
 end)
 
-local flySlider = createSlider(movePage, "Vitesse Fly", 52, 20, 500, flyState.speed, function(v)
+_G.flySlider = createSlider(movePage, "Vitesse Fly", 52, 20, 500, flyState.speed, function(v)
 	flyState.speed = math.floor(v)
 end, Color3.fromRGB(100, 180, 255))
 
-local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
+_G.noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 	noclipState.enabled = on
 	if not on then
 		updateCharacter()
@@ -341,9 +341,9 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 	end
 end)
 
-local PathfindingService = game:GetService("PathfindingService")
+_G.PathfindingService = game:GetService("PathfindingService")
 
-local gotoWalkState = { enabled = false, active = false, target = nil, path = {}, visuals = {}, lastClick = 0, lastMoveTo = nil, recompute = nil, busy = false }
+_G.gotoWalkState = { enabled = false, active = false, target = nil, path = {}, visuals = {}, lastClick = 0, lastMoveTo = nil, recompute = nil, busy = false }
 
 _G.clearWalkVisuals = function()
 	for _, v in ipairs(gotoWalkState.visuals) do
@@ -355,7 +355,7 @@ end
 _G.visualizeWaypoints = function(waypoints)
 	clearWalkVisuals()
 	for i, wp in ipairs(waypoints) do
-		local dot = Instance.new("Part")
+		_G.dot = Instance.new("Part")
 		dot.Anchored = true
 		dot.CanCollide = false
 		dot.Transparency = 0.45
@@ -366,12 +366,12 @@ _G.visualizeWaypoints = function(waypoints)
 		dot.Parent = Workspace
 		table.insert(gotoWalkState.visuals, dot)
 		if i > 1 then
-			local prev = waypoints[i - 1]
-			local seg = Instance.new("Part")
+			_G.prev = waypoints[i - 1]
+			_G.seg = Instance.new("Part")
 			seg.Anchored = true
 			seg.CanCollide = false
 			seg.Transparency = 0.7
-			local len = (wp - prev).Magnitude
+			_G.len = (wp - prev).Magnitude
 			if len > 0.1 then
 				seg.Size = Vector3.new(0.15, 0.15, len)
 				seg.CFrame = CFrame.lookAt(prev, wp) * CFrame.new(0, 0, -len / 2)
@@ -391,35 +391,35 @@ _G.computePathTo = function(targetPos)
 	updateCharacter()
 	if not rootPart or not humanoid then return {} end
 
-	local myPos = rootPart.Position
-	local flatDist = Vector3.new(targetPos.X - myPos.X, 0, targetPos.Z - myPos.Z).Magnitude
-	local waypoints = {}
+	_G.myPos = rootPart.Position
+	_G.flatDist = Vector3.new(targetPos.X - myPos.X, 0, targetPos.Z - myPos.Z).Magnitude
+	_G.waypoints = {}
 
 	-- Helper: raycast clearance check
 	local function rayClear(from, to)
-		local params = RaycastParams.new()
+		_G.params = RaycastParams.new()
 		params.FilterDescendantsInstances = {character}
 		params.FilterType = Enum.RaycastFilterType.Exclude
-		local dir = to - from
-		local dist = dir.Magnitude
+		_G.dir = to - from
+		_G.dist = dir.Magnitude
 		if dist < 0.1 then return true end
-		local hit = Workspace:Raycast(from, dir.Unit * dist, params)
+		_G.hit = Workspace:Raycast(from, dir.Unit * dist, params)
 		return hit == nil
 	end
 
 	-- Helper: find best height for a direction
 	local function findBestHeight(from, dir, dist)
-		local params = RaycastParams.new()
+		_G.params = RaycastParams.new()
 		params.FilterDescendantsInstances = {character}
 		params.FilterType = Enum.RaycastFilterType.Exclude
-		local heights = {0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 15}
-		local bestH = nil
-		local bestScore = math.huge
+		_G.heights = {0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 15}
+		_G.bestH = nil
+		_G.bestScore = math.huge
 		for _, h in ipairs(heights) do
-			local origin = from + Vector3.new(0, h, 0)
-			local hit = Workspace:Raycast(origin, dir * (dist + 1), params)
+			_G.origin = from + Vector3.new(0, h, 0)
+			_G.hit = Workspace:Raycast(origin, dir * (dist + 1), params)
 			if not hit then
-				local score = math.abs(h - math.max(0, targetPos.Y - from.Y))
+				_G.score = math.abs(h - math.max(0, targetPos.Y - from.Y))
 				if score < bestScore then bestScore = score; bestH = h end
 			end
 		end
@@ -427,8 +427,8 @@ _G.computePathTo = function(targetPos)
 	end
 
 	-- 1) PathfindingService Roblox (parametres optimises longues distances)
-	local ok, pathOrErr = pcall(function()
-		local p = PathfindingService:CreatePath({
+	_G.ok, pathOrErr = pcall(function()
+		_G.p = PathfindingService:CreatePath({
 			AgentRadius = 1.5,
 			AgentHeight = 4.5,
 			AgentCanJump = true,
@@ -450,18 +450,18 @@ _G.computePathTo = function(targetPos)
 
 	-- 2) Longue distance: decouper le trajet en segments de 25 studs
 	if flatDist > 30 then
-		local dir = Vector3.new(targetPos.X - myPos.X, 0, targetPos.Z - myPos.Z).Unit
-		local segmentLen = 25
-		local segments = math.floor(flatDist / segmentLen)
-		local prevPos = myPos
+		_G.dir = Vector3.new(targetPos.X - myPos.X, 0, targetPos.Z - myPos.Z).Unit
+		_G.segmentLen = 25
+		_G.segments = math.floor(flatDist / segmentLen)
+		_G.prevPos = myPos
 		
 		for i = 1, segments do
-			local segTarget = myPos + dir * (i * segmentLen)
+			_G.segTarget = myPos + dir * (i * segmentLen)
 			-- Find ground at this point
-			local gParams = RaycastParams.new()
+			_G.gParams = RaycastParams.new()
 			gParams.FilterDescendantsInstances = {character}
 			gParams.FilterType = Enum.RaycastFilterType.Exclude
-			local ground = Workspace:Raycast(segTarget + Vector3.new(0, 30, 0), Vector3.new(0, -60, 0), gParams)
+			_G.ground = Workspace:Raycast(segTarget + Vector3.new(0, 30, 0), Vector3.new(0, -60, 0), gParams)
 			if ground then
 				segTarget = Vector3.new(segTarget.X, ground.Position.Y + 2, segTarget.Z)
 			end
@@ -471,18 +471,18 @@ _G.computePathTo = function(targetPos)
 				prevPos = segTarget
 			else
 				-- Try to find a path around obstacle at this segment
-				local bestH = findBestHeight(prevPos, dir, segmentLen)
+				_G.bestH = findBestHeight(prevPos, dir, segmentLen)
 				if bestH then
-					local mid = prevPos + dir * (segmentLen * 0.5)
+					_G.mid = prevPos + dir * (segmentLen * 0.5)
 					segTarget = Vector3.new(mid.X, prevPos.Y + bestH, mid.Z)
 					table.insert(waypoints, segTarget)
 					prevPos = segTarget
 				else
 					-- Try going around: left/right offsets
-					local offsets = {Vector3.new(0,0,5), Vector3.new(0,0,-5), Vector3.new(5,0,0), Vector3.new(-5,0,0)}
-					local found = false
+					_G.offsets = {Vector3.new(0,0,5), Vector3.new(0,0,-5), Vector3.new(5,0,0), Vector3.new(-5,0,0)}
+					_G.found = false
 					for _, off in ipairs(offsets) do
-						local tryPos = segTarget + off
+						_G.tryPos = segTarget + off
 						if rayClear(prevPos, tryPos) then
 							table.insert(waypoints, tryPos)
 							prevPos = tryPos
@@ -503,10 +503,10 @@ _G.computePathTo = function(targetPos)
 			table.insert(waypoints, targetPos)
 		else
 			-- Try to find ground at target
-			local gParams = RaycastParams.new()
+			_G.gParams = RaycastParams.new()
 			gParams.FilterDescendantsInstances = {character}
 			gParams.FilterType = Enum.RaycastFilterType.Exclude
-			local ground = Workspace:Raycast(targetPos + Vector3.new(0, 30, 0), Vector3.new(0, -60, 0), gParams)
+			_G.ground = Workspace:Raycast(targetPos + Vector3.new(0, 30, 0), Vector3.new(0, -60, 0), gParams)
 			if ground then
 				table.insert(waypoints, Vector3.new(targetPos.X, ground.Position.Y + 2, targetPos.Z))
 			else
@@ -518,40 +518,40 @@ _G.computePathTo = function(targetPos)
 
 	-- 3) Multi-hauteur raycast (courte distance)
 	local function findClearPath(from, to)
-		local dir = to - from
-		local flatDir = Vector3.new(dir.X, 0, dir.Z)
-		local d = flatDir.Magnitude
+		_G.dir = to - from
+		_G.flatDir = Vector3.new(dir.X, 0, dir.Z)
+		_G.d = flatDir.Magnitude
 		if d < 0.5 then return to end
-		local unit = flatDir / d
-		local bestH = findBestHeight(from, unit, d)
+		_G.unit = flatDir / d
+		_G.bestH = findBestHeight(from, unit, d)
 		if bestH then
-			local mid = from + unit * math.min(10, d * 0.35)
+			_G.mid = from + unit * math.min(10, d * 0.35)
 			return Vector3.new(mid.X, from.Y + bestH, mid.Z)
 		end
 		return nil
 	end
 
-	local mid = findClearPath(myPos, targetPos)
+	_G.mid = findClearPath(myPos, targetPos)
 	if mid then
-		local mid2 = findClearPath(mid, targetPos)
+		_G.mid2 = findClearPath(mid, targetPos)
 		if mid2 then return {mid, mid2} end
 		return {mid}
 	end
 
 	-- 4) Fallback final: step forward
-	local flat = Vector3.new(targetPos.X - myPos.X, 0, targetPos.Z - myPos.Z)
+	_G.flat = Vector3.new(targetPos.X - myPos.X, 0, targetPos.Z - myPos.Z)
 	if flat.Magnitude > 0.1 then
-		local step = myPos + flat.Unit * math.min(6, flat.Magnitude * 0.3)
-		local gParams = RaycastParams.new()
+		_G.step = myPos + flat.Unit * math.min(6, flat.Magnitude * 0.3)
+		_G.gParams = RaycastParams.new()
 		gParams.FilterDescendantsInstances = {character}
 		gParams.FilterType = Enum.RaycastFilterType.Exclude
-		local ground = Workspace:Raycast(step + Vector3.new(0, 10, 0), Vector3.new(0, -20, 0), gParams)
+		_G.ground = Workspace:Raycast(step + Vector3.new(0, 10, 0), Vector3.new(0, -20, 0), gParams)
 		if ground then step = Vector3.new(step.X, ground.Position.Y + 2, step.Z) end
 		return { step }
 	end
 	return {}
 end
-local gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, function(on)
+_G.gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, function(on)
 	gotoWalkState.enabled = on
 	if not on then
 		gotoWalkState.active = false
@@ -569,20 +569,20 @@ _G.refreshNoClipSwitch = function()
 	noclipSwitch.set(false)
 end
 
-local walkSlider = createSlider(movePage, "Vitesse marche", 234, 1, 250, 16, function(v)
+_G.walkSlider = createSlider(movePage, "Vitesse marche", 234, 1, 250, 16, function(v)
 	walkSpeedState.value = math.floor(v)
 	updateCharacter()
 	if humanoid then humanoid.WalkSpeed = walkSpeedState.value end
 end, Color3.fromRGB(255, 100, 100))
 
-local walkResetBtn = createButton(movePage, "Reset vitesse", 288, Color3.fromRGB(80, 80, 90), function()
+_G.walkResetBtn = createButton(movePage, "Reset vitesse", 288, Color3.fromRGB(80, 80, 90), function()
 	walkSpeedState.value = 16
 	walkSlider.set(16)
 	updateCharacter()
 	if humanoid then humanoid.WalkSpeed = 16 end
 end)
 
-local platformLabel = Instance.new("TextLabel")
+_G.platformLabel = Instance.new("TextLabel")
 platformLabel.Size = UDim2.new(1, -16, 0, 30)
 platformLabel.Position = UDim2.new(0, 8, 0, 328)
 platformLabel.BackgroundTransparency = 1
@@ -595,14 +595,14 @@ platformLabel.Parent = movePage
 
 
 -- ============= LOCAL (ZERO-G + TIME + GRAVITY) =============
-local localState = {
+_G.localState = {
 	zeroGravity = false,
 	normalGravity = Workspace.Gravity,
 	customGravity = 196.2,
 	timeOfDay = 12,
 }
 
-local zeroGSwitch = createSwitch(localPage, "Zero Gravité", 10, function(on)
+_G.zeroGSwitch = createSwitch(localPage, "Zero Gravité", 10, function(on)
 	localState.zeroGravity = on
 	if on then
 		Workspace.Gravity = 0
@@ -610,10 +610,10 @@ local zeroGSwitch = createSwitch(localPage, "Zero Gravité", 10, function(on)
 		Workspace.Gravity = localState.customGravity
 	end
 
-	local character = LocalPlayer.Character
+	_G.character = LocalPlayer.Character
 	if character then
-		local hum = character:FindFirstChildWhichIsA("Humanoid")
-		local animate = character:FindFirstChild("Animate")
+		_G.hum = character:FindFirstChildWhichIsA("Humanoid")
+		_G.animate = character:FindFirstChild("Animate")
 		if hum then
 			hum.PlatformStand = on
 			if animate then animate.Disabled = on end
@@ -629,7 +629,7 @@ end)
 
 -- Conteneur gravité personnalisé (slider précis + input + reset)
 _=(function()
-local gravityContainer = Instance.new("Frame")
+_G.gravityContainer = Instance.new("Frame")
 gravityContainer.Size = UDim2.new(1, -16, 0, 86)
 gravityContainer.Position = UDim2.new(0, 8, 0, 56)
 gravityContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
@@ -638,7 +638,7 @@ gravityContainer.Parent = localPage
 createCorner(gravityContainer, 10)
 createStroke(gravityContainer, Color3.fromRGB(45, 45, 55), 1)
 
-local gravityLabel = Instance.new("TextLabel")
+_G.gravityLabel = Instance.new("TextLabel")
 gravityLabel.Size = UDim2.new(1, -10, 0, 18)
 gravityLabel.Position = UDim2.new(0, 8, 0, 5)
 gravityLabel.BackgroundTransparency = 1
@@ -649,7 +649,7 @@ gravityLabel.TextColor3 = Color3.fromRGB(210, 210, 210)
 gravityLabel.TextXAlignment = Enum.TextXAlignment.Left
 gravityLabel.Parent = gravityContainer
 
-local gravityTrack = Instance.new("Frame")
+_G.gravityTrack = Instance.new("Frame")
 gravityTrack.Size = UDim2.new(1, -110, 0, 6)
 gravityTrack.Position = UDim2.new(0, 8, 0, 30)
 gravityTrack.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
@@ -657,14 +657,14 @@ gravityTrack.BorderSizePixel = 0
 gravityTrack.Parent = gravityContainer
 createCorner(gravityTrack, 3)
 
-local gravityFill = Instance.new("Frame")
+_G.gravityFill = Instance.new("Frame")
 gravityFill.Size = UDim2.new(196.2 / 300, 0, 1, 0)
 gravityFill.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
 gravityFill.BorderSizePixel = 0
 gravityFill.Parent = gravityTrack
 createCorner(gravityFill, 3)
 
-local gravityInput = Instance.new("TextBox")
+_G.gravityInput = Instance.new("TextBox")
 gravityInput.Size = UDim2.new(0, 80, 0, 22)
 gravityInput.Position = UDim2.new(1, -90, 0, 22)
 gravityInput.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
@@ -690,9 +690,9 @@ createStroke(gravityInput, Color3.fromRGB(80, 80, 100), 1)
 	gravityFill.Size = UDim2.new(v / 300, 0, 1, 0)
 end
 
-local draggingGravity = false
+_G.draggingGravity = false
 _G.gravityFromX = function(x)
-	local rel = math.clamp((x - gravityTrack.AbsolutePosition.X) / gravityTrack.AbsoluteSize.X, 0, 1)
+	_G.rel = math.clamp((x - gravityTrack.AbsolutePosition.X) / gravityTrack.AbsoluteSize.X, 0, 1)
 	return math.floor(rel * 300 + 0.5)
 end
 
@@ -717,14 +717,14 @@ gravityInput.FocusLost:Connect(function(enterPressed)
 	_G._agoraSetGravityExact(gravityInput.Text)
 end)
 
-local resetGravityBtn = createButton(localPage, "Reset gravité normale", 148, Color3.fromRGB(80, 80, 90), function()
+_G.resetGravityBtn = createButton(localPage, "Reset gravité normale", 148, Color3.fromRGB(80, 80, 90), function()
 	_G._agoraSetGravityExact(196.2)
 end)
 resetGravityBtn.Size = UDim2.new(1, -16, 0, 30)
 resetGravityBtn.Position = UDim2.new(0, 8, 0, 148)
 end)()
 
-local timeSwitch = createSwitch(localPage, "Temps custom", 200, function(on)
+_G.timeSwitch = createSwitch(localPage, "Temps custom", 200, function(on)
 	if on then
 		Lighting.TimeOfDay = string.format("%02d:00:00", localState.timeOfDay)
 	else
@@ -753,8 +753,8 @@ createButton(localPage, "Reset monde", 348, Color3.fromRGB(80, 80, 90), function
 end)
 
 -- Switch ESP Global dans l'onglet Local
-local globalESPEnabled = false
-local globalESPSwitch = createSwitch(localPage, "ESP Global", 404, function(on)
+_G.globalESPEnabled = false
+_G.globalESPSwitch = createSwitch(localPage, "ESP Global", 404, function(on)
 	globalESPEnabled = on
 	espState.enabled = on
 	if on then
@@ -765,7 +765,7 @@ local globalESPSwitch = createSwitch(localPage, "ESP Global", 404, function(on)
 end)
 
 -- Toggle icônes chat sur l'ESP
-local chatIconsSwitch = createSwitch(localPage, "Icônes chat ESP", 448, function(on)
+_G.chatIconsSwitch = createSwitch(localPage, "Icônes chat ESP", 448, function(on)
 	espState.chatIcons = on
 end)
 chatIconsSwitch.set(true)
@@ -774,7 +774,7 @@ chatIconsSwitch.set(true)
 updateLoad(0.40, "Auto Clicker...")
 task.wait(0.05)
 -- ============= AUTO CLICKER =============
-local autoClickState = {
+_G.autoClickState = {
 	toolActive = false,   -- le switch (faux tool dans le backpack)
 	clickEnabled = false, -- le moteur d'autoclick actif
 	speed = 0.05,
@@ -803,15 +803,15 @@ _G.removeFakeTool = function()
 end
 
 _G.createFakeTool = function()
-	local backpack = LocalPlayer:FindFirstChild("Backpack")
+	_G.backpack = LocalPlayer:FindFirstChild("Backpack")
 	if not backpack then return end
 	removeFakeTool()
-	local tool = Instance.new("Tool")
+	_G.tool = Instance.new("Tool")
 	tool.Name = "AutoClicker_Tool"
 	tool.RequiresHandle = false
 	tool.CanBeDropped = false
 	tool.ToolTip = "Configurer puis activer l'autoclick"
-	local h = Instance.new("Part")
+	_G.h = Instance.new("Part")
 	h.Name = "Handle"
 	h.Size = Vector3.new(0.1, 0.1, 0.1)
 	h.Transparency = 1
@@ -847,14 +847,14 @@ _G.onToolDeactivated = function()
 	stopAutoClickEngine()
 end
 
-local VirtualInputManager
+_G.VirtualInputManager
 pcall(function()
 	VirtualInputManager = (getvirtualinputmanager and getvirtualinputmanager()) or game:GetService("VirtualInputManager")
 end)
 
 -- Position FIXE capturée quand l'utilisateur clique "Démarrer AutoClick".
 -- C'est cette position qu'on réutilise à chaque tick (le curseur peut bouger).
-local acTarget = {
+_G.acTarget = {
 	captured = false,
 	position = Vector2.new(0, 0),   -- position écran
 	worldHit = nil,                 -- Mouse.Hit sous le curseur à la capture
@@ -874,7 +874,7 @@ _=(function()
 	function refreshAutoClickMarker()
 		destroyAutoClickMarker()
 		if not acTarget.worldHit then return end
-		local marker = Instance.new("Part")
+		_G.marker = Instance.new("Part")
 		marker.Name = "AutoClickMarker"
 		marker.Size = Vector3.new(0.6, 0.6, 0.6)
 		marker.Shape = Enum.PartType.Ball
@@ -892,7 +892,7 @@ end)()
 
 -- Met à jour la position FIXE = le curseur au moment de l'appel
 _G.captureTargetFromCursor = function()
-	local mouse = LocalPlayer:GetMouse()
+	_G.mouse = LocalPlayer:GetMouse()
 	if not mouse then return false end
 	acTarget.captured = true
 	acTarget.position = UserInputService:GetMouseLocation()
@@ -905,12 +905,12 @@ end
 -- Trouve le bouton GUI au point (Vector2) en descendant l'arbre GUI
 _G.findGuiButtonAt = function(point, root)
 	if not root then return nil end
-	local best = nil
+	_G.best = nil
 	local function walk(obj)
 		if obj:IsA("TextButton") or obj:IsA("ImageButton") or obj:IsA("TextButton") then
 			if obj.Visible and obj.Active ~= false then
-				local ap = obj.AbsolutePosition
-				local as = obj.AbsoluteSize
+				_G.ap = obj.AbsolutePosition
+				_G.as = obj.AbsoluteSize
 				if as.X > 0 and as.Y > 0 then
 					if point.X >= ap.X and point.X <= ap.X + as.X
 						and point.Y >= ap.Y and point.Y <= ap.Y + as.Y then
@@ -923,7 +923,7 @@ _G.findGuiButtonAt = function(point, root)
 			end
 		end
 		for _, child in ipairs(obj:GetChildren()) do
-			local ok, _ = pcall(walk, child)
+			_G.ok, _ = pcall(walk, child)
 			if not ok then end
 		end
 	end
@@ -933,18 +933,18 @@ end
 
 -- ClickDetector sous le point écran — raycast caméra vers l'arrière
 _G.findClickDetectorAtScreen = function(point)
-	local camera = Workspace.CurrentCamera
+	_G.camera = Workspace.CurrentCamera
 	if not camera then return nil end
-	local unit = camera:ScreenPointToRay(point.X, point.Y)
-	local hit = Workspace:Raycast(unit.Origin, unit.Direction * 1000)
+	_G.unit = camera:ScreenPointToRay(point.X, point.Y)
+	_G.hit = Workspace:Raycast(unit.Origin, unit.Direction * 1000)
 	if not hit then return nil end
-	local inst = hit.Instance
+	_G.inst = hit.Instance
 	if inst and inst:IsA("ClickDetector") then return inst end
 	if inst then
-		local cd = inst:FindFirstChildOfClass("ClickDetector")
+		_G.cd = inst:FindFirstChildOfClass("ClickDetector")
 		if cd then return cd end
 		if inst.Parent then
-			local cd2 = inst.Parent:FindFirstChildOfClass("ClickDetector")
+			_G.cd2 = inst.Parent:FindFirstChildOfClass("ClickDetector")
 			if cd2 then return cd2 end
 		end
 	end
@@ -954,15 +954,15 @@ end
 -- Un seul clic à la position FIXE acTarget (pas le curseur actuel)
 _G.fireClickFixed = function(useNative)
 	if not acTarget.captured then return false end
-	local pt = acTarget.position
-	local clicked = false
-	local mode = acTarget.targetType
+	_G.pt = acTarget.position
+	_G.clicked = false
+	_G.mode = acTarget.targetType
 
 	-- 1) GUI au point fixe
 	if mode == "any" or mode == "gui" then
-		local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+		_G.playerGui = LocalPlayer:FindFirstChild("PlayerGui")
 		if playerGui then
-			local btn = findGuiButtonAt(pt, playerGui)
+			_G.btn = findGuiButtonAt(pt, playerGui)
 			if btn then
 				pcall(function()
 					btn.MouseEnter:Fire()
@@ -977,7 +977,7 @@ _G.fireClickFixed = function(useNative)
 
 	-- 2) ClickDetector dans le monde au point fixe
 	if not clicked and (mode == "any" or mode == "world") then
-		local cd = findClickDetectorAtScreen(pt)
+		_G.cd = findClickDetectorAtScreen(pt)
 		if cd then
 			pcall(function() fireclickdetector(cd) end)
 			clicked = true
@@ -986,21 +986,21 @@ _G.fireClickFixed = function(useNative)
 
 	-- 2b) ProximityPrompt dans le monde au point fixe (clic souris direct)
 	if not clicked and (mode == "any" or mode == "world") then
-		local cam = workspace.CurrentCamera
+		_G.cam = workspace.CurrentCamera
 		if cam then
-			local ray = cam:ScreenPointToRay(pt.X, pt.Y)
-			local pp = nil
+			_G.ray = cam:ScreenPointToRay(pt.X, pt.Y)
+			_G.pp = nil
 			-- Cherche un ProximityPrompt dont l'ObjectText chevauche le curseur
 			for _, desc in ipairs(workspace:GetDescendants()) do
 				if desc:IsA("ProximityPrompt") and desc.Enabled and desc.Parent then
-					local att = desc.Parent
+					_G.att = desc.Parent
 					if att:IsA("Attachment") and att.Parent then
-						local p3 = att.WorldPosition
+						_G.p3 = att.WorldPosition
 						-- Projection du point curseur sur le rayon, distance au point 3D
-						local toPoint = p3 - ray.Origin
-						local t = toPoint:Dot(ray.Direction)
+						_G.toPoint = p3 - ray.Origin
+						_G.t = toPoint:Dot(ray.Direction)
 						if t > 0 then
-							local closest = ray.Origin + ray.Direction * t
+							_G.closest = ray.Origin + ray.Direction * t
 							if (closest - p3).Magnitude <= math.max(2, desc.MaxActivationDistance) then
 								pp = desc
 								break
@@ -1049,12 +1049,12 @@ _G.startAutoClickEngine = function()
 	autoClickState.clickEnabled = true
 	statusLabel.Text = "Statut : actif"
 	statusLabel.TextColor3 = Color3.fromRGB(80, 220, 120)
-	local threadId = {}
+	_G.threadId = {}
 	autoClickState.activeThread = threadId
-	local interval = math.max(0.001, autoClickState.speed)
+	_G.interval = math.max(0.001, autoClickState.speed)
 	-- Boucle : utilise VIM fallback (force=true) pour attraper les clics souris natifs du jeu
 	-- En mode "gui" seul, on n'utilise PAS le VIM (risque de cliquer dans le jeu derrière les menus)
-	local useNative = (acTarget.targetType ~= "gui")
+	_G.useNative = (acTarget.targetType ~= "gui")
 	task.spawn(function()
 		while autoClickState.clickEnabled and autoClickState.activeThread == threadId do
 			fireClickFixed(useNative)
@@ -1063,7 +1063,7 @@ _G.startAutoClickEngine = function()
 	end)
 end
 
-local autoClickContainer = Instance.new("Frame")
+_G.autoClickContainer = Instance.new("Frame")
 autoClickContainer.Size = UDim2.new(1, -16, 0, 260)
 autoClickContainer.Position = UDim2.new(0, 8, 0, 460)
 autoClickContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
@@ -1072,7 +1072,7 @@ autoClickContainer.Parent = localPage
 createCorner(autoClickContainer, 10)
 createStroke(autoClickContainer, Color3.fromRGB(45, 45, 55), 1)
 
-local autoClickTitle = Instance.new("TextLabel")
+_G.autoClickTitle = Instance.new("TextLabel")
 autoClickTitle.Size = UDim2.new(1, -10, 0, 18)
 autoClickTitle.Position = UDim2.new(0, 8, 0, 6)
 autoClickTitle.BackgroundTransparency = 1
@@ -1083,7 +1083,7 @@ autoClickTitle.TextColor3 = Color3.fromRGB(210, 210, 210)
 autoClickTitle.TextXAlignment = Enum.TextXAlignment.Left
 autoClickTitle.Parent = autoClickContainer
 
-local infoLabel = Instance.new("TextLabel")
+_G.infoLabel = Instance.new("TextLabel")
 infoLabel.Size = UDim2.new(1, -16, 0, 28)
 infoLabel.Position = UDim2.new(0, 8, 0, 22)
 infoLabel.BackgroundTransparency = 1
@@ -1096,7 +1096,7 @@ infoLabel.TextXAlignment = Enum.TextXAlignment.Left
 infoLabel.Parent = autoClickContainer
 
 -- Marqueur visuel : petit point rouge à la position FIXE capturée
-local acMarker = Instance.new("Frame")
+_G.acMarker = Instance.new("Frame")
 acMarker.Name = "_ACMarker"
 acMarker.Size = UDim2.new(0, 14, 0, 14)
 acMarker.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
@@ -1108,7 +1108,7 @@ acMarker.AnchorPoint = Vector2.new(0.5, 0.5)
 acMarker.Parent = screenGui
 createCorner(acMarker, 7)
 
-local acMarkerStroke = Instance.new("UIStroke")
+_G.acMarkerStroke = Instance.new("UIStroke")
 acMarkerStroke.Color = Color3.fromRGB(255, 200, 200)
 acMarkerStroke.Thickness = 1.5
 acMarkerStroke.Parent = acMarker
@@ -1121,15 +1121,15 @@ _G.hideMarker = function()
 	acMarker.Visible = false
 end
 
-local _origCapture = captureTargetFromCursor
+_G._origCapture = captureTargetFromCursor
 captureTargetFromCursor = function()
-	local ok = _origCapture()
+	_G.ok = _origCapture()
 	if ok then showMarkerAt(acTarget.position) end
 	return ok
 end
 
 -- Switch : active/désactive UNIQUEMENT le faux tool dans le backpack
-local autoClickSwitch = createSwitch(autoClickContainer, "Activer (touche G) - ouvre mini panel", 56, function(on)
+_G.autoClickSwitch = createSwitch(autoClickContainer, "Activer (touche G) - ouvre mini panel", 56, function(on)
 	autoClickState.toolActive = on
 	if on then
 		-- Plus de fake tool : on ouvre juste le mini panel flottant
@@ -1154,17 +1154,17 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 	end
 end)
 
-local modeFrame = Instance.new("Frame")
+_G.modeFrame = Instance.new("Frame")
 modeFrame.Size = UDim2.new(1, -16, 0, 26)
 modeFrame.Position = UDim2.new(0, 8, 0, 100)
 modeFrame.BackgroundTransparency = 1
 modeFrame.Parent = autoClickContainer
 
-local modes = {any = "Les 2", world = "Monde", gui = "GUI"}
-local modeOrder = {"any", "world", "gui"}
-local modeBtns = {}
+_G.modes = {any = "Les 2", world = "Monde", gui = "GUI"}
+_G.modeOrder = {"any", "world", "gui"}
+_G.modeBtns = {}
 for i, m in ipairs(modeOrder) do
-	local btn = Instance.new("TextButton")
+	_G.btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0.32, -2, 1, 0)
 	btn.Position = UDim2.new((i - 1) * 0.34, 0, 0, 0)
 	btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
@@ -1185,7 +1185,7 @@ for i, m in ipairs(modeOrder) do
 end
 tween(modeBtns["any"], {BackgroundColor3 = Color3.fromRGB(60, 120, 200)}, 0)
 
-local speedLabel = Instance.new("TextLabel")
+_G.speedLabel = Instance.new("TextLabel")
 speedLabel.Size = UDim2.new(1, -10, 0, 16)
 speedLabel.Position = UDim2.new(0, 8, 0, 132)
 speedLabel.BackgroundTransparency = 1
@@ -1196,7 +1196,7 @@ speedLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 speedLabel.TextXAlignment = Enum.TextXAlignment.Left
 speedLabel.Parent = autoClickContainer
 
-local speedSliderTrack = Instance.new("Frame")
+_G.speedSliderTrack = Instance.new("Frame")
 speedSliderTrack.Size = UDim2.new(1, -16, 0, 6)
 speedSliderTrack.Position = UDim2.new(0, 8, 0, 152)
 speedSliderTrack.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
@@ -1204,16 +1204,16 @@ speedSliderTrack.BorderSizePixel = 0
 speedSliderTrack.Parent = autoClickContainer
 createCorner(speedSliderTrack, 3)
 
-local speedFill = Instance.new("Frame")
+_G.speedFill = Instance.new("Frame")
 speedFill.Size = UDim2.new(0.5, 0, 1, 0)
 speedFill.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
 speedFill.BorderSizePixel = 0
 speedFill.Parent = speedSliderTrack
 createCorner(speedFill, 3)
 
-local draggingSpeed = false
+_G.draggingSpeed = false
 _G.speedFromX = function(x)
-	local rel = math.clamp((x - speedSliderTrack.AbsolutePosition.X) / speedSliderTrack.AbsoluteSize.X, 0, 1)
+	_G.rel = math.clamp((x - speedSliderTrack.AbsolutePosition.X) / speedSliderTrack.AbsoluteSize.X, 0, 1)
 	return 0.001 + rel * 0.199
 end
 _G.setSpeed = function(s)
@@ -1244,7 +1244,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- Mini panneau de contrôle flottant
-local clickControl = Instance.new("Frame")
+_G.clickControl = Instance.new("Frame")
 clickControl.Name = "AutoClickControl"
 clickControl.Size = UDim2.new(0, 140, 0, 170)
 clickControl.Position = UDim2.new(0.5, -70, 0.5, -85)
@@ -1259,7 +1259,7 @@ clickControl.Visible = false
 createCorner(clickControl, 12)
 createStroke(clickControl, Color3.fromRGB(80, 80, 100), 1)
 
-local controlHeader = Instance.new("TextButton")
+_G.controlHeader = Instance.new("TextButton")
 controlHeader.AutoButtonColor = false
 controlHeader.Size = UDim2.new(1, 0, 0, 24)
 controlHeader.BackgroundTransparency = 1
@@ -1272,7 +1272,7 @@ controlHeader.Parent = clickControl
 
 -- Drag manuel du clickControl depuis le header (TextButton avec AutoButtonColor=false)
 -- Listener global sur UserInputService pour que le drag suive la souris même hors du header
-local ccDragging, ccDragStart, ccStartPos = false, nil, nil
+_G.ccDragging, ccDragStart, ccStartPos = false, nil, nil
 controlHeader.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		ccDragging = true
@@ -1283,8 +1283,8 @@ end)
 UserInputService.InputChanged:Connect(function(input)
 	if ccDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 		if ccStartPos and ccDragStart then
-			local dx = input.Position.X - ccDragStart.X
-			local dy = input.Position.Y - ccDragStart.Y
+			_G.dx = input.Position.X - ccDragStart.X
+			_G.dy = input.Position.Y - ccDragStart.Y
 			clickControl.Position = UDim2.new(ccStartPos.X.Scale, ccStartPos.X.Offset + dx, ccStartPos.Y.Scale, ccStartPos.Y.Offset + dy)
 		end
 	end
@@ -1295,7 +1295,7 @@ UserInputService.InputEnded:Connect(function(input)
 	end
 end)
 
-local statusLabel = Instance.new("TextLabel")
+_G.statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(0.9, 0, 0, 16)
 statusLabel.Position = UDim2.new(0.05, 0, 0, 26)
 statusLabel.BackgroundTransparency = 1
@@ -1306,7 +1306,7 @@ statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 statusLabel.ZIndex = 122
 statusLabel.Parent = clickControl
 
-local execBtn = Instance.new("TextButton")
+_G.execBtn = Instance.new("TextButton")
 execBtn.Size = UDim2.new(0.9, 0, 0, 28)
 execBtn.Position = UDim2.new(0.05, 0, 0, 46)
 execBtn.ZIndex = 122
@@ -1324,7 +1324,7 @@ execBtn.MouseButton1Click:Connect(function()
 	fireClickFixed(true)
 end)
 
-local multiBtn = Instance.new("TextButton")
+_G.multiBtn = Instance.new("TextButton")
 multiBtn.Size = UDim2.new(0.9, 0, 0, 28)
 multiBtn.Position = UDim2.new(0.05, 0, 0, 78)
 multiBtn.ZIndex = 122
@@ -1344,7 +1344,7 @@ multiBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
-local toggleClickBtn = Instance.new("TextButton")
+_G.toggleClickBtn = Instance.new("TextButton")
 toggleClickBtn.Size = UDim2.new(0.9, 0, 0, 28)
 toggleClickBtn.Position = UDim2.new(0.05, 0, 0, 110)
 toggleClickBtn.ZIndex = 122
@@ -1370,7 +1370,7 @@ toggleClickBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
-local closeControlBtn = Instance.new("TextButton")
+_G.closeControlBtn = Instance.new("TextButton")
 closeControlBtn.Size = UDim2.new(0.9, 0, 0, 18)
 closeControlBtn.Position = UDim2.new(0.05, 0, 0, 142)
 closeControlBtn.ZIndex = 122
@@ -1387,7 +1387,7 @@ closeControlBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Petite poignée de drag en bas à droite du panneau
-local dragHandle = Instance.new("TextButton")
+_G.dragHandle = Instance.new("TextButton")
 dragHandle.Name = "DragHandle"
 dragHandle.Size = UDim2.new(0, 22, 0, 22)
 dragHandle.Position = UDim2.new(1, -24, 1, -24)
@@ -1401,10 +1401,10 @@ dragHandle.Parent = clickControl
 createCorner(dragHandle, 11)
 
 _G.clampControl = function()
-	local s = screenGui.AbsoluteSize
-	local sz = clickControl.AbsoluteSize
-	local x = math.clamp(clickControl.AbsolutePosition.X, 0, math.max(0, s.X - sz.X))
-	local y = math.clamp(clickControl.AbsolutePosition.Y, 0, math.max(0, s.Y - sz.Y))
+	_G.s = screenGui.AbsoluteSize
+	_G.sz = clickControl.AbsoluteSize
+	_G.x = math.clamp(clickControl.AbsolutePosition.X, 0, math.max(0, s.X - sz.X))
+	_G.y = math.clamp(clickControl.AbsolutePosition.Y, 0, math.max(0, s.Y - sz.Y))
 	clickControl.Position = UDim2.new(0, x, 0, y)
 end
 
@@ -1412,7 +1412,7 @@ clickControl:GetPropertyChangedSignal("Position"):Connect(function()
 	task.defer(clampControl)
 end)
 
-local controlToggle = createButton(autoClickContainer, "Afficher/Cacher panneau", 198, Color3.fromRGB(80, 60, 160), function()
+_G.controlToggle = createButton(autoClickContainer, "Afficher/Cacher panneau", 198, Color3.fromRGB(80, 60, 160), function()
 	clickControl.Visible = not clickControl.Visible
 end)
 controlToggle.Size = UDim2.new(1, -16, 0, 28)
@@ -1420,21 +1420,21 @@ controlToggle.Position = UDim2.new(0, 8, 0, 226)
 
 -- Restaurer sauvegarde
 if panelMemory.autoClick and panelMemory.autoClick.pos then
-	local p = panelMemory.autoClick.pos
+	_G.p = panelMemory.autoClick.pos
 	clickControl.Position = UDim2.new(p[1], p[2], p[3], p[4])
 end
 if panelMemory.autoClick and panelMemory.autoClick.speed then
 	setSpeed(panelMemory.autoClick.speed)
 end
 if panelMemory.autoClick and panelMemory.autoClick.targetType then
-	local saved = panelMemory.autoClick.targetType
+	_G.saved = panelMemory.autoClick.targetType
 	if modes[saved] then
 		acTarget.targetType = saved
 		for _, b in pairs(modeBtns) do tween(b, {BackgroundColor3 = Color3.fromRGB(45, 45, 55)}, 0.1) end
 		tween(modeBtns[saved], {BackgroundColor3 = Color3.fromRGB(60, 120, 200)}, 0.1)
 	end
 elseif panelMemory.autoClick and panelMemory.autoClick.mode then
-	local saved = panelMemory.autoClick.mode
+	_G.saved = panelMemory.autoClick.mode
 	if saved == "rapid" or saved == "auto" then saved = "any" end
 	if modes[saved] then
 		acTarget.targetType = saved
@@ -1456,10 +1456,10 @@ localScroll.CanvasSize = UDim2.new(0, 0, 0, 900)
 -- Empêche le panel d'être poussé sous le chat au démarrage
 task.delay(0, function()
 	local function clampFrame()
-		local abs = mainFrame.AbsoluteSize
-		local scr = screenGui.AbsoluteSize
-		local x = math.clamp(mainFrame.AbsolutePosition.X, 0, math.max(0, scr.X - abs.X))
-		local y = math.clamp(mainFrame.AbsolutePosition.Y, 0, math.max(0, scr.Y - abs.Y))
+		_G.abs = mainFrame.AbsoluteSize
+		_G.scr = screenGui.AbsoluteSize
+		_G.x = math.clamp(mainFrame.AbsolutePosition.X, 0, math.max(0, scr.X - abs.X))
+		_G.y = math.clamp(mainFrame.AbsolutePosition.Y, 0, math.max(0, scr.Y - abs.Y))
 		mainFrame.Position = UDim2.new(0, x, 0, y)
 	end
 	clampFrame()
@@ -1469,9 +1469,9 @@ end)
 
 RunService.RenderStepped:Connect(function()
 	if localState.zeroGravity then
-		local char = LocalPlayer.Character
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-		local cam = Workspace.CurrentCamera
+		_G.char = LocalPlayer.Character
+		_G.hrp = char and char:FindFirstChild("HumanoidRootPart")
+		_G.cam = Workspace.CurrentCamera
 		if hrp and UserInputService:IsKeyDown(Enum.KeyCode.W) then
 			hrp.AssemblyLinearVelocity = cam.CFrame.LookVector * 16
 		end
@@ -1508,25 +1508,25 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 			end
 			-- Détermine la hauteur initiale de la plate selon le contexte (à pied / en voiture)
 			-- La plate ne suit PAS la position, seulement la hauteur capturée ici
-			local seatPart = humanoid and humanoid.SeatPart
-			local capturedY
+			_G.seatPart = humanoid and humanoid.SeatPart
+			_G.capturedY
 			if seatPart and seatPart:IsA("BasePart") then
 				-- En voiture : plate sous les roues (marge 1.5 stud pour pas toucher le châssis)
-				local seatModel = seatPart:FindFirstAncestorOfClass("Model") or seatPart.Parent
+				_G.seatModel = seatPart:FindFirstAncestorOfClass("Model") or seatPart.Parent
 				if seatModel and seatModel ~= character then
-					local ok, cf, size = pcall(function() return seatModel:GetBoundingBox() end)
+					_G.ok, cf, size = pcall(function() return seatModel:GetBoundingBox() end)
 					if ok and cf and size then
 						capturedY = cf.Position.Y - size.Y / 2 - 1.5
 					end
 				end
 				if not capturedY and seatPart then
-					local cf = seatPart.CFrame
-					local size = seatPart.Size
+					_G.cf = seatPart.CFrame
+					_G.size = seatPart.Size
 					capturedY = cf.Position.Y - size.Y / 2 - 1.5
 				end
 			elseif character then
 				-- À pied : sous nos pieds (marge 0.2 stud)
-				local ok, cf, size = pcall(function() return character:GetBoundingBox() end)
+				_G.ok, cf, size = pcall(function() return character:GetBoundingBox() end)
 				if ok and cf and size then
 					capturedY = cf.Position.Y - size.Y / 2 - 0.2
 				elseif rootPart then
@@ -1540,7 +1540,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 				platformState.offset = 0
 				platformState.smoothedOffset = 0
 				-- Centre la plate sur le joueur/voiture au moment du toggle, puis elle reste FIXE
-				local anchorPos = rootPart and rootPart.Position or (humanoid and humanoid.SeatPart and humanoid.SeatPart.Position)
+				_G.anchorPos = rootPart and rootPart.Position or (humanoid and humanoid.SeatPart and humanoid.SeatPart.Position)
 				if anchorPos then
 					platformState.part.CFrame = CFrame.new(anchorPos.X, capturedY, anchorPos.Z)
 				else
@@ -1573,33 +1573,33 @@ RunService.Stepped:Connect(function(_, dt)
 			platformState.offset -= 25 * dt
 		end
 		-- Lissage de la position verticale (évite les sauts secs)
-		local smoothing = math.min(1, dt * 12)
+		_G.smoothing = math.min(1, dt * 12)
 		platformState.smoothedOffset = platformState.smoothedOffset + (platformState.offset - platformState.smoothedOffset) * smoothing
 		-- Conserve la position X/Z initiale, change juste Y
-		local cur = platformState.part.CFrame
+		_G.cur = platformState.part.CFrame
 		platformState.part.CFrame = CFrame.new(cur.X, platformState.y + platformState.smoothedOffset, cur.Z)
 	end
 	-- Go to Walk : déplace le humanoid vers chaque waypoint avec MoveTo
 	-- Go to Walk : deplace le humanoid vers chaque waypoint avec MoveTo + saut auto si bloque
 	if humanoid and rootPart and gotoWalkState.active and #gotoWalkState.path > 0 then
-		local wp = gotoWalkState.path[1]
-		local myPos = rootPart.Position
-		local flatDist = Vector3.new(myPos.X - wp.X, 0, myPos.Z - wp.Z).Magnitude
+		_G.wp = gotoWalkState.path[1]
+		_G.myPos = rootPart.Position
+		_G.flatDist = Vector3.new(myPos.X - wp.X, 0, myPos.Z - wp.Z).Magnitude
 		
 		-- === DETECTION DIMENSIONS PERSONNAGE ===
-		local charWidth = 2 -- largeur approximative du personnage (HumanoidRootPart size)
-		local charHeight = 5 -- hauteur approximative (tete + torse + jambes)
-		local crawlMode = false
+		_G.charWidth = 2 -- largeur approximative du personnage (HumanoidRootPart size)
+		_G.charHeight = 5 -- hauteur approximative (tete + torse + jambes)
+		_G.crawlMode = false
 		
 		-- Raycast box pour verifier si on passe en hauteur
 		local function checkPassage(pos, height, width)
-			local params = RaycastParams.new()
+			_G.params = RaycastParams.new()
 			params.FilterDescendantsInstances = {character}
 			params.FilterType = Enum.RaycastFilterType.Exclude
 			-- Check hauteur: raycast du sol vers le haut
-			local topHit = Workspace:Raycast(pos, Vector3.new(0, height, 0), params)
+			_G.topHit = Workspace:Raycast(pos, Vector3.new(0, height, 0), params)
 			if topHit then
-				local clearance = (topHit.Position - pos).Y
+				_G.clearance = (topHit.Position - pos).Y
 				if clearance < charHeight then
 					-- Trop bas pour marcher, verifie si on peut ramper
 					if clearance >= 1.5 then
@@ -1611,8 +1611,8 @@ RunService.Stepped:Connect(function(_, dt)
 				end
 			end
 			-- Check largeur: raycast a gauche et droite
-			local leftHit = Workspace:Raycast(pos, Vector3.new(-width/2, 0, 0), params)
-			local rightHit = Workspace:Raycast(pos, Vector3.new(width/2, 0, 0), params)
+			_G.leftHit = Workspace:Raycast(pos, Vector3.new(-width/2, 0, 0), params)
+			_G.rightHit = Workspace:Raycast(pos, Vector3.new(width/2, 0, 0), params)
 			if leftHit or rightHit then
 				return "tight"
 			end
@@ -1620,12 +1620,12 @@ RunService.Stepped:Connect(function(_, dt)
 		end
 		
 		-- Verifie le passage au prochain waypoint
-		local passage = checkPassage(wp, charHeight, charWidth)
+		_G.passage = checkPassage(wp, charHeight, charWidth)
 		if passage == "crawl" then
 			-- Coucher le personnage (ramper)
 			pcall(function()
 				humanoid.HipHeight = 0
-				local root = rootPart
+				_G.root = rootPart
 				if root then
 					root.Size = Vector3.new(2, 1, 1)
 				end
@@ -1634,7 +1634,7 @@ RunService.Stepped:Connect(function(_, dt)
 			-- Restaurer la posture normale
 			pcall(function()
 				humanoid.HipHeight = 2
-				local root = rootPart
+				_G.root = rootPart
 				if root then
 					root.Size = Vector3.new(2, 5, 1)
 				end
@@ -1643,7 +1643,7 @@ RunService.Stepped:Connect(function(_, dt)
 		
 		-- === SAUT INTELLIGENT ===
 		-- Verifie si le prochain waypoint est plus haut que la position actuelle
-		local heightDiff = wp.Y - myPos.Y
+		_G.heightDiff = wp.Y - myPos.Y
 		if heightDiff > 2.5 and flatDist < 8 then
 			-- Le waypoint est plus haut et proche -> sauter
 			pcall(function()
@@ -1651,10 +1651,10 @@ RunService.Stepped:Connect(function(_, dt)
 			end)
 		end
 		-- Verifie aussi s'il y a un obstacle devant qui necessite un saut
-		local frontParams = RaycastParams.new()
+		_G.frontParams = RaycastParams.new()
 		frontParams.FilterDescendantsInstances = {character}
 		frontParams.FilterType = Enum.RaycastFilterType.Exclude
-		local frontRay = Workspace:Raycast(myPos, rootPart.CFrame.LookVector * 4, frontParams)
+		_G.frontRay = Workspace:Raycast(myPos, rootPart.CFrame.LookVector * 4, frontParams)
 		if frontRay and heightDiff > 0 then
 			-- Obstacle devant et on doit monter -> sauter
 			pcall(function()
@@ -1663,8 +1663,8 @@ RunService.Stepped:Connect(function(_, dt)
 		end
 		
 		-- === DETECTION DE BLOCAGE ===
-		local vel = rootPart.AssemblyLinearVelocity
-		local flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
+		_G.vel = rootPart.AssemblyLinearVelocity
+		_G.flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
 		if flatDist > 3 and flatSpeed < 1 then
 			if gotoWalkState.stuckSince == nil then gotoWalkState.stuckSince = tick() end
 			if tick() - gotoWalkState.stuckSince > 0.5 then
@@ -1673,9 +1673,9 @@ RunService.Stepped:Connect(function(_, dt)
 				-- Si toujours bloque apres 2s, recalcule
 				if tick() - gotoWalkState.stuckSince > 2 and gotoWalkState.target then
 					gotoWalkState.stuckSince = nil
-					local newPath = computePathTo(gotoWalkState.target)
+					_G.newPath = computePathTo(gotoWalkState.target)
 					if not newPath or #newPath == 0 then
-						local offsets = {Vector3.new(4,0,0), Vector3.new(-4,0,0), Vector3.new(0,0,4), Vector3.new(0,0,-4), Vector3.new(4,0,4), Vector3.new(-4,0,-4)}
+						_G.offsets = {Vector3.new(4,0,0), Vector3.new(-4,0,0), Vector3.new(0,0,4), Vector3.new(0,0,-4), Vector3.new(4,0,4), Vector3.new(-4,0,-4)}
 						for _, off in ipairs(offsets) do
 							newPath = computePathTo(gotoWalkState.target + off)
 							if newPath and #newPath > 0 then break end
@@ -1721,10 +1721,10 @@ RunService.Stepped:Connect(function(_, dt)
 	-- même appliqué. Cette boucle est pcall-wrapped donc JAMAIS elle ne s'arrête.
 	RunService.RenderStepped:Connect(function()
 		pcall(function()
-			local char = LocalPlayer.Character
-			local hum = char and char:FindFirstChildOfClass("Humanoid")
+			_G.char = LocalPlayer.Character
+			_G.hum = char and char:FindFirstChildOfClass("Humanoid")
 			if hum and not flyState.flying then
-				local target = walkSpeedState.value
+				_G.target = walkSpeedState.value
 				if math.abs(hum.WalkSpeed - target) > 0.5 then
 					hum.WalkSpeed = target
 				end
@@ -1736,12 +1736,12 @@ RunService.Stepped:Connect(function(_, dt)
 updateLoad(0.50, "Modules extra...")
 task.wait(0.05)
 -- ============= EXTRA =============
-local fullbrightState = { enabled = false, old = {} }
-local clickTPState = { enabled = false }
-local hitboxState = { enabled = false }
+_G.fullbrightState = { enabled = false, old = {} }
+_G.clickTPState = { enabled = false }
+_G.hitboxState = { enabled = false }
 
 -- FIX: extraPage overflow (17+ items Y=10..730 > panel height 520px). Wrap in ScrollingFrame.
-local extraScroll = Instance.new("ScrollingFrame")
+_G.extraScroll = Instance.new("ScrollingFrame")
 extraScroll.Name = "ExtraScroll"
 extraScroll.Size = UDim2.new(1, -10, 1, -10)
 extraScroll.Position = UDim2.new(0, 5, 0, 5)
@@ -1751,7 +1751,7 @@ extraScroll.BorderSizePixel = 0
 extraScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 extraScroll.Parent = extraPage
 
-local extraLayout = Instance.new("UIListLayout")
+_G.extraLayout = Instance.new("UIListLayout")
 extraLayout.Padding = UDim.new(0, 6)
 extraLayout.SortOrder = Enum.SortOrder.LayoutOrder
 extraLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -1767,7 +1767,7 @@ end)
 -- === Carte "Stats serveur" (6 stats en grille) — déplacée depuis Joueurs (trop large) ===
 -- WRAP dans local function + appel pour isoler les locals
 _G._initServerStatsCard = function()
-	local statsCard = Instance.new("Frame")
+	_G.statsCard = Instance.new("Frame")
 	statsCard.Name = "StatsCard"
 	statsCard.Size = UDim2.new(1, -10, 0, 0)
 	statsCard.AutomaticSize = Enum.AutomaticSize.Y
@@ -1778,14 +1778,14 @@ _G._initServerStatsCard = function()
 	createCorner(statsCard, 8)
 	createStroke(statsCard, Color3.fromRGB(80, 80, 120), 1)
 
-	local statsPadding = Instance.new("UIPadding")
+	_G.statsPadding = Instance.new("UIPadding")
 	statsPadding.PaddingTop = UDim.new(0, 8)
 	statsPadding.PaddingBottom = UDim.new(0, 8)
 	statsPadding.PaddingLeft = UDim.new(0, 12)
 	statsPadding.PaddingRight = UDim.new(0, 12)
 	statsPadding.Parent = statsCard
 
-	local statsTitle = Instance.new("TextLabel")
+	_G.statsTitle = Instance.new("TextLabel")
 	statsTitle.Size = UDim2.new(1, 0, 0, 16)
 	statsTitle.BackgroundTransparency = 1
 	statsTitle.Text = "📊 Stats serveur"
@@ -1797,13 +1797,13 @@ _G._initServerStatsCard = function()
 	statsTitle.Parent = statsCard
 
 	-- Container pour la grille de stats (2 lignes × 3 colonnes)
-	local statsGrid = Instance.new("Frame")
+	_G.statsGrid = Instance.new("Frame")
 	statsGrid.Size = UDim2.new(1, 0, 0, 90) -- 2 lignes × 42 + gap 6 = 90
 	statsGrid.BackgroundTransparency = 1
 	statsGrid.LayoutOrder = 2
 	statsGrid.Parent = statsCard
 
-	local statsGridLayout = Instance.new("UIGridLayout")
+	_G.statsGridLayout = Instance.new("UIGridLayout")
 	statsGridLayout.CellSize = UDim2.new(0, 100, 0, 38)
 	statsGridLayout.CellPadding = UDim2.new(0, 6, 0, 6)
 	statsGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -1811,14 +1811,14 @@ _G._initServerStatsCard = function()
 
 	-- Helper local pour créer une stat cell dans la grille
 	local function addGridStat(parent, name, layoutOrder)
-		local cell = Instance.new("Frame")
+		_G.cell = Instance.new("Frame")
 		cell.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 		cell.BorderSizePixel = 0
 		cell.LayoutOrder = layoutOrder
 		cell.Parent = parent
 		createCorner(cell, 6)
 
-		local label = Instance.new("TextLabel")
+		_G.label = Instance.new("TextLabel")
 		label.Size = UDim2.new(1, -8, 0, 12)
 		label.Position = UDim2.new(0, 4, 0, 2)
 		label.BackgroundTransparency = 1
@@ -1830,7 +1830,7 @@ _G._initServerStatsCard = function()
 		label.TextTruncate = Enum.TextTruncate.AtEnd
 		label.Parent = cell
 
-		local value = Instance.new("TextLabel")
+		_G.value = Instance.new("TextLabel")
 		value.Size = UDim2.new(1, -8, 0, 18)
 		value.Position = UDim2.new(0, 4, 0, 16)
 		value.BackgroundTransparency = 1
@@ -1845,20 +1845,20 @@ _G._initServerStatsCard = function()
 	end
 
 	-- Créer les 6 stats dans la grille (LayoutOrder 1-6)
-	local statPlayers = addGridStat(statsGrid, "Joueurs", 1)
-	local statFPS = addGridStat(statsGrid, "FPS", 2)
-	local statPing = addGridStat(statsGrid, "Ping", 3)
-	local statTime = addGridStat(statsGrid, "Heure", 4)
-	local statJobId = addGridStat(statsGrid, "Job ID", 5)
-	local statPlaceId = addGridStat(statsGrid, "Place ID", 6)
+	_G.statPlayers = addGridStat(statsGrid, "Joueurs", 1)
+	_G.statFPS = addGridStat(statsGrid, "FPS", 2)
+	_G.statPing = addGridStat(statsGrid, "Ping", 3)
+	_G.statTime = addGridStat(statsGrid, "Heure", 4)
+	_G.statJobId = addGridStat(statsGrid, "Job ID", 5)
+	_G.statPlaceId = addGridStat(statsGrid, "Place ID", 6)
 
 	-- FPS counter
-	local _fps = 60
-	local _lastFrame = tick()
+	_G._fps = 60
+	_G._lastFrame = tick()
 	pcall(function()
 		RunService.RenderStepped:Connect(function()
-			local now = tick()
-			local dt = now - _lastFrame
+			_G.now = tick()
+			_G.dt = now - _lastFrame
 			_lastFrame = now
 			if dt > 0 then _fps = math.clamp(1 / dt, 1, 240) end
 		end)
@@ -1870,12 +1870,12 @@ _G._initServerStatsCard = function()
 			pcall(function()
 				statPlayers.Text = tostring(#Players:GetPlayers()) .. "/" .. tostring(Players.MaxPlayers)
 				statFPS.Text = tostring(math.floor(_fps))
-				local ping = LocalPlayer:GetNetworkPing() * 1000
+				_G.ping = LocalPlayer:GetNetworkPing() * 1000
 				statPing.Text = string.format("%.0f ms", ping)
 				statTime.Text = os.date("%H:%M:%S")
-				local okJ, jobId = pcall(function() return game.JobId end)
+				_G.okJ, jobId = pcall(function() return game.JobId end)
 				statJobId.Text = (okJ and jobId and jobId ~= "") and jobId:sub(1, 12) .. "..." or "N/A"
-				local okP, placeId = pcall(function() return game.PlaceId end)
+				_G.okP, placeId = pcall(function() return game.PlaceId end)
 				statPlaceId.Text = okP and tostring(placeId) or "N/A"
 			end)
 		end
@@ -1886,7 +1886,7 @@ _initServerStatsCard()
 -- === Carte "Infos serveur" (Créateur du jeu) — déplacée depuis Joueurs (était trop large) ===
 -- WRAP dans local function + appel pour isoler les locals (réduit les 200 registres)
 _G._initServerInfoCard = function()
-	local serverInfoCard = Instance.new("Frame")
+	_G.serverInfoCard = Instance.new("Frame")
 	serverInfoCard.Name = "ServerInfoCard"
 	serverInfoCard.Size = UDim2.new(1, -10, 0, 0)
 	serverInfoCard.AutomaticSize = Enum.AutomaticSize.Y
@@ -1897,14 +1897,14 @@ _G._initServerInfoCard = function()
 	createCorner(serverInfoCard, 8)
 	createStroke(serverInfoCard, Color3.fromRGB(80, 80, 120), 1)
 
-	local serverInfoPadding = Instance.new("UIPadding")
+	_G.serverInfoPadding = Instance.new("UIPadding")
 	serverInfoPadding.PaddingTop = UDim.new(0, 8)
 	serverInfoPadding.PaddingBottom = UDim.new(0, 8)
 	serverInfoPadding.PaddingLeft = UDim.new(0, 12)
 	serverInfoPadding.PaddingRight = UDim.new(0, 12)
 	serverInfoPadding.Parent = serverInfoCard
 
-	local serverInfoTitle = Instance.new("TextLabel")
+	_G.serverInfoTitle = Instance.new("TextLabel")
 	serverInfoTitle.Size = UDim2.new(1, 0, 0, 16)
 	serverInfoTitle.BackgroundTransparency = 1
 	serverInfoTitle.Text = "🖥️ Infos serveur"
@@ -1915,7 +1915,7 @@ _G._initServerInfoCard = function()
 	serverInfoTitle.LayoutOrder = 1
 	serverInfoTitle.Parent = serverInfoCard
 
-	local serverInfoText = Instance.new("TextLabel")
+	_G.serverInfoText = Instance.new("TextLabel")
 	serverInfoText.Size = UDim2.new(1, 0, 0, 0)
 	serverInfoText.AutomaticSize = Enum.AutomaticSize.Y
 	serverInfoText.BackgroundTransparency = 1
@@ -1930,7 +1930,7 @@ _G._initServerInfoCard = function()
 	serverInfoText.Parent = serverInfoCard
 
 	-- UIListLayout pour empiler verticalement les enfants
-	local serverInfoLayout = Instance.new("UIListLayout")
+	_G.serverInfoLayout = Instance.new("UIListLayout")
 	serverInfoLayout.Padding = UDim.new(0, 4)
 	serverInfoLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	serverInfoLayout.Parent = serverInfoCard
@@ -1939,23 +1939,23 @@ _G._initServerInfoCard = function()
 	task.spawn(function()
 		while task.wait(2) do
 			pcall(function()
-				local lines = {}
-				local okCreator, creatorId = pcall(function() return game.CreatorId end)
+				_G.lines = {}
+				_G.okCreator, creatorId = pcall(function() return game.CreatorId end)
 				if okCreator and creatorId and creatorId ~= 0 then
 					table.insert(lines, "  🎮 Créateur du jeu (CreatorId) : " .. tostring(creatorId))
-					local okCreatorType, creatorType = pcall(function() return game.CreatorType end)
+					_G.okCreatorType, creatorType = pcall(function() return game.CreatorType end)
 					if okCreatorType then
 						table.insert(lines, "  📌 Type créateur    : " .. tostring(creatorType))
 					end
-					local okName, gameName = pcall(function() return game.Name end)
+					_G.okName, gameName = pcall(function() return game.Name end)
 					if okName then
 						table.insert(lines, "  🎯 Nom du jeu       : " .. tostring(gameName))
 					end
-					local okVIP, vipOwnerId = pcall(function() return game.VIPServerOwnerId end)
+					_G.okVIP, vipOwnerId = pcall(function() return game.VIPServerOwnerId end)
 					if okVIP and vipOwnerId and vipOwnerId ~= 0 then
 						table.insert(lines, "  👑 Proprio VIP     : " .. tostring(vipOwnerId))
 					end
-					local okVIPId, vipId = pcall(function() return game.VIPServerId end)
+					_G.okVIPId, vipId = pcall(function() return game.VIPServerId end)
 					if okVIPId and vipId and vipId ~= "" then
 						table.insert(lines, "  🔑 VIP Server ID    : " .. tostring(vipId):sub(1, 24))
 					end
@@ -1979,7 +1979,7 @@ task.wait(0.05)
 -- - Option clic auto : mouse1click à chaque frame sur la cible
 -- Wrap dans local function + appel pour isoler les locals (limite 200 registers)
 _G._initAimbot = function()
-	local aimbotCard = Instance.new("Frame")
+	_G.aimbotCard = Instance.new("Frame")
 	aimbotCard.Name = "AimbotCard"
 	aimbotCard.Size = UDim2.new(1, -10, 0, 0)
 	aimbotCard.AutomaticSize = Enum.AutomaticSize.Y
@@ -1992,20 +1992,20 @@ _G._initAimbot = function()
 
 	-- UIListLayout OBLIGATOIRE pour que les enfants se positionnent en colonne
 	-- Sans ça, les enfants s'empilent tous à (0,0) et se chevauchent
-	local aimbotLayout = Instance.new("UIListLayout")
+	_G.aimbotLayout = Instance.new("UIListLayout")
 	aimbotLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	aimbotLayout.Padding = UDim.new(0, 4)
 	aimbotLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	aimbotLayout.Parent = aimbotCard
 
-	local aimbotPad = Instance.new("UIPadding")
+	_G.aimbotPad = Instance.new("UIPadding")
 	aimbotPad.PaddingTop = UDim.new(0, 8)
 	aimbotPad.PaddingBottom = UDim.new(0, 8)
 	aimbotPad.PaddingLeft = UDim.new(0, 12)
 	aimbotPad.PaddingRight = UDim.new(0, 12)
 	aimbotPad.Parent = aimbotCard
 
-	local aimbotTitle = Instance.new("TextLabel")
+	_G.aimbotTitle = Instance.new("TextLabel")
 	aimbotTitle.Size = UDim2.new(1, 0, 0, 16)
 	aimbotTitle.BackgroundTransparency = 1
 	aimbotTitle.Text = "🎯 Aimbot (verrouille le centre écran sur la cible)"
@@ -2018,12 +2018,12 @@ _G._initAimbot = function()
 
 	-- Toggle principal (aim ON/OFF)
 	_G._agoraAimbotEnabled = false
-	local aimbotEnabled = false
-	local aimbotAutoClick = false
-	local aimbotMaxDist = 300 -- studs (par défaut)
+	_G.aimbotEnabled = false
+	_G.aimbotAutoClick = false
+	_G.aimbotMaxDist = 300 -- studs (par défaut)
 
 	-- Status label (en haut, avant les switches)
-	local aimStatusLabel = Instance.new("TextLabel")
+	_G.aimStatusLabel = Instance.new("TextLabel")
 	aimStatusLabel.Size = UDim2.new(1, 0, 0, 16)
 	aimStatusLabel.BackgroundTransparency = 1
 	aimStatusLabel.Text = "⏸ Aim inactif"
@@ -2034,12 +2034,12 @@ _G._initAimbot = function()
 	aimStatusLabel.LayoutOrder = 2
 	aimStatusLabel.Parent = aimbotCard
 
-	local mainSwitchRow = Instance.new("Frame")
+	_G.mainSwitchRow = Instance.new("Frame")
 	mainSwitchRow.Size = UDim2.new(1, 0, 0, 26)
 	mainSwitchRow.BackgroundTransparency = 1
 	mainSwitchRow.LayoutOrder = 3
 	mainSwitchRow.Parent = aimbotCard
-	local mainSwitchLabel = Instance.new("TextLabel")
+	_G.mainSwitchLabel = Instance.new("TextLabel")
 	mainSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
 	mainSwitchLabel.BackgroundTransparency = 1
 	mainSwitchLabel.Text = "Aim ON / OFF"
@@ -2049,7 +2049,7 @@ _G._initAimbot = function()
 	mainSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
 	mainSwitchLabel.Parent = mainSwitchRow
 	mainSwitchLabel.ZIndex = 4
-	local mainSwitch = createSwitch(mainSwitchRow, "", 0, function(on)
+	_G.mainSwitch = createSwitch(mainSwitchRow, "", 0, function(on)
 		aimbotEnabled = on
 		_G._agoraAimbotEnabled = on
 	end)
@@ -2059,7 +2059,7 @@ _G._initAimbot = function()
 
 	-- Toggle auto-clic
 	_G._agoraAimbotAutoClick = _G._agoraAimbotAutoClick or false
-	local clickSwitch = createSwitch(clickSwitchRow, "", 0, function(on)
+	_G.clickSwitch = createSwitch(clickSwitchRow, "", 0, function(on)
 		aimbotAutoClick = on
 		_G._agoraAimbotAutoClick = on
 	end)
@@ -2069,13 +2069,13 @@ _G._initAimbot = function()
 
 	-- Slider de distance max (clic gauche = -25, clic droit = +25)
 	_G._agoraAimbotMaxDist = _G._agoraAimbotMaxDist or 300
-	local aimbotMaxDist = _G._agoraAimbotMaxDist or 300
-	local distRow = Instance.new("Frame")
+	_G.aimbotMaxDist = _G._agoraAimbotMaxDist or 300
+	_G.distRow = Instance.new("Frame")
 	distRow.Size = UDim2.new(1, 0, 0, 26)
 	distRow.BackgroundTransparency = 1
 	distRow.LayoutOrder = 5
 	distRow.Parent = aimbotCard
-	local distLabel = Instance.new("TextLabel")
+	_G.distLabel = Instance.new("TextLabel")
 	distLabel.Size = UDim2.new(0.5, 0, 1, 0)
 	distLabel.BackgroundTransparency = 1
 	distLabel.Text = "📏 Distance max : " .. aimbotMaxDist .. " studs"
@@ -2084,7 +2084,7 @@ _G._initAimbot = function()
 	distLabel.TextSize = 11
 	distLabel.TextXAlignment = Enum.TextXAlignment.Left
 	distLabel.Parent = distRow
-	local distSlider = Instance.new("TextButton")
+	_G.distSlider = Instance.new("TextButton")
 	distSlider.Size = UDim2.new(0.5, -4, 1, 0)
 	distSlider.Position = UDim2.new(0.5, 4, 0, 0)
 	distSlider.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
@@ -2107,7 +2107,7 @@ _G._initAimbot = function()
 	end)
 
 	-- Label d'aide sous les switches
-	local helpLbl = Instance.new("TextLabel")
+	_G.helpLbl = Instance.new("TextLabel")
 	helpLbl.Size = UDim2.new(1, 0, 0, 28)
 	helpLbl.BackgroundTransparency = 1
 	helpLbl.Text = "ℹ️  Active Aim puis vise une cible à l'écran. Clic auto tire quand verrouillé."
@@ -2120,27 +2120,27 @@ _G._initAimbot = function()
 	helpLbl.Parent = aimbotCard
 
 	-- Indicateur visuel : cercle rouge qui apparaît sur la cible actuelle
-	local aimCircle = Instance.new("Frame")
+	_G.aimCircle = Instance.new("Frame")
 	aimCircle.Size = UDim2.new(0, 60, 0, 60)
 	aimCircle.BackgroundTransparency = 1
 	aimCircle.BorderSizePixel = 0
 	aimCircle.Visible = false
 	aimCircle.ZIndex = 999
 	aimCircle.Parent = screenGui
-	local aimCircleCorner = Instance.new("UICorner")
+	_G.aimCircleCorner = Instance.new("UICorner")
 	aimCircleCorner.CornerRadius = UDim.new(1, 0)
 	aimCircleCorner.Parent = aimCircle
-	local aimCircleStroke = Instance.new("UIStroke")
+	_G.aimCircleStroke = Instance.new("UIStroke")
 	aimCircleStroke.Color = Color3.fromRGB(255, 60, 60)
 	aimCircleStroke.Thickness = 3
 	aimCircleStroke.Transparency = 0.3
 	aimCircleStroke.Parent = aimCircle
 
 	-- Boucle aimbot sur RenderStepped
-	local cam = workspace.CurrentCamera
-	local localPlayer = Players.LocalPlayer
-	local lastClickTick = 0
-	local renderConn = RunService.RenderStepped:Connect(function()
+	_G.cam = workspace.CurrentCamera
+	_G.localPlayer = Players.LocalPlayer
+	_G.lastClickTick = 0
+	_G.renderConn = RunService.RenderStepped:Connect(function()
 		if not _G._agoraAimbotEnabled then
 			if aimCircle.Visible then aimCircle.Visible = false end
 			return
@@ -2148,28 +2148,28 @@ _G._initAimbot = function()
 		if not localPlayer or not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then
 			return
 		end
-		local bestTarget = nil
-		local bestDistFromCenter = math.huge
-		local screenCenter = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
-		local myChar = localPlayer.Character
-		local myPos = myChar.HumanoidRootPart.Position
+		_G.bestTarget = nil
+		_G.bestDistFromCenter = math.huge
+		_G.screenCenter = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
+		_G.myChar = localPlayer.Character
+		_G.myPos = myChar.HumanoidRootPart.Position
 		for _, plr in ipairs(Players:GetPlayers()) do
 			if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
-				local targetHead = plr.Character.Head
-				local targetPos = targetHead.Position
+				_G.targetHead = plr.Character.Head
+				_G.targetPos = targetHead.Position
 				if (targetPos - myPos).Magnitude <= (_G._agoraAimbotMaxDist or 300) then
-					local screenPos, onScreen = cam:WorldToScreenPoint(targetPos)
+					_G.screenPos, onScreen = cam:WorldToScreenPoint(targetPos)
 					if onScreen and screenPos.Z > 0 then
-						local origin = cam.CFrame.Position
-						local direction = (targetPos - origin)
-						local rayParams = RaycastParams.new()
+						_G.origin = cam.CFrame.Position
+						_G.direction = (targetPos - origin)
+						_G.rayParams = RaycastParams.new()
 						rayParams.FilterDescendantsInstances = {myChar, plr.Character}
 						rayParams.FilterType = Enum.RaycastFilterType.Exclude
-						local result = workspace:Raycast(origin, direction, rayParams)
+						_G.result = workspace:Raycast(origin, direction, rayParams)
 						if result == nil then
-							local dx = screenPos.X - screenCenter.X
-							local dy = screenPos.Y - screenCenter.Y
-							local distFromCenter = math.sqrt(dx * dx + dy * dy)
+							_G.dx = screenPos.X - screenCenter.X
+							_G.dy = screenPos.Y - screenCenter.Y
+							_G.distFromCenter = math.sqrt(dx * dx + dy * dy)
 							if distFromCenter < bestDistFromCenter then
 								bestDistFromCenter = distFromCenter
 								bestTarget = {player = plr, head = targetHead, screen = Vector2.new(screenPos.X, screenPos.Y)}
@@ -2180,10 +2180,10 @@ _G._initAimbot = function()
 			end
 		end
 		if bestTarget then
-			local dx = bestTarget.screen.X - screenCenter.X
-			local dy = bestTarget.screen.Y - screenCenter.Y
-			local smoothX = dx * 0.33
-			local smoothY = dy * 0.33
+			_G.dx = bestTarget.screen.X - screenCenter.X
+			_G.dy = bestTarget.screen.Y - screenCenter.Y
+			_G.smoothX = dx * 0.33
+			_G.smoothY = dy * 0.33
 			pcall(function() mousemoverel(smoothX, smoothY) end)
 			aimCircle.Position = UDim2.new(0, bestTarget.screen.X - 30, 0, bestTarget.screen.Y - 30)
 			if not aimCircle.Visible then aimCircle.Visible = true end
@@ -2202,7 +2202,7 @@ _G._initAimbot = function()
 end
 _initAimbot()
 
-local fullbrightSwitch = createSwitch(extraScroll, "Fullbright", 0, function(on)
+_G.fullbrightSwitch = createSwitch(extraScroll, "Fullbright", 0, function(on)
 	fullbrightState.enabled = on
 	if on then
 		fullbrightState.old.ambient = Lighting.Ambient
@@ -2221,16 +2221,16 @@ local fullbrightSwitch = createSwitch(extraScroll, "Fullbright", 0, function(on)
 	end
 end)
 
-local clickTPSwitch = createSwitch(extraScroll, "Click TP (Ctrl+clic)", 0, function(on)
+_G.clickTPSwitch = createSwitch(extraScroll, "Click TP (Ctrl+clic)", 0, function(on)
 	clickTPState.enabled = on
 end)
 
-local hitboxSwitch = createSwitch(extraScroll, "Hitbox expander", 0, function(on)
+_G.hitboxSwitch = createSwitch(extraScroll, "Hitbox expander", 0, function(on)
 	hitboxState.enabled = on
 	if not on then
 		for _, plr in ipairs(Players:GetPlayers()) do
 			if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-				local hrp = plr.Character.HumanoidRootPart
+				_G.hrp = plr.Character.HumanoidRootPart
 				hrp.Size = Vector3.new(2, 2, 1)
 				hrp.Transparency = 1
 				hrp.Color = Color3.fromRGB(255, 255, 255)
@@ -2258,7 +2258,7 @@ if type(notify) ~= "function" then
 end
 
 -- === FEATURES UNIVERSELLES (marchent sur tous les jeux Roblox) ===
-local fpsBoostState = { enabled = false, saved = {} }
+_G.fpsBoostState = { enabled = false, saved = {} }
 createSwitch(extraScroll, "FPS Boost (qualité↓)", 0, function(on)
 	fpsBoostState.enabled = on
 	if on then
@@ -2279,7 +2279,7 @@ createSwitch(extraScroll, "FPS Boost (qualité↓)", 0, function(on)
 	end
 end)
 
-local antiVoidState = { enabled = false }
+_G.antiVoidState = { enabled = false }
 createSwitch(extraScroll, "Anti-Void (y<-2000)", 0, function(on)
 	antiVoidState.enabled = on
 end)
@@ -2287,13 +2287,13 @@ end)
 -- Rejoin le même serveur (universel)
 createButton(extraScroll, "Rejoindre ce serveur", 0, Color3.fromRGB(70, 130, 200), function()
 	pcall(function()
-		local TeleportService = game:GetService("TeleportService")
+		_G.TeleportService = game:GetService("TeleportService")
 		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
 	end)
 end)
 
 -- Bouton panique : ferme tout d'un coup (Shift+P)
-local panicEnabled = false
+_G.panicEnabled = false
 createSwitch(extraScroll, "Bouton panique (Shift+P)", 0, function(on)
 	panicEnabled = on
 end)
@@ -2320,19 +2320,19 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 
 	-- Go to Walk : click sol = calcul d'itinéraire et marche auto
 	if input.UserInputType == Enum.UserInputType.MouseButton1 and gotoWalkState.enabled then
-		local now = tick()
+		_G.now = tick()
 		if now - gotoWalkState.lastClick < 0.25 then return end
 		gotoWalkState.lastClick = now
 
 		if gotoWalkState.busy then return end
 		gotoWalkState.busy = true
 		task.spawn(function()
-			local ok, err = pcall(function()
+			_G.ok, err = pcall(function()
 				updateCharacter()
 				if not Mouse or not Mouse.Hit then return end
-				local targetPos = Mouse.Hit.Position + Vector3.new(0, 3, 0)
+				_G.targetPos = Mouse.Hit.Position + Vector3.new(0, 3, 0)
 				gotoWalkState.target = targetPos
-				local waypoints = computePathTo(targetPos)
+				_G.waypoints = computePathTo(targetPos)
 				gotoWalkState.path = waypoints
 				gotoWalkState.active = #waypoints > 0
 				if #waypoints > 0 and humanoid then
@@ -2354,7 +2354,7 @@ task.spawn(function()
 		if hitboxState.enabled then
 			for _, plr in ipairs(Players:GetPlayers()) do
 				if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-					local hrp = plr.Character.HumanoidRootPart
+					_G.hrp = plr.Character.HumanoidRootPart
 					if hrp.Size.X ~= 15 then
 						hrp.Size = Vector3.new(15, 15, 15)
 						hrp.Transparency = 0.7
@@ -2371,7 +2371,7 @@ end)
 updateLoad(0.70, "Protections...")
 task.wait(0.05)
 -- ============= PROTECTIONS =============
-local protectionsState = {
+_G.protectionsState = {
 	antiFling = false,
 	antiSeat = false,
 	antiSeatWatcher = nil,
@@ -2387,7 +2387,7 @@ local protectionsState = {
 }
 
 LocalPlayer.CharacterAdded:Connect(function(char)
-	local hum = char:WaitForChild("Humanoid")
+	_G.hum = char:WaitForChild("Humanoid")
 	hum.Died:Connect(function()
 		if not protectionsState.antiKill then return end
 		updateCharacter()
@@ -2396,7 +2396,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 		end
 	end)
 	if not protectionsState.antiKill then return end
-	local hrp = char:WaitForChild("HumanoidRootPart")
+	_G.hrp = char:WaitForChild("HumanoidRootPart")
 	task.wait(0.2)
 	if protectionsState.antiKillSavedCFrame then
 		hrp.CFrame = protectionsState.antiKillSavedCFrame
@@ -2428,11 +2428,11 @@ end
 
 _G.createAntiSeatSitWatcher = function()
 	local function onCharacter(char)
-		local hum = char:FindFirstChildOfClass("Humanoid")
+		_G.hum = char:FindFirstChildOfClass("Humanoid")
 		if not hum then
 			hum = char:WaitForChild("Humanoid")
 		end
-		local con
+		_G.con
 		con = hum:GetPropertyChangedSignal("Sit"):Connect(function()
 			if not protectionsState.antiSeat then
 				if con then con:Disconnect() end
@@ -2508,8 +2508,8 @@ RunService.Heartbeat:Connect(function()
 	updateCharacter()
 	if not rootPart or not humanoid then return end
 
-	local pos = rootPart.Position
-	local vel = rootPart.AssemblyLinearVelocity
+	_G.pos = rootPart.Position
+	_G.vel = rootPart.AssemblyLinearVelocity
 
 	if protectionsState.antiFling then
 		if math.abs(vel.Y) > 500 then
@@ -2521,7 +2521,7 @@ RunService.Heartbeat:Connect(function()
 		if humanoid.Sit then
 			humanoid.Sit = false
 		end
-		local seat = humanoid.SeatPart
+		_G.seat = humanoid.SeatPart
 		if seat then
 			humanoid.Sit = false
 		end
@@ -2540,12 +2540,12 @@ RunService.Heartbeat:Connect(function()
 			protectionsState.lastSafeCFrame = rootPart.CFrame
 			protectionsState.lastHrpPosition = pos
 		else
-			local last = protectionsState.lastHrpPosition
+			_G.last = protectionsState.lastHrpPosition
 			if last then
-				local flatDelta = Vector3.new(pos.X - last.X, 0, pos.Z - last.Z)
-				local dist = flatDelta.Magnitude + math.abs(pos.Y - last.Y) * 0.5
+				_G.flatDelta = Vector3.new(pos.X - last.X, 0, pos.Z - last.Z)
+				_G.dist = flatDelta.Magnitude + math.abs(pos.Y - last.Y) * 0.5
 				-- Grâce après fly : pendant 0.4s après la sortie de fly, on réinitialise la baseline au lieu de comparer
-				local graceUntil = protectionsState.antiTeleportGraceUntil or 0
+				_G.graceUntil = protectionsState.antiTeleportGraceUntil or 0
 				if tick() < graceUntil then
 					protectionsState.lastSafeCFrame = rootPart.CFrame
 					protectionsState.lastHrpPosition = pos
@@ -2582,7 +2582,7 @@ task.spawn(function()
 	while true do
 		task.wait(10)
 		if protectionsState.antiAFK then
-			local now = tick()
+			_G.now = tick()
 			if now - protectionsState.antiAFKLastAction >= 300 then
 				updateCharacter()
 				if humanoid then
@@ -2607,7 +2607,7 @@ end)
 -- ============= REMOTES (anciennement SERVEUR) =============
 -- Cet onglet liste tous les RemoteEvents/RemoteFunctions du jeu et permet de les Fire
 -- avec nos propres arguments. ATTENTION : ça touche au serveur.
-local serverScroll = Instance.new("ScrollingFrame")
+_G.serverScroll = Instance.new("ScrollingFrame")
 serverScroll.Size = UDim2.new(1, -10, 1, -10)
 serverScroll.Position = UDim2.new(0, 5, 0, 5)
 serverScroll.BackgroundTransparency = 1
@@ -2617,7 +2617,7 @@ serverScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
 serverScroll.Parent = remotesPage
 createCorner(serverScroll, 4)
 
-local serverLayout = Instance.new("UIListLayout")
+_G.serverLayout = Instance.new("UIListLayout")
 serverLayout.Padding = UDim.new(0, 6)
 serverLayout.SortOrder = Enum.SortOrder.LayoutOrder
 serverLayout.Parent = serverScroll
@@ -2625,7 +2625,7 @@ serverLayout.Parent = serverScroll
 -- Wrap du contenu Remotes dans une fonction locale pour limiter les 200 registers
 _G._wrapRemotes = function()
 	-- Avertissement en haut
-	local remoteWarn = Instance.new("Frame")
+	_G.remoteWarn = Instance.new("Frame")
 	remoteWarn.Size = UDim2.new(1, -8, 0, 60)
 	remoteWarn.BackgroundColor3 = Color3.fromRGB(80, 30, 30)
 	remoteWarn.BorderSizePixel = 0
@@ -2634,7 +2634,7 @@ _G._wrapRemotes = function()
 	createCorner(remoteWarn, 6)
 	createStroke(remoteWarn, Color3.fromRGB(220, 80, 80), 1.5)
 
-	local warnTitle = Instance.new("TextLabel")
+	_G.warnTitle = Instance.new("TextLabel")
 	warnTitle.Size = UDim2.new(1, -16, 0, 22)
 	warnTitle.Position = UDim2.new(0, 8, 0, 6)
 	warnTitle.BackgroundTransparency = 1
@@ -2645,7 +2645,7 @@ _G._wrapRemotes = function()
 	warnTitle.TextXAlignment = Enum.TextXAlignment.Left
 	warnTitle.Parent = remoteWarn
 
-	local warnDesc = Instance.new("TextLabel")
+	_G.warnDesc = Instance.new("TextLabel")
 	warnDesc.Size = UDim2.new(1, -16, 0, 30)
 	warnDesc.Position = UDim2.new(0, 8, 0, 28)
 	warnDesc.BackgroundTransparency = 1
@@ -2660,11 +2660,11 @@ _G._wrapRemotes = function()
 
 	-- Helpers: scanne tous les remotes du jeu
 	local function collectRemotes()
-		local remotes = {}
-		local seen = {}
+		_G.remotes = {}
+		_G.seen = {}
 		local function addRemote(obj)
 			if obj and (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) then
-				local fn = obj:GetFullName()
+				_G.fn = obj:GetFullName()
 				if not seen[fn] then
 					seen[fn] = true
 					table.insert(remotes, obj)
@@ -2695,7 +2695,7 @@ _G._wrapRemotes = function()
 	end
 
 	-- Header "Remotes détectés (N)" + bouton refresh
-	local remoteHeader = Instance.new("Frame")
+	_G.remoteHeader = Instance.new("Frame")
 	remoteHeader.Size = UDim2.new(1, -8, 0, 32)
 	remoteHeader.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
 	remoteHeader.BorderSizePixel = 0
@@ -2703,7 +2703,7 @@ _G._wrapRemotes = function()
 	remoteHeader.Parent = serverScroll
 	createCorner(remoteHeader, 4)
 
-	local remoteCount = Instance.new("TextLabel")
+	_G.remoteCount = Instance.new("TextLabel")
 	remoteCount.Size = UDim2.new(1, -50, 1, 0)
 	remoteCount.Position = UDim2.new(0, 8, 0, 0)
 	remoteCount.BackgroundTransparency = 1
@@ -2714,7 +2714,7 @@ _G._wrapRemotes = function()
 	remoteCount.TextXAlignment = Enum.TextXAlignment.Left
 	remoteCount.Parent = remoteHeader
 
-	local refreshRemotesBtn = Instance.new("TextButton")
+	_G.refreshRemotesBtn = Instance.new("TextButton")
 	refreshRemotesBtn.Size = UDim2.new(0, 28, 0, 22)
 	refreshRemotesBtn.Position = UDim2.new(1, -32, 0, 5)
 	refreshRemotesBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
@@ -2727,7 +2727,7 @@ _G._wrapRemotes = function()
 	createCorner(refreshRemotesBtn, 4)
 
 	-- Barre de recherche pour filtrer les remotes par nom
-	local remotesSearchBox = Instance.new("TextBox")
+	_G.remotesSearchBox = Instance.new("TextBox")
 	remotesSearchBox.Size = UDim2.new(1, -8, 0, 28)
 	remotesSearchBox.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 	remotesSearchBox.BorderSizePixel = 0
@@ -2744,22 +2744,22 @@ _G._wrapRemotes = function()
 	createStroke(remotesSearchBox, Color3.fromRGB(60, 60, 80), 1)
 
 	-- Container des cartes de remotes
-	local remoteListFrame = Instance.new("Frame")
+	_G.remoteListFrame = Instance.new("Frame")
 	remoteListFrame.Size = UDim2.new(1, 0, 0, 0)
 	remoteListFrame.BackgroundTransparency = 1
 	remoteListFrame.AutomaticSize = Enum.AutomaticSize.Y
 	remoteListFrame.LayoutOrder = 0
 	remoteListFrame.Parent = serverScroll
 
-	local remoteListLayout = Instance.new("UIListLayout")
+	_G.remoteListLayout = Instance.new("UIListLayout")
 	remoteListLayout.Padding = UDim.new(0, 4)
 	remoteListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	remoteListLayout.Parent = remoteListFrame
 
 	-- Fonction: crée une carte pour un remote
 	local function makeRemoteCard(remote)
-	local isFunction = remote:IsA("RemoteFunction")
-	local card = Instance.new("Frame")
+	_G.isFunction = remote:IsA("RemoteFunction")
+	_G.card = Instance.new("Frame")
 	card.Size = UDim2.new(1, -8, 0, 0)
 	card.AutomaticSize = Enum.AutomaticSize.Y
 	card.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
@@ -2768,7 +2768,7 @@ _G._wrapRemotes = function()
 	card.Parent = remoteListFrame
 	createCorner(card, 6)
 	createStroke(card, isFunction and Color3.fromRGB(255, 180, 80) or Color3.fromRGB(80, 180, 255), 1)
-	local cardPadding = Instance.new("UIPadding")
+	_G.cardPadding = Instance.new("UIPadding")
 	cardPadding.PaddingTop = UDim.new(0, 6)
 	cardPadding.PaddingBottom = UDim.new(0, 6)
 	cardPadding.PaddingLeft = UDim.new(0, 8)
@@ -2776,14 +2776,14 @@ _G._wrapRemotes = function()
 	cardPadding.Parent = card
 
 	-- UIListLayout pour empiler header / row / result proprement
-	local cardLayout = Instance.new("UIListLayout")
+	_G.cardLayout = Instance.new("UIListLayout")
 	cardLayout.Padding = UDim.new(0, 6)
 	cardLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	cardLayout.FillDirection = Enum.FillDirection.Vertical
 	cardLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
 	cardLayout.Parent = card
 
-	local header = Instance.new("TextLabel")
+	_G.header = Instance.new("TextLabel")
 	header.Name = "Header"
 	header.Size = UDim2.new(1, 0, 0, 0)
 	header.AutomaticSize = Enum.AutomaticSize.Y
@@ -2798,14 +2798,14 @@ _G._wrapRemotes = function()
 	header.Parent = card
 
 	-- Row: argsBox + fireBtn cote a cote
-	local row = Instance.new("Frame")
+	_G.row = Instance.new("Frame")
 	row.Name = "Row"
 	row.Size = UDim2.new(1, 0, 0, 24)
 	row.BackgroundTransparency = 1
 	row.LayoutOrder = 2
 	row.Parent = card
 
-	local argsBox = Instance.new("TextBox")
+	_G.argsBox = Instance.new("TextBox")
 	argsBox.Name = "ArgsBox"
 	argsBox.Size = UDim2.new(1, -72, 1, 0)
 	argsBox.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
@@ -2821,7 +2821,7 @@ _G._wrapRemotes = function()
 	argsBox.Parent = row
 	createCorner(argsBox, 4)
 
-	local fireBtn = Instance.new("TextButton")
+	_G.fireBtn = Instance.new("TextButton")
 	fireBtn.Name = "FireBtn"
 	fireBtn.Size = UDim2.new(0, 64, 1, 0)
 	fireBtn.Position = UDim2.new(1, -64, 0, 0)
@@ -2835,7 +2835,7 @@ _G._wrapRemotes = function()
 	fireBtn.Parent = row
 	createCorner(fireBtn, 4)
 
-	local resultLbl = Instance.new("TextLabel")
+	_G.resultLbl = Instance.new("TextLabel")
 	resultLbl.Name = "ResultLbl"
 	resultLbl.Size = UDim2.new(1, 0, 0, 0)
 	resultLbl.AutomaticSize = Enum.AutomaticSize.Y
@@ -2854,15 +2854,15 @@ _G._wrapRemotes = function()
 		-- Parseur d'arguments simples
 		local function parseArgs(str)
 			if not str or str == "" then return {} end
-			local args = {}
-			local i = 1
+			_G.args = {}
+			_G.i = 1
 			while i <= #str do
 				while i <= #str and str:sub(i, i):match("%s") do i = i + 1 end
 				if i > #str then break end
-				local c = str:sub(i, i)
+				_G.c = str:sub(i, i)
 				if c == '"' then
-					local j = i + 1
-					local s = ""
+					_G.j = i + 1
+					_G.s = ""
 					while j <= #str and str:sub(j, j) ~= '"' do
 						s = s .. str:sub(j, j)
 						j = j + 1
@@ -2879,12 +2879,12 @@ _G._wrapRemotes = function()
 					table.insert(args, nil)
 					i = i + 3
 				elseif c:match("%d") or c == "-" then
-					local j = i
+					_G.j = i
 					while j <= #str and (str:sub(j, j):match("[%d%.%-eE+]")) do
 						j = j + 1
 					end
-					local numStr = str:sub(i, j - 1)
-					local num = tonumber(numStr)
+					_G.numStr = str:sub(i, j - 1)
+					_G.num = tonumber(numStr)
 					if num then
 						table.insert(args, num)
 					else
@@ -2892,13 +2892,13 @@ _G._wrapRemotes = function()
 					end
 					i = j
 				else
-					local j = i
+					_G.j = i
 					while j <= #str and str:sub(j, j) ~= "," do
 						j = j + 1
 					end
-					local tok = str:sub(i, j - 1):match("^%s*(.-)%s*$")
+					_G.tok = str:sub(i, j - 1):match("^%s*(.-)%s*$")
 					if tok ~= "" then
-						local num = tonumber(tok)
+						_G.num = tonumber(tok)
 						if num then
 							table.insert(args, num)
 						else
@@ -2913,13 +2913,13 @@ _G._wrapRemotes = function()
 		end
 
 		fireBtn.MouseButton1Click:Connect(function()
-		local args = parseArgs(argsBox.Text)
+		_G.args = parseArgs(argsBox.Text)
 		resultLbl.Visible = true
 		resultLbl.Text = "→ Envoi en cours..."
 			resultLbl.TextColor3 = Color3.fromRGB(180, 180, 220)
-			local ok, err = pcall(function()
+			_G.ok, err = pcall(function()
 				if isFunction then
-					local result = remote:InvokeServer(unpack(args))
+					_G.result = remote:InvokeServer(unpack(args))
 					resultLbl.Text = "✓ Réponse : " .. tostring(result)
 				else
 					remote:FireServer(unpack(args))
@@ -2936,31 +2936,31 @@ _G._wrapRemotes = function()
 	end
 
 	-- Remplit la liste
-	local refreshLock = false
+	_G.refreshLock = false
 	local function refreshRemotesList(force)
 		if refreshLock and not force then return end
 		refreshLock = true
 		-- Check if we already have cards (don't destroy if just updating)
-		local existingCards = {}
+		_G.existingCards = {}
 		for _, child in ipairs(remoteListFrame:GetChildren()) do
 			if child:IsA("Frame") then
 				existingCards[child.Name] = child
 			end
 		end
 		
-		local remotes = collectRemotes()
+		_G.remotes = collectRemotes()
 		remoteCount.Text = "Remotes detectes : " .. #remotes
 		table.sort(remotes, function(a, b)
 			return a.Name < b.Name
 		end)
 		
 		-- Only destroy+recreate if the remote list changed (new/removed remotes)
-		local needRebuild = force or #remotes ~= #existingCards
+		_G.needRebuild = force or #remotes ~= #existingCards
 		if not needRebuild then
 			-- Just update LayoutOrder for sorting
 			for i, remote in ipairs(remotes) do
-				local cardName = remote:GetFullName():gsub("[^%w]", "_")
-				local card = existingCards[cardName]
+				_G.cardName = remote:GetFullName():gsub("[^%w]", "_")
+				_G.card = existingCards[cardName]
 				if card then
 					card.LayoutOrder = i
 		
@@ -2984,15 +2984,15 @@ _G._wrapRemotes = function()
 
 	-- Filtre de recherche: affiche/masque les cartes selon le texte
 	local function applyRemotesFilter()
-		local query = remotesSearchBox.Text:lower()
+		_G.query = remotesSearchBox.Text:lower()
 		for _, child in ipairs(remoteListFrame:GetChildren()) do
 			if child:IsA("Frame") then
 				if query == "" then
 					child.Visible = true
 				else
 					-- Récupère le nom du remote depuis le header (1er enfant TextLabel)
-					local headerLabel = child:FindFirstChildWhichIsA("TextLabel")
-					local name = headerLabel and headerLabel.Text or ""
+					_G.headerLabel = child:FindFirstChildWhichIsA("TextLabel")
+					_G.name = headerLabel and headerLabel.Text or ""
 					child.Visible = name:lower():find(query, 1, true) ~= nil
 				end
 			end
@@ -3013,7 +3013,7 @@ _G.buildRegistrySection = function(parentPage)
 	-- Chaque enfant a un LayoutOrder pour empiler verticalement via registryLayout (UIListLayout parent).
 	-- ResultScroll a une TAILLE FIXE (pas de scroll imbriqué foireux).
 
-local registryTitle = Instance.new("TextLabel")
+_G.registryTitle = Instance.new("TextLabel")
 registryTitle.Name = "RegistryTitle"
 registryTitle.Size = UDim2.new(1, -16, 0, 22)
 registryTitle.BackgroundTransparency = 1
@@ -3025,7 +3025,7 @@ registryTitle.TextXAlignment = Enum.TextXAlignment.Left
 registryTitle.LayoutOrder = 1
 registryTitle.Parent = registryScroll
 
-local registrySubtitle = Instance.new("TextLabel")
+_G.registrySubtitle = Instance.new("TextLabel")
 registrySubtitle.Name = "RegistrySubtitle"
 registrySubtitle.Size = UDim2.new(1, -16, 0, 14)
 registrySubtitle.BackgroundTransparency = 1
@@ -3065,7 +3065,7 @@ resultScroll.Parent = registryScroll
 createCorner(resultScroll, 6)
 createStroke(resultScroll, Color3.fromRGB(60, 60, 80), 1)
 
-local resultLayout = Instance.new("UIListLayout")
+_G.resultLayout = Instance.new("UIListLayout")
 resultLayout.Padding = UDim.new(0, 6)
 resultLayout.SortOrder = Enum.SortOrder.LayoutOrder
 resultLayout.Parent = resultScroll
@@ -3075,8 +3075,8 @@ _G.joinOrIndi = function(list, sep, max)
 	if not list or type(list) ~= "table" or #list == 0 then
 		return "Indisponible"
 	end
-	local n = math.min(#list, max or #list)
-	local parts = {}
+	_G.n = math.min(#list, max or #list)
+	_G.parts = {}
 	for i = 1, n do
 		parts[#parts + 1] = tostring(list[i])
 	end
@@ -3086,10 +3086,10 @@ end
 -- ============= TAGS CUSTOMS + BARRE D'ACTIONS + DEVICE DETECTION =============
 -- Tout est wrappé dans une IIFE pour économiser les locals top-level (limite CLI Luau 200)
 -- Le code expose : getUserTags, addTagToUser, removeTagFromUser, openTagPopup, detectLocalDevice
-local getUserTags, addTagToUser, removeTagFromUser, openTagPopup, detectLocalDevice
+_G.getUserTags, addTagToUser, removeTagFromUser, openTagPopup, detectLocalDevice
 do
-	local _TAG_STORE = {} -- _TAG_STORE[userId] = { tags = {...}, lastSeen = "..." }
-	local _tagPopup = nil
+	_G._TAG_STORE = {} -- _TAG_STORE[userId] = { tags = {...}, lastSeen = "..." }
+	_G._tagPopup = nil
 
 	function getUserTags(userId)
 		if not _TAG_STORE[userId] then return {} end
@@ -3128,7 +3128,7 @@ do
 
 	function openTagPopup(userId, username, parentRef)
 		closeTagPopup()
-		local overlay = Instance.new("Frame")
+		_G.overlay = Instance.new("Frame")
 		overlay.Size = UDim2.new(1, 0, 1, 0)
 		overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 		overlay.BackgroundTransparency = 0.4
@@ -3140,7 +3140,7 @@ do
 				closeTagPopup()
 			end
 		end)
-		local card = Instance.new("Frame")
+		_G.card = Instance.new("Frame")
 		card.Size = UDim2.new(0, 280, 0, 220)
 		card.Position = UDim2.new(0.5, -140, 0.5, -110)
 		card.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
@@ -3149,7 +3149,7 @@ do
 		card.Parent = overlay
 		createCorner(card, 10)
 		createStroke(card, Color3.fromRGB(120, 80, 255), 2)
-		local title = Instance.new("TextLabel")
+		_G.title = Instance.new("TextLabel")
 		title.Size = UDim2.new(1, 0, 0, 26)
 		title.BackgroundTransparency = 1
 		title.Text = "🏷️ Tags — @" .. (username or "?")
@@ -3158,7 +3158,7 @@ do
 		title.TextSize = 14
 		title.ZIndex = 52
 		title.Parent = card
-		local subtitle = Instance.new("TextLabel")
+		_G.subtitle = Instance.new("TextLabel")
 		subtitle.Size = UDim2.new(1, -16, 0, 16)
 		subtitle.Position = UDim2.new(0, 8, 0, 26)
 		subtitle.BackgroundTransparency = 1
@@ -3169,7 +3169,7 @@ do
 		subtitle.TextXAlignment = Enum.TextXAlignment.Left
 		subtitle.ZIndex = 52
 		subtitle.Parent = card
-		local tagInput = Instance.new("TextBox")
+		_G.tagInput = Instance.new("TextBox")
 		tagInput.Size = UDim2.new(1, -16, 0, 28)
 		tagInput.Position = UDim2.new(0, 8, 0, 46)
 		tagInput.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
@@ -3182,7 +3182,7 @@ do
 		tagInput.ZIndex = 52
 		tagInput.Parent = card
 		createCorner(tagInput, 6)
-		local listLabel = Instance.new("TextLabel")
+		_G.listLabel = Instance.new("TextLabel")
 		listLabel.Size = UDim2.new(1, -16, 0, 50)
 		listLabel.Position = UDim2.new(0, 8, 0, 80)
 		listLabel.BackgroundTransparency = 1
@@ -3195,19 +3195,19 @@ do
 		listLabel.ZIndex = 52
 		listLabel.Parent = card
 		local function refreshList()
-			local tags = getUserTags(userId)
+			_G.tags = getUserTags(userId)
 			if #tags == 0 then
 				listLabel.Text = "Aucun tag pour l'instant"
 				listLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
 			else
-				local parts = {}
+				_G.parts = {}
 				for _, t in ipairs(tags) do parts[#parts + 1] = "• " .. t end
 				listLabel.Text = table.concat(parts, "\n")
 				listLabel.TextColor3 = Color3.fromRGB(220, 220, 255)
 			end
 		end
 		refreshList()
-		local addBtn = Instance.new("TextButton")
+		_G.addBtn = Instance.new("TextButton")
 		addBtn.Size = UDim2.new(0.5, -12, 0, 30)
 		addBtn.Position = UDim2.new(0, 8, 0, 140)
 		addBtn.BackgroundColor3 = Color3.fromRGB(80, 200, 120)
@@ -3222,7 +3222,7 @@ do
 		addBtn.MouseButton1Click:Connect(function()
 			if addTagToUser(userId, tagInput.Text) then tagInput.Text = "" ; refreshList() end
 		end)
-		local removeBtn = Instance.new("TextButton")
+		_G.removeBtn = Instance.new("TextButton")
 		removeBtn.Size = UDim2.new(0.5, -12, 0, 30)
 		removeBtn.Position = UDim2.new(0.5, 4, 0, 140)
 		removeBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
@@ -3235,7 +3235,7 @@ do
 		removeBtn.Parent = card
 		createCorner(removeBtn, 6)
 		removeBtn.MouseButton1Click:Connect(function()
-			local tags = getUserTags(userId)
+			_G.tags = getUserTags(userId)
 			if #tags > 0 then removeTagFromUser(userId, tags[#tags]) ; refreshList() end
 		end)
 		tagInput.FocusLost:Connect(function(enterPressed)
@@ -3243,7 +3243,7 @@ do
 				if addTagToUser(userId, tagInput.Text) then tagInput.Text = "" ; refreshList() end
 			end
 		end)
-		local closeBtn = Instance.new("TextButton")
+		_G.closeBtn = Instance.new("TextButton")
 		closeBtn.Size = UDim2.new(0, 30, 0, 30)
 		closeBtn.Position = UDim2.new(1, -36, 0, 6)
 		closeBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
@@ -3261,12 +3261,12 @@ do
 
 	-- === DÉTECTION APPAREIL (seulement pour le local player) ===
 	function detectLocalDevice()
-		local ok, result = pcall(function()
-			local touchOn = UserInputService.TouchEnabled
-			local kbOn = UserInputService.KeyboardEnabled
-			local mouseOn = UserInputService.MouseEnabled
-			local gamepadOn = UserInputService.GamepadEnabled
-			local vrOn = UserInputService.VREnabled
+		_G.ok, result = pcall(function()
+			_G.touchOn = UserInputService.TouchEnabled
+			_G.kbOn = UserInputService.KeyboardEnabled
+			_G.mouseOn = UserInputService.MouseEnabled
+			_G.gamepadOn = UserInputService.GamepadEnabled
+			_G.vrOn = UserInputService.VREnabled
 			if vrOn then return "🥽 VR (casque)"
 			elseif gamepadOn and not kbOn and not mouseOn then return "🎮 Console (manette)"
 			elseif touchOn and not kbOn and not mouseOn then return "📱 Mobile (tactile)"
@@ -3285,7 +3285,7 @@ end
 -- Apparition ligne par ligne (typewriter) pour faciliter la lecture
 _G.renderResult = function(data, parent)
 	-- Grosse carte unie
-	local card = Instance.new("Frame")
+	_G.card = Instance.new("Frame")
 	card.Size = UDim2.new(1, -8, 0, 0) -- hauteur auto, ajustée après
 	card.AutomaticSize = Enum.AutomaticSize.Y
 	card.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
@@ -3296,13 +3296,13 @@ _G.renderResult = function(data, parent)
 
 	-- Badges VERIFIED / PREMIUM / BANNED en haut à droite de la carte
 	_=(function()
-		local hasVerified = data.isVerified == true
-		local hasPremium = data.isPremium == true
-		local isBanned = data.isBanned == true
+		_G.hasVerified = data.isVerified == true
+		_G.hasPremium = data.isPremium == true
+		_G.isBanned = data.isBanned == true
 		if not hasVerified and not hasPremium and not isBanned then return end
-		local headerY = 0
+		_G.headerY = 0
 		if hasVerified then
-			local v = Instance.new("TextLabel")
+			_G.v = Instance.new("TextLabel")
 			v.Size = UDim2.new(0, 70, 0, 18)
 			v.Position = UDim2.new(1, -82, 0, 8)
 			v.BackgroundColor3 = Color3.fromRGB(50, 130, 220)
@@ -3317,7 +3317,7 @@ _G.renderResult = function(data, parent)
 			createCorner(v, 4)
 		end
 		if hasPremium then
-			local p = Instance.new("TextLabel")
+			_G.p = Instance.new("TextLabel")
 			p.Size = UDim2.new(0, 60, 0, 18)
 			p.Position = UDim2.new(1, -156, 0, 8)
 			p.BackgroundColor3 = Color3.fromRGB(255, 200, 60)
@@ -3332,7 +3332,7 @@ _G.renderResult = function(data, parent)
 			createCorner(p, 4)
 		end
 		if isBanned then
-			local b = Instance.new("TextLabel")
+			_G.b = Instance.new("TextLabel")
 			b.Size = UDim2.new(0, 50, 0, 18)
 			b.Position = UDim2.new(1, -210, 0, 8)
 			b.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
@@ -3348,7 +3348,7 @@ _G.renderResult = function(data, parent)
 		end
 	end)()
 
-	local padding = Instance.new("UIPadding")
+	_G.padding = Instance.new("UIPadding")
 	padding.PaddingTop = UDim.new(0, 10)
 	padding.PaddingBottom = UDim.new(0, 10)
 	padding.PaddingLeft = UDim.new(0, 12)
@@ -3356,19 +3356,19 @@ _G.renderResult = function(data, parent)
 	padding.Parent = card
 
 	-- Layout vertical : header (encadré API bloquée + nom) en haut, puis content (texte + avatar)
-	local cardLayout = Instance.new("UIListLayout")
+	_G.cardLayout = Instance.new("UIListLayout")
 	cardLayout.Padding = UDim.new(0, 8)
 	cardLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	cardLayout.Parent = card
 
 	-- === EN-TÊTE : bandeau d'avertissement si APIs bloquées ===
-	local apiBlocked = (data.apiBlocked == true) or (
+	_G.apiBlocked = (data.apiBlocked == true) or (
 		not data.created and not data.friendCount and not data.isBanned
 		and not data.isPremium and not data.badgeCount and not data.langName
 		and not data.groups and not data.games and not data.favGames
 	)
 	if apiBlocked then
-		local warnBar = Instance.new("Frame")
+		_G.warnBar = Instance.new("Frame")
 		warnBar.Name = "APIWarning"
 		warnBar.Size = UDim2.new(1, 0, 0, 36)
 		warnBar.BackgroundColor3 = Color3.fromRGB(80, 40, 20)
@@ -3377,7 +3377,7 @@ _G.renderResult = function(data, parent)
 		warnBar.Parent = card
 		createCorner(warnBar, 6)
 		createStroke(warnBar, Color3.fromRGB(255, 150, 50), 1.2)
-		local wLbl = Instance.new("TextLabel")
+		_G.wLbl = Instance.new("TextLabel")
 		wLbl.Size = UDim2.new(1, -16, 1, 0)
 		wLbl.Position = UDim2.new(0, 8, 0, 0)
 		wLbl.BackgroundTransparency = 1
@@ -3392,7 +3392,7 @@ _G.renderResult = function(data, parent)
 	end
 
 	-- === Contenu : Frame horizontal qui contient le texte à gauche et l'avatar à droite ===
-	local contentRow = Instance.new("Frame")
+	_G.contentRow = Instance.new("Frame")
 	contentRow.Name = "ContentRow"
 	contentRow.Size = UDim2.new(1, 0, 0, 200) -- sera ajusté par AutomaticSize
 	contentRow.AutomaticSize = Enum.AutomaticSize.Y
@@ -3400,14 +3400,14 @@ _G.renderResult = function(data, parent)
 	contentRow.BorderSizePixel = 0
 	contentRow.LayoutOrder = 1
 	contentRow.Parent = card
-	local contentLayout = Instance.new("UIListLayout")
+	_G.contentLayout = Instance.new("UIListLayout")
 	contentLayout.FillDirection = Enum.FillDirection.Horizontal
 	contentLayout.Padding = UDim.new(0, 10)
 	contentLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 	contentLayout.Parent = contentRow
 
 	-- === Colonne gauche : TextLabel avec toutes les infos ===
-	local big = Instance.new("TextLabel")
+	_G.big = Instance.new("TextLabel")
 	big.Name = "InfoLabel"
 	big.Size = UDim2.new(1, -180, 0, 0) -- largeur réduite pour laisser place à l'avatar à droite
 	big.AutomaticSize = Enum.AutomaticSize.Y
@@ -3425,7 +3425,7 @@ _G.renderResult = function(data, parent)
 
 	-- === Colonne droite : ImageLabel avec la photo 2D du joueur (thumbnail) ===
 	-- Fallback: InsertService (avatar 3D manequin) est bloqué par certains exécuteurs → on affiche la photo thumbnail
-	local avatarHolder = Instance.new("Frame")
+	_G.avatarHolder = Instance.new("Frame")
 	avatarHolder.Name = "AvatarHolder"
 	avatarHolder.Size = UDim2.new(0, 160, 0, 200)
 	avatarHolder.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
@@ -3436,7 +3436,7 @@ _G.renderResult = function(data, parent)
 	createStroke(avatarHolder, Color3.fromRGB(120, 80, 255), 1.5)
 
 	-- Label "Chargement..." par-dessus tant que la photo n'est pas prête
-	local avatarLoading = Instance.new("TextLabel")
+	_G.avatarLoading = Instance.new("TextLabel")
 	avatarLoading.Size = UDim2.new(1, 0, 1, 0)
 	avatarLoading.BackgroundTransparency = 1
 	avatarLoading.Text = "🖼️\nChargement\nphoto..."
@@ -3448,7 +3448,7 @@ _G.renderResult = function(data, parent)
 	avatarLoading.Parent = avatarHolder
 
 	-- ImageLabel (photo 2D du joueur, thumbnail 150x150)
-	local avatarImg = Instance.new("ImageLabel")
+	_G.avatarImg = Instance.new("ImageLabel")
 	avatarImg.Name = "AvatarImg"
 	avatarImg.Size = UDim2.new(1, -8, 1, -8)
 	avatarImg.Position = UDim2.new(0, 4, 0, 4)
@@ -3462,15 +3462,15 @@ _G.renderResult = function(data, parent)
 	createCorner(avatarImg, 6)
 
 	-- Construire la liste des lignes (une par champ)
-	local friendsText = joinOrIndi(data.friendsList, ", ", 5)
-	local groupsText = joinOrIndi(data.groupsList, ", ", 3)
-	local gamesText = joinOrIndi(data.games, " | ", 5)
-	local favText = joinOrIndi(data.favGames, " | ", 5)
-	local outfitText = joinOrIndi(data.outfits, " | ", 3)
-	local histText = joinOrIndi(data.usernameHistory, " → ", 4)
-	local invText = joinOrIndi(data.inventoryItems, ", ", 8)
+	_G.friendsText = joinOrIndi(data.friendsList, ", ", 5)
+	_G.groupsText = joinOrIndi(data.groupsList, ", ", 3)
+	_G.gamesText = joinOrIndi(data.games, " | ", 5)
+	_G.favText = joinOrIndi(data.favGames, " | ", 5)
+	_G.outfitText = joinOrIndi(data.outfits, " | ", 3)
+	_G.histText = joinOrIndi(data.usernameHistory, " → ", 4)
+	_G.invText = joinOrIndi(data.inventoryItems, ", ", 8)
 
-	local presenceText = "Indisponible"
+	_G.presenceText = "Indisponible"
 	if data.presenceType == 0 then presenceText = "🔘 Hors ligne"
 	elseif data.presenceType == 1 then presenceText = "🟢 En ligne"
 	elseif data.presenceType == 2 then presenceText = "🎮 En jeu"
@@ -3489,7 +3489,7 @@ _G.renderResult = function(data, parent)
 		return "  " .. emoji .. "  " .. label .. " : " .. tostring(value)
 	end
 
-	local lines = {}
+	_G.lines = {}
 	table.insert(lines, "━━━━━━━━━ " .. (data.username or "?") .. " ━━━━━━━━━")
 	table.insert(lines, "  💬 Can chat        : [CHATSTATUS]")
 	table.insert(lines, "  🆔 User ID          : " .. (data.userId or "Indisponible"))
@@ -3497,7 +3497,7 @@ _G.renderResult = function(data, parent)
 	-- Mise à jour async du statut chat (API native Roblox)
 	if data.userId then
 		_G._resolveCanChat(data.userId, function(result, src)
-			local chatText
+			_G.chatText
 			if src == "CanTalkWithMe" then
 				if result == true then
 					chatText = "  💬 Peut me parler    : oui"
@@ -3554,29 +3554,29 @@ _G.renderResult = function(data, parent)
 	table.insert(lines, "  💱 Trades sortants  : " .. (data.tradesOutbound or "Indisponible"))
 	table.insert(lines, "  💱 Trades actifs    : " .. (data.tradesActive or "Indisponible"))
 	table.insert(lines, "  💰 Robux            : " .. (data.robux or "Indisponible"))
-	local badgesText = joinOrIndi(data.badgesList, ", ", 10)
+	_G.badgesText = joinOrIndi(data.badgesList, ", ", 10)
 	table.insert(lines, "  🏅 Badges           : " .. badgesText)
 	-- === LIVE (serveur actuel) : check via natives Roblox ===
 	table.insert(lines, "  ━━━━━━━━━━ LIVE (ce serveur) ━━━━━━━━━━")
 	if data.userId and Players then
-		local liveFound = false
+		_G.liveFound = false
 		pcall(function()
-			local target = Players:GetPlayerByUserId(data.userId)
+			_G.target = Players:GetPlayerByUserId(data.userId)
 			if target then
 				liveFound = true
-				local _ageDays = target.AccountAge or 0
-				local _ageYears = math.floor(_ageDays / 365)
-				local _ageRem = _ageDays - (_ageYears * 365)
-				local _mt = tostring(target.MembershipType or "None"):gsub("Enum.MembershipType.", "")
-				local _teamName = (target.Team and target.Team.Name) or "Aucune"
-				local _ping = "?"
+				_G._ageDays = target.AccountAge or 0
+				_G._ageYears = math.floor(_ageDays / 365)
+				_G._ageRem = _ageDays - (_ageYears * 365)
+				_G._mt = tostring(target.MembershipType or "None"):gsub("Enum.MembershipType.", "")
+				_G._teamName = (target.Team and target.Team.Name) or "Aucune"
+				_G._ping = "?"
 				pcall(function() _ping = tostring(math.floor((target.GetNetworkPing and target:GetNetworkPing() or 0) * 1000)) .. " ms" end)
-				local _loaded = (target.HasAppearanceLoaded and "Oui") or "Non"
-				local _isFriend = (target.IsFriendsWith and LocalPlayer and target:IsFriendsWith(LocalPlayer.UserId)) and "Oui" or "Non"
-				local _charOk = target.Character ~= nil
-				local _humOk = _charOk and target.Character:FindFirstChildOfClass("Humanoid") ~= nil
-				local _hp = "?"
-				local _maxHp = "?"
+				_G._loaded = (target.HasAppearanceLoaded and "Oui") or "Non"
+				_G._isFriend = (target.IsFriendsWith and LocalPlayer and target:IsFriendsWith(LocalPlayer.UserId)) and "Oui" or "Non"
+				_G._charOk = target.Character ~= nil
+				_G._humOk = _charOk and target.Character:FindFirstChildOfClass("Humanoid") ~= nil
+				_G._hp = "?"
+				_G._maxHp = "?"
 				pcall(function() if _humOk then local h = target.Character:FindFirstChildOfClass("Humanoid"); _hp = tostring(math.floor(h.Health)); _maxHp = tostring(math.floor(h.MaxHealth)) end end)
 				table.insert(lines, "  🔴 Présent ici     : OUI (connecté à ce serveur)")
 				table.insert(lines, "  ├─ AccountAge      : " .. _ageYears .. " an(s) " .. _ageRem .. "j (" .. _ageDays .. " jours)")
@@ -3589,30 +3589,30 @@ _G.renderResult = function(data, parent)
 				table.insert(lines, "  └─ HP / MaxHP      : " .. _hp .. " / " .. _maxHp)
 				-- Groupes clés (natives Roblox : pas d'HTTP)
 				;(function(_t, _ll, _lp)
-					local _groups = {
+					_G._groups = {
 						{1, "Roblox (officiel)"},
 						{1200769, "Groupe Officiel"},
 						{687101511, "Vzlom_Emk"},
 					}
 					for _, g in ipairs(_groups) do
-						local ok, rank, isIn = pcall(function()
-							local r = _t:GetRankInGroup(g[1])
-							local b = _t:IsInGroup(g[1])
+						_G.ok, rank, isIn = pcall(function()
+							_G.r = _t:GetRankInGroup(g[1])
+							_G.b = _t:IsInGroup(g[1])
 							return r, b
 						end)
 						if ok then
-							local role = isIn and "Membre (rank " .. tostring(rank) .. ")" or "Non-membre"
+							_G.role = isIn and "Membre (rank " .. tostring(rank) .. ")" or "Non-membre"
 							_ll:insert("  └─ " .. g[2] .. " (g" .. g[1] .. ") : " .. role)
 						end
 					end
 					-- Badges Officier / Admin (natives : pas d'HTTP)
-					local ok2, has = pcall(function()
-						local bs = game:GetService("BadgeService")
+					_G.ok2, has = pcall(function()
+						_G.bs = game:GetService("BadgeService")
 						return bs and bs:UserHasBadgeAsync(_t.UserId, 1)
 					end)
 					if ok2 and has then _ll:insert("  └─ 🛡️ Badge Administrator : OUI") end
-					local ok3, hasOfficial = pcall(function()
-						local bs = game:GetService("BadgeService")
+					_G.ok3, hasOfficial = pcall(function()
+						_G.bs = game:GetService("BadgeService")
 						return bs and bs:UserHasBadgeAsync(_t.UserId, 2)
 					end)
 					if ok3 and hasOfficial then _ll:insert("  └─ 🛡️ Badge Official : OUI") end
@@ -3643,11 +3643,11 @@ _G.renderResult = function(data, parent)
 	-- Animation typewriter: apparition ligne par ligne (toutes les 25ms = ~40 lignes/sec)
 	-- Si la recherche est rapide, on peut tout afficher direct, sinon on anime
 	task.spawn(function()
-		local animDelay = 0.025 -- 25ms par ligne
+		_G.animDelay = 0.025 -- 25ms par ligne
 		for i, l in ipairs(lines) do
 			-- Si la carte est détruite avant la fin (nouvelle recherche), on arrête
 			if not big or not big.Parent then return end
-			local currentText = big.Text
+			_G.currentText = big.Text
 			if currentText == "" then
 				big.Text = l
 			else
@@ -3667,9 +3667,9 @@ _G.renderResult = function(data, parent)
 	-- Approche : URL Roblox directe (marche même quand Players:GetUserThumbnailAsync bloque)
 	-- Format: http://www.roblox.com/Thumbs/Avatar.ashx?x=150&y=150&userId={userId}
 	if data.userId then
-		local userId = data.userId
+		_G.userId = data.userId
 		-- URL directe thumbnail Roblox (image PNG, marche via ContentProvider)
-		local directUrl = "http://www.roblox.com/Thumbs/Avatar.ashx?x=150&y=150&userId=" .. tostring(userId)
+		_G.directUrl = "http://www.roblox.com/Thumbs/Avatar.ashx?x=150&y=150&userId=" .. tostring(userId)
 		task.spawn(function()
 			pcall(function()
 				avatarImg.Image = directUrl
@@ -3694,19 +3694,19 @@ _G.renderResult = function(data, parent)
 	-- ============= BARRE D'ACTIONS EN BAS DE LA CARTE =============
 	-- Wrap dans un IIFE pour économiser les locals top-level
 	do
-		local actionsRow = Instance.new("Frame")
+		_G.actionsRow = Instance.new("Frame")
 		actionsRow.Size = UDim2.new(1, -16, 0, 30)
 		actionsRow.Position = UDim2.new(0, 8, 0, 100) -- position fixe (le big TextLabel est plus haut)
 		actionsRow.BackgroundTransparency = 1
 		actionsRow.ZIndex = 5
 		actionsRow.Parent = card
-		local actionsLayout = Instance.new("UIListLayout")
+		_G.actionsLayout = Instance.new("UIListLayout")
 		actionsLayout.FillDirection = Enum.FillDirection.Horizontal
 		actionsLayout.Padding = UDim.new(0, 6)
 		actionsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 		actionsLayout.Parent = actionsRow
 		local function makeActionBtn(text, color, layoutOrder, onClick)
-			local btn = Instance.new("TextButton")
+			_G.btn = Instance.new("TextButton")
 			btn.Size = UDim2.new(0, 100, 0, 28)
 			btn.BackgroundColor3 = color
 			btn.Text = text
@@ -3736,8 +3736,8 @@ _G.renderResult = function(data, parent)
 			if data.gameId or data.placeId then
 				makeActionBtn("🌐 Rejoindre", Color3.fromRGB(70, 130, 200), 4, function()
 					pcall(function()
-						local TS = game:GetService("TeleportService")
-						local pid = data.placeId or data.gameId
+						_G.TS = game:GetService("TeleportService")
+						_G.pid = data.placeId or data.gameId
 						if data.gameInstanceId and data.gameInstanceId ~= "" then
 							TS:TeleportToPlaceInstance(pid, data.gameInstanceId, LocalPlayer)
 						else
@@ -3771,13 +3771,13 @@ function runRegistrySearch(query)
 
 	task.spawn(function()
 		-- 1) Résoudre username -> userId via Players:GetUserIdFromNameAsync (NATUREL Roblox, pas d'API externe)
-		local userId, displayName, username
-		local ok, uid = pcall(function()
+		_G.userId, displayName, username
+		_G.ok, uid = pcall(function()
 			return Players:GetUserIdFromNameAsync(query)
 		end)
 		if not ok or not uid or uid == 0 then
 			-- Pas trouvé : on peut quand même afficher le userId si l'user tape un nombre
-			local asNumber = tonumber(query)
+			_G.asNumber = tonumber(query)
 			if asNumber and asNumber > 0 then
 				userId = asNumber
 				username = "UserId:" .. asNumber
@@ -3805,16 +3805,16 @@ function runRegistrySearch(query)
 		statusLbl.TextColor3 = Color3.fromRGB(120, 220, 160)
 
 		-- 2) Récupérer détails profil
-		local data = {
+		_G.data = {
 			userId = userId,
 			displayName = displayName,
 			username = username
 		}
 		-- 2) Profil détaillé (helper multi-exécuteur : HttpGet, GetAsync, syn.request)
 		pcall(function()
-			local r = httpGet("https://users.roblox.com/v1/users/" .. userId)
+			_G.r = httpGet("https://users.roblox.com/v1/users/" .. userId)
 			if r and r ~= "" then
-				local d2 = HttpService:JSONDecode(r)
+				_G.d2 = HttpService:JSONDecode(r)
 				if d2 then
 									data.created = d2.created
 									data.isBanned = d2.isBanned
@@ -3823,7 +3823,7 @@ function runRegistrySearch(query)
 									data.hasVerifiedBadge = d2.hasVerifiedBadge or false
 									-- Noms de langue courants : en_US, fr_FR, es_ES, de_DE, etc.
 									if data.locale then
-										local langMap = {
+										_G.langMap = {
 											en_US = "Anglais (US)", en_GB = "Anglais (UK)",
 											fr_FR = "Français", es_ES = "Espagnol", es_MX = "Espagnol (Mexique)",
 											de_DE = "Allemand", it_IT = "Italien", pt_BR = "Portugais (BR)",
@@ -3837,13 +3837,13 @@ function runRegistrySearch(query)
 									end
 									if d2.created then
 						-- Format ISO 8601: "2021-04-08T15:32:19.847Z" -> parser en epoch
-						local y, mo, da = d2.created:match("^(%d+)%-(%d+)%-(%d+)")
+						_G.y, mo, da = d2.created:match("^(%d+)%-(%d+)%-(%d+)")
 						if y and mo and da then
-							local epochThen = os.time({year=tonumber(y), month=tonumber(mo), day=tonumber(da), hour=0, min=0, sec=0})
-							local epochDiff = os.time() - epochThen
-							local years = math.floor(epochDiff / 31536000)
-							local days = math.floor((epochDiff % 31536000) / 86400)
-							local hours = math.floor((epochDiff % 86400) / 3600)
+							_G.epochThen = os.time({year=tonumber(y), month=tonumber(mo), day=tonumber(da), hour=0, min=0, sec=0})
+							_G.epochDiff = os.time() - epochThen
+							_G.years = math.floor(epochDiff / 31536000)
+							_G.days = math.floor((epochDiff % 31536000) / 86400)
+							_G.hours = math.floor((epochDiff % 86400) / 3600)
 							if years > 0 then
 								data.accountAge = years .. " an(s) " .. days .. "j"
 							elseif days > 0 then
@@ -3865,18 +3865,18 @@ function runRegistrySearch(query)
 		-- 3b) Native Roblox data (no HTTP needed - works on ALL executors)
 		pcall(function()
 			-- Get display name via native API
-			local name = Players:GetNameFromUserIdAsync(userId)
+			_G.name = Players:GetNameFromUserIdAsync(userId)
 			if name and name ~= "" then data.displayName = name end
 		end)
 		pcall(function()
 			-- Check if user is online on THIS server
-			local player = Players:GetPlayerByUserId(userId)
+			_G.player = Players:GetPlayerByUserId(userId)
 			if player then
 				data.presenceType = 2 -- "En jeu"
 				data.presencePlaceId = tostring(game.PlaceId)
 				data.presenceLastLocation = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name or "?"
 				-- Get their friends list (native)
-				local friends = player:GetFriendsOnline()
+				_G.friends = player:GetFriendsOnline()
 				if friends and #friends > 0 then
 					data.friendsList = {}
 					for i, f in ipairs(friends) do
@@ -3888,7 +3888,7 @@ function runRegistrySearch(query)
 		end)
 		pcall(function()
 			-- Get account age in days (native)
-			local player = Players:GetPlayerByUserId(userId)
+			_G.player = Players:GetPlayerByUserId(userId)
 			if player then
 				data.accountAgeDays = player.AccountAge
 			end
@@ -3896,18 +3896,18 @@ function runRegistrySearch(query)
 
 		-- 4) Friends count
 		pcall(function()
-			local r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/friends/count")
+			_G.r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/friends/count")
 			if r and r ~= "" then
-				local d2 = HttpService:JSONDecode(r)
+				_G.d2 = HttpService:JSONDecode(r)
 				if d2 and d2.count then data.friendCount = d2.count end
 			end
 		end)
 
 		-- 5) Groupes
 		pcall(function()
-			local r = httpGet("https://users.roblox.com/v1/users/" .. userId .. "/groups")
+			_G.r = httpGet("https://users.roblox.com/v1/users/" .. userId .. "/groups")
 			if r and r ~= "" then
-				local d2 = HttpService:JSONDecode(r)
+				_G.d2 = HttpService:JSONDecode(r)
 				if d2 and d2.data and #d2.data > 0 then
 					data.groups = {}
 					for i, g in ipairs(d2.data) do
@@ -3922,9 +3922,9 @@ function runRegistrySearch(query)
 
 		-- 6) Jeux
 			pcall(function()
-				local r = httpGet("https://games.roblox.com/v2/users/" .. userId .. "/games?sortOrder=Desc&limit=5")
+				_G.r = httpGet("https://games.roblox.com/v2/users/" .. userId .. "/games?sortOrder=Desc&limit=5")
 				if r and r ~= "" then
-					local d2 = HttpService:JSONDecode(r)
+					_G.d2 = HttpService:JSONDecode(r)
 					if d2 and d2.data and #d2.data > 0 then
 						data.games = {}
 						for i, g in ipairs(d2.data) do
@@ -3937,9 +3937,9 @@ function runRegistrySearch(query)
 
 			-- 6b) Jeux favoris
 			pcall(function()
-				local r = httpGet("https://games.roblox.com/v1/users/" .. userId .. "/favorite/games?sortOrder=Desc&limit=5")
+				_G.r = httpGet("https://games.roblox.com/v1/users/" .. userId .. "/favorite/games?sortOrder=Desc&limit=5")
 				if r and r ~= "" then
-					local d2 = HttpService:JSONDecode(r)
+					_G.d2 = HttpService:JSONDecode(r)
 					if d2 and d2.data and #d2.data > 0 then
 						data.favGames = {}
 						for i, g in ipairs(d2.data) do
@@ -3952,46 +3952,46 @@ function runRegistrySearch(query)
 
 			-- 6c) Premium (via API Roblox)
 			pcall(function()
-				local r = httpGet("https://premiumfeatures.roblox.com/v1/users/" .. userId .. "/validate-membership")
+				_G.r = httpGet("https://premiumfeatures.roblox.com/v1/users/" .. userId .. "/validate-membership")
 				if r and r ~= "" then
-					local isPremium = (r == "true")
+					_G.isPremium = (r == "true")
 					data.isPremium = isPremium
 				end
 			end)
 
 			-- 6d) Badges count
 			pcall(function()
-				local r = httpGet("https://badges.roblox.com/v1/users/" .. userId .. "/badges?limit=1&sortOrder=Desc")
+				_G.r = httpGet("https://badges.roblox.com/v1/users/" .. userId .. "/badges?limit=1&sortOrder=Desc")
 				if r and r ~= "" then
-					local d2 = HttpService:JSONDecode(r)
+					_G.d2 = HttpService:JSONDecode(r)
 					if d2 and d2.data then data.badgeCount = #d2.data end
 				end
 			end)
 
 			-- 6e) Followers / Following count
 			pcall(function()
-				local r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/followings/count")
+				_G.r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/followings/count")
 				if r and r ~= "" then
-					local d2 = HttpService:JSONDecode(r)
+					_G.d2 = HttpService:JSONDecode(r)
 					if d2 and d2.count then data.followingCount = d2.count end
 				end
 			end)
 			pcall(function()
-				local r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/followers/count")
+				_G.r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/followers/count")
 				if r and r ~= "" then
-					local d2 = HttpService:JSONDecode(r)
+					_G.d2 = HttpService:JSONDecode(r)
 					if d2 and d2.count then data.followerCount = d2.count end
 				end
 			end)
 
 			-- 6f) Présence en temps réel (en ligne / en jeu / au studio)
 			pcall(function()
-				local body = HttpService:JSONEncode({userIds = {userId}})
-				local r = httpGet("https://presence.roblox.com/v1/presence/users?userIds=" .. tostring(userId))
+				_G.body = HttpService:JSONEncode({userIds = {userId}})
+				_G.r = httpGet("https://presence.roblox.com/v1/presence/users?userIds=" .. tostring(userId))
 				if r and r ~= "" then
-					local d = HttpService:JSONDecode(r)
+					_G.d = HttpService:JSONDecode(r)
 					if d and d.userPresences and d.userPresences[1] then
-						local p = d.userPresences[1]
+						_G.p = d.userPresences[1]
 						data.presenceType = p.userPresenceType
 						data.presenceLastLocation = p.lastLocation
 						data.presenceLastOnline = p.lastOnline
@@ -4003,9 +4003,9 @@ function runRegistrySearch(query)
 
 			-- 6g) Avatar items (ce qu'il porte)
 				pcall(function()
-					local r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/avatar")
+					_G.r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/avatar")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 then
 							data.avatarHatCount = d2.numHats or 0
 							data.avatarBody = d2.bodyColors and "Personnalisé" or "Classique"
@@ -4015,9 +4015,9 @@ function runRegistrySearch(query)
 
 				-- 6h) Currently wearing (accessoires actuellement équipés)
 				pcall(function()
-					local r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/currently-wearing")
+					_G.r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/currently-wearing")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 and d2.assetIds then
 							data.wearingCount = #d2.assetIds
 						end
@@ -4026,9 +4026,9 @@ function runRegistrySearch(query)
 
 				-- 6i) Tenues (outfits)
 				pcall(function()
-					local r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/outfits?page=1&itemsPerPage=10&isEditable=false")
+					_G.r = httpGet("https://avatar.roblox.com/v1/users/" .. userId .. "/outfits?page=1&itemsPerPage=10&isEditable=false")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 and d2.data and #d2.data > 0 then
 							data.outfits = {}
 							for i, o in ipairs(d2.data) do
@@ -4041,15 +4041,15 @@ function runRegistrySearch(query)
 
 				-- 6j) Historique des usernames (avec dates)
 				pcall(function()
-					local r = httpGet("https://users.roblox.com/v1/users/" .. userId .. "/username-history?limit=10&sortOrder=Desc")
+					_G.r = httpGet("https://users.roblox.com/v1/users/" .. userId .. "/username-history?limit=10&sortOrder=Desc")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 and d2.data and #d2.data > 0 then
 							data.usernameHistory = {}
 							for i, h in ipairs(d2.data) do
 								if i > 5 then break end
 								if h.name then
-									local entry = h.name
+									_G.entry = h.name
 									if h.created then
 										entry = entry .. " (" .. tostring(h.created):sub(1, 10) .. ")"
 									end
@@ -4062,14 +4062,14 @@ function runRegistrySearch(query)
 
 				-- 6k) Groupes avec RÔLE (top 5)
 				pcall(function()
-					local r = httpGet("https://groups.roblox.com/v2/users/" .. userId .. "/groups/roles?includeLocked=true")
+					_G.r = httpGet("https://groups.roblox.com/v2/users/" .. userId .. "/groups/roles?includeLocked=true")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 and d2.data and #d2.data > 0 then
 							data.groupsWithRole = {}
 							for i, g in ipairs(d2.data) do
 								if i > 5 then break end
-								local entry = {name=g.group.name or "?", role=(g.role and g.role.name) or "Membre"}
+								_G.entry = {name=g.group.name or "?", role=(g.role and g.role.name) or "Membre"}
 								table.insert(data.groupsWithRole, entry)
 							end
 						end
@@ -4078,9 +4078,9 @@ function runRegistrySearch(query)
 
 				-- 6l) Amis (top 5)
 				pcall(function()
-					local r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/friends?page=1&itemsPerPage=5")
+					_G.r = httpGet("https://friends.roblox.com/v1/users/" .. userId .. "/friends?page=1&itemsPerPage=5")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 and d2.data and #d2.data > 0 then
 							data.friendsList = {}
 							for i, f in ipairs(d2.data) do
@@ -4093,18 +4093,18 @@ function runRegistrySearch(query)
 
 				-- 6m) Inventaire détaillé (counts par type d'asset)
 				pcall(function()
-					local assetTypes = {
+					_G.assetTypes = {
 						"Hat", "HairAccessory", "FaceAccessory", "NeckAccessory",
 						"ShoulderAccessory", "FrontAccessory", "BackAccessory", "WaistAccessory",
 						"Audio", "Badge"
 					}
 					data.inventory = {}
 					for _, atype in ipairs(assetTypes) do
-						local ok, r = pcall(function()
+						_G.ok, r = pcall(function()
 							return httpGet("https://inventory.roblox.com/v2/users/" .. userId .. "/inventory/" .. atype .. "?page=1&itemsPerPage=1&sortOrder=Desc")
 						end)
 						if ok and r and r ~= "" then
-							local d2 = HttpService:JSONDecode(r)
+							_G.d2 = HttpService:JSONDecode(r)
 							if d2 and d2.totalCount then
 								data.inventory[atype] = d2.totalCount
 							end
@@ -4114,14 +4114,14 @@ function runRegistrySearch(query)
 
 				-- 6n) Last online timestamp
 				pcall(function()
-					local r = httpGet("https://presence.roblox.com/v1/presence/last-online?userId=" .. tostring(userId))
+					_G.r = httpGet("https://presence.roblox.com/v1/presence/last-online?userId=" .. tostring(userId))
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 and d2.lastOnline then
 							data.lastOnline = d2.lastOnline
 							-- Format epoch ISO
-							local now = os.time()
-							local diff = now - d2.lastOnline
+							_G.now = os.time()
+							_G.diff = now - d2.lastOnline
 							if diff < 60 then data.lastOnlineText = "À l'instant"
 							elseif diff < 3600 then data.lastOnlineText = math.floor(diff/60) .. " min"
 							elseif diff < 86400 then data.lastOnlineText = math.floor(diff/3600) .. "h"
@@ -4134,9 +4134,9 @@ function runRegistrySearch(query)
 
 				-- 6o) Email vérifié / statut 2FA
 				pcall(function()
-					local r = httpGet("https://accountinformation.roblox.com/v1/users/" .. userId .. "/email")
+					_G.r = httpGet("https://accountinformation.roblox.com/v1/users/" .. userId .. "/email")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 then
 							data.hasEmail = d2.emailAddress and d2.emailAddress ~= "" or false
 							data.emailVerified = d2.verified or false
@@ -4146,9 +4146,9 @@ function runRegistrySearch(query)
 
 				-- 6p) Premium subscription details (date d'expiration)
 				pcall(function()
-					local r = httpGet("https://billing.roblox.com/v1/users/" .. userId .. "/subscription")
+					_G.r = httpGet("https://billing.roblox.com/v1/users/" .. userId .. "/subscription")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 and d2.expirationDate then
 							data.premiumUntil = d2.expirationDate
 						end
@@ -4164,41 +4164,41 @@ function runRegistrySearch(query)
 
 				-- 6r) Trade activity (counts)
 				pcall(function()
-					local r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trade-privacy")
+					_G.r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trade-privacy")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 then
 							data.tradePrivacy = d2.tradePrivacy
 						end
 					end
 				end)
 				pcall(function()
-					local r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/inbound/count")
+					_G.r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/inbound/count")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 and d2.count then data.tradesInbound = d2.count end
 					end
 				end)
 				pcall(function()
-					local r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/outbound/count")
+					_G.r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/outbound/count")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 and d2.count then data.tradesOutbound = d2.count end
 					end
 				end)
 				-- 6s) Robux (economy)
 				pcall(function()
-					local r = httpGet("https://economy.roblox.com/v1/users/" .. userId .. "/currency")
+					_G.r = httpGet("https://economy.roblox.com/v1/users/" .. userId .. "/currency")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 and d2.robux then data.robux = d2.robux end
 					end
 				end)
 				-- 6t) Badges list (names)
 				pcall(function()
-					local r = httpGet("https://badges.roblox.com/v1/users/" .. userId .. "/badges?limit=20&sortOrder=Desc")
+					_G.r = httpGet("https://badges.roblox.com/v1/users/" .. userId .. "/badges?limit=20&sortOrder=Desc")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 and d2.data and #d2.data > 0 then
 							data.badgesList = {}
 							for i, b in ipairs(d2.data) do
@@ -4210,23 +4210,23 @@ function runRegistrySearch(query)
 				end)
 				-- 6u) Description complete
 				pcall(function()
-					local r = httpGet("https://accountinformation.roblox.com/v1/description/" .. userId)
+					_G.r = httpGet("https://accountinformation.roblox.com/v1/description/" .. userId)
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 and d2.description then data.blurb = d2.description end
 					end
 				end)
 				pcall(function()
-					local r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/active/count")
+					_G.r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/active/count")
 					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
+						_G.d2 = HttpService:JSONDecode(r)
 						if d2 and d2.count then data.tradesActive = d2.count end
 					end
 				end)
 
 		-- 7) Afficher
 				-- Compteur d'APIs qui ont répondu (au moins 1 = l'exécuteur autorise HttpGet externe)
-				local apiSuccessCount = 0
+				_G.apiSuccessCount = 0
 				if data.created then apiSuccessCount = apiSuccessCount + 1 end
 				if data.friendCount or data.followerCount then apiSuccessCount = apiSuccessCount + 1 end
 				if data.games or data.favGames then apiSuccessCount = apiSuccessCount + 1 end
@@ -4252,7 +4252,7 @@ function runRegistrySearch(query)
 				-- ID 1000000000 ≈ 2015, ID 10000000000 ≈ 2020, ID 100000000000 ≈ 2024
 				if userId and not data.created then
 					-- Formule simple : année ≈ 2003 + log10(userId) * 4
-					local estYear = 2003 + math.floor(math.log10(math.max(userId, 1)) * 4)
+					_G.estYear = 2003 + math.floor(math.log10(math.max(userId, 1)) * 4)
 					estYear = math.min(estYear, 2026)
 					estYear = math.max(estYear, 2003)
 					data.createdEst = estYear
@@ -4328,27 +4328,27 @@ function giveGhostTool()
 		if v:IsA("ScreenGui") and (v.Name:find("Chronos") or v.Name:find("Ghost")) then v:Destroy() end
 	end
 
-	local tool = Instance.new("Tool")
+	_G.tool = Instance.new("Tool")
 	tool.Name = "Invisible_V4"
 	tool.RequiresHandle = false
 	tool.Parent = LocalPlayer:WaitForChild("Backpack")
 
-	local isInvisible = false
-	local ghostChar = nil
-	local ghostConn = nil
-	local ghostMouse = LocalPlayer:GetMouse()
-	local OFFSET_UNDER = -30
+	_G.isInvisible = false
+	_G.ghostChar = nil
+	_G.ghostConn = nil
+	_G.ghostMouse = LocalPlayer:GetMouse()
+	_G.OFFSET_UNDER = -30
 
 	local function remoteClick()
-		local target = ghostMouse.Target
+		_G.target = ghostMouse.Target
 		if target then
-			local detector = target:FindFirstChildOfClass("ClickDetector") or (target.Parent and target.Parent:FindFirstChildOfClass("ClickDetector"))
+			_G.detector = target:FindFirstChildOfClass("ClickDetector") or (target.Parent and target.Parent:FindFirstChildOfClass("ClickDetector"))
 			if detector then pcall(function() fireclickdetector(detector) end) end
 		end
 	end
 
 	tool.Activated:Connect(function()
-		local char = LocalPlayer.Character
+		_G.char = LocalPlayer.Character
 		if not char then return end
 		if not isInvisible then
 			isInvisible = true
@@ -4356,7 +4356,7 @@ function giveGhostTool()
 			ghostChar = char:Clone()
 			ghostChar.Name = "Ghost_Player"
 			ghostChar.Parent = Workspace
-			local gh = ghostChar:FindFirstChildOfClass("Humanoid")
+			_G.gh = ghostChar:FindFirstChildOfClass("Humanoid")
 			if gh then gh.HipHeight = gh.HipHeight + 0.001 end
 			for _, p in ipairs(ghostChar:GetDescendants()) do
 				if p:IsA("BasePart") then
@@ -4365,7 +4365,7 @@ function giveGhostTool()
 					if p.Name:find("Foot") or p.Name:find("Leg") then p.CanCollide = false end
 				end
 			end
-			local targetCf = char:GetPivot() * CFrame.new(0, OFFSET_UNDER, 0)
+			_G.targetCf = char:GetPivot() * CFrame.new(0, OFFSET_UNDER, 0)
 			for _ = 1, 3 do
 				char:PivotTo(targetCf)
 				RunService.Heartbeat:Wait()
@@ -4375,8 +4375,8 @@ function giveGhostTool()
 			Camera.CameraSubject = gh
 			ghostConn = RunService.RenderStepped:Connect(function()
 				if isInvisible and ghostChar and LocalPlayer.Character then
-					local realHum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-					local ghostHum = ghostChar:FindFirstChildOfClass("Humanoid")
+					_G.realHum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+					_G.ghostHum = ghostChar:FindFirstChildOfClass("Humanoid")
 					if realHum and ghostHum then
 						ghostHum:Move(realHum.MoveDirection, false)
 						if realHum.Jump then ghostHum.Jump = true end
@@ -4387,7 +4387,7 @@ function giveGhostTool()
 			isInvisible = false
 			if ghostConn then ghostConn:Disconnect() end
 			if ghostChar then
-				local lastPos = ghostChar:GetPivot()
+				_G.lastPos = ghostChar:GetPivot()
 				if char.PrimaryPart then
 					char.PrimaryPart.Anchored = false
 					char.PrimaryPart.AssemblyLinearVelocity = Vector3.zero
@@ -4411,10 +4411,10 @@ end
 
 function giveElevenTool()
 	if LocalPlayer.Backpack:FindFirstChild("Eleven_Master_PZ70") or (character and character:FindFirstChild("Eleven_Master_PZ70")) then return end
-	local tool = Instance.new("Tool")
+	_G.tool = Instance.new("Tool")
 	tool.Name = "Eleven_Master_PZ70"
 	tool.RequiresHandle = true
-	local h = Instance.new("Part")
+	_G.h = Instance.new("Part")
 	h.Name = "Handle"
 	h.Size = Vector3.new(0.1, 0.1, 0.1)
 	h.Transparency = 1
@@ -4422,21 +4422,21 @@ function giveElevenTool()
 	h.Parent = tool
 	tool.Parent = LocalPlayer:WaitForChild("Backpack")
 
-	local targetPart = nil
-	local bp, bg = nil, nil
-	local distance = 25
-	local active = false
-	local rotationMode = false
-	local lockedZoom = 10
-	local ghostActive = false
-	local ghostChar = nil
-	local ghostConn = nil
-	local eMouse = LocalPlayer:GetMouse()
-	local heldConn = nil
+	_G.targetPart = nil
+	_G.bp, bg = nil, nil
+	_G.distance = 25
+	_G.active = false
+	_G.rotationMode = false
+	_G.lockedZoom = 10
+	_G.ghostActive = false
+	_G.ghostChar = nil
+	_G.ghostConn = nil
+	_G.eMouse = LocalPlayer:GetMouse()
+	_G.heldConn = nil
 
 	local function isPlayerPart(part)
 		if not part then return false end
-		local model = part:FindFirstAncestorOfClass("Model")
+		_G.model = part:FindFirstAncestorOfClass("Model")
 		if model then
 			for _, plr in ipairs(Players:GetPlayers()) do
 				if plr.Character == model then return true end
@@ -4446,11 +4446,11 @@ function giveElevenTool()
 	end
 
 	local function findTarget()
-		local tgt = eMouse.Target
+		_G.tgt = eMouse.Target
 		if tgt and tgt:IsA("BasePart") and not tgt.Anchored and not isPlayerPart(tgt) then
-			local model = tgt:FindFirstAncestorOfClass("Model")
+			_G.model = tgt:FindFirstAncestorOfClass("Model")
 			if model then
-				local main = model:FindFirstChild("DriveSeat") or model:FindFirstChildOfClass("VehicleSeat") or tgt
+				_G.main = model:FindFirstChild("DriveSeat") or model:FindFirstChildOfClass("VehicleSeat") or tgt
 				if main and main:IsA("BasePart") and not main.Anchored then return main end
 			end
 			return tgt
@@ -4479,7 +4479,7 @@ function giveElevenTool()
 			LocalPlayer.CameraMaxZoomDistance = lockedZoom
 			LocalPlayer.CameraMinZoomDistance = lockedZoom
 			if not rotationMode then
-				local ray = eMouse.UnitRay
+				_G.ray = eMouse.UnitRay
 				bp.Position = ray.Origin + ray.Direction * distance
 				bp.P = 20000
 				bp.MaxForce = Vector3.one * math.huge
@@ -4496,13 +4496,13 @@ function giveElevenTool()
 				cleanupHolding()
 				return
 			end
-			local tgt = findTarget()
+			_G.tgt = findTarget()
 			if tgt then
 				targetPart = tgt
 				targetPart.Anchored = false
 				targetPart.CanCollide = false
 				targetPart.CanTouch = false
-				local r = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+				_G.r = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 				if r then lockedZoom = (Camera.CFrame.Position - r.Position).Magnitude end
 				bp = Instance.new("BodyPosition", targetPart)
 				bp.MaxForce = Vector3.one * math.huge
@@ -4534,8 +4534,8 @@ function giveElevenTool()
 		if processed then return end
 		if input.KeyCode == Enum.KeyCode.Nine then
 			ghostActive = not ghostActive
-			local char = LocalPlayer.Character
-			local root = char and char:FindFirstChild("HumanoidRootPart")
+			_G.char = LocalPlayer.Character
+			_G.root = char and char:FindFirstChild("HumanoidRootPart")
 			if not char or not root then return end
 			if ghostActive then
 				char.Archivable = true
@@ -4548,7 +4548,7 @@ function giveElevenTool()
 				root.Anchored = true
 				ghostConn = RunService.RenderStepped:Connect(function()
 					if ghostChar and char:FindFirstChildOfClass("Humanoid") then
-						local gcHum = ghostChar:FindFirstChildOfClass("Humanoid")
+						_G.gcHum = ghostChar:FindFirstChildOfClass("Humanoid")
 						if gcHum then
 							gcHum:Move(char.Humanoid.MoveDirection, false)
 							if char.Humanoid.Jump then gcHum.Jump = true end
@@ -4602,24 +4602,24 @@ end
 function giveSpiderTool()
 	if LocalPlayer.Backpack:FindFirstChild("SpiderTool") or (character and character:FindFirstChild("SpiderTool")) then return end
 
-	local tool = Instance.new("Tool")
+	_G.tool = Instance.new("Tool")
 	tool.Name = "SpiderTool"
 	tool.RequiresHandle = false
 	tool.Parent = LocalPlayer:WaitForChild("Backpack")
 
-	local connection = nil
-	local jumpConnection = nil
-	local isClimbing = false
-	local currentHitNormal = Vector3.new(0, 1, 0)
-	local smoothedNormal = Vector3.new(0, 1, 0)
-	local jumpCooldown = false
-	local bodyVelocity, bodyGyro, attachment = nil, nil, nil
+	_G.connection = nil
+	_G.jumpConnection = nil
+	_G.isClimbing = false
+	_G.currentHitNormal = Vector3.new(0, 1, 0)
+	_G.smoothedNormal = Vector3.new(0, 1, 0)
+	_G.jumpCooldown = false
+	_G.bodyVelocity, bodyGyro, attachment = nil, nil, nil
 
 	tool.Equipped:Connect(function()
-		local char = LocalPlayer.Character
+		_G.char = LocalPlayer.Character
 		if not char then return end
-		local root = char:WaitForChild("HumanoidRootPart")
-		local hum = char:WaitForChild("Humanoid")
+		_G.root = char:WaitForChild("HumanoidRootPart")
+		_G.hum = char:WaitForChild("Humanoid")
 
 		attachment = Instance.new("Attachment")
 		attachment.Parent = root
@@ -4639,7 +4639,7 @@ function giveSpiderTool()
 		bodyGyro.Attachment0 = attachment
 		bodyGyro.Parent = root
 
-		local params = RaycastParams.new()
+		_G.params = RaycastParams.new()
 		params.FilterDescendantsInstances = {char, tool}
 		params.FilterType = Enum.RaycastFilterType.Exclude
 
@@ -4662,20 +4662,20 @@ function giveSpiderTool()
 				return
 			end
 
-			local pos = root.Position
-			local look = root.CFrame.LookVector
-			local up = root.CFrame.UpVector
-			local right = root.CFrame.RightVector
+			_G.pos = root.Position
+			_G.look = root.CFrame.LookVector
+			_G.up = root.CFrame.UpVector
+			_G.right = root.CFrame.RightVector
 
-			local rayForward = Workspace:Raycast(pos, look * 4.5, params)
-			local rayBackward = Workspace:Raycast(pos, -look * 4.5, params)
-			local rayDown = Workspace:Raycast(pos, -up * 8, params)
-			local rayOuterFwd = Workspace:Raycast(pos + look * 3.5, (-up * 3 - look * 2).Unit * 12, params)
-			local rayOuterBack = Workspace:Raycast(pos - look * 3.5, (-up * 3 + look * 2).Unit * 12, params)
-			local rayOuterRight = Workspace:Raycast(pos + right * 3.5, (-up * 3 - right * 2).Unit * 12, params)
-			local rayOuterLeft = Workspace:Raycast(pos - right * 3.5, (-up * 3 + right * 2).Unit * 12, params)
+			_G.rayForward = Workspace:Raycast(pos, look * 4.5, params)
+			_G.rayBackward = Workspace:Raycast(pos, -look * 4.5, params)
+			_G.rayDown = Workspace:Raycast(pos, -up * 8, params)
+			_G.rayOuterFwd = Workspace:Raycast(pos + look * 3.5, (-up * 3 - look * 2).Unit * 12, params)
+			_G.rayOuterBack = Workspace:Raycast(pos - look * 3.5, (-up * 3 + look * 2).Unit * 12, params)
+			_G.rayOuterRight = Workspace:Raycast(pos + right * 3.5, (-up * 3 - right * 2).Unit * 12, params)
+			_G.rayOuterLeft = Workspace:Raycast(pos - right * 3.5, (-up * 3 + right * 2).Unit * 12, params)
 
-			local hitNormal, hitPosition, isAttached = Vector3.new(0, 1, 0), pos, false
+			_G.hitNormal, hitPosition, isAttached = Vector3.new(0, 1, 0), pos, false
 
 			if rayForward then hitNormal, hitPosition, isAttached = rayForward.Normal, rayForward.Position, true
 			elseif rayBackward then hitNormal, hitPosition, isAttached = rayBackward.Normal, rayBackward.Position, true
@@ -4686,8 +4686,8 @@ function giveSpiderTool()
 			elseif rayOuterLeft then hitNormal, hitPosition, isAttached = rayOuterLeft.Normal, rayOuterLeft.Position, true
 			end
 
-			local onFloor = hitNormal.Y > 0.85
-			local wasClimbing = isClimbing
+			_G.onFloor = hitNormal.Y > 0.85
+			_G.wasClimbing = isClimbing
 			isClimbing = isAttached and not onFloor
 			currentHitNormal = hitNormal
 
@@ -4701,18 +4701,18 @@ function giveSpiderTool()
 				bodyVelocity.Enabled = true
 				bodyGyro.Enabled = true
 
-				local flatMove = hum.MoveDirection
-				local wallMoveDir = Vector3.zero
+				_G.flatMove = hum.MoveDirection
+				_G.wallMoveDir = Vector3.zero
 				if flatMove.Magnitude > 0.001 then
-					local axis = Vector3.new(0, 1, 0):Cross(smoothedNormal)
-					local climbDir = flatMove
+					_G.axis = Vector3.new(0, 1, 0):Cross(smoothedNormal)
+					_G.climbDir = flatMove
 					if axis.Magnitude > 0.001 then
-						local angle = math.acos(math.clamp(Vector3.new(0, 1, 0):Dot(smoothedNormal), -1, 1))
+						_G.angle = math.acos(math.clamp(Vector3.new(0, 1, 0):Dot(smoothedNormal), -1, 1))
 						climbDir = CFrame.fromAxisAngle(axis.Unit, angle) * flatMove
 					end
-					local walkDir = flatMove - (flatMove:Dot(smoothedNormal) * smoothedNormal)
+					_G.walkDir = flatMove - (flatMove:Dot(smoothedNormal) * smoothedNormal)
 					if walkDir.Magnitude > 0.001 then walkDir = walkDir.Unit end
-					local w = 0
+					_G.w = 0
 					if smoothedNormal.Y > 0.2 then
 						w = math.clamp((smoothedNormal.Y - 0.2) / 0.5, 0, 1)
 					elseif smoothedNormal.Y < -0.2 then
@@ -4722,18 +4722,18 @@ function giveSpiderTool()
 					if wallMoveDir.Magnitude > 0.001 then wallMoveDir = wallMoveDir.Unit end
 				end
 
-				local distFromWall = math.abs((pos - hitPosition):Dot(smoothedNormal))
-				local hover = SETTINGS.SpiderHoverDistance
+				_G.distFromWall = math.abs((pos - hitPosition):Dot(smoothedNormal))
+				_G.hover = SETTINGS.SpiderHoverDistance
 				if wallMoveDir.Magnitude > 0.1 then hover = hover + SETTINGS.SpiderNetworkCompensation end
-				local pushForce = (hover - distFromWall) * 15
+				_G.pushForce = (hover - distFromWall) * 15
 
 				bodyVelocity.VectorVelocity = (wallMoveDir * SETTINGS.SpiderSpeed) + (smoothedNormal * pushForce)
 
 				if wallMoveDir.Magnitude > 0.1 then
 					bodyGyro.CFrame = CFrame.lookAt(Vector3.zero, wallMoveDir, smoothedNormal)
 				else
-					local currentLook = root.CFrame.LookVector
-					local projectedLook = currentLook - (currentLook:Dot(smoothedNormal) * smoothedNormal)
+					_G.currentLook = root.CFrame.LookVector
+					_G.projectedLook = currentLook - (currentLook:Dot(smoothedNormal) * smoothedNormal)
 					if projectedLook.Magnitude > 0.001 then
 						bodyGyro.CFrame = CFrame.lookAt(Vector3.zero, projectedLook, smoothedNormal)
 					else
@@ -4757,9 +4757,9 @@ function giveSpiderTool()
 		isClimbing = false
 		jumpCooldown = false
 		smoothedNormal = Vector3.new(0, 1, 0)
-		local char = LocalPlayer.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		local root = char and char:FindFirstChild("HumanoidRootPart")
+		_G.char = LocalPlayer.Character
+		_G.hum = char and char:FindFirstChildOfClass("Humanoid")
+		_G.root = char and char:FindFirstChild("HumanoidRootPart")
 		if hum then
 			hum.AutoRotate = true
 			hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
@@ -4770,7 +4770,7 @@ function giveSpiderTool()
 		if attachment then attachment:Destroy() end
 		bodyVelocity, bodyGyro, attachment = nil, nil, nil
 		if root then
-			local look = root.CFrame.LookVector
+			_G.look = root.CFrame.LookVector
 			root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, math.atan2(look.X, look.Z), 0)
 			root.AssemblyLinearVelocity = Vector3.zero
 			root.AssemblyAngularVelocity = Vector3.zero
@@ -4784,7 +4784,7 @@ task.wait(0.05)
 -- Wrap dans IIFE avec paramètres pour éviter la limite d'upvalues (200)
 ;(function(_fly, _noclip, _esp, _fullbright, _zeroG, _localPlayer)
 	_localPlayer.Chatted:Connect(function(msg)
-		local m = msg:lower()
+		_G.m = msg:lower()
 		if m == ";fly" then _fly.set(true)
 		elseif m == ";unfly" then _fly.set(false)
 		elseif m == ";noclip" then _noclip.set(true)
@@ -4803,7 +4803,7 @@ updateLoad(0.95, "Finalisation...")
 task.wait(0.05)
 -- ============= CRÉDITS =============
 ;(function(_mainFrame)
-	local credits = Instance.new("TextLabel")
+	_G.credits = Instance.new("TextLabel")
 	credits.Size = UDim2.new(1, 0, 0, 18)
 	credits.Position = UDim2.new(0, 0, 1, -20)
 	credits.BackgroundTransparency = 1
