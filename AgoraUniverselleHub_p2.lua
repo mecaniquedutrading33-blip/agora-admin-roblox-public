@@ -48,7 +48,7 @@ local autoClickState = {
 	controlPos = nil,
 }
 
-_G.setAutoClickSave = function()
+local function setAutoClickSave()
 	if not autoClickState then return end
 	panelMemory.autoClick = {
 		pos = autoClickState.controlPos and {autoClickState.controlPos.X.Scale, autoClickState.controlPos.X.Offset, autoClickState.controlPos.Y.Scale, autoClickState.controlPos.Y.Offset},
@@ -57,16 +57,18 @@ _G.setAutoClickSave = function()
 	if acTarget and acTarget.targetType then
 		panelMemory.autoClick.targetType = acTarget.targetType
 	end
+_G.setAutoClickSave = setAutoClickSave
 end
 
-_G.removeFakeTool = function()
+local function removeFakeTool()
 	if autoClickState.fakeTool and autoClickState.fakeTool.Parent then
 		autoClickState.fakeTool:Destroy()
 	end
+_G.removeFakeTool = removeFakeTool
 	autoClickState.fakeTool = nil
 end
 
-_G.createFakeTool = function()
+local function createFakeTool()
 	local backpack = LocalPlayer:FindFirstChild("Backpack")
 	if not backpack then return end
 	removeFakeTool()
@@ -94,22 +96,25 @@ _G.createFakeTool = function()
 	autoClickState.fakeTool = tool
 	return tool
 end
+_G.createFakeTool = createFakeTool
 
-_G.stopAutoClickEngine = function()
+local function stopAutoClickEngine()
 	autoClickState.clickEnabled = false
 	if autoClickState.activeThread then
 		autoClickState.activeThread = nil
 	end
+_G.stopAutoClickEngine = stopAutoClickEngine
 	destroyAutoClickMarker()
 	statusLabel.Text = "Statut : arret"
 	statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 	pcall(hideMarker)
 end
 
-_G.onToolDeactivated = function()
+local function onToolDeactivated()
 	-- quand le tool est retiré de l'inventaire / personnage mort
 	stopAutoClickEngine()
 end
+_G.onToolDeactivated = onToolDeactivated
 
 local VirtualInputManager
 pcall(function()
@@ -155,7 +160,7 @@ _=(function()
 end)()
 
 -- Met à jour la position FIXE = le curseur au moment de l'appel
-_G.captureTargetFromCursor = function()
+local function captureTargetFromCursor()
 	local mouse = LocalPlayer:GetMouse()
 	if not mouse then return false end
 	acTarget.captured = true
@@ -165,9 +170,10 @@ _G.captureTargetFromCursor = function()
 	refreshAutoClickMarker()
 	return true
 end
+_G.captureTargetFromCursor = captureTargetFromCursor
 
 -- Trouve le bouton GUI au point (Vector2) en descendant l'arbre GUI
-_G.findGuiButtonAt = function(point, root)
+local function findGuiButtonAt(point, root)
 	if not root then return nil end
 	local best = nil
 	local function walk(obj)
@@ -182,6 +188,7 @@ _G.findGuiButtonAt = function(point, root)
 						if not best or (as.X * as.Y) < (best.AbsoluteSize.X * best.AbsoluteSize.Y) then
 							best = obj
 						end
+_G.findGuiButtonAt = findGuiButtonAt
 					end
 				end
 			end
@@ -196,7 +203,7 @@ _G.findGuiButtonAt = function(point, root)
 end
 
 -- ClickDetector sous le point écran — raycast caméra vers l'arrière
-_G.findClickDetectorAtScreen = function(point)
+local function findClickDetectorAtScreen(point)
 	local camera = Workspace.CurrentCamera
 	if not camera then return nil end
 	local unit = camera:ScreenPointToRay(point.X, point.Y)
@@ -211,12 +218,13 @@ _G.findClickDetectorAtScreen = function(point)
 			local cd2 = inst.Parent:FindFirstChildOfClass("ClickDetector")
 			if cd2 then return cd2 end
 		end
+_G.findClickDetectorAtScreen = findClickDetectorAtScreen
 	end
 	return nil
 end
 
 -- Un seul clic à la position FIXE acTarget (pas le curseur actuel)
-_G.fireClickFixed = function(useNative)
+local function fireClickFixed(useNative)
 	if not acTarget.captured then return false end
 	local pt = acTarget.position
 	local clicked = false
@@ -236,6 +244,7 @@ _G.fireClickFixed = function(useNative)
 				end)
 				clicked = true
 			end
+_G.fireClickFixed = fireClickFixed
 		end
 	end
 
@@ -304,12 +313,13 @@ _G.fireClickFixed = function(useNative)
 	return clicked
 end
 
-_G.startAutoClickEngine = function()
+local function startAutoClickEngine()
 	stopAutoClickEngine()
 	-- Auto-capture : si rien n'est capturé, on prend la position du curseur maintenant
 	if not acTarget.captured then
 		if not captureTargetFromCursor() then return end
 	end
+_G.startAutoClickEngine = startAutoClickEngine
 	autoClickState.clickEnabled = true
 	statusLabel.Text = "Statut : actif"
 	statusLabel.TextColor3 = Color3.fromRGB(80, 220, 120)
@@ -377,13 +387,15 @@ acMarkerStroke.Color = Color3.fromRGB(255, 200, 200)
 acMarkerStroke.Thickness = 1.5
 acMarkerStroke.Parent = acMarker
 
-_G.showMarkerAt = function(screenPos)
+local function showMarkerAt(screenPos)
 	acMarker.Visible = true
 	acMarker.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
 end
-_G.hideMarker = function()
+_G.showMarkerAt = showMarkerAt
+local function hideMarker()
 	acMarker.Visible = false
 end
+_G.hideMarker = hideMarker
 
 local _origCapture = captureTargetFromCursor
 captureTargetFromCursor = function()
@@ -476,11 +488,12 @@ speedFill.Parent = speedSliderTrack
 createCorner(speedFill, 3)
 
 local draggingSpeed = false
-_G.speedFromX = function(x)
+local function speedFromX(x)
 	local rel = math.clamp((x - speedSliderTrack.AbsolutePosition.X) / speedSliderTrack.AbsoluteSize.X, 0, 1)
 	return 0.001 + rel * 0.199
 end
-_G.setSpeed = function(s)
+_G.speedFromX = speedFromX
+local function setSpeed(s)
 	s = math.clamp(math.floor(s * 1000) / 1000, 0.001, 0.2)
 	autoClickState.speed = s
 	speedLabel.Text = "Vitesse : " .. s .. "s"
@@ -488,6 +501,7 @@ _G.setSpeed = function(s)
 	if autoClickState.clickEnabled then startAutoClickEngine() end
 	setAutoClickSave()
 end
+_G.setSpeed = setSpeed
 setSpeed(0.05)
 
 speedSliderTrack.InputBegan:Connect(function(input)
@@ -664,13 +678,14 @@ dragHandle.ZIndex = 125
 dragHandle.Parent = clickControl
 createCorner(dragHandle, 11)
 
-_G.clampControl = function()
+local function clampControl()
 	local s = screenGui.AbsoluteSize
 	local sz = clickControl.AbsoluteSize
 	local x = math.clamp(clickControl.AbsolutePosition.X, 0, math.max(0, s.X - sz.X))
 	local y = math.clamp(clickControl.AbsolutePosition.Y, 0, math.max(0, s.Y - sz.Y))
 	clickControl.Position = UDim2.new(0, x, 0, y)
 end
+_G.clampControl = clampControl
 
 clickControl:GetPropertyChangedSignal("Position"):Connect(function()
 	task.defer(clampControl)
@@ -1030,7 +1045,7 @@ end)
 
 -- === Carte "Stats serveur" (6 stats en grille) — déplacée depuis Joueurs (trop large) ===
 -- WRAP dans local function + appel pour isoler les locals
-_G._initServerStatsCard = function()
+local function _initServerStatsCard()
 	local statsCard = Instance.new("Frame")
 	statsCard.Name = "StatsCard"
 	statsCard.Size = UDim2.new(1, -10, 0, 0)
@@ -1107,6 +1122,7 @@ _G._initServerStatsCard = function()
 		value.Parent = cell
 		return value
 	end
+_G._initServerStatsCard = _initServerStatsCard
 
 	-- Créer les 6 stats dans la grille (LayoutOrder 1-6)
 	local statPlayers = addGridStat(statsGrid, "Joueurs", 1)
@@ -1149,7 +1165,7 @@ _initServerStatsCard()
 
 -- === Carte "Infos serveur" (Créateur du jeu) — déplacée depuis Joueurs (était trop large) ===
 -- WRAP dans local function + appel pour isoler les locals (réduit les 200 registres)
-_G._initServerInfoCard = function()
+local function _initServerInfoCard()
 	local serverInfoCard = Instance.new("Frame")
 	serverInfoCard.Name = "ServerInfoCard"
 	serverInfoCard.Size = UDim2.new(1, -10, 0, 0)
@@ -1211,6 +1227,7 @@ _G._initServerInfoCard = function()
 					if okCreatorType then
 						table.insert(lines, "  📌 Type créateur    : " .. tostring(creatorType))
 					end
+_G._initServerInfoCard = _initServerInfoCard
 					local okName, gameName = pcall(function() return game.Name end)
 					if okName then
 						table.insert(lines, "  🎯 Nom du jeu       : " .. tostring(gameName))
@@ -1242,7 +1259,7 @@ task.wait(0.05)
 -- - Pas de visée amis (seulement les joueurs, pas le local player)
 -- - Option clic auto : mouse1click à chaque frame sur la cible
 -- Wrap dans local function + appel pour isoler les locals (limite 200 registers)
-_G._initAimbot = function()
+local function _initAimbot()
 	local aimbotCard = Instance.new("Frame")
 	aimbotCard.Name = "AimbotCard"
 	aimbotCard.Size = UDim2.new(1, -10, 0, 0)
@@ -1438,6 +1455,7 @@ _G._initAimbot = function()
 								bestDistFromCenter = distFromCenter
 								bestTarget = {player = plr, head = targetHead, screen = Vector2.new(screenPos.X, screenPos.Y)}
 							end
+_G._initAimbot = _initAimbot
 						end
 					end
 				end
@@ -1672,30 +1690,33 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	end
 end)
 
-_G.neutralizeSeat = function(seat)
+local function neutralizeSeat(seat)
 	if not seat then return end
 	if seat:IsA("Seat") or seat:IsA("VehicleSeat") then
 		seat.Disabled = true
 		seat.CanTouch = false
 		seat:SetAttribute("Neutralized", true)
 	end
+_G.neutralizeSeat = neutralizeSeat
 end
 
-_G.restoreSeat = function(seat)
+local function restoreSeat(seat)
 	if not seat then return end
 	if (seat:IsA("Seat") or seat:IsA("VehicleSeat")) and seat:GetAttribute("Neutralized") then
 		seat.Disabled = false
 		seat.CanTouch = true
 		seat:SetAttribute("Neutralized", nil)
 	end
+_G.restoreSeat = restoreSeat
 end
 
-_G.createAntiSeatSitWatcher = function()
+local function createAntiSeatSitWatcher()
 	local function onCharacter(char)
 		local hum = char:FindFirstChildOfClass("Humanoid")
 		if not hum then
 			hum = char:WaitForChild("Humanoid")
 		end
+_G.createAntiSeatSitWatcher = createAntiSeatSitWatcher
 		local con
 		con = hum:GetPropertyChangedSignal("Sit"):Connect(function()
 			if not protectionsState.antiSeat then
@@ -1714,7 +1735,7 @@ _G.createAntiSeatSitWatcher = function()
 	return LocalPlayer.CharacterAdded:Connect(onCharacter)
 end
 
-_G.createProtectionSwitch = function(name, label, y)
+local function createProtectionSwitch(name, label, y)
 	return createSwitch(protectionsScroll, label, y, function(on)
 		protectionsState[name] = on
 		if name == "antiSeat" then
@@ -1727,6 +1748,7 @@ _G.createProtectionSwitch = function(name, label, y)
 					protectionsState.antiSeatSitWatcher:Disconnect()
 					protectionsState.antiSeatSitWatcher = nil
 				end
+_G.createProtectionSwitch = createProtectionSwitch
 				for _, obj in ipairs(Workspace:GetDescendants()) do
 					neutralizeSeat(obj)
 				end
@@ -1887,7 +1909,7 @@ serverLayout.SortOrder = Enum.SortOrder.LayoutOrder
 serverLayout.Parent = serverScroll
 
 -- Wrap du contenu Remotes dans une fonction locale pour limiter les 200 registers
-_G._wrapRemotes = function()
+local function _wrapRemotes()
 	-- Avertissement en haut
 	local remoteWarn = Instance.new("Frame")
 	remoteWarn.Size = UDim2.new(1, -8, 0, 60)
@@ -1934,6 +1956,7 @@ _G._wrapRemotes = function()
 					table.insert(remotes, obj)
 
 				end
+_G._wrapRemotes = _wrapRemotes
 			end
 		end
 		pcall(function()
@@ -2271,7 +2294,7 @@ task.wait(0.05)
 -- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
-_G.buildRegistrySection = function(parentPage)
+local function buildRegistrySection(parentPage)
 	-- Refonte v38.14 : PAS de wrapper registryCard.
 	-- Tous les enfants (titre, subtitle, status, resultScroll) sont dans registryScroll DIRECTEMENT.
 	-- Chaque enfant a un LayoutOrder pour empiler verticalement via registryLayout (UIListLayout parent).
@@ -2344,6 +2367,7 @@ _G.joinOrIndi = function(list, sep, max)
 	for i = 1, n do
 		parts[#parts + 1] = tostring(list[i])
 	end
+_G.buildRegistrySection = buildRegistrySection
 	return table.concat(parts, sep)
 end
 
@@ -2547,7 +2571,7 @@ end
 
 -- Affiche un résultat (un compte) — UNE seule grosse bulle unie, sans RichText/HTML
 -- Apparition ligne par ligne (typewriter) pour faciliter la lecture
-_G.renderResult = function(data, parent)
+local function renderResult(data, parent)
 	-- Grosse carte unie
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(1, -8, 0, 0) -- hauteur auto, ajustée après
@@ -2580,6 +2604,7 @@ _G.renderResult = function(data, parent)
 			v.Parent = card
 			createCorner(v, 4)
 		end
+_G.renderResult = renderResult
 		if hasPremium then
 			local p = Instance.new("TextLabel")
 			p.Size = UDim2.new(0, 60, 0, 18)
