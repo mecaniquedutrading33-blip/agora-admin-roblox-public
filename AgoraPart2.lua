@@ -427,7 +427,7 @@ _G.computePathTo = function(targetPos)
 	end
 
 	-- 1) PathfindingService Roblox (parametres optimises longues distances)
-	_G.ok, pathOrErr = pcall(function()
+	_G.ok, _G.pathOrErr = pcall(function()
 		_G.p = PathfindingService:CreatePath({
 			AgentRadius = 1.5,
 			AgentHeight = 4.5,
@@ -923,7 +923,7 @@ _G.findGuiButtonAt = function(point, root)
 			end
 		end
 		for _, child in ipairs(obj:GetChildren()) do
-			_G.ok, _ = pcall(walk, child)
+			_G.ok, _G._ = pcall(walk, child)
 			if not ok then end
 		end
 	end
@@ -1272,7 +1272,7 @@ controlHeader.Parent = clickControl
 
 -- Drag manuel du clickControl depuis le header (TextButton avec AutoButtonColor=false)
 -- Listener global sur UserInputService pour que le drag suive la souris même hors du header
-_G.ccDragging, ccDragStart, ccStartPos = false, nil, nil
+_G.ccDragging, _G.ccDragStart, _G.ccStartPos = false, nil, nil
 controlHeader.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		ccDragging = true
@@ -1514,7 +1514,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 				-- En voiture : plate sous les roues (marge 1.5 stud pour pas toucher le châssis)
 				_G.seatModel = seatPart:FindFirstAncestorOfClass("Model") or seatPart.Parent
 				if seatModel and seatModel ~= character then
-					_G.ok, cf, size = pcall(function() return seatModel:GetBoundingBox() end)
+					_G.ok, _G.cf, _G.size = pcall(function() return seatModel:GetBoundingBox() end)
 					if ok and cf and size then
 						capturedY = cf.Position.Y - size.Y / 2 - 1.5
 					end
@@ -1526,7 +1526,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 				end
 			elseif character then
 				-- À pied : sous nos pieds (marge 0.2 stud)
-				_G.ok, cf, size = pcall(function() return character:GetBoundingBox() end)
+				_G.ok, _G.cf, _G.size = pcall(function() return character:GetBoundingBox() end)
 				if ok and cf and size then
 					capturedY = cf.Position.Y - size.Y / 2 - 0.2
 				elseif rootPart then
@@ -1873,9 +1873,9 @@ _G._initServerStatsCard = function()
 				_G.ping = LocalPlayer:GetNetworkPing() * 1000
 				statPing.Text = string.format("%.0f ms", ping)
 				statTime.Text = os.date("%H:%M:%S")
-				_G.okJ, jobId = pcall(function() return game.JobId end)
+				_G.okJ, _G.jobId = pcall(function() return game.JobId end)
 				statJobId.Text = (okJ and jobId and jobId ~= "") and jobId:sub(1, 12) .. "..." or "N/A"
-				_G.okP, placeId = pcall(function() return game.PlaceId end)
+				_G.okP, _G.placeId = pcall(function() return game.PlaceId end)
 				statPlaceId.Text = okP and tostring(placeId) or "N/A"
 			end)
 		end
@@ -1940,22 +1940,22 @@ _G._initServerInfoCard = function()
 		while task.wait(2) do
 			pcall(function()
 				_G.lines = {}
-				_G.okCreator, creatorId = pcall(function() return game.CreatorId end)
+				_G.okCreator, _G.creatorId = pcall(function() return game.CreatorId end)
 				if okCreator and creatorId and creatorId ~= 0 then
 					table.insert(lines, "  🎮 Créateur du jeu (CreatorId) : " .. tostring(creatorId))
-					_G.okCreatorType, creatorType = pcall(function() return game.CreatorType end)
+					_G.okCreatorType, _G.creatorType = pcall(function() return game.CreatorType end)
 					if okCreatorType then
 						table.insert(lines, "  📌 Type créateur    : " .. tostring(creatorType))
 					end
-					_G.okName, gameName = pcall(function() return game.Name end)
+					_G.okName, _G.gameName = pcall(function() return game.Name end)
 					if okName then
 						table.insert(lines, "  🎯 Nom du jeu       : " .. tostring(gameName))
 					end
-					_G.okVIP, vipOwnerId = pcall(function() return game.VIPServerOwnerId end)
+					_G.okVIP, _G.vipOwnerId = pcall(function() return game.VIPServerOwnerId end)
 					if okVIP and vipOwnerId and vipOwnerId ~= 0 then
 						table.insert(lines, "  👑 Proprio VIP     : " .. tostring(vipOwnerId))
 					end
-					_G.okVIPId, vipId = pcall(function() return game.VIPServerId end)
+					_G.okVIPId, _G.vipId = pcall(function() return game.VIPServerId end)
 					if okVIPId and vipId and vipId ~= "" then
 						table.insert(lines, "  🔑 VIP Server ID    : " .. tostring(vipId):sub(1, 24))
 					end
@@ -2158,7 +2158,7 @@ _G._initAimbot = function()
 				_G.targetHead = plr.Character.Head
 				_G.targetPos = targetHead.Position
 				if (targetPos - myPos).Magnitude <= (_G._agoraAimbotMaxDist or 300) then
-					_G.screenPos, onScreen = cam:WorldToScreenPoint(targetPos)
+					_G.screenPos, _G.onScreen = cam:WorldToScreenPoint(targetPos)
 					if onScreen and screenPos.Z > 0 then
 						_G.origin = cam.CFrame.Position
 						_G.direction = (targetPos - origin)
@@ -2327,7 +2327,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 		if gotoWalkState.busy then return end
 		gotoWalkState.busy = true
 		task.spawn(function()
-			_G.ok, err = pcall(function()
+			_G.ok, _G.err = pcall(function()
 				updateCharacter()
 				if not Mouse or not Mouse.Hit then return end
 				_G.targetPos = Mouse.Hit.Position + Vector3.new(0, 3, 0)
@@ -2917,7 +2917,7 @@ _G._wrapRemotes = function()
 		resultLbl.Visible = true
 		resultLbl.Text = "→ Envoi en cours..."
 			resultLbl.TextColor3 = Color3.fromRGB(180, 180, 220)
-			_G.ok, err = pcall(function()
+			_G.ok, _G.err = pcall(function()
 				if isFunction then
 					_G.result = remote:InvokeServer(unpack(args))
 					resultLbl.Text = "✓ Réponse : " .. tostring(result)
@@ -3086,7 +3086,7 @@ end
 -- ============= TAGS CUSTOMS + BARRE D'ACTIONS + DEVICE DETECTION =============
 -- Tout est wrappé dans une IIFE pour économiser les locals top-level (limite CLI Luau 200)
 -- Le code expose : getUserTags, addTagToUser, removeTagFromUser, openTagPopup, detectLocalDevice
-_G.getUserTags, addTagToUser, removeTagFromUser, openTagPopup, detectLocalDevice
+_G.getUserTags, _G.addTagToUser, _G.removeTagFromUser, _G.openTagPopup, _G.detectLocalDevice
 do
 	_G._TAG_STORE = {} -- _TAG_STORE[userId] = { tags = {...}, lastSeen = "..." }
 	_G._tagPopup = nil
@@ -3261,7 +3261,7 @@ do
 
 	-- === DÉTECTION APPAREIL (seulement pour le local player) ===
 	function detectLocalDevice()
-		_G.ok, result = pcall(function()
+		_G.ok, _G.result = pcall(function()
 			_G.touchOn = UserInputService.TouchEnabled
 			_G.kbOn = UserInputService.KeyboardEnabled
 			_G.mouseOn = UserInputService.MouseEnabled
@@ -3496,7 +3496,7 @@ _G.renderResult = function(data, parent)
 
 	-- Mise à jour async du statut chat (API native Roblox)
 	if data.userId then
-		_G._resolveCanChat(data.userId, function(result, src)
+		_G._resolveCanChat(data.userId, _G.function(result, _G.src)
 			_G.chatText
 			if src == "CanTalkWithMe" then
 				if result == true then
@@ -3595,7 +3595,7 @@ _G.renderResult = function(data, parent)
 						{687101511, "Vzlom_Emk"},
 					}
 					for _, g in ipairs(_groups) do
-						_G.ok, rank, isIn = pcall(function()
+						_G.ok, _G.rank, _G.isIn = pcall(function()
 							_G.r = _t:GetRankInGroup(g[1])
 							_G.b = _t:IsInGroup(g[1])
 							return r, b
@@ -3606,12 +3606,12 @@ _G.renderResult = function(data, parent)
 						end
 					end
 					-- Badges Officier / Admin (natives : pas d'HTTP)
-					_G.ok2, has = pcall(function()
+					_G.ok2, _G.has = pcall(function()
 						_G.bs = game:GetService("BadgeService")
 						return bs and bs:UserHasBadgeAsync(_t.UserId, 1)
 					end)
 					if ok2 and has then _ll:insert("  └─ 🛡️ Badge Administrator : OUI") end
-					_G.ok3, hasOfficial = pcall(function()
+					_G.ok3, _G.hasOfficial = pcall(function()
 						_G.bs = game:GetService("BadgeService")
 						return bs and bs:UserHasBadgeAsync(_t.UserId, 2)
 					end)
@@ -3771,8 +3771,8 @@ function runRegistrySearch(query)
 
 	task.spawn(function()
 		-- 1) Résoudre username -> userId via Players:GetUserIdFromNameAsync (NATUREL Roblox, pas d'API externe)
-		_G.userId, displayName, username
-		_G.ok, uid = pcall(function()
+		_G.userId, _G.displayName, _G.username
+		_G.ok, _G.uid = pcall(function()
 			return Players:GetUserIdFromNameAsync(query)
 		end)
 		if not ok or not uid or uid == 0 then
@@ -3837,7 +3837,7 @@ function runRegistrySearch(query)
 									end
 									if d2.created then
 						-- Format ISO 8601: "2021-04-08T15:32:19.847Z" -> parser en epoch
-						_G.y, mo, da = d2.created:match("^(%d+)%-(%d+)%-(%d+)")
+						_G.y, _G.mo, _G.da = d2.created:match("^(%d+)%-(%d+)%-(%d+)")
 						if y and mo and da then
 							_G.epochThen = os.time({year=tonumber(y), month=tonumber(mo), day=tonumber(da), hour=0, min=0, sec=0})
 							_G.epochDiff = os.time() - epochThen
@@ -4100,7 +4100,7 @@ function runRegistrySearch(query)
 					}
 					data.inventory = {}
 					for _, atype in ipairs(assetTypes) do
-						_G.ok, r = pcall(function()
+						_G.ok, _G.r = pcall(function()
 							return httpGet("https://inventory.roblox.com/v2/users/" .. userId .. "/inventory/" .. atype .. "?page=1&itemsPerPage=1&sortOrder=Desc")
 						end)
 						if ok and r and r ~= "" then
@@ -4423,7 +4423,7 @@ function giveElevenTool()
 	tool.Parent = LocalPlayer:WaitForChild("Backpack")
 
 	_G.targetPart = nil
-	_G.bp, bg = nil, nil
+	_G.bp, _G.bg = nil, nil
 	_G.distance = 25
 	_G.active = false
 	_G.rotationMode = false
@@ -4613,7 +4613,7 @@ function giveSpiderTool()
 	_G.currentHitNormal = Vector3.new(0, 1, 0)
 	_G.smoothedNormal = Vector3.new(0, 1, 0)
 	_G.jumpCooldown = false
-	_G.bodyVelocity, bodyGyro, attachment = nil, nil, nil
+	_G.bodyVelocity, _G.bodyGyro, _G.attachment = nil, nil, nil
 
 	tool.Equipped:Connect(function()
 		_G.char = LocalPlayer.Character
@@ -4675,7 +4675,7 @@ function giveSpiderTool()
 			_G.rayOuterRight = Workspace:Raycast(pos + right * 3.5, (-up * 3 - right * 2).Unit * 12, params)
 			_G.rayOuterLeft = Workspace:Raycast(pos - right * 3.5, (-up * 3 + right * 2).Unit * 12, params)
 
-			_G.hitNormal, hitPosition, isAttached = Vector3.new(0, 1, 0), pos, false
+			_G.hitNormal, _G.hitPosition, _G.isAttached = Vector3.new(0, 1, 0), pos, false
 
 			if rayForward then hitNormal, hitPosition, isAttached = rayForward.Normal, rayForward.Position, true
 			elseif rayBackward then hitNormal, hitPosition, isAttached = rayBackward.Normal, rayBackward.Position, true
