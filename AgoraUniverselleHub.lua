@@ -5642,7 +5642,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 						capturedY = cf.Position.Y - size.Y / 2 - 1.5
 					end
 				end
-				if not capturedY then
+				if not capturedY and seatPart then
 					local cf = seatPart.CFrame
 					local size = seatPart.Size
 					capturedY = cf.Position.Y - size.Y / 2 - 1.5
