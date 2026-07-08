@@ -72,7 +72,7 @@ loadingGui.Parent = (game:GetService("CoreGui")) or game:GetService("Players").L
 local loadingBg = Instance.new("Frame")
 loadingBg.Size = UDim2.new(1, 0, 1, 0)
 loadingBg.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
-loadingBg.BackgroundTransparency = 0
+loadingBg.BackgroundTransparency = 1
 loadingBg.BorderSizePixel = 0
 loadingBg.Parent = loadingGui
 
