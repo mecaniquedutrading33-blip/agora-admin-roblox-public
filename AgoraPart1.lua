@@ -2777,7 +2777,7 @@ _G.createPlayerEntry = function(plr)
 			for _, item in ipairs(items) do
 				if item.Tool and item.Tool.Parent then
 					item.Tool:Clone().Parent = myBackpack
-					stolen += 1
+					stolen = stolen + 1
 				end
 			end
 			if notify then notify("Volés: " .. stolen .. " item(s)", 2) end
@@ -2823,7 +2823,7 @@ _G.createPlayerEntry = function(plr)
 					end
 				end
 				clone.Parent = character
-				copied += 1
+				copied = copied + 1
 			end
 		end
 		local hum = character:FindFirstChildOfClass("Humanoid")
