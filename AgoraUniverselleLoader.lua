@@ -1,19 +1,29 @@
--- Agora Universelle Hub - Loader v20 (2 parts, clean)
-local B="https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file="
+-- Agora Universelle Hub - Loader v21 (single file, chunked fetch)
+local B="https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub.lua"
 local C="&_="..math.random(100000,999999)
-local function L(u)
-	local o,c=pcall(function()return game:HttpGet(u)end)
-	if o and c and #c>100 then
-		local f,e=loadstring(c)
-		if f then
-			local o2,e2=pcall(f)
-			if not o2 then warn("[A]"..tostring(e2))end
-			return o2
-		else warn("[A]ls:"..tostring(e))end
-	end
-	return false
+local function fetch(u)
+	local ok,res=pcall(function()
+		local hs=game:GetService("HttpService")
+		if hs then
+			local r=hs:RequestAsync({Url=u,Method="GET"})
+			if r.Success then return r.Body end
+		end
+		return game:HttpGet(u)
+	end)
+	if ok and res and #res>100 then return res end
+	return nil
 end
-local o1=L(B.."AgoraPart1.lua"..C)
-if not o1 then warn("[A]P1 fail");return end
-local o2=L(B.."AgoraPart2.lua"..C)
-if not o2 then warn("[A]P2 fail")end
+-- Fetch full file (331KB, one shot - most executors handle it fine)
+local code=fetch(B..C)
+if not code then
+	warn("[A]Fetch fail")
+	return
+end
+-- Load and run
+local fn,err=loadstring(code)
+if fn then
+	local ok,e2=pcall(fn)
+	if not ok then warn("[A]"..tostring(e2)) end
+else
+	warn("[A]ls:"..tostring(err))
+end
