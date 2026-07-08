@@ -1,49 +1,3 @@
-(function()
--- Local aliases for _G functions (Solara compatibility)
-local PanelMemory = _G.PanelMemory
-local SETTINGS = _G.SETTINGS
-local _agoraAimbotEnabled = _G._agoraAimbotEnabled
-local _agoraApplyLang = _G._agoraApplyLang
-local _agoraLang = _G._agoraLang
-local _agoraStats = _G._agoraStats
-local _chatSeenPlayers = _G._chatSeenPlayers
-local _game = _G._game
-local _initRegistrySearch = _G._initRegistrySearch
-local _resolveCanChat = _G._resolveCanChat
-local addGlow = _G.addGlow
-local addPlayerCard = _G.addPlayerCard
-local applyGlobalESPToPlayer = _G.applyGlobalESPToPlayer
-local blinkESP = _G.blinkESP
-local bootSequence = _G.bootSequence
-local buildESP = _G.buildESP
-local clearESP = _G.clearESP
-local createButton = _G.createButton
-local createCorner = _G.createCorner
-local createPlayerEntry = _G.createPlayerEntry
-local createStroke = _G.createStroke
-local createSwitch = _G.createSwitch
-local createTab = _G.createTab
-local distanceColor = _G.distanceColor
-local ensureESPForPlayer = _G.ensureESPForPlayer
-local getDeviceType = _G.getDeviceType
-local httpGet = _G.httpGet
-local httpPost = _G.httpPost
-local makeIcon = _G.makeIcon
-local matrixRain = _G.matrixRain
-local playSound = _G.playSound
-local refreshESP = _G.refreshESP
-local refreshPlayersList = _G.refreshPlayersList
-local removePlayerCard = _G.removePlayerCard
-local reparentChildrenToLocalScroll = _G.reparentChildrenToLocalScroll
-local sendEchoMessage = _G.sendEchoMessage
-local showRestorePopup = _G.showRestorePopup
-local shutdownPanel = _G.shutdownPanel
-local switchTab = _G.switchTab
-local tween = _G.tween
-local typewriterEffect = _G.typewriterEffect
-local updateCharacter = _G.updateCharacter
-local updateLoad = _G.updateLoad
-
 -- Agora Hub [UNIVERSELLE] - Panel Roblox universel
 -- LocalScript dans StarterPlayerScripts ou exécuteur
 
@@ -209,7 +163,7 @@ _G.updateLoad = function(progress, msg)
 	task.wait(0.05)
 end
 
-updateLoad(0.02, "Initialisation...")
+_G.updateLoad((0.02, "Initialisation...")
 task.wait(0.1)
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -416,21 +370,21 @@ _G.updateCharacter = function()
 	end
 end
 
-updateCharacter()
+_G.updateCharacter(()
 LocalPlayer.CharacterAdded:Connect(function(char)
 	char:WaitForChild("HumanoidRootPart")
 	char:WaitForChild("Humanoid")
 	task.wait(0.2)
-	updateCharacter()
+	_G.updateCharacter(()
 	if flyState and flyState.flying then
-		stopFly()
+		_G.stopFly(()
 	end
 	if noclipState and noclipState.enabled then
 		noclipState.enabled = false
 		if refreshNoClipSwitch then refreshNoClipSwitch() end
 	end
 	if espState.enabled or globalESPEnabled then
-		refreshESP()
+		_G.refreshESP(()
 	end
 end)
 
@@ -498,8 +452,8 @@ mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 mainFrame.ClipsDescendants = true
 mainFrame.ZIndex = 1
-createCorner(mainFrame, 14)
-createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
+_G.createCorner((mainFrame, 14)
+_G.createStroke((mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 
 -- ===== INTRO CINÉMA : "Agora Hub" puis TAMPON "UNIVERSELLE" BOUM =====
 -- Backdrop full screen noir pour masquer le panel pendant l'intro
@@ -623,14 +577,14 @@ _=(function()
 	task.spawn(function()
 		local ok, err = pcall(function()
 			-- Étape 1 : fade in du backdrop depuis noir + whoosh grave
-			playSound(9114850423, 0.5)
+			_G.playSound((9114850423, 0.5)
 			backdrop.BackgroundTransparency = 0
 
 			-- Étape 2 : titre "Agora Hub" fade in (0.5s) + ding doux
 			task.wait(0.3)
 			_tween(title, {TextTransparency = 0}, 0.5)
 			_tween(subtitle, {TextTransparency = 0}, 0.5)
-			playSound(6042053626, 0.25)
+			_G.playSound((6042053626, 0.25)
 
 			-- Étape 3 : pause 1s pour lire le titre
 			task.wait(1.0)
@@ -646,7 +600,7 @@ _=(function()
 			uniTag.Position = UDim2.new(0.5, 0, 0.5, 0)
 			uniTag.AnchorPoint = Vector2.new(0.5, 0.5)
 			uniTag.Rotation = 4  -- rotation d'entrée (corrigée à -8 à la fin)
-			playSound(4590662766, 0.85)  -- boom impact
+			_G.playSound((4590662766, 0.85)  -- boom impact
 			_tween(uniTag, {Size = UDim2.new(1.2, 0, 0, 140), Rotation = -10}, 0.12, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			_tween(flash, {BackgroundTransparency = 1}, 0.25)
 			task.wait(0.12)
@@ -688,8 +642,8 @@ topBar.BackgroundTransparency = 0.45
 topBar.BorderSizePixel = 0
 topBar.Parent = mainFrame
 topBar.ZIndex = 2
-createCorner(topBar, 14)
-createStroke(topBar, Color3.fromRGB(80, 80, 100), 0.8)
+_G.createCorner((topBar, 14)
+_G.createStroke((topBar, Color3.fromRGB(80, 80, 100), 0.8)
 
 -- Logo à gauche du titre + badge "UNIVERSELLE" penché (mini) à droite du titre
 _=(function()
@@ -776,7 +730,7 @@ closeBtn.Text = ""
 closeBtn.AutoButtonColor = false
 closeBtn.BorderSizePixel = 0
 closeBtn.Parent = topBar
-createCorner(closeBtn, 8)
+_G.createCorner((closeBtn, 8)
 
 local minimizeBtn = Instance.new("TextButton")
 minimizeBtn.Name = "MinimizeBtn"
@@ -790,7 +744,7 @@ minimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
 minimizeBtn.AutoButtonColor = false
 minimizeBtn.BorderSizePixel = 0
 minimizeBtn.Parent = topBar
-createCorner(minimizeBtn, 8)
+_G.createCorner((minimizeBtn, 8)
 
 _G.makeIcon = function(btn, txt)
 	local l = Instance.new("TextLabel")
@@ -803,7 +757,7 @@ _G.makeIcon = function(btn, txt)
 	l.Parent = btn
 end
 
-makeIcon(closeBtn, "×")
+_G.makeIcon((closeBtn, "×")
 
 _G.createButton = function(parent, text, yPos, color, callback)
 	local btn = Instance.new("TextButton")
@@ -817,11 +771,11 @@ _G.createButton = function(parent, text, yPos, color, callback)
 	btn.BorderSizePixel = 0
 	btn.AutoButtonColor = false
 	btn.Parent = parent
-	createCorner(btn, 8)
+	_G.createCorner((btn, 8)
 	btn.MouseEnter:Connect(function() tween(btn, {BackgroundColor3 = color and color:Lerp(Color3.new(1,1,1), 0.15) or Color3.fromRGB(60, 95, 200)}, 0.1) end)
 	btn.MouseLeave:Connect(function() tween(btn, {BackgroundColor3 = color or Color3.fromRGB(45, 75, 160)}, 0.1) end)
 	btn.MouseButton1Click:Connect(function()
-		playSound(6042053626, 0.22)
+		_G.playSound((6042053626, 0.22)
 		if callback then callback() end
 	end)
 	return btn
@@ -833,7 +787,7 @@ tabBar.Position = UDim2.new(0, 10, 0, 44)
 tabBar.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 tabBar.BorderSizePixel = 0
 tabBar.Parent = mainFrame
-createCorner(tabBar, 10)
+_G.createCorner((tabBar, 10)
 
 local tabHolder = Instance.new("Frame")
 tabHolder.Size = UDim2.new(1, -8, 1, -8)
@@ -863,12 +817,12 @@ _G.switchTab = function(name)
 	for n, page in pairs(pages) do
 		page.Visible = (n == name)
 		if n == name then
-			tween(page, {BackgroundTransparency = 1}, 0)
+			_G.tween((page, {BackgroundTransparency = 1}, 0)
 		end
 	end
 	for n, btn in pairs(tabButtons) do
 		local active = (n == name)
-		tween(btn, {BackgroundColor3 = active and Color3.fromRGB(55, 90, 180) or Color3.fromRGB(40, 40, 50)}, 0.15)
+		_G.tween((btn, {BackgroundColor3 = active and Color3.fromRGB(55, 90, 180) or Color3.fromRGB(40, 40, 50)}, 0.15)
 		btn.TextColor3 = active and Color3.new(1, 1, 1) or Color3.fromRGB(160, 160, 160)
 	end
 end
@@ -884,7 +838,7 @@ _G.createTab = function(name)
 		btn.BorderSizePixel = 0
 		btn.AutoButtonColor = false
 	btn.Parent = tabHolder
-	createCorner(btn, 6)
+	_G.createCorner((btn, 6)
 	btn.MouseButton1Click:Connect(function() switchTab(name) end)
 	btn.MouseEnter:Connect(function() if activeTab ~= name then tween(btn, {BackgroundColor3 = Color3.fromRGB(50, 50, 65)}, 0.1) end end)
 	btn.MouseLeave:Connect(function() if activeTab ~= name then tween(btn, {BackgroundColor3 = Color3.fromRGB(40, 40, 50)}, 0.1) end end)
@@ -908,7 +862,7 @@ _=(function()
 	bgFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
 	bgFrame.BorderSizePixel = 0
 	bgFrame.Parent = homePage
-	createCorner(bgFrame, 10)
+	_G.createCorner((bgFrame, 10)
 	
 	-- Logo / Titre centre
 	local title = Instance.new("TextLabel")
@@ -958,7 +912,7 @@ _=(function()
 	changelogBox.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
 	changelogBox.BorderSizePixel = 0
 	changelogBox.Parent = bgFrame
-	createCorner(changelogBox, 8)
+	_G.createCorner((changelogBox, 8)
 	
 	local changelogTitle = Instance.new("TextLabel")
 	changelogTitle.Size = UDim2.new(1, -10, 0, 20)
@@ -1021,7 +975,7 @@ _=(function()
 	discordBtn.BorderSizePixel = 0
 	discordBtn.AutoButtonColor = true
 	discordBtn.Parent = bgFrame
-	createCorner(discordBtn, 8)
+	_G.createCorner((discordBtn, 8)
 	
 	local copyLabel = Instance.new("TextLabel")
 	copyLabel.Size = UDim2.new(1, 0, 0, 16)
@@ -1047,7 +1001,7 @@ _=(function()
 					copyLabel.Text = "Lien: " .. link
 				end
 			end
-			playSound(6042053626, 0.3)
+			_G.playSound((6042053626, 0.3)
 		end)
 		task.delay(5, function()
 			pcall(function() copyLabel.Text = "" end)
@@ -1107,7 +1061,7 @@ _=(function()
 	langBtn.BorderSizePixel = 0
 	langBtn.AutoButtonColor = true
 	langBtn.Parent = bgFrame
-	createCorner(langBtn, 8)
+	_G.createCorner((langBtn, 8)
 
 	local langMenu = Instance.new("Frame")
 	langMenu.Size = UDim2.new(0, 200, 0, 280)
@@ -1117,7 +1071,7 @@ _=(function()
 	langMenu.Visible = false
 	langMenu.ZIndex = 100
 	langMenu.Parent = bgFrame
-	createCorner(langMenu, 10)
+	_G.createCorner((langMenu, 10)
 
 	local langMenuTitle = Instance.new("TextLabel")
 	langMenuTitle.Size = UDim2.new(1, -10, 0, 24)
@@ -1166,7 +1120,7 @@ _=(function()
 		lBtn.LayoutOrder = _
 		lBtn.ZIndex = 101
 		lBtn.Parent = langMenuScroll
-		createCorner(lBtn, 6)
+		_G.createCorner((lBtn, 6)
 
 		lBtn.MouseButton1Click:Connect(function()
 			selectedLang = lang.code
@@ -1180,7 +1134,7 @@ _=(function()
 				end
 			end
 			lBtn.BackgroundColor3 = Color3.fromRGB(55, 90, 180)
-			playSound(6042053626, 0.2)
+			_G.playSound((6042053626, 0.2)
 			task.wait(0.15)
 			langMenu.Visible = false
 		end)
@@ -1198,14 +1152,14 @@ _=(function()
 	langCloseBtn.BorderSizePixel = 0
 	langCloseBtn.ZIndex = 102
 	langCloseBtn.Parent = langMenu
-	createCorner(langCloseBtn, 6)
+	_G.createCorner((langCloseBtn, 6)
 	langCloseBtn.MouseButton1Click:Connect(function()
 		langMenu.Visible = false
 	end)
 
 	langBtn.MouseButton1Click:Connect(function()
 		langMenu.Visible = not langMenu.Visible
-		playSound(6042053626, 0.2)
+		_G.playSound((6042053626, 0.2)
 	end)
 
 	-- === TRANSLATION SYSTEM ===
@@ -1260,7 +1214,7 @@ _=(function()
 	statsBox.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
 	statsBox.BorderSizePixel = 0
 	statsBox.Parent = bgFrame
-	createCorner(statsBox, 8)
+	_G.createCorner((statsBox, 8)
 
 	local statsLayout = Instance.new("UIListLayout")
 	statsLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -1352,8 +1306,8 @@ _G._initRegistrySearch = function()
 	registrySearchBox.TextXAlignment = Enum.TextXAlignment.Center
 	registrySearchBox.ClearTextOnFocus = false
 	registrySearchBox.Parent = registryPage
-	createCorner(registrySearchBox, 8)
-	createStroke(registrySearchBox, Color3.fromRGB(80, 80, 100), 1)
+	_G.createCorner((registrySearchBox, 8)
+	_G.createStroke((registrySearchBox, Color3.fromRGB(80, 80, 100), 1)
 
 	-- Bouton X pour effacer la saisie (à droite de la searchBox)
 	local registryClearBtn = Instance.new("TextButton")
@@ -1369,7 +1323,7 @@ _G._initRegistrySearch = function()
 	registryClearBtn.ZIndex = registrySearchBox.ZIndex + 1
 	registryClearBtn.AutoButtonColor = true
 	registryClearBtn.Parent = registryPage
-	createCorner(registryClearBtn, 11) -- rond
+	_G.createCorner((registryClearBtn, 11) -- rond
 	registryClearBtn.MouseButton1Click:Connect(function()
 		registrySearchBox.Text = ""
 		registryClearBtn.Visible = false
@@ -1389,8 +1343,8 @@ _G._initRegistrySearch = function()
 	suggestionsFrame.BorderSizePixel = 0
 	suggestionsFrame.Visible = false -- caché par défaut
 	suggestionsFrame.Parent = registryPage
-	createCorner(suggestionsFrame, 6)
-	createStroke(suggestionsFrame, Color3.fromRGB(70, 70, 100), 1)
+	_G.createCorner((suggestionsFrame, 6)
+	_G.createStroke((suggestionsFrame, Color3.fromRGB(70, 70, 100), 1)
 
 	local suggestionsLayout = Instance.new("UIListLayout")
 	suggestionsLayout.Padding = UDim.new(0, 2)
@@ -1519,7 +1473,7 @@ _G._initRegistrySearch = function()
 			btn.TextXAlignment = Enum.TextXAlignment.Left
 			btn.LayoutOrder = i
 			btn.Parent = suggestionsFrame
-			createCorner(btn, 4)
+			_G.createCorner((btn, 4)
 
 			-- Cliquer = remplir la search box
 			btn.MouseButton1Click:Connect(function()
@@ -1574,7 +1528,7 @@ _G._initRegistrySearch = function()
 	-- Cliquer sur le frame parent (registryPage) en dehors de la search box
 	-- cache les suggestions (pour pas qu'elles restent flottantes)
 end
-_initRegistrySearch()
+_G._initRegistrySearch(()
 
 -- ============= REGISTRY SCROLL =============
 -- registryScroll commence juste après la search box + un peu de gap pour les suggestions
@@ -1587,7 +1541,7 @@ registryScroll.BorderSizePixel = 0
 registryScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 registryScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
 registryScroll.Parent = registryPage
-createCorner(registryScroll, 4)
+_G.createCorner((registryScroll, 4)
 
 local registryLayout = Instance.new("UIListLayout")
 registryLayout.Padding = UDim.new(0, 6)
@@ -1816,8 +1770,8 @@ closeBtn.MouseButton1Click:Connect(function()
 	confirm.BorderSizePixel = 0
 	confirm.ZIndex = 200
 	confirm.Parent = screenGui
-	createCorner(confirm, 12)
-	createStroke(confirm, Color3.fromRGB(80, 80, 100), 1)
+	_G.createCorner((confirm, 12)
+	_G.createStroke((confirm, Color3.fromRGB(80, 80, 100), 1)
 
 	local msg = Instance.new("TextLabel")
 	msg.Size = UDim2.new(1, -20, 0, 50)
@@ -1842,9 +1796,9 @@ closeBtn.MouseButton1Click:Connect(function()
 		flash.BorderSizePixel = 0
 		flash.ZIndex = 999
 		flash.Parent = screenGui
-		tween(flash, {BackgroundTransparency = 0.4}, 0.1)
+		_G.tween((flash, {BackgroundTransparency = 0.4}, 0.1)
 		task.wait(0.1)
-		tween(flash, {BackgroundTransparency = 1}, 0.3)
+		_G.tween((flash, {BackgroundTransparency = 1}, 0.3)
 		task.delay(0.4, function() if flash and flash.Parent then flash:Destroy() end end)
 
 		-- Phase 2 : glitch horizontal bars
@@ -1859,7 +1813,7 @@ closeBtn.MouseButton1Click:Connect(function()
 			gb.Parent = screenGui
 			task.spawn(function()
 				task.wait(i * 0.05)
-				tween(gb, {BackgroundTransparency = 1, Position = UDim2.new(0, math.random(-20, 20), gb.Position.Y.Scale, 0)}, 0.2)
+				_G.tween((gb, {BackgroundTransparency = 1, Position = UDim2.new(0, math.random(-20, 20), gb.Position.Y.Scale, 0)}, 0.2)
 				task.delay(0.3, function() if gb and gb.Parent then gb:Destroy() end end)
 			end)
 		end
@@ -1868,7 +1822,7 @@ closeBtn.MouseButton1Click:Connect(function()
 		mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 		local oldPos = mainFrame.Position
 		mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-		tween(mainFrame, {
+		_G.tween((mainFrame, {
 			Size = UDim2.new(0, 0, 0, 0),
 			Rotation = 12,
 			BackgroundTransparency = 1,
@@ -1887,9 +1841,9 @@ closeBtn.MouseButton1Click:Connect(function()
 		goodbye.ZIndex = 1000
 		goodbye.Parent = screenGui
 		task.wait(0.2)
-		tween(goodbye, {TextTransparency = 0}, 0.3)
+		_G.tween((goodbye, {TextTransparency = 0}, 0.3)
 		task.wait(1.2)
-		tween(goodbye, {TextTransparency = 1}, 0.5)
+		_G.tween((goodbye, {TextTransparency = 1}, 0.5)
 		task.wait(0.6)
 		screenGui.Enabled = false
 		if goodbye and goodbye.Parent then goodbye:Destroy() end
@@ -1925,13 +1879,13 @@ _G.shutdownPanel = function()
 	end
 	if espState then
 		espState.enabled = false
-		clearESP()
+		_G.clearESP(()
 	end
 	globalESPEnabled = false
 	if autoClickState then
 		autoClickState.toolActive = false
 		if stopAutoClickEngine then stopAutoClickEngine() end
-		removeFakeTool()
+		_G.removeFakeTool(()
 		if clickControl then clickControl.Visible = false end
 	end
 	if fullbrightSwitch and fullbrightSwitch.get and fullbrightSwitch.get() then fullbrightSwitch.set(false) end
@@ -1969,8 +1923,8 @@ _G.createSwitch = function(parent, labelText, yPos, callback, defaultOn)
 	container.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 	container.BorderSizePixel = 0
 	container.Parent = parent
-	createCorner(container, 8)
-	createStroke(container, Color3.fromRGB(45, 45, 55), 1)
+	_G.createCorner((container, 8)
+	_G.createStroke((container, Color3.fromRGB(45, 45, 55), 1)
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, -70, 1, 0)
@@ -1991,7 +1945,7 @@ _G.createSwitch = function(parent, labelText, yPos, callback, defaultOn)
 	track.BorderSizePixel = 0
 	track.Parent = container
 	track.ZIndex = 5
-	createCorner(track, 12)
+	_G.createCorner((track, 12)
 
 	local knob = Instance.new("Frame")
 	knob.Size = UDim2.new(0, 20, 0, 20)
@@ -2000,13 +1954,13 @@ _G.createSwitch = function(parent, labelText, yPos, callback, defaultOn)
 	knob.BorderSizePixel = 0
 	knob.Parent = track
 	knob.ZIndex = 6
-	createCorner(knob, 10)
+	_G.createCorner((knob, 10)
 
 	local state = defaultOn or false
 	local function update(animate)
 		local dur = animate and 0.15 or 0
-		tween(track, {BackgroundColor3 = state and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(60, 60, 70)}, dur)
-		tween(knob, {Position = state and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)}, dur)
+		_G.tween((track, {BackgroundColor3 = state and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(60, 60, 70)}, dur)
+		_G.tween((knob, {Position = state and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)}, dur)
 	end
 	update(false)
 
@@ -2041,7 +1995,7 @@ _G.createSwitch = function(parent, labelText, yPos, callback, defaultOn)
 	}
 end
 
-updateLoad(0.08, "Modules joueurs...")
+_G.updateLoad((0.08, "Modules joueurs...")
 task.wait(0.05)
 -- ============= JOUEURS =============
 local playerCards = {}
@@ -2062,8 +2016,8 @@ playerSearchBox.TextSize = 11
 playerSearchBox.TextXAlignment = Enum.TextXAlignment.Left
 playerSearchBox.ClearTextOnFocus = false
 playerSearchBox.Parent = playersPage
-createCorner(playerSearchBox, 6)
-createStroke(playerSearchBox, Color3.fromRGB(60, 60, 80), 1)
+_G.createCorner((playerSearchBox, 6)
+_G.createStroke((playerSearchBox, Color3.fromRGB(60, 60, 80), 1)
 
 -- Bouton X pour effacer le filtre Joueurs
 local playerClearBtn = Instance.new("TextButton")
@@ -2079,7 +2033,7 @@ playerClearBtn.Visible = false
 playerClearBtn.ZIndex = playerSearchBox.ZIndex + 1
 playerClearBtn.AutoButtonColor = true
 playerClearBtn.Parent = playersPage
-createCorner(playerClearBtn, 10)
+_G.createCorner((playerClearBtn, 10)
 playerClearBtn.MouseButton1Click:Connect(function()
 	playerSearchBox.Text = ""
 	playerClearBtn.Visible = false
@@ -2244,8 +2198,8 @@ _G.showRestorePopup = function(lastName)
 	popup.BorderSizePixel = 0
 	popup.ZIndex = 500
 	popup.Parent = screenGui
-	createCorner(popup, 12)
-	createStroke(popup, Color3.fromRGB(80, 80, 100), 1)
+	_G.createCorner((popup, 12)
+	_G.createStroke((popup, Color3.fromRGB(80, 80, 100), 1)
 
 	local msg = Instance.new("TextLabel")
 	msg.Size = UDim2.new(1, -20, 0, 44)
@@ -2293,8 +2247,8 @@ _G.createPlayerEntry = function(plr)
 	card.BorderSizePixel = 0
 	card.LayoutOrder = plr.Name:byte(1)
 	card.Parent = playersScroll
-	createCorner(card, 10)
-	createStroke(card, Color3.fromRGB(45, 45, 55), 1)
+	_G.createCorner((card, 10)
+	_G.createStroke((card, Color3.fromRGB(45, 45, 55), 1)
 
 	local nameLbl = Instance.new("TextLabel")
 	nameLbl.Size = UDim2.new(1, -80, 0, 18)
@@ -2498,7 +2452,7 @@ _G.createPlayerEntry = function(plr)
 	tpBtn.TextColor3 = Color3.new(1, 1, 1)
 	tpBtn.BorderSizePixel = 0
 	tpBtn.Parent = card
-	createCorner(tpBtn, 6)
+	_G.createCorner((tpBtn, 6)
 
 	local specBtn = Instance.new("TextButton")
 	specBtn.Size = UDim2.new(0, 68, 0, 24)
@@ -2510,7 +2464,7 @@ _G.createPlayerEntry = function(plr)
 	specBtn.TextColor3 = Color3.new(1, 1, 1)
 	specBtn.BorderSizePixel = 0
 	specBtn.Parent = card
-	createCorner(specBtn, 6)
+	_G.createCorner((specBtn, 6)
 
 	local echoBtn = Instance.new("TextButton")
 	echoBtn.Size = UDim2.new(0, 54, 0, 24)
@@ -2522,7 +2476,7 @@ _G.createPlayerEntry = function(plr)
 	echoBtn.TextColor3 = Color3.new(1, 1, 1)
 	echoBtn.BorderSizePixel = 0
 	echoBtn.Parent = card
-	createCorner(echoBtn, 6)
+	_G.createCorner((echoBtn, 6)
 
 	local espBtn = Instance.new("TextButton")
 	espBtn.Size = UDim2.new(0, 68, 0, 24)
@@ -2534,7 +2488,7 @@ _G.createPlayerEntry = function(plr)
 	espBtn.TextColor3 = Color3.new(1, 1, 1)
 	espBtn.BorderSizePixel = 0
 	espBtn.Parent = card
-	createCorner(espBtn, 6)
+	_G.createCorner((espBtn, 6)
 
 	local invBtn = Instance.new("TextButton")
 	invBtn.Size = UDim2.new(0, 54, 0, 24)
@@ -2546,7 +2500,7 @@ _G.createPlayerEntry = function(plr)
 	invBtn.TextColor3 = Color3.new(1, 1, 1)
 	invBtn.BorderSizePixel = 0
 	invBtn.Parent = card
-	createCorner(invBtn, 6)
+	_G.createCorner((invBtn, 6)
 
 	local skinBtn = Instance.new("TextButton")
 	skinBtn.Size = UDim2.new(0, 68, 0, 24)
@@ -2558,12 +2512,12 @@ _G.createPlayerEntry = function(plr)
 	skinBtn.TextColor3 = Color3.new(1, 1, 1)
 	skinBtn.BorderSizePixel = 0
 	skinBtn.Parent = card
-	createCorner(skinBtn, 6)
+	_G.createCorner((skinBtn, 6)
 
 	local spectating = false
 
 	tpBtn.MouseButton1Click:Connect(function()
-		updateCharacter()
+		_G.updateCharacter(()
 		if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and rootPart then
 			rootPart.CFrame = plr.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
 		end
@@ -2576,7 +2530,7 @@ _G.createPlayerEntry = function(plr)
 			specBtn.Text = "Stop"
 			specBtn.BackgroundColor3 = Color3.fromRGB(160, 60, 60)
 		else
-			updateCharacter()
+			_G.updateCharacter(()
 			if humanoid then Camera.CameraSubject = humanoid end
 			spectating = false
 			specBtn.Text = "Spectate"
@@ -2680,8 +2634,8 @@ _G.createPlayerEntry = function(plr)
 		win.Active = true
 		win.Draggable = true
 		win.Parent = screenGui
-		createCorner(win, 10)
-		createStroke(win, Color3.fromRGB(100, 100, 130), 1.2)
+		_G.createCorner((win, 10)
+		_G.createStroke((win, Color3.fromRGB(100, 100, 130), 1.2)
 
 		-- Titre + fermeture X
 		local title = Instance.new("TextLabel")
@@ -2705,7 +2659,7 @@ _G.createPlayerEntry = function(plr)
 		closeX.TextColor3 = Color3.new(1, 1, 1)
 		closeX.BorderSizePixel = 0
 		closeX.Parent = win
-		createCorner(closeX, 6)
+		_G.createCorner((closeX, 6)
 		closeX.MouseButton1Click:Connect(function() win:Destroy() end)
 
 		-- Bouton "Tout voler"
@@ -2719,7 +2673,7 @@ _G.createPlayerEntry = function(plr)
 		stealAll.TextColor3 = Color3.new(1, 1, 1)
 		stealAll.BorderSizePixel = 0
 		stealAll.Parent = win
-		createCorner(stealAll, 6)
+		_G.createCorner((stealAll, 6)
 
 		-- Liste scrollable
 		local list = Instance.new("ScrollingFrame")
@@ -2731,8 +2685,8 @@ _G.createPlayerEntry = function(plr)
 		list.BorderSizePixel = 0
 		list.CanvasSize = UDim2.new(0, 0, 0, 0)
 		list.Parent = win
-		createCorner(list, 6)
-		createStroke(list, Color3.fromRGB(60, 60, 75), 1)
+		_G.createCorner((list, 6)
+		_G.createStroke((list, Color3.fromRGB(60, 60, 75), 1)
 
 		local layout = Instance.new("UIListLayout")
 		layout.Padding = UDim.new(0, 4)
@@ -2774,7 +2728,7 @@ _G.createPlayerEntry = function(plr)
 					row.BorderSizePixel = 0
 					row.LayoutOrder = idx
 					row.Parent = list
-					createCorner(row, 5)
+					_G.createCorner((row, 5)
 
 					local nameLbl = Instance.new("TextLabel")
 					nameLbl.Size = UDim2.new(1, -76, 1, 0)
@@ -2798,7 +2752,7 @@ _G.createPlayerEntry = function(plr)
 					take.TextColor3 = Color3.new(1, 1, 1)
 					take.BorderSizePixel = 0
 					take.Parent = row
-					createCorner(take, 5)
+					_G.createCorner((take, 5)
 					take.MouseButton1Click:Connect(function()
 						local tool = item.Tool
 						if not tool or not tool.Parent then return end
@@ -2851,7 +2805,7 @@ _G.createPlayerEntry = function(plr)
 	skinBtn.MouseButton1Click:Connect(function()
 		local target = plr.Character
 		if not target then return end
-		updateCharacter()
+		_G.updateCharacter(()
 		if not character then return end
 		-- Copie locale des vêtements/corps uniquement (local uniquement)
 		local copied = 0
@@ -2886,9 +2840,9 @@ _G.createPlayerEntry = function(plr)
 		note.TextColor3 = copied > 0 and Color3.fromRGB(120, 255, 180) or Color3.fromRGB(255, 120, 120)
 		note.ZIndex = 200
 		note.Parent = screenGui
-		tween(note, {TextTransparency = 0}, 0.3)
+		_G.tween((note, {TextTransparency = 0}, 0.3)
 		task.delay(2.5, function()
-			tween(note, {TextTransparency = 1}, 0.3)
+			_G.tween((note, {TextTransparency = 1}, 0.3)
 			task.delay(0.35, function() if note then note:Destroy() end end)
 		end)
 	end)
@@ -2896,7 +2850,7 @@ _G.createPlayerEntry = function(plr)
 	task.spawn(function()
 		while card.Parent do
 			task.wait(0.6)
-			updateCharacter()
+			_G.updateCharacter(()
 			local char = plr.Character
 			if char and rootPart then
 				local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -2975,12 +2929,12 @@ _G.createPlayerEntry = function(plr)
 								end
 							end
 							card.BackgroundColor3 = Color3.fromRGB(38, 25, 25)
-							createStroke(card, Color3.fromRGB(160, 70, 70), 1.2)
+							_G.createStroke((card, Color3.fromRGB(160, 70, 70), 1.2)
 						else
 							moveBadge.Visible = false
 							moveDetail.Text = ""
 							card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-							createStroke(card, Color3.fromRGB(45, 45, 55), 1)
+							_G.createStroke((card, Color3.fromRGB(45, 45, 55), 1)
 						end
 						-- badge chat en temps réel
 						local now2 = tick()
@@ -3041,7 +2995,7 @@ _G.createPlayerEntry = function(plr)
 	infoBtn.BorderSizePixel = 0
 	infoBtn.AutoButtonColor = false
 	infoBtn.Parent = card
-	createCorner(infoBtn, 12)
+	_G.createCorner((infoBtn, 12)
 
 	-- Boucle live : met à jour le timer et le badge toutes les secondes
 	-- Timestamp = moment où le panel a vu ce player pour la 1ère fois
@@ -3098,8 +3052,8 @@ _G.createPlayerEntry = function(plr)
 			win.Active = true
 			win.Draggable = true
 			win.Parent = screenGui
-			createCorner(win, 10)
-			createStroke(win, Color3.fromRGB(120, 80, 255), 1.2)
+			_G.createCorner((win, 10)
+			_G.createStroke((win, Color3.fromRGB(120, 80, 255), 1.2)
 
 			local title = Instance.new("TextLabel")
 			title.Size = UDim2.new(1, -100, 0, 28)
@@ -3123,7 +3077,7 @@ _G.createPlayerEntry = function(plr)
 			copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 			copyBtn.BorderSizePixel = 0
 			copyBtn.Parent = win
-			createCorner(copyBtn, 4)
+			_G.createCorner((copyBtn, 4)
 
 			local closeX = Instance.new("TextButton")
 			closeX.Size = UDim2.new(0, 26, 0, 26)
@@ -3135,7 +3089,7 @@ _G.createPlayerEntry = function(plr)
 			closeX.TextColor3 = Color3.fromRGB(255, 255, 255)
 			closeX.BorderSizePixel = 0
 			closeX.Parent = win
-			createCorner(closeX, 6)
+			_G.createCorner((closeX, 6)
 			closeX.MouseButton1Click:Connect(function() win:Destroy() end)
 
 			-- Contenu scrollable (permet beaucoup plus d'infos que le TextLabel fixe)
@@ -3150,7 +3104,7 @@ _G.createPlayerEntry = function(plr)
 			scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 1500)
 			scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 			scrollFrame.Parent = win
-			createCorner(scrollFrame, 4)
+			_G.createCorner((scrollFrame, 4)
 
 			-- Avatar via Players:GetUserThumbnailAsync (NATIVE Roblox, pas besoin de HttpGet)
 			pcall(function()
@@ -3161,7 +3115,7 @@ _G.createPlayerEntry = function(plr)
 				img.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 				img.BorderSizePixel = 0
 				img.Parent = scrollFrame
-				createCorner(img, 36)
+				_G.createCorner((img, 36)
 				local ok, content = pcall(function()
 					return Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
 				end)
@@ -3439,7 +3393,7 @@ _G.createPlayerEntry = function(plr)
 _G.addPlayerCard = function(plr)
 	if plr == LocalPlayer then return end
 	if playerCards[plr] and playerCards[plr].Parent then return end
-	createPlayerEntry(plr)
+	_G.createPlayerEntry((plr)
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
 
@@ -3467,7 +3421,7 @@ _G.refreshPlayersList = function()
 	end
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr ~= LocalPlayer and not existing[plr] then
-			createPlayerEntry(plr)
+			_G.createPlayerEntry((plr)
 		end
 	end
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
@@ -3475,21 +3429,21 @@ end
 
 Players.PlayerAdded:Connect(function(plr)
 	task.wait(0.3)
-	addPlayerCard(plr)
+	_G.addPlayerCard((plr)
 end)
 Players.PlayerRemoving:Connect(function(plr)
 	task.wait(0.1)
-	removePlayerCard(plr)
+	_G.removePlayerCard((plr)
 end)
 playersLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end)
-refreshPlayersList()
+_G.refreshPlayersList(()
 
 -- Pop-up de restauration au démarrage
 if panelMemory.lastEchoPlayerName and not panelMemory.dontAskRestore then
 	task.delay(1.5, function()
-		showRestorePopup(panelMemory.lastEchoPlayerName)
+		_G.showRestorePopup((panelMemory.lastEchoPlayerName)
 	end)
 end
 
@@ -3521,7 +3475,7 @@ TextChatService.MessageReceived:Connect(function(msg)
 end)
 
 
-updateLoad(0.15, "ESP...")
+_G.updateLoad((0.15, "ESP...")
 task.wait(0.05)
 -- ============= ESP =============
 local espFolder = Instance.new("Folder")
@@ -3630,7 +3584,7 @@ function togglePlayerESP(plr)
 		if data.bill then data.bill.Enabled = false end
 	else
 		data.active = true
-		buildESP(plr)
+		_G.buildESP((plr)
 		if data.hl then data.hl.Enabled = true end
 		if data.bill then data.bill.Enabled = true end
 	end
@@ -3641,7 +3595,7 @@ _G.blinkESP = function(plr, duration)
 	local data = ensureESPForPlayer(plr)
 	if not data.active then
 		data.active = true
-		buildESP(plr)
+		_G.buildESP((plr)
 		if data.hl then data.hl.Enabled = true end
 		if data.bill then data.bill.Enabled = true end
 	end
@@ -3652,7 +3606,7 @@ _G.blinkESP = function(plr, duration)
 end
 
 RunService.RenderStepped:Connect(function()
-	updateCharacter()
+	_G.updateCharacter(()
 	if not rootPart then return end
 	for plr, data in pairs(espState.individual) do
 		if data.active and data.targetPart and data.targetPart.Parent then
@@ -3738,12 +3692,12 @@ end)
 task.spawn(function()
 	while true do
 		task.wait(60)
-		refreshESP()
+		_G.refreshESP(()
 	end
 end)
 
 
-updateLoad(0.22, "Animations...")
+_G.updateLoad((0.22, "Animations...")
 task.wait(0.05)
 -- ============= ANIMATIONS =============
 _G.typewriterEffect = function(label, text, speed)
@@ -3781,7 +3735,7 @@ _G.matrixRain = function(parent, duration)
 			lbl.ZIndex = 99
 			lbl.Parent = parent
 			local speed = math.random(12, 35) / 10
-			tween(lbl, {Position = UDim2.new(lbl.Position.X.Scale, 0, 1.2, 0), TextTransparency = 1}, speed)
+			_G.tween((lbl, {Position = UDim2.new(lbl.Position.X.Scale, 0, 1.2, 0), TextTransparency = 1}, speed)
 			task.delay(speed + 0.1, function() if lbl then lbl:Destroy() end end)
 		end
 	end)
@@ -4021,14 +3975,14 @@ _G.bootSequence = function(onComplete)
 		for pass = 1, 3 do
 			for i, s in ipairs(shards) do
 				task.spawn(function()
-					tween(s, {TextTransparency = math.random(20, 50) / 100}, 0.05)
+					_G.tween((s, {TextTransparency = math.random(20, 50) / 100}, 0.05)
 				end)
 				task.wait(0.02 + math.random() * 0.03)
 			end
 			task.wait(0.15)
 			for i, s in ipairs(shards) do
 				task.spawn(function()
-					tween(s, {TextTransparency = 1}, 0.05)
+					_G.tween((s, {TextTransparency = 1}, 0.05)
 				end)
 				task.wait(0.01)
 			end
@@ -4037,7 +3991,7 @@ _G.bootSequence = function(onComplete)
 		-- Apparition finale longue
 		for i, s in ipairs(shards) do
 			task.spawn(function()
-				tween(s, {TextTransparency = 0.4}, 0.2)
+				_G.tween((s, {TextTransparency = 0.4}, 0.2)
 			end)
 			task.wait(0.02)
 		end
@@ -4045,13 +3999,13 @@ _G.bootSequence = function(onComplete)
 		for i = 1, 5 do
 			for _, l in ipairs(scratchLines) do
 				task.spawn(function()
-					tween(l, {BackgroundTransparency = 0.4}, 0.04)
+					_G.tween((l, {BackgroundTransparency = 0.4}, 0.04)
 				end)
 			end
 			task.wait(0.08)
 			for _, l in ipairs(scratchLines) do
 				task.spawn(function()
-					tween(l, {BackgroundTransparency = 1}, 0.05)
+					_G.tween((l, {BackgroundTransparency = 1}, 0.05)
 				end)
 			end
 			task.wait(0.06)
@@ -4059,9 +4013,9 @@ _G.bootSequence = function(onComplete)
 		-- Fracture lines flash
 		for _, fl in ipairs(fractureLines) do
 			task.spawn(function()
-				tween(fl, {BackgroundTransparency = 0.5}, 0.06)
+				_G.tween((fl, {BackgroundTransparency = 0.5}, 0.06)
 				task.wait(0.1)
-				tween(fl, {BackgroundTransparency = 1}, 0.1)
+				_G.tween((fl, {BackgroundTransparency = 1}, 0.1)
 			end)
 			task.wait(0.08)
 		end
@@ -4138,14 +4092,14 @@ _G.bootSequence = function(onComplete)
 		for pass = 1, 3 do
 			for i, s in ipairs(shards) do
 				task.spawn(function()
-					tween(s, {TextTransparency = math.random(20, 50) / 100}, 0.05)
+					_G.tween((s, {TextTransparency = math.random(20, 50) / 100}, 0.05)
 				end)
 				task.wait(0.02 + math.random() * 0.03)
 			end
 			task.wait(0.15)
 			for i, s in ipairs(shards) do
 				task.spawn(function()
-					tween(s, {TextTransparency = 1}, 0.05)
+					_G.tween((s, {TextTransparency = 1}, 0.05)
 				end)
 				task.wait(0.01)
 			end
@@ -4153,29 +4107,29 @@ _G.bootSequence = function(onComplete)
 		end
 		for i, s in ipairs(shards) do
 			task.spawn(function()
-				tween(s, {TextTransparency = 0.4}, 0.2)
+				_G.tween((s, {TextTransparency = 0.4}, 0.2)
 			end)
 			task.wait(0.02)
 		end
 		for i = 1, 5 do
 			for _, l in ipairs(scratchLines) do
 				task.spawn(function()
-					tween(l, {BackgroundTransparency = 0.4}, 0.04)
+					_G.tween((l, {BackgroundTransparency = 0.4}, 0.04)
 				end)
 			end
 			task.wait(0.08)
 			for _, l in ipairs(scratchLines) do
 				task.spawn(function()
-					tween(l, {BackgroundTransparency = 1}, 0.05)
+					_G.tween((l, {BackgroundTransparency = 1}, 0.05)
 				end)
 			end
 			task.wait(0.06)
 		end
 		for _, fl in ipairs(fractureLines) do
 			task.spawn(function()
-				tween(fl, {BackgroundTransparency = 0.5}, 0.06)
+				_G.tween((fl, {BackgroundTransparency = 0.5}, 0.06)
 				task.wait(0.1)
-				tween(fl, {BackgroundTransparency = 1}, 0.1)
+				_G.tween((fl, {BackgroundTransparency = 1}, 0.1)
 			end)
 			task.wait(0.08)
 		end
@@ -4198,7 +4152,7 @@ _G.bootSequence = function(onComplete)
 		for i, p in ipairs(particles) do
 			task.spawn(function()
 				local dur = math.random(15, 30) / 10
-				tween(p, {Position = UDim2.new(p.Position.X.Scale, 0, 1.1, 0), TextTransparency = 1}, dur)
+				_G.tween((p, {Position = UDim2.new(p.Position.X.Scale, 0, 1.1, 0), TextTransparency = 1}, dur)
 				task.delay(dur + 0.1, function() if p and p.Parent then p:Destroy() end end)
 			end)
 			task.wait(0.04)
@@ -4221,20 +4175,20 @@ _G.bootSequence = function(onComplete)
 
 		-- Pulse du titre
 		for i = 1, 3 do
-			tween(title, {TextSize = 76}, 0.1)
+			_G.tween((title, {TextSize = 76}, 0.1)
 			task.wait(0.1)
-			tween(title, {TextSize = 72}, 0.1)
+			_G.tween((title, {TextSize = 72}, 0.1)
 			task.wait(0.1)
 		end
 
 		-- 4) Sous-titre
 		title.TextStrokeTransparency = 0
-		tween(subtitle, {TextTransparency = 0.1}, 0.4)
+		_G.tween((subtitle, {TextTransparency = 0.1}, 0.4)
 
 		-- 5) Glitch bars flash
 		for _, gb in ipairs(glitchBars) do
 			task.spawn(function()
-				tween(gb, {Position = UDim2.new(0, 0, math.random(), 0), BackgroundTransparency = 0.9}, 0.2)
+				_G.tween((gb, {Position = UDim2.new(0, 0, math.random(), 0), BackgroundTransparency = 0.9}, 0.2)
 				task.wait(0.2)
 				if gb and gb.Parent then gb:Destroy() end
 			end)
@@ -4242,7 +4196,7 @@ _G.bootSequence = function(onComplete)
 
 		-- 6) Logs typewriter
 		for i, log in ipairs(logs) do
-			tween(log, {TextTransparency = 0.3}, 0.2)
+			_G.tween((log, {TextTransparency = 0.3}, 0.2)
 			local text = logTexts[i]
 			for j = 1, #text do
 				log.Text = text:sub(1, j)
@@ -4251,7 +4205,7 @@ _G.bootSequence = function(onComplete)
 			local pct = i / #logTexts
 			TweenService:Create(progFill, ti(0.3), {Size = UDim2.new(pct * 0.4, 0, 1, 0)}):Play()
 			pctLabel.Text = math.floor(pct * 100) .. "%"
-			tween(pctLabel, {TextTransparency = 0.2}, 0.2)
+			_G.tween((pctLabel, {TextTransparency = 0.2}, 0.2)
 			if i == 3 or i == 6 then
 				task.spawn(function()
 					for _ = 1, 4 do
@@ -4278,9 +4232,9 @@ _G.bootSequence = function(onComplete)
 		flash.BorderSizePixel = 0
 		flash.ZIndex = 500
 		flash.Parent = backdrop
-		tween(flash, {BackgroundTransparency = 0.3}, 0.08)
+		_G.tween((flash, {BackgroundTransparency = 0.3}, 0.08)
 		task.wait(0.08)
-		tween(flash, {BackgroundTransparency = 1}, 0.3)
+		_G.tween((flash, {BackgroundTransparency = 1}, 0.3)
 		task.delay(0.4, function() if flash and flash.Parent then flash:Destroy() end end)
 
 		TweenService:Create(title, ti(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Position = UDim2.new(0, 0, 0.45, 0), TextSize = 28, TextTransparency = 0.5}):Play()
@@ -4291,7 +4245,7 @@ _G.bootSequence = function(onComplete)
 		TweenService:Create(progTrack, ti(0.4), {BackgroundTransparency = 1}):Play()
 		TweenService:Create(progFill, ti(0.4), {BackgroundTransparency = 1}):Play()
 		TweenService:Create(pctLabel, ti(0.4), {TextTransparency = 1}):Play()
-		tween(backdrop, {BackgroundTransparency = 1}, 0.7)
+		_G.tween((backdrop, {BackgroundTransparency = 1}, 0.7)
 
 		for _, p in ipairs(particles) do
 			if p and p.Parent then tween(p, {TextTransparency = 1}, 0.4) end
@@ -4314,6 +4268,5 @@ _G.bootSequence = function(onComplete)
 	end)
 end
 
-updateLoad(0.30, "Mouvement...")
+_G.updateLoad((0.30, "Mouvement...")
 task.wait(0.05)
-end)()
