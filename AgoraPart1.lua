@@ -1,4 +1,49 @@
 (function()
+-- Local aliases for _G functions (Solara compatibility)
+local PanelMemory = _G.PanelMemory
+local SETTINGS = _G.SETTINGS
+local _agoraAimbotEnabled = _G._agoraAimbotEnabled
+local _agoraApplyLang = _G._agoraApplyLang
+local _agoraLang = _G._agoraLang
+local _agoraStats = _G._agoraStats
+local _chatSeenPlayers = _G._chatSeenPlayers
+local _game = _G._game
+local _initRegistrySearch = _G._initRegistrySearch
+local _resolveCanChat = _G._resolveCanChat
+local addGlow = _G.addGlow
+local addPlayerCard = _G.addPlayerCard
+local applyGlobalESPToPlayer = _G.applyGlobalESPToPlayer
+local blinkESP = _G.blinkESP
+local bootSequence = _G.bootSequence
+local buildESP = _G.buildESP
+local clearESP = _G.clearESP
+local createButton = _G.createButton
+local createCorner = _G.createCorner
+local createPlayerEntry = _G.createPlayerEntry
+local createStroke = _G.createStroke
+local createSwitch = _G.createSwitch
+local createTab = _G.createTab
+local distanceColor = _G.distanceColor
+local ensureESPForPlayer = _G.ensureESPForPlayer
+local getDeviceType = _G.getDeviceType
+local httpGet = _G.httpGet
+local httpPost = _G.httpPost
+local makeIcon = _G.makeIcon
+local matrixRain = _G.matrixRain
+local playSound = _G.playSound
+local refreshESP = _G.refreshESP
+local refreshPlayersList = _G.refreshPlayersList
+local removePlayerCard = _G.removePlayerCard
+local reparentChildrenToLocalScroll = _G.reparentChildrenToLocalScroll
+local sendEchoMessage = _G.sendEchoMessage
+local showRestorePopup = _G.showRestorePopup
+local shutdownPanel = _G.shutdownPanel
+local switchTab = _G.switchTab
+local tween = _G.tween
+local typewriterEffect = _G.typewriterEffect
+local updateCharacter = _G.updateCharacter
+local updateLoad = _G.updateLoad
+
 -- Agora Hub [UNIVERSELLE] - Panel Roblox universel
 -- LocalScript dans StarterPlayerScripts ou exécuteur
 
