@@ -1,7 +1,7 @@
 -- Agora Hub [UNIVERSELLE] - Panel Roblox universel
 -- LocalScript dans StarterPlayerScripts ou exécuteur
 
-local SETTINGS = {
+_G.SETTINGS = {
 	SpiderSpeed = 16,
 	SpiderHoverDistance = 2.6,
 	SpiderNetworkCompensation = 0.8,
@@ -12,10 +12,10 @@ local SETTINGS = {
 
 -- SAFEGUARD EXECUTEUR: certains loadstring ne passent pas 'game' en global
 -- On recupere game via getfenv, shared, ou le premier argument de loadstring
-local _game = nil
+_G._game = nil
 if game then _game = game end
 if not _game then
-	local ok, envGame = pcall(function() return getfenv().game end)
+	_G.ok, envGame = pcall(function() return getfenv().game end)
 	if ok and envGame then _game = envGame end
 end
 if not _game then
@@ -50,11 +50,10 @@ end
 game = _game
 
 -- WRAP PANEL IN LOCAL FUNCTION to avoid Solara 200-register chunk limit
-local _agoraOk = true
-;(function()
+local function _buildPanel()
 if not game then
 	warn("[AGORA] game est nil — exécuteur incompatible ou loadstring mal formé")
-	_agoraOk = false
+	return
 end
 
 -- === LOADING SCREEN ===
@@ -1535,9 +1534,7 @@ local function _initRegistrySearch()
 	-- cache les suggestions (pour pas qu'elles restent flottantes)
 end
 _initRegistrySearch()
-end)()
 
-;(function()
 -- ============= REGISTRY SCROLL =============
 -- registryScroll commence juste après la search box + un peu de gap pour les suggestions
 local registryScroll = Instance.new("ScrollingFrame")
@@ -2004,9 +2001,7 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 end
 
 updateLoad(0.08, "Modules joueurs...")
-end)()
-
-;(function()
+task.wait(0.05)
 -- ============= JOUEURS =============
 local playerCards = {}
 local playerSearchQuery = "" -- query actuelle (vide = pas de filtre)
@@ -3486,9 +3481,7 @@ end)
 
 
 updateLoad(0.15, "ESP...")
-end)()
-
-;(function()
+task.wait(0.05)
 -- ============= ESP =============
 local espFolder = Instance.new("Folder")
 espFolder.Name = "PanelESP"
@@ -3710,9 +3703,7 @@ end)
 
 
 updateLoad(0.22, "Animations...")
-end)()
-
-;(function()
+task.wait(0.05)
 -- ============= ANIMATIONS =============
 local function typewriterEffect(label, text, speed)
 	speed = speed or 0.02
@@ -4283,9 +4274,7 @@ local function bootSequence(onComplete)
 end
 
 updateLoad(0.30, "Mouvement...")
-end)()
-
-;(function()
+task.wait(0.05)
 -- ============= MOVE =============
 local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
 local noclipState = { enabled = false }
@@ -5060,9 +5049,7 @@ chatIconsSwitch.set(true)
 
 
 updateLoad(0.40, "Auto Clicker...")
-end)()
-
-;(function()
+task.wait(0.05)
 -- ============= AUTO CLICKER =============
 local autoClickState = {
 	toolActive = false,   -- le switch (faux tool dans le backpack)
@@ -6024,9 +6011,7 @@ RunService.Stepped:Connect(function(_, dt)
 
 
 updateLoad(0.50, "Modules extra...")
-end)()
-
-;(function()
+task.wait(0.05)
 -- ============= EXTRA =============
 local fullbrightState = { enabled = false, old = {} }
 local clickTPState = { enabled = false }
@@ -6262,9 +6247,7 @@ end
 _initServerInfoCard()
 
 updateLoad(0.60, "Aimbot...")
-end)()
-
-;(function()
+task.wait(0.05)
 -- ============= AIMBOT =============
 -- Verrouille la souris sur la TÊTE du joueur le plus proche du CENTRE de l'écran
 -- - Filtre "pas à travers les murs" : raycast camera → head, vérifie qu'on touche le character
@@ -6663,9 +6646,7 @@ end)
 
 
 updateLoad(0.70, "Protections...")
-end)()
-
-;(function()
+task.wait(0.05)
 -- ============= PROTECTIONS =============
 local protectionsState = {
 	antiFling = false,
@@ -7299,9 +7280,7 @@ end
 _wrapRemotes() -- Exécute le wrap (IIFE pattern pour limiter les 200 registers)
 
 updateLoad(0.80, "Registry...")
-end)()
-
-;(function()
+task.wait(0.05)
 -- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
@@ -9077,9 +9056,7 @@ function giveSpiderTool()
 end
 
 updateLoad(0.90, "Chat commands...")
-end)()
-
-;(function()
+task.wait(0.05)
 -- ============= CHAT COMMANDS =============
 -- Wrap dans IIFE avec paramètres pour éviter la limite d'upvalues (200)
 ;(function(_fly, _noclip, _esp, _fullbright, _zeroG, _localPlayer)
@@ -9100,9 +9077,7 @@ end)()
 end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlayer)
 
 updateLoad(0.95, "Finalisation...")
-end)()
-
-;(function()
+task.wait(0.05)
 -- ============= CRÉDITS =============
 ;(function(_mainFrame)
 	local credits = Instance.new("TextLabel")
@@ -9162,4 +9137,8 @@ end)
 -- 	pcall(function() mainFrame.Visible = true end)
 -- 	switchTab("Joueurs")
 -- end) end)
-end)()
+
+end
+-- Remove loading screen
+pcall(function() if loadingGui then loadingGui:Destroy() end end)
+_buildPanel()
