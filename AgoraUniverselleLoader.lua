@@ -1,48 +1,34 @@
--- Agora Universelle Hub - Loader
--- Coller dans exécuteur ou LocalScript dans StarterPlayerScripts
--- Auto-update: le script est fetch depuis Supabase proxy à chaque exécution
+-- Agora Universelle Hub - Loader (v39.15)
+-- Ce loader charge le panel en 2 parties pour eviter les limites de taille des executeurs
 
-local SUPABASE_URL = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub.lua&nocache=" .. tostring(tick())
-
--- Multi-fallback HTTP (game:HttpGet, HttpService, request/syn.request)
-local function httpGet(url)
-	-- 1) game:HttpGet (Solara, etc.)
-	local ok, r = pcall(function() return game:HttpGet(url) end)
-	if ok and r and r ~= "" then return r end
-	-- 2) HttpService:GetAsync
-	ok, r = pcall(function() return game:GetService("HttpService"):GetAsync(url) end)
-	if ok and r and r ~= "" then return r end
-	-- 3) request / syn.request (Synapse, Fluxus, etc.)
-	local req = (syn and syn.request) or (http and http.request) or http_request or request
-	if req then
-		ok, r = pcall(function() return req({Url=url, Method="GET"}).Body end)
-		if ok and r and r ~= "" then return r end
-	end
+local function loadPart(url)
+	local ok, code = pcall(function() return game:HttpGet(url) end)
+	if ok and code and #code > 100 then return code end
+	-- Fallback
+	ok, code = pcall(function() return HttpService:GetAsync(url) end)
+	if ok and code and #code > 100 then return code end
 	return nil
 end
 
-print("[AGORA UNIVERSALLE] Téléchargement du script...")
+local BASE = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file="
+local nocache = "&_=" .. math.random(100000, 999999)
 
-local code = httpGet(SUPABASE_URL)
-
-if not code or code == "" then
-	warn("[AGORA UNIVERSALLE] ERREUR: Impossible de télécharger le script.")
-	warn("[AGORA UNIVERSALLE] URL: " .. SUPABASE_URL)
+local part1 = loadPart(BASE .. "AgoraPart1.lua" .. nocache)
+if not part1 then
+	warn("[AGORA] Erreur: impossible de charger la partie 1")
 	return
 end
 
-print("[AGORA UNIVERSALLE] Script téléchargé (" .. #code .. " bytes)")
-
-local fn, err = loadstring(code)
-if not fn then
-	warn("[AGORA UNIVERSALLE] ERREUR de compilation: " .. tostring(err))
+local part2 = loadPart(BASE .. "AgoraPart2.lua" .. nocache)
+if not part2 then
+	warn("[AGORA] Erreur: impossible de charger la partie 2")
 	return
 end
 
-print("[AGORA UNIVERSALLE] Compilation OK, exécution...")
-local ok, runErr = pcall(fn)
-if not ok then
-	warn("[AGORA UNIVERSALLE] ERREUR d'exécution: " .. tostring(runErr))
+local fullCode = part1 .. "\n" .. part2
+local ok, err = pcall(loadstring, fullCode)
+if ok then
+	err() -- execute
 else
-	print("[AGORA UNIVERSALLE] Script chargé avec succès!")
+	warn("[AGORA] Erreur loadstring: " .. tostring(err))
 end
