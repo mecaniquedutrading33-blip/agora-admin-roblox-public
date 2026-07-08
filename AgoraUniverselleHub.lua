@@ -760,7 +760,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.14"
+	versionLabel.Text = "v39.15"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -4518,16 +4518,48 @@ local function computePathTo(targetPos)
 	if not rootPart or not humanoid then return {} end
 
 	local myPos = rootPart.Position
+	local flatDist = Vector3.new(targetPos.X - myPos.X, 0, targetPos.Z - myPos.Z).Magnitude
 	local waypoints = {}
 
-	-- 1) PathfindingService Roblox (parametres ameliores: climb, spacing reduit)
+	-- Helper: raycast clearance check
+	local function rayClear(from, to)
+		local params = RaycastParams.new()
+		params.FilterDescendantsInstances = {character}
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		local dir = to - from
+		local dist = dir.Magnitude
+		if dist < 0.1 then return true end
+		local hit = Workspace:Raycast(from, dir.Unit * dist, params)
+		return hit == nil
+	end
+
+	-- Helper: find best height for a direction
+	local function findBestHeight(from, dir, dist)
+		local params = RaycastParams.new()
+		params.FilterDescendantsInstances = {character}
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		local heights = {0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 15}
+		local bestH = nil
+		local bestScore = math.huge
+		for _, h in ipairs(heights) do
+			local origin = from + Vector3.new(0, h, 0)
+			local hit = Workspace:Raycast(origin, dir * (dist + 1), params)
+			if not hit then
+				local score = math.abs(h - math.max(0, targetPos.Y - from.Y))
+				if score < bestScore then bestScore = score; bestH = h end
+			end
+		end
+		return bestH
+	end
+
+	-- 1) PathfindingService Roblox (parametres optimises longues distances)
 	local ok, pathOrErr = pcall(function()
 		local p = PathfindingService:CreatePath({
 			AgentRadius = 1.5,
 			AgentHeight = 4.5,
 			AgentCanJump = true,
 			AgentCanClimb = true,
-			WaypointSpacing = 3,
+			WaypointSpacing = 6,
 			Costs = { Climbing = 3, Jumping = 2 }
 		})
 		p:ComputeAsync(myPos, targetPos)
@@ -4542,36 +4574,85 @@ local function computePathTo(targetPos)
 		if #waypoints > 0 then return waypoints end
 	end
 
-	-- 2) Multi-hauteur raycast: cherche le meilleur chemin en testant differentes hauteurs
-	local function findClearPath(from, to)
-		local dir = to - from
-		local flatDir = Vector3.new(dir.X, 0, dir.Z)
-		local dist = flatDir.Magnitude
-		if dist < 0.5 then return to end
-		local unit = flatDir / dist
-		local params = RaycastParams.new()
-		params.FilterDescendantsInstances = {character}
-		params.FilterType = Enum.RaycastFilterType.Exclude
+	-- 2) Longue distance: decouper le trajet en segments de 25 studs
+	if flatDist > 30 then
+		local dir = Vector3.new(targetPos.X - myPos.X, 0, targetPos.Z - myPos.Z).Unit
+		local segmentLen = 25
+		local segments = math.floor(flatDist / segmentLen)
+		local prevPos = myPos
 		
-		local heights = {0, 1, 2, 3, 4, 5, 6, 8, 10}
-		local bestHeight = nil
-		local bestScore = math.huge
-		
-		for _, h in ipairs(heights) do
-			local origin = from + Vector3.new(0, h, 0)
-			local hit = Workspace:Raycast(origin, unit * (dist + 2), params)
-			if not hit then
-				local heightDiff = math.abs(h - math.max(0, to.Y - from.Y))
-				if heightDiff < bestScore then
-					bestScore = heightDiff
-					bestHeight = h
+		for i = 1, segments do
+			local segTarget = myPos + dir * (i * segmentLen)
+			-- Find ground at this point
+			local gParams = RaycastParams.new()
+			gParams.FilterDescendantsInstances = {character}
+			gParams.FilterType = Enum.RaycastFilterType.Exclude
+			local ground = Workspace:Raycast(segTarget + Vector3.new(0, 30, 0), Vector3.new(0, -60, 0), gParams)
+			if ground then
+				segTarget = Vector3.new(segTarget.X, ground.Position.Y + 2, segTarget.Z)
+			end
+			-- Check if clear path to this segment
+			if rayClear(prevPos, segTarget) then
+				table.insert(waypoints, segTarget)
+				prevPos = segTarget
+			else
+				-- Try to find a path around obstacle at this segment
+				local bestH = findBestHeight(prevPos, dir, segmentLen)
+				if bestH then
+					local mid = prevPos + dir * (segmentLen * 0.5)
+					segTarget = Vector3.new(mid.X, prevPos.Y + bestH, mid.Z)
+					table.insert(waypoints, segTarget)
+					prevPos = segTarget
+				else
+					-- Try going around: left/right offsets
+					local offsets = {Vector3.new(0,0,5), Vector3.new(0,0,-5), Vector3.new(5,0,0), Vector3.new(-5,0,0)}
+					local found = false
+					for _, off in ipairs(offsets) do
+						local tryPos = segTarget + off
+						if rayClear(prevPos, tryPos) then
+							table.insert(waypoints, tryPos)
+							prevPos = tryPos
+							found = true
+							break
+						end
+					end
+					if not found then
+						-- Just add the target anyway, MoveTo will handle
+						table.insert(waypoints, segTarget)
+						prevPos = segTarget
+					end
 				end
 			end
 		end
-		
-		if bestHeight then
-			local mid = from + unit * math.min(10, dist * 0.35)
-			return Vector3.new(mid.X, from.Y + bestHeight, mid.Z)
+		-- Final segment to exact target
+		if rayClear(prevPos, targetPos) then
+			table.insert(waypoints, targetPos)
+		else
+			-- Try to find ground at target
+			local gParams = RaycastParams.new()
+			gParams.FilterDescendantsInstances = {character}
+			gParams.FilterType = Enum.RaycastFilterType.Exclude
+			local ground = Workspace:Raycast(targetPos + Vector3.new(0, 30, 0), Vector3.new(0, -60, 0), gParams)
+			if ground then
+				table.insert(waypoints, Vector3.new(targetPos.X, ground.Position.Y + 2, targetPos.Z))
+			else
+				table.insert(waypoints, targetPos)
+			end
+		end
+		if #waypoints > 0 then return waypoints end
+	end
+
+	-- 3) Multi-hauteur raycast (courte distance)
+	local function findClearPath(from, to)
+		local dir = to - from
+		local flatDir = Vector3.new(dir.X, 0, dir.Z)
+		local d = flatDir.Magnitude
+		if d < 0.5 then return to end
+		local unit = flatDir / d
+		local bestH = findBestHeight(from, unit, d)
+		if bestH then
+			local mid = from + unit * math.min(10, d * 0.35)
+			return Vector3.new(mid.X, from.Y + bestH, mid.Z)
 		end
 		return nil
 	end
@@ -4583,7 +4664,7 @@ local function computePathTo(targetPos)
 		return {mid}
 	end
 
-	-- 3) Fallback: step forward avec ajustement au sol
+	-- 4) Fallback final: step forward
 	local flat = Vector3.new(targetPos.X - myPos.X, 0, targetPos.Z - myPos.Z)
 	if flat.Magnitude > 0.1 then
 		local step = myPos + flat.Unit * math.min(6, flat.Magnitude * 0.3)
@@ -4595,8 +4676,7 @@ local function computePathTo(targetPos)
 		return { step }
 	end
 	return {}
-end
-local gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, function(on)
+endlocal gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, function(on)
 	gotoWalkState.enabled = on
 	if not on then
 		gotoWalkState.active = false
