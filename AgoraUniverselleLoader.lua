@@ -1,4 +1,4 @@
--- Agora Universelle Hub - Loader v19 (2 parts, clean split)
+-- Agora Universelle Hub - Loader v20 (2 parts, clean)
 local B="https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file="
 local C="&_="..math.random(100000,999999)
 local function L(u)
