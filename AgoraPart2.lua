@@ -6,7 +6,7 @@ local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
 local platformState = { enabled = false, part = nil, y = 0, offset = 0 }
 
-local function stopFly()
+_G.stopFly = function()
 	if not flyState.flying then return end
 	flyState.flying = false
 	if flyState.loop then flyState.loop:Disconnect() flyState.loop = nil end
@@ -161,7 +161,7 @@ end
 	_fly.isMobile = isMobile
 end)(flyState, screenGui)
 
-local function startFly()
+_G.startFly = function()
 	updateCharacter()
 	if flyState.flying or not rootPart then return end
 	flyState.flying = true
@@ -213,7 +213,7 @@ local function startFly()
 	end)
 end
 
-local function createSlider(parent, labelText, yPos, min, max, default, callback, color, decimals, step)
+_G.createSlider = function(parent, labelText, yPos, min, max, default, callback, color, decimals, step)
 	decimals = decimals or 0
 	step = step or nil
 	local function fmt(v)
@@ -346,14 +346,14 @@ local PathfindingService = game:GetService("PathfindingService")
 
 local gotoWalkState = { enabled = false, active = false, target = nil, path = {}, visuals = {}, lastClick = 0, lastMoveTo = nil, recompute = nil, busy = false }
 
-local function clearWalkVisuals()
+_G.clearWalkVisuals = function()
 	for _, v in ipairs(gotoWalkState.visuals) do
 		if v and v.Parent then v:Destroy() end
 	end
 	gotoWalkState.visuals = {}
 end
 
-local function visualizeWaypoints(waypoints)
+_G.visualizeWaypoints = function(waypoints)
 	clearWalkVisuals()
 	for i, wp in ipairs(waypoints) do
 		local dot = Instance.new("Part")
@@ -388,7 +388,7 @@ local function visualizeWaypoints(waypoints)
 end
 
 -- Calcule un trajet vers targetPos. Retourne une liste de waypoints (Vector3) ou {} si impossible.
-local function computePathTo(targetPos)
+_G.computePathTo = function(targetPos)
 	updateCharacter()
 	if not rootPart or not humanoid then return {} end
 
@@ -566,7 +566,7 @@ createSwitch(movePage, "Saut infini", 192, function(on)
 	jumpState.infinite = on
 end)
 
-local function refreshNoClipSwitch()
+_G.refreshNoClipSwitch = function()
 	noclipSwitch.set(false)
 end
 
@@ -692,7 +692,7 @@ createStroke(gravityInput, Color3.fromRGB(80, 80, 100), 1)
 end
 
 local draggingGravity = false
-local function gravityFromX(x)
+_G.gravityFromX = function(x)
 	local rel = math.clamp((x - gravityTrack.AbsolutePosition.X) / gravityTrack.AbsoluteSize.X, 0, 1)
 	return math.floor(rel * 300 + 0.5)
 end
@@ -788,7 +788,7 @@ local autoClickState = {
 	controlPos = nil,
 }
 
-local function setAutoClickSave()
+_G.setAutoClickSave = function()
 	if not autoClickState then return end
 	panelMemory.autoClick = {
 		pos = autoClickState.controlPos and {autoClickState.controlPos.X.Scale, autoClickState.controlPos.X.Offset, autoClickState.controlPos.Y.Scale, autoClickState.controlPos.Y.Offset},
@@ -799,14 +799,14 @@ local function setAutoClickSave()
 	end
 end
 
-local function removeFakeTool()
+_G.removeFakeTool = function()
 	if autoClickState.fakeTool and autoClickState.fakeTool.Parent then
 		autoClickState.fakeTool:Destroy()
 	end
 	autoClickState.fakeTool = nil
 end
 
-local function createFakeTool()
+_G.createFakeTool = function()
 	local backpack = LocalPlayer:FindFirstChild("Backpack")
 	if not backpack then return end
 	removeFakeTool()
@@ -835,7 +835,7 @@ local function createFakeTool()
 	return tool
 end
 
-local function stopAutoClickEngine()
+_G.stopAutoClickEngine = function()
 	autoClickState.clickEnabled = false
 	if autoClickState.activeThread then
 		autoClickState.activeThread = nil
@@ -846,7 +846,7 @@ local function stopAutoClickEngine()
 	pcall(hideMarker)
 end
 
-local function onToolDeactivated()
+_G.onToolDeactivated = function()
 	-- quand le tool est retiré de l'inventaire / personnage mort
 	stopAutoClickEngine()
 end
@@ -895,7 +895,7 @@ local acTarget = {
 end)()
 
 -- Met à jour la position FIXE = le curseur au moment de l'appel
-local function captureTargetFromCursor()
+_G.captureTargetFromCursor = function()
 	local mouse = LocalPlayer:GetMouse()
 	if not mouse then return false end
 	acTarget.captured = true
@@ -907,7 +907,7 @@ local function captureTargetFromCursor()
 end
 
 -- Trouve le bouton GUI au point (Vector2) en descendant l'arbre GUI
-local function findGuiButtonAt(point, root)
+_G.findGuiButtonAt = function(point, root)
 	if not root then return nil end
 	local best = nil
 	local function walk(obj)
@@ -936,7 +936,7 @@ local function findGuiButtonAt(point, root)
 end
 
 -- ClickDetector sous le point écran — raycast caméra vers l'arrière
-local function findClickDetectorAtScreen(point)
+_G.findClickDetectorAtScreen = function(point)
 	local camera = Workspace.CurrentCamera
 	if not camera then return nil end
 	local unit = camera:ScreenPointToRay(point.X, point.Y)
@@ -956,7 +956,7 @@ local function findClickDetectorAtScreen(point)
 end
 
 -- Un seul clic à la position FIXE acTarget (pas le curseur actuel)
-local function fireClickFixed(useNative)
+_G.fireClickFixed = function(useNative)
 	if not acTarget.captured then return false end
 	local pt = acTarget.position
 	local clicked = false
@@ -1044,7 +1044,7 @@ local function fireClickFixed(useNative)
 	return clicked
 end
 
-local function startAutoClickEngine()
+_G.startAutoClickEngine = function()
 	stopAutoClickEngine()
 	-- Auto-capture : si rien n'est capturé, on prend la position du curseur maintenant
 	if not acTarget.captured then
@@ -1117,11 +1117,11 @@ acMarkerStroke.Color = Color3.fromRGB(255, 200, 200)
 acMarkerStroke.Thickness = 1.5
 acMarkerStroke.Parent = acMarker
 
-local function showMarkerAt(screenPos)
+_G.showMarkerAt = function(screenPos)
 	acMarker.Visible = true
 	acMarker.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
 end
-local function hideMarker()
+_G.hideMarker = function()
 	acMarker.Visible = false
 end
 
@@ -1216,11 +1216,11 @@ speedFill.Parent = speedSliderTrack
 createCorner(speedFill, 3)
 
 local draggingSpeed = false
-local function speedFromX(x)
+_G.speedFromX = function(x)
 	local rel = math.clamp((x - speedSliderTrack.AbsolutePosition.X) / speedSliderTrack.AbsoluteSize.X, 0, 1)
 	return 0.001 + rel * 0.199
 end
-local function setSpeed(s)
+_G.setSpeed = function(s)
 	s = math.clamp(math.floor(s * 1000) / 1000, 0.001, 0.2)
 	autoClickState.speed = s
 	speedLabel.Text = "Vitesse : " .. s .. "s"
@@ -1404,7 +1404,7 @@ dragHandle.ZIndex = 125
 dragHandle.Parent = clickControl
 createCorner(dragHandle, 11)
 
-local function clampControl()
+_G.clampControl = function()
 	local s = screenGui.AbsoluteSize
 	local sz = clickControl.AbsoluteSize
 	local x = math.clamp(clickControl.AbsolutePosition.X, 0, math.max(0, s.X - sz.X))
@@ -1773,7 +1773,7 @@ end)
 
 -- === Carte "Stats serveur" (6 stats en grille) — déplacée depuis Joueurs (trop large) ===
 -- WRAP dans local function + appel pour isoler les locals
-local function _initServerStatsCard()
+_G._initServerStatsCard = function()
 	local statsCard = Instance.new("Frame")
 	statsCard.Name = "StatsCard"
 	statsCard.Size = UDim2.new(1, -10, 0, 0)
@@ -1892,7 +1892,7 @@ _initServerStatsCard()
 
 -- === Carte "Infos serveur" (Créateur du jeu) — déplacée depuis Joueurs (était trop large) ===
 -- WRAP dans local function + appel pour isoler les locals (réduit les 200 registres)
-local function _initServerInfoCard()
+_G._initServerInfoCard = function()
 	local serverInfoCard = Instance.new("Frame")
 	serverInfoCard.Name = "ServerInfoCard"
 	serverInfoCard.Size = UDim2.new(1, -10, 0, 0)
@@ -1988,7 +1988,7 @@ task.wait(0.05)
 -- - Pas de visée amis (seulement les joueurs, pas le local player)
 -- - Option clic auto : mouse1click à chaque frame sur la cible
 -- Wrap dans local function + appel pour isoler les locals (limite 200 registers)
-local function _initAimbot()
+_G._initAimbot = function()
 	local aimbotCard = Instance.new("Frame")
 	aimbotCard.Name = "AimbotCard"
 	aimbotCard.Size = UDim2.new(1, -10, 0, 0)
@@ -2421,7 +2421,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	end
 end)
 
-local function neutralizeSeat(seat)
+_G.neutralizeSeat = function(seat)
 	if not seat then return end
 	if seat:IsA("Seat") or seat:IsA("VehicleSeat") then
 		seat.Disabled = true
@@ -2430,7 +2430,7 @@ local function neutralizeSeat(seat)
 	end
 end
 
-local function restoreSeat(seat)
+_G.restoreSeat = function(seat)
 	if not seat then return end
 	if (seat:IsA("Seat") or seat:IsA("VehicleSeat")) and seat:GetAttribute("Neutralized") then
 		seat.Disabled = false
@@ -2439,7 +2439,7 @@ local function restoreSeat(seat)
 	end
 end
 
-local function createAntiSeatSitWatcher()
+_G.createAntiSeatSitWatcher = function()
 	local function onCharacter(char)
 		local hum = char:FindFirstChildOfClass("Humanoid")
 		if not hum then
@@ -2463,7 +2463,7 @@ local function createAntiSeatSitWatcher()
 	return LocalPlayer.CharacterAdded:Connect(onCharacter)
 end
 
-local function createProtectionSwitch(name, label, y)
+_G.createProtectionSwitch = function(name, label, y)
 	return createSwitch(protectionsScroll, label, y, function(on)
 		protectionsState[name] = on
 		if name == "antiSeat" then
@@ -2636,7 +2636,7 @@ serverLayout.SortOrder = Enum.SortOrder.LayoutOrder
 serverLayout.Parent = serverScroll
 
 -- Wrap du contenu Remotes dans une fonction locale pour limiter les 200 registers
-local function _wrapRemotes()
+_G._wrapRemotes = function()
 	-- Avertissement en haut
 	local remoteWarn = Instance.new("Frame")
 	remoteWarn.Size = UDim2.new(1, -8, 0, 60)
@@ -3023,7 +3023,7 @@ task.wait(0.05)
 -- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
-local function buildRegistrySection(parentPage)
+_G.buildRegistrySection = function(parentPage)
 	-- Refonte v38.14 : PAS de wrapper registryCard.
 	-- Tous les enfants (titre, subtitle, status, resultScroll) sont dans registryScroll DIRECTEMENT.
 	-- Chaque enfant a un LayoutOrder pour empiler verticalement via registryLayout (UIListLayout parent).
@@ -3087,7 +3087,7 @@ resultLayout.SortOrder = Enum.SortOrder.LayoutOrder
 resultLayout.Parent = resultScroll
 
 -- Helper: join a list into a string with separator, or "Indisponible" if empty
-local function joinOrIndi(list, sep, max)
+_G.joinOrIndi = function(list, sep, max)
 	if not list or type(list) ~= "table" or #list == 0 then
 		return "Indisponible"
 	end
@@ -3299,7 +3299,7 @@ end
 
 -- Affiche un résultat (un compte) — UNE seule grosse bulle unie, sans RichText/HTML
 -- Apparition ligne par ligne (typewriter) pour faciliter la lecture
-local function renderResult(data, parent)
+_G.renderResult = function(data, parent)
 	-- Grosse carte unie
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(1, -8, 0, 0) -- hauteur auto, ajustée après

@@ -1,7 +1,7 @@
 -- Agora Hub [UNIVERSELLE] - Panel Roblox universel
 -- LocalScript dans StarterPlayerScripts ou exécuteur
 
-local SETTINGS = {
+_G.SETTINGS = {
 	SpiderSpeed = 16,
 	SpiderHoverDistance = 2.6,
 	SpiderNetworkCompensation = 0.8,
@@ -12,10 +12,10 @@ local SETTINGS = {
 
 -- SAFEGUARD EXECUTEUR: certains loadstring ne passent pas 'game' en global
 -- On recupere game via getfenv, shared, ou le premier argument de loadstring
-local _game = nil
+_G._game = nil
 if game then _game = game end
 if not _game then
-	local ok, envGame = pcall(function() return getfenv().game end)
+	_G.ok, envGame = pcall(function() return getfenv().game end)
 	if ok and envGame then _game = envGame end
 end
 if not _game then
@@ -157,7 +157,7 @@ task.spawn(function()
 end)
 
 -- Helper: update loading bar
-local function updateLoad(progress, msg)
+_G.updateLoad = function(progress, msg)
 	if loadingBar and loadingBar.Parent then
 		loadingBar:TweenSize(UDim2.new(progress, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
 	end
@@ -272,7 +272,7 @@ task.spawn(function()
 end)
 
 -- Wrapper de son multi-exécuteur (Solara, etc.) - pcall silencieux
-local function playSound(id, vol)
+_G.playSound = function(id, vol)
 	if not id then return end
 	pcall(function()
 		local s = Instance.new("Sound")
@@ -294,7 +294,7 @@ local function playSound(id, vol)
 end
 
 -- Helper HTTP multi-executeur (essaie TOUTES les methodes possibles)
-local function httpGet(url)
+_G.httpGet = function(url)
 	-- 1) game:HttpGet (Solara, Xeno, etc.) - le plus commun
 	local ok, r = pcall(function() return game:HttpGet(url) end)
 	if ok and r and r ~= "" then return r end
@@ -338,7 +338,7 @@ local function httpGet(url)
 	return nil
 end
 
-local function httpPost(url, body)
+_G.httpPost = function(url, body)
 	-- 1) game:HttpPostJSON / HttpGet avec body
 	local ok, r = pcall(function() return game:HttpGet(url, true, body) end)
 	if ok and r and r ~= "" then return r end
@@ -365,7 +365,7 @@ end
 local panelMemory = _G.PanelMemory
 
 local character, humanoid, rootPart
-local function updateCharacter()
+_G.updateCharacter = function()
 	character = LocalPlayer.Character
 	if character then
 		humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -393,7 +393,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	end
 end)
 
-local function getDeviceType()
+_G.getDeviceType = function()
 	if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
 		return "Mobile"
 	elseif UserInputService.GamepadEnabled then
@@ -403,14 +403,14 @@ local function getDeviceType()
 	end
 end
 
-local function createCorner(parent, radius)
+_G.createCorner = function(parent, radius)
 	local c = Instance.new("UICorner")
 	c.CornerRadius = UDim.new(0, radius or 6)
 	c.Parent = parent
 	return c
 end
 
-local function createStroke(parent, color, thickness)
+_G.createStroke = function(parent, color, thickness)
 	local s = Instance.new("UIStroke")
 	s.Color = color or Color3.fromRGB(60, 60, 60)
 	s.Thickness = thickness or 1
@@ -418,7 +418,7 @@ local function createStroke(parent, color, thickness)
 	return s
 end
 
-local function tween(obj, props, duration)
+_G.tween = function(obj, props, duration)
 	if not obj or not obj.Parent then return end
 	pcall(function()
 		TweenService:Create(obj, TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
@@ -701,7 +701,7 @@ titleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = topBar
 
-local function addGlow(frame)
+_G.addGlow = function(frame)
 	local glow = Instance.new("ImageLabel")
 	glow.Name = "Glow"
 	glow.Size = UDim2.new(1, 60, 1, 60)
@@ -753,7 +753,7 @@ minimizeBtn.BorderSizePixel = 0
 minimizeBtn.Parent = topBar
 createCorner(minimizeBtn, 8)
 
-local function makeIcon(btn, txt)
+_G.makeIcon = function(btn, txt)
 	local l = Instance.new("TextLabel")
 	l.Size = UDim2.new(1, 0, 1, 0)
 	l.BackgroundTransparency = 1
@@ -766,7 +766,7 @@ end
 
 makeIcon(closeBtn, "×")
 
-local function createButton(parent, text, yPos, color, callback)
+_G.createButton = function(parent, text, yPos, color, callback)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, -20, 0, 34)
 	btn.Position = UDim2.new(0, 10, 0, yPos)
@@ -819,7 +819,7 @@ local pages = {}
 local tabButtons = {}
 local activeTab = "Joueurs"
 
-local function switchTab(name)
+_G.switchTab = function(name)
 	activeTab = name
 	for n, page in pairs(pages) do
 		page.Visible = (n == name)
@@ -834,7 +834,7 @@ local function switchTab(name)
 	end
 end
 
-local function createTab(name)
+_G.createTab = function(name)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0.115, -2, 1, 0)
 		btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
@@ -1299,7 +1299,7 @@ local protectionsPage = createTab("Protections")
 
 -- ============= REGISTRY SEARCH + AUTOCOMPLETE =============
 -- WRAP dans local function + appel pour isoler les locals
-local function _initRegistrySearch()
+_G._initRegistrySearch = function()
 	local registrySearchBox = Instance.new("TextBox")
 	registrySearchBox.Size = UDim2.new(1, -10, 0, 28)
 	registrySearchBox.Position = UDim2.new(0, 5, 0, 5)
@@ -1601,7 +1601,7 @@ task.defer(function()
 	protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, protectionsLayout.AbsoluteContentSize.Y + 10)
 end)
 
-local function reparentChildrenToLocalScroll()
+_G.reparentChildrenToLocalScroll = function()
 	for _, child in ipairs(localPage:GetChildren()) do
 		if child ~= localScroll then
 			child.Parent = localScroll
@@ -1871,7 +1871,7 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- == SHUTDOWN ALL FEATURES ==
-local function shutdownPanel()
+_G.shutdownPanel = function()
 	if flyState and flyState.flying then stopFly() end
 	if noclipState and noclipState.enabled then
 		noclipState.enabled = false
@@ -1924,7 +1924,7 @@ local function shutdownPanel()
 	end)
 end
 
-local function createSwitch(parent, labelText, yPos, callback, defaultOn)
+_G.createSwitch = function(parent, labelText, yPos, callback, defaultOn)
 	local container = Instance.new("Frame")
 	container.Size = UDim2.new(1, -20, 0, 36)
 	container.Position = UDim2.new(0, 10, 0, yPos)
@@ -2195,7 +2195,7 @@ echoStatusLabel.Parent = mainFrame
 local selectedEchoPlayer = nil
 
 -- Pop-up de restauration du dernier joueur Echo
-local function showRestorePopup(lastName)
+_G.showRestorePopup = function(lastName)
 	if panelMemory.dontAskRestore then return end
 	if not lastName then return end
 	local current = Players:FindFirstChild(lastName)
@@ -2250,7 +2250,7 @@ local function showRestorePopup(lastName)
 	popup:TweenPosition(UDim2.new(0.5, -150, 0.5, -65), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.25, true)
 end
 
-local function createPlayerEntry(plr)
+_G.createPlayerEntry = function(plr)
 	local card = Instance.new("Frame")
 end)()
 
@@ -3403,7 +3403,7 @@ end)()
 					return card
 					end
 
-local function addPlayerCard(plr)
+_G.addPlayerCard = function(plr)
 	if plr == LocalPlayer then return end
 end)()
 
@@ -3413,7 +3413,7 @@ end)()
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
 
-local function removePlayerCard(plr)
+_G.removePlayerCard = function(plr)
 	if playerCards[plr] then
 		playerCards[plr]:Destroy()
 		playerCards[plr] = nil
@@ -3426,7 +3426,7 @@ local function removePlayerCard(plr)
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
 
-local function refreshPlayersList()
+_G.refreshPlayersList = function()
 	local existing = {}
 	for plr, card in pairs(playerCards) do
 		if card and card.Parent then
@@ -3473,7 +3473,7 @@ for plr, card in pairs(playerCards) do
 end
 
 -- ECHO CHAT
-local function sendEchoMessage(text)
+_G.sendEchoMessage = function(text)
 	local channels = TextChatService:FindFirstChild("TextChannels")
 	if not channels then return end
 	local general = channels:FindFirstChild("RBXGeneral")
@@ -3502,20 +3502,20 @@ espFolder.Parent = Workspace
 
 local espState = { enabled = false, individual = {}, chatIcons = true }
 
-local function distanceColor(dist)
+_G.distanceColor = function(dist)
 	if dist < 50 then return Color3.fromRGB(80, 255, 120)
 	elseif dist < 200 then return Color3.fromRGB(255, 200, 80)
 	else return Color3.fromRGB(255, 80, 80) end
 end
 
-local function ensureESPForPlayer(plr)
+_G.ensureESPForPlayer = function(plr)
 	if espState.individual[plr] then return espState.individual[plr] end
 	local data = { hl = nil, bill = nil, label = nil, targetPart = nil, humanoid = nil }
 	espState.individual[plr] = data
 	return data
 end
 
-local function buildESP(plr)
+_G.buildESP = function(plr)
 	local data = ensureESPForPlayer(plr)
 	local char = plr.Character
 	if not char then return end
@@ -3575,12 +3575,12 @@ local function buildESP(plr)
 	return data
 end
 
-local function clearESP()
+_G.clearESP = function()
 	for _, child in ipairs(espFolder:GetChildren()) do child:Destroy() end
 	espState.individual = {}
 end
 
-local function refreshESP()
+_G.refreshESP = function()
 	if not (espState.enabled or globalESPEnabled) then return end
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr ~= LocalPlayer then
@@ -3608,7 +3608,7 @@ function togglePlayerESP(plr)
 	end
 end
 
-local function blinkESP(plr, duration)
+_G.blinkESP = function(plr, duration)
 	duration = duration or 3
 	local data = ensureESPForPlayer(plr)
 	if not data.active then
@@ -3667,7 +3667,7 @@ RunService.RenderStepped:Connect(function()
 	end
 end)
 
-local function applyGlobalESPToPlayer(plr)
+_G.applyGlobalESPToPlayer = function(plr)
 	if plr == LocalPlayer then return end
 	if not plr.Character then return end
 	local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
@@ -3720,7 +3720,7 @@ task.wait(0.05)
 end)()
 
 ;(function()
-local function typewriterEffect(label, text, speed)
+_G.typewriterEffect = function(label, text, speed)
 	speed = speed or 0.02
 	local chars = text:split("")
 	local current = ""
@@ -3732,7 +3732,7 @@ local function typewriterEffect(label, text, speed)
 end
 
 
-local function matrixRain(parent, duration)
+_G.matrixRain = function(parent, duration)
 	duration = duration or 1
 	local letters = {"0","1","/","\\","[","]","{","}","<",">","#","@","%","&","*","+","-","=","?","!"}
 	local startTime = tick()
@@ -3761,7 +3761,7 @@ local function matrixRain(parent, duration)
 	end)
 end
 
-local function bootSequence(onComplete)
+_G.bootSequence = function(onComplete)
 	-- BOOT ANIMATION v2 : "Genesis" - le panel s'assemble piece par piece avec effets cinematiques
 	-- Layer 1 boot-safe : pcall dans le task.spawn
 	local bootGui = Instance.new("ScreenGui")
