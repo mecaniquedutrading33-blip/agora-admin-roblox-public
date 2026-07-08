@@ -15,22 +15,22 @@ _G.SETTINGS = {
 _G._game = nil
 if game then _game = game end
 if not _game then
-	_G.ok, envGame = pcall(function() return getfenv().game end)
+	_G.ok, _G.envGame = pcall(function() return getfenv().game end)
 	if ok and envGame then _game = envGame end
 end
 if not _game then
-	_G.ok, sharedGame = pcall(function() return shared and shared.game end)
+	_G.ok, _G.sharedGame = pcall(function() return shared and shared.game end)
 	if ok and sharedGame then _game = sharedGame end
 end
 if not _game then
-	_G.ok, argGame = pcall(function() return nil end)
+	_G.ok, _G.argGame = pcall(function() return nil end)
 	if ok and argGame and typeof(argGame) == "Instance" and argGame:IsA("DataModel") then _game = argGame end
 end
 if not _game then
 	for i = 0, 10 do
-		_G.ok, env = pcall(function() return getfenv(i) end)
+		_G.ok, _G.env = pcall(function() return getfenv(i) end)
 		if ok and env then
-			_G.ok2, g = pcall(function() return env.game end)
+			_G.ok2, _G.g = pcall(function() return env.game end)
 			if ok2 and g then _game = g; break end
 		end
 	end
@@ -177,14 +177,14 @@ _G.SoundService = game:GetService("SoundService")
 -- Helper multi-fallback pour vérifier si un joueur peut chatter (client-only, pas d'accès serveur)
 _G._resolveCanChat = function(target, callback)
 	task.spawn(function()
-		_G.result, src = nil, "non vérifiable"
+		_G.result, _G.src = nil, "non vérifiable"
 		_G.uid = (typeof(target) == "Instance" and target:IsA("Player") and target.UserId) or tonumber(target)
 
 		-- 1) VRAIE réponse serveur : RemoteFunction CanUsersChatAsync
 		if uid and LocalPlayer then
 			_G.rf = ReplicatedStorage:FindFirstChild("AgoraCanChatRF")
 			if rf and rf:IsA("RemoteFunction") then
-				_G.ok, r = pcall(function() return rf:InvokeServer(uid) end)
+				_G.ok, _G.r = pcall(function() return rf:InvokeServer(uid) end)
 				if ok and r ~= nil then
 					result, src = r, "CanTalkWithMe"
 				end
@@ -193,21 +193,21 @@ _G._resolveCanChat = function(target, callback)
 
 		-- 2) API client native (moins fiable, indique juste "a le chat activé")
 		if result == nil and uid then
-			_G.ok, r = pcall(function() return TextChatService:CanUserChatAsync(uid) end)
+			_G.ok, _G.r = pcall(function() return TextChatService:CanUserChatAsync(uid) end)
 			if ok then result, src = r, "ChatEnabled" end
 		end
 
 		-- 3) Propriétés legacy
 		if result == nil and typeof(target) == "Instance" and target:IsA("Player") then
-			_G.ok, r = pcall(function() return target.CanChat end)
+			_G.ok, _G.r = pcall(function() return target.CanChat end)
 			if ok then result, src = r, "Player.CanChat" end
 		end
 		if result == nil and typeof(target) == "Instance" and target:IsA("Player") and LocalPlayer then
-			_G.ok, r = pcall(function() return target:CanChatWith(LocalPlayer.UserId) end)
+			_G.ok, _G.r = pcall(function() return target:CanChatWith(LocalPlayer.UserId) end)
 			if ok then result, src = r, "CanChatWith" end
 		end
 		if result == nil and typeof(target) == "Instance" and target:IsA("Player") then
-			_G.ok, r = pcall(function()
+			_G.ok, _G.r = pcall(function()
 				_G.chans = TextChatService:FindFirstChild("TextChannels")
 				if not chans then return nil end
 				_G.general = chans:FindFirstChild("RBXGeneral")
@@ -237,7 +237,7 @@ end
 -- Client-only chat detection: remember players whose public messages we actually saw
 _G._chatSeenPlayers = {}
 task.spawn(function()
-	_G.ok, svc = pcall(function() return game:GetService("TextChatService") end)
+	_G.ok, _G.svc = pcall(function() return game:GetService("TextChatService") end)
 	if not ok or not svc then return end
 	_G.ok2 = pcall(function()
 		svc.MessageReceived:Connect(function(msg)
@@ -290,7 +290,7 @@ end
 -- Helper HTTP multi-executeur (essaie TOUTES les methodes possibles)
 _G.httpGet = function(url)
 	-- 1) game:HttpGet (Solara, Xeno, etc.) - le plus commun
-	_G.ok, r = pcall(function() return game:HttpGet(url) end)
+	_G.ok, _G.r = pcall(function() return game:HttpGet(url) end)
 	if ok and r and r ~= "" then return r end
 	-- 2) game:HttpGet avec no-cache
 	ok, r = pcall(function() return game:HttpGet(url, true) end)
@@ -334,7 +334,7 @@ end
 
 _G.httpPost = function(url, body)
 	-- 1) game:HttpPostJSON / HttpGet avec body
-	_G.ok, r = pcall(function() return game:HttpGet(url, true, body) end)
+	_G.ok, _G.r = pcall(function() return game:HttpGet(url, true, body) end)
 	if ok and r and r ~= "" then return r end
 	-- 2) HttpService:PostAsync
 	ok, r = pcall(function() return HttpService:PostAsync(url, body) end)
@@ -358,7 +358,7 @@ if not _G.PanelMemory then
 end
 _G.panelMemory = _G.PanelMemory
 
-_G.character, humanoid, rootPart
+_G.character, _G.humanoid, _G.rootPart
 _G.updateCharacter = function()
 	character = LocalPlayer.Character
 	if character then
@@ -574,7 +574,7 @@ _=(function()
 
 	-- === SÉQUENCE CINÉMA ===
 	task.spawn(function()
-		_G.ok, err = pcall(function()
+		_G.ok, _G.err = pcall(function()
 			-- Étape 1 : fade in du backdrop depuis noir + whoosh grave
 			playSound(9114850423, 0.5)
 			backdrop.BackgroundTransparency = 0
@@ -1603,7 +1603,7 @@ _G.reparentChildrenToLocalScroll = function()
 	end
 end
 
-_G.dragging, dragStart, startPos
+_G.dragging, _G.dragStart, _G.startPos
 
 topBar.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -2404,7 +2404,7 @@ _G.createPlayerEntry = function(plr)
 	chatLbl.TextXAlignment = Enum.TextXAlignment.Left
 	chatLbl.Parent = card
 
-	_G._resolveCanChat(plr, function(canChat, src)
+	_G._resolveCanChat(plr, _G.function(canChat, _G.src)
 		if chatLbl and chatLbl.Parent then
 			if src == "CanTalkWithMe" then
 				if canChat == true then
@@ -2561,7 +2561,7 @@ _G.createPlayerEntry = function(plr)
 		_G.targetChar = plr.Character
 		_G.targetHrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
 		_G.targetHead = targetChar and targetChar:FindFirstChild("Head")
-		_G.arrowGui, arrowLbl
+		_G.arrowGui, _G.arrowLbl
 
 		if targetHead then
 			_G.arrowAdorn = Instance.new("BillboardGui")
@@ -3115,7 +3115,7 @@ _G.createPlayerEntry = function(plr)
 				img.BorderSizePixel = 0
 				img.Parent = scrollFrame
 				createCorner(img, 36)
-				_G.ok, content = pcall(function()
+				_G.ok, _G.content = pcall(function()
 					return Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
 				end)
 				if ok and content then
@@ -3295,7 +3295,7 @@ _G.createPlayerEntry = function(plr)
 								end
 								if p.lastOnline then
 									-- Parser lastOnline ISO -> délai relatif
-									_G.y, mo, da, h, mi, s = p.lastOnline:match("^(%d+)%-(%d+)%-(%d+)T(%d+):(%d+):(%d+)")
+									_G.y, _G.mo, _G.da, _G.h, _G.mi, _G.s = p.lastOnline:match("^(%d+)%-(%d+)%-(%d+)T(%d+):(%d+):(%d+)")
 									if y then
 										_G.epochThen = os.time({year=tonumber(y), month=tonumber(mo), day=tonumber(da), hour=tonumber(h), min=tonumber(mi), sec=tonumber(s)})
 										_G.diff = os.time() - epochThen
@@ -3549,7 +3549,7 @@ _G.buildESP = function(plr)
 	data.targetPart = targetPart
 	data.humanoid = hum
 	data.canChat = nil
-	_G._resolveCanChat(plr, function(canChat, src)
+	_G._resolveCanChat(plr, _G.function(canChat, _G.src)
 		if data then data.canChat = canChat end
 		data.canChatSrc = src
 	end)
@@ -4255,7 +4255,7 @@ _G.bootSequence = function(onComplete)
 
 	-- Layer 1 : pcall sur l'ensemble
 	task.defer(function()
-		_G.ok, err = pcall(function()
+		_G.ok, _G.err = pcall(function()
 			for _ = 1, 50 do
 				if not backdrop or not backdrop.Parent then break end
 				task.wait(0.1)
