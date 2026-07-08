@@ -50,10 +50,11 @@ end
 game = _game
 
 -- WRAP PANEL IN LOCAL FUNCTION to avoid Solara 200-register chunk limit
-local function _buildPanel()
+local _agoraOk = true
+
 if not game then
 	warn("[AGORA] game est nil — exécuteur incompatible ou loadstring mal formé")
-	return
+	_agoraOk = false
 end
 
 -- === LOADING SCREEN ===
@@ -9137,8 +9138,3 @@ end)
 -- 	pcall(function() mainFrame.Visible = true end)
 -- 	switchTab("Joueurs")
 -- end) end)
-
-end
--- Remove loading screen
-pcall(function() if loadingGui then loadingGui:Destroy() end end)
-_buildPanel()
