@@ -1,4 +1,4 @@
--- Agora Universelle Hub - Loader v18 (single file, no _buildPanel, original locals)
+-- Agora Universelle Hub - Loader v19 (2 parts, clean split)
 local B="https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file="
 local C="&_="..math.random(100000,999999)
 local function L(u)
@@ -13,4 +13,7 @@ local function L(u)
 	end
 	return false
 end
-L(B.."AgoraUniverselleHub.lua"..C)
+local o1=L(B.."AgoraPart1.lua"..C)
+if not o1 then warn("[A]P1 fail");return end
+local o2=L(B.."AgoraPart2.lua"..C)
+if not o2 then warn("[A]P2 fail")end
