@@ -12,34 +12,42 @@ local SETTINGS = {
 
 -- SAFEGUARD EXECUTEUR: certains loadstring ne passent pas 'game' en global
 -- On recupere game via getfenv, shared, ou le premier argument de loadstring
-if not game then
+local _game = nil
+if game then _game = game end
+if not _game then
 	local ok, envGame = pcall(function() return getfenv().game end)
-	if ok and envGame then
-		game = envGame
-	end
+	if ok and envGame then _game = envGame end
 end
-if not game then
+if not _game then
 	local ok, sharedGame = pcall(function() return shared and shared.game end)
-	if ok and sharedGame then
-		game = sharedGame
-	end
+	if ok and sharedGame then _game = sharedGame end
 end
-if not game then
-	-- Dernier recours: chercher dans tous les environnements
+if not _game then
+	local ok, argGame = pcall(function() return ... end)
+	if ok and argGame and typeof(argGame) == "Instance" and argGame:IsA("DataModel") then _game = argGame end
+end
+if not _game then
 	for i = 0, 10 do
 		local ok, env = pcall(function() return getfenv(i) end)
 		if ok and env then
 			local ok2, g = pcall(function() return env.game end)
-			if ok2 and g then
-				game = g
-				break
-			end
+			if ok2 and g then _game = g; break end
 		end
 	end
 end
-if not game then
+if not _game then
+	-- Dernier recours: chercher dans les globals
+	for k, v in pairs(getfenv()) do
+		if typeof(v) == "Instance" and pcall(function() return v:IsA("DataModel") end) then
+			_game = v; break
+		end
+	end
+end
+if not _game then
+	warn("[AGORA] game est nil - executeur incompatible")
 	return
 end
+game = _game
 
 -- WRAP PANEL IN LOCAL FUNCTION to avoid Solara 200-register chunk limit
 local function _buildPanel()
