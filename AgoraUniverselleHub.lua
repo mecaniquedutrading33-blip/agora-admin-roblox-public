@@ -50,11 +50,6 @@ end
 game = _game
 
 -- WRAP PANEL IN LOCAL FUNCTION to avoid Solara 200-register chunk limit
-_G._buildPanel = function()
-if not game then
-	warn("[AGORA] game est nil — exécuteur incompatible ou loadstring mal formé")
-	return
-end
 
 -- === LOADING SCREEN ===
 local Players = game:GetService("Players")
@@ -9139,6 +9134,6 @@ end)
 -- end) end)
 
 end
+
 -- Remove loading screen
 pcall(function() if loadingGui then loadingGui:Destroy() end end)
-_G._buildPanel()
