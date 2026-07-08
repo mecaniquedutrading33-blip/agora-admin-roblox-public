@@ -56,7 +56,120 @@ if not game then
 	return
 end
 
+-- === LOADING SCREEN ===
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TextChatService = game:GetService("TextChatService")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local SoundService = game:GetService("SoundService")
+
+-- Create loading screen
+local loadingGui = Instance.new("ScreenGui")
+loadingGui.Name = "AgoraLoading"
+loadingGui.ResetOnSpawn = false
+loadingGui.Parent = (game:GetService("CoreGui")) or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+
+local loadingBg = Instance.new("Frame")
+loadingBg.Size = UDim2.new(1, 0, 1, 0)
+loadingBg.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+loadingBg.BackgroundTransparency = 0
+loadingBg.BorderSizePixel = 0
+loadingBg.Parent = loadingGui
+
+local loadingLogo = Instance.new("TextLabel")
+loadingLogo.Size = UDim2.new(0, 300, 0, 60)
+loadingLogo.Position = UDim2.new(0.5, -150, 0.4, -30)
+loadingLogo.BackgroundTransparency = 1
+loadingLogo.Text = "AGORA"
+loadingLogo.Font = Enum.Font.GothamBold
+loadingLogo.TextSize = 48
+loadingLogo.TextColor3 = Color3.fromRGB(60, 180, 255)
+loadingLogo.TextXAlignment = Enum.TextXAlignment.Center
+loadingLogo.Parent = loadingBg
+
+local loadingSub = Instance.new("TextLabel")
+loadingSub.Size = UDim2.new(0, 300, 0, 30)
+loadingSub.Position = UDim2.new(0.5, -150, 0.4, 35)
+loadingSub.BackgroundTransparency = 1
+loadingSub.Text = "UNIVERSELLE HUB"
+loadingSub.Font = Enum.Font.Gotham
+loadingSub.TextSize = 18
+loadingSub.TextColor3 = Color3.fromRGB(120, 120, 140)
+loadingSub.TextXAlignment = Enum.TextXAlignment.Center
+loadingSub.Parent = loadingBg
+
+local loadingBarBg = Instance.new("Frame")
+loadingBarBg.Size = UDim2.new(0, 250, 0, 6)
+loadingBarBg.Position = UDim2.new(0.5, -125, 0.5, -3)
+loadingBarBg.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+loadingBarBg.BorderSizePixel = 0
+local barCorner = Instance.new("UICorner")
+barCorner.CornerRadius = UDim.new(0, 3)
+barCorner.Parent = loadingBarBg
+loadingBarBg.Parent = loadingBg
+
+local loadingBar = Instance.new("Frame")
+loadingBar.Size = UDim2.new(0, 0, 1, 0)
+loadingBar.BackgroundColor3 = Color3.fromRGB(60, 180, 255)
+loadingBar.BorderSizePixel = 0
+local barFillCorner = Instance.new("UICorner")
+barFillCorner.CornerRadius = UDim.new(0, 3)
+barFillCorner.Parent = loadingBar
+loadingBar.Parent = loadingBarBg
+
+local loadingText = Instance.new("TextLabel")
+loadingText.Size = UDim2.new(0, 300, 0, 20)
+loadingText.Position = UDim2.new(0.5, -150, 0.5, 15)
+loadingText.BackgroundTransparency = 1
+loadingText.Text = "Chargement..."
+loadingText.Font = Enum.Font.Gotham
+loadingText.TextSize = 13
+loadingText.TextColor3 = Color3.fromRGB(100, 100, 120)
+loadingText.TextXAlignment = Enum.TextXAlignment.Center
+loadingText.Parent = loadingBg
+
+-- Loading dots animation
+local dots = Instance.new("TextLabel")
+dots.Size = UDim2.new(0, 300, 0, 20)
+dots.Position = UDim2.new(0.5, -150, 0.5, 35)
+dots.BackgroundTransparency = 1
+dots.Text = ""
+dots.Font = Enum.Font.Gotham
+dots.TextSize = 20
+dots.TextColor3 = Color3.fromRGB(60, 180, 255)
+dots.TextXAlignment = Enum.TextXAlignment.Center
+dots.Parent = loadingBg
+
+-- Animate dots
+task.spawn(function()
+	local dotFrames = {"", ".", "..", "...", "....", "....."}
+	local i = 0
+	while loadingGui and loadingGui.Parent do
+		i = i % #dotFrames + 1
+		dots.Text = dotFrames[i]
+		task.wait(0.3)
+	end
+end)
+
+-- Helper: update loading bar
+local function updateLoad(progress, msg)
+	if loadingBar and loadingBar.Parent then
+		loadingBar:TweenSize(UDim2.new(progress, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
+	end
+	if loadingText then
+		loadingText.Text = msg or "Chargement..."
+	end
+	-- Petit wait pour étaler la charge
+	task.wait(0.05)
+end
+
+updateLoad(0.02, "Initialisation...")
+task.wait(0.1)
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TextChatService = game:GetService("TextChatService")
@@ -790,7 +903,7 @@ end
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.15"
+	versionLabel.Text = "v39.16"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -1887,6 +2000,8 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	}
 end
 
+updateLoad(0.08, "Modules joueurs...")
+task.wait(0.05)
 -- ============= JOUEURS =============
 local playerCards = {}
 local playerSearchQuery = "" -- query actuelle (vide = pas de filtre)
@@ -3365,6 +3480,8 @@ TextChatService.MessageReceived:Connect(function(msg)
 end)
 
 
+updateLoad(0.15, "ESP...")
+task.wait(0.05)
 -- ============= ESP =============
 local espFolder = Instance.new("Folder")
 espFolder.Name = "PanelESP"
@@ -3585,6 +3702,8 @@ task.spawn(function()
 end)
 
 
+updateLoad(0.22, "Animations...")
+task.wait(0.05)
 -- ============= ANIMATIONS =============
 local function typewriterEffect(label, text, speed)
 	speed = speed or 0.02
@@ -4154,6 +4273,8 @@ local function bootSequence(onComplete)
 	end)
 end
 
+updateLoad(0.30, "Mouvement...")
+task.wait(0.05)
 -- ============= MOVE =============
 local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
 local noclipState = { enabled = false }
@@ -4926,6 +5047,8 @@ end)
 chatIconsSwitch.set(true)
 
 
+updateLoad(0.40, "Auto Clicker...")
+task.wait(0.05)
 -- ============= AUTO CLICKER =============
 local autoClickState = {
 	toolActive = false,   -- le switch (faux tool dans le backpack)
@@ -5886,6 +6009,8 @@ RunService.Stepped:Connect(function(_, dt)
 	end)
 
 
+updateLoad(0.50, "Modules extra...")
+task.wait(0.05)
 -- ============= EXTRA =============
 local fullbrightState = { enabled = false, old = {} }
 local clickTPState = { enabled = false }
@@ -6120,6 +6245,8 @@ local function _initServerInfoCard()
 end
 _initServerInfoCard()
 
+updateLoad(0.60, "Aimbot...")
+task.wait(0.05)
 -- ============= AIMBOT =============
 -- Verrouille la souris sur la TÊTE du joueur le plus proche du CENTRE de l'écran
 -- - Filtre "pas à travers les murs" : raycast camera → head, vérifie qu'on touche le character
@@ -6517,6 +6644,8 @@ task.spawn(function()
 end)
 
 
+updateLoad(0.70, "Protections...")
+task.wait(0.05)
 -- ============= PROTECTIONS =============
 local protectionsState = {
 	antiFling = false,
@@ -7149,6 +7278,8 @@ local function _wrapRemotes()
 end
 _wrapRemotes() -- Exécute le wrap (IIFE pattern pour limiter les 200 registers)
 
+updateLoad(0.80, "Registry...")
+task.wait(0.05)
 -- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
@@ -8923,6 +9054,8 @@ function giveSpiderTool()
 	end)
 end
 
+updateLoad(0.90, "Chat commands...")
+task.wait(0.05)
 -- ============= CHAT COMMANDS =============
 -- Wrap dans IIFE avec paramètres pour éviter la limite d'upvalues (200)
 ;(function(_fly, _noclip, _esp, _fullbright, _zeroG, _localPlayer)
@@ -8942,6 +9075,8 @@ end
 	end)
 end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlayer)
 
+updateLoad(0.95, "Finalisation...")
+task.wait(0.05)
 -- ============= CRÉDITS =============
 ;(function(_mainFrame)
 	local credits = Instance.new("TextLabel")
@@ -9003,4 +9138,6 @@ end)
 -- end) end)
 
 end
+-- Remove loading screen
+pcall(function() if loadingGui then loadingGui:Destroy() end end)
 _buildPanel()
