@@ -49,12 +49,6 @@ if not _game then
 end
 game = _game
 
--- WRAP PANEL IN LOCAL FUNCTION to avoid Solara 200-register chunk limit
-local _agoraOk = true
-
-	warn("[AGORA] game est nil — exécuteur incompatible ou loadstring mal formé")
-	_agoraOk = false
-end
 
 -- === LOADING SCREEN ===
 local Players = game:GetService("Players")
@@ -440,15 +434,15 @@ mainFrame.Position = UDim2.new(0.5, -230, 0.5, -260)
 mainFrame.Visible = false  -- Sera révélé après l'intro
 -- S'assure que le panel reste visible et ne se fait pas pousser par le chat au démarrage
 task.delay(0, function()
-	_G.clampFrame = function()
-
-;(function()
+	local function clampFrame()
 		local abs = mainFrame.AbsoluteSize
 		local scr = screenGui.AbsoluteSize
 		local x = math.clamp(mainFrame.AbsolutePosition.X, 0, math.max(0, scr.X - abs.X))
 		local y = math.clamp(mainFrame.AbsolutePosition.Y, 0, math.max(0, scr.Y - abs.Y))
 		mainFrame.Position = UDim2.new(0, x, 0, y)
 	end
+
+;(function()
 	clampFrame()
 	task.wait(0.1)
 	clampFrame()
@@ -1536,15 +1530,16 @@ _G._initRegistrySearch = function()
 	-- cache les suggestions (pour pas qu'elles restent flottantes)
 end
 _initRegistrySearch()
-end)()
 
-;(function()
+-- ============= REGISTRY SCROLL =============
 -- registryScroll commence juste après la search box + un peu de gap pour les suggestions
 local registryScroll = Instance.new("ScrollingFrame")
 registryScroll.Size = UDim2.new(1, 0, 1, -40) -- 40px = search box (33) + gap (7)
 registryScroll.Position = UDim2.new(0, 0, 0, 40)
 registryScroll.BackgroundTransparency = 1
-registryScroll.ScrollBarThickness = 4
+end)()
+
+;(function()
 registryScroll.BorderSizePixel = 0
 registryScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 registryScroll.CanvasSize = UDim2.new(0, 0, 0, 2000)
@@ -2005,15 +2000,15 @@ end
 
 updateLoad(0.08, "Modules joueurs...")
 task.wait(0.05)
-end)()
-
-;(function()
+-- ============= JOUEURS =============
 local playerCards = {}
 local playerSearchQuery = "" -- query actuelle (vide = pas de filtre)
 
 -- searchBox de Joueurs = FILTRE LOCAL de la liste des joueurs connectés
 -- (la recherche officielle par username Roblox reste dans Registry)
-local playerSearchBox = Instance.new("TextBox")
+end)()
+
+;(function()
 playerSearchBox.Size = UDim2.new(1, -10, 0, 26)
 playerSearchBox.Position = UDim2.new(0, 5, 0, 8)
 playerSearchBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
@@ -2252,15 +2247,15 @@ end
 
 _G.createPlayerEntry = function(plr)
 	local card = Instance.new("Frame")
-end)()
-
-;(function()
 	card.Size = UDim2.new(1, -8, 0, 196)
 	card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 	card.BorderSizePixel = 0
 	card.LayoutOrder = plr.Name:byte(1)
 	card.Parent = playersScroll
 	createCorner(card, 10)
+end)()
+
+;(function()
 	createStroke(card, Color3.fromRGB(45, 45, 55), 1)
 
 	local nameLbl = Instance.new("TextLabel")
@@ -3405,15 +3400,15 @@ end)()
 
 _G.addPlayerCard = function(plr)
 	if plr == LocalPlayer then return end
-end)()
-
-;(function()
 	if playerCards[plr] and playerCards[plr].Parent then return end
 	createPlayerEntry(plr)
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
 
 _G.removePlayerCard = function(plr)
+end)()
+
+;(function()
 	if playerCards[plr] then
 		playerCards[plr]:Destroy()
 		playerCards[plr] = nil
@@ -3493,15 +3488,15 @@ end)
 
 updateLoad(0.15, "ESP...")
 task.wait(0.05)
-end)()
-
-;(function()
+-- ============= ESP =============
 local espFolder = Instance.new("Folder")
 espFolder.Name = "PanelESP"
 espFolder.Parent = Workspace
 
 local espState = { enabled = false, individual = {}, chatIcons = true }
+end)()
 
+;(function()
 _G.distanceColor = function(dist)
 	if dist < 50 then return Color3.fromRGB(80, 255, 120)
 	elseif dist < 200 then return Color3.fromRGB(255, 200, 80)
@@ -3717,15 +3712,15 @@ end)
 
 updateLoad(0.22, "Animations...")
 task.wait(0.05)
-end)()
-
-;(function()
+-- ============= ANIMATIONS =============
 _G.typewriterEffect = function(label, text, speed)
 	speed = speed or 0.02
 	local chars = text:split("")
 	local current = ""
 	for i = 1, #chars do
-		current = current .. chars[i]
+end)()
+
+;(function()
 		label.Text = current
 		task.wait(speed)
 	end
