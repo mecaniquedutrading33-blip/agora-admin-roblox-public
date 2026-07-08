@@ -51,7 +51,6 @@ game = _game
 
 -- WRAP PANEL IN LOCAL FUNCTION to avoid Solara 200-register chunk limit
 local function _buildPanel()
-;(function()
 if not game then
 	warn("[AGORA] game est nil — exécuteur incompatible ou loadstring mal formé")
 	return
@@ -442,6 +441,8 @@ mainFrame.Visible = false  -- Sera révélé après l'intro
 -- S'assure que le panel reste visible et ne se fait pas pousser par le chat au démarrage
 task.delay(0, function()
 	local function clampFrame()
+
+;(function()
 		local abs = mainFrame.AbsoluteSize
 		local scr = screenGui.AbsoluteSize
 		local x = math.clamp(mainFrame.AbsolutePosition.X, 0, math.max(0, scr.X - abs.X))
