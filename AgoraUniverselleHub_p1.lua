@@ -649,9 +649,9 @@ end)()
 
 
 local topBar = Instance.new("Frame")
-topBar.Size = UDim2.new(1, 0, 0, 38)
-topBar.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-topBar.BackgroundTransparency = 0.45
+topBar.Size = UDim2.new(1, 0, 0, 0)
+topBar.BackgroundTransparency = 1
+-- topBar.BackgroundTransparency = 0.45  -- overridden
 topBar.BorderSizePixel = 0
 topBar.Parent = mainFrame
 topBar.ZIndex = 2
@@ -799,7 +799,7 @@ _G.createButton = createButton
 
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1, -20, 0, 34)
-tabBar.Position = UDim2.new(0, 10, 0, 44)
+tabBar.Position = UDim2.new(0, 10, 0, 6)
 tabBar.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 tabBar.BorderSizePixel = 0
 tabBar.Parent = mainFrame
