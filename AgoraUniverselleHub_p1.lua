@@ -916,7 +916,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.16"
+	versionLabel.Text = "v39.17"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -960,6 +960,7 @@ _=(function()
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
+	"- Barre grise supérieure supprimée, onglets repositionnés pour meilleure visibilité",
 		"v38.97 — Tri remotes + traduction langue",
 		"+ Remotes interceptes tries en haut de la liste automatiquement",
 		"+ Auto-refresh de la liste remotes toutes les 5s",
