@@ -193,7 +193,6 @@ local function _resolveCanChat(target, callback)
 				if ok and r ~= nil then
 					result, src = r, "CanTalkWithMe"
 				end
-_G._resolveCanChat = _resolveCanChat
 			end
 		end
 
@@ -239,6 +238,7 @@ _G._resolveCanChat = _resolveCanChat
 		pcall(function() callback(result, src) end)
 	end)
 end
+_G._resolveCanChat = _resolveCanChat
 
 -- Client-only chat detection: remember players whose public messages we actually saw
 _G._chatSeenPlayers = {}
