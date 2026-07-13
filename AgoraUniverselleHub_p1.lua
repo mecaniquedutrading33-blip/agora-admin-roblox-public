@@ -918,7 +918,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.30"
+	versionLabel.Text = "v39.31"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -962,6 +962,9 @@ _=(function()
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
+		"v39.31 — Ajout systeme emotes (fenetre draggable + 16 emotes)",
+		"  Emotes: saluer, danser, rire, rouler par terre, rebondir, etc.",
+		"  Fenetre draggable avec bouton X + bouton stop emote",
 		"v39.30 — FIX compteurs live (lancements + en ligne)",
 		"  Edge Function: action=launch retourne maintenant total_launches + online_users",
 		"  Table agora_hub_launches creee dans Supabase",
@@ -1313,6 +1316,285 @@ _=(function()
 	credits.TextSize = 10
 	credits.TextColor3 = Color3.fromRGB(80, 80, 100)
 	credits.Parent = bgFrame
+	-- === SYSTEME D'EMOTES (fenetre draggable) ===
+	local function _initEmotes()
+		local emoteBtn = Instance.new("TextButton")
+		emoteBtn.Size = UDim2.new(0.7, 0, 0, 28)
+		emoteBtn.Position = UDim2.new(0.15, 0, 0, 312)
+		emoteBtn.BackgroundColor3 = Color3.fromRGB(35, 25, 50)
+		emoteBtn.Text = "🎭 Emotes"
+		emoteBtn.Font = Enum.Font.GothamSemibold
+		emoteBtn.TextSize = 13
+		emoteBtn.TextColor3 = Color3.fromRGB(220, 180, 255)
+		emoteBtn.BorderSizePixel = 0
+		emoteBtn.AutoButtonColor = true
+		emoteBtn.Parent = bgFrame
+		createCorner(emoteBtn, 8)
+		emoteBtn.MouseEnter:Connect(function() tween(emoteBtn, {BackgroundColor3 = Color3.fromRGB(50, 35, 70)}, 0.15) end)
+		emoteBtn.MouseLeave:Connect(function() tween(emoteBtn, {BackgroundColor3 = Color3.fromRGB(35, 25, 50)}, 0.15) end)
+
+		-- Fenetre draggable
+		local emoteWin = Instance.new("Frame")
+		emoteWin.Size = UDim2.new(0, 220, 0, 320)
+		emoteWin.Position = UDim2.new(0.5, -110, 0.3, 0)
+		emoteWin.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+		emoteWin.BorderSizePixel = 0
+		emoteWin.Visible = false
+		emoteWin.ZIndex = 200
+		emoteWin.Parent = screenGui
+		createCorner(emoteWin, 10)
+
+		-- Barre de titre (draggable)
+		local emoteTitleBar = Instance.new("Frame")
+		emoteTitleBar.Size = UDim2.new(1, 0, 0, 32)
+		emoteTitleBar.BackgroundColor3 = Color3.fromRGB(30, 25, 45)
+		emoteTitleBar.BorderSizePixel = 0
+		emoteTitleBar.ZIndex = 201
+		emoteTitleBar.Parent = emoteWin
+		createCorner(emoteTitleBar, 10)
+
+		local emoteTitle = Instance.new("TextLabel")
+		emoteTitle.Size = UDim2.new(1, -30, 1, 0)
+		emoteTitle.Position = UDim2.new(0, 8, 0, 0)
+		emoteTitle.BackgroundTransparency = 1
+		emoteTitle.Text = "🎭 Emotes"
+		emoteTitle.Font = Enum.Font.GothamBold
+		emoteTitle.TextSize = 14
+		emoteTitle.TextColor3 = Color3.fromRGB(200, 170, 255)
+		emoteTitle.TextXAlignment = Enum.TextXAlignment.Left
+		emoteTitle.ZIndex = 202
+		emoteTitle.Parent = emoteTitleBar
+
+		-- Bouton X
+		local emoteClose = Instance.new("TextButton")
+		emoteClose.Size = UDim2.new(0, 24, 0, 24)
+		emoteClose.Position = UDim2.new(1, -28, 0, 4)
+		emoteClose.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+		emoteClose.Text = "✕"
+		emoteClose.Font = Enum.Font.GothamBold
+		emoteClose.TextSize = 12
+		emoteClose.TextColor3 = Color3.new(1, 1, 1)
+		emoteClose.BorderSizePixel = 0
+		emoteClose.ZIndex = 202
+		emoteClose.Parent = emoteTitleBar
+		createCorner(emoteClose, 6)
+
+		-- Scroll des emotes
+		local emoteScroll = Instance.new("ScrollingFrame")
+		emoteScroll.Size = UDim2.new(1, -10, 1, -42)
+		emoteScroll.Position = UDim2.new(0, 5, 0, 36)
+		emoteScroll.BackgroundTransparency = 1
+		emoteScroll.BorderSizePixel = 0
+		emoteScroll.ScrollBarThickness = 3
+		emoteScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		emoteScroll.CanvasSize = UDim2.new(0, 0, 0, 400)
+		emoteScroll.ZIndex = 201
+		emoteScroll.Parent = emoteWin
+
+		local emoteLayout = Instance.new("UIListLayout")
+		emoteLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		emoteLayout.Padding = UDim.new(0, 3)
+		emoteLayout.Parent = emoteScroll
+
+		-- Helper: jouer une animation
+		local function playEmote(animId, isLoop)
+			pcall(function()
+				local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+				local hum = char:FindFirstChildOfClass("Humanoid")
+				if not hum then return end
+				local animator = hum:FindFirstChildOfClass("Animator")
+				if not animator then
+					animator = Instance.new("Animator")
+					animator.Parent = hum
+				end
+				if _G._currentEmoteTrack then
+					pcall(function() _G._currentEmoteTrack:Stop(0.3) end)
+				end
+				local anim = Instance.new("Animation")
+				anim.AnimationId = "rbxassetid://" .. tostring(animId)
+				local track = animator:LoadAnimation(anim)
+				track.Looped = isLoop or false
+				track:Play()
+				_G._currentEmoteTrack = track
+				if not isLoop then
+					task.delay(track.Length + 0.5, function()
+						pcall(function() if track then track:Stop(0.3) end end)
+					end)
+				end
+				playSound(6042053626, 0.2)
+			end)
+		end
+
+		-- Helper: rouler par terre
+		local function rollOnGround()
+			pcall(function()
+				local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+				local hum = char:FindFirstChildOfClass("Humanoid")
+				local root = char:FindFirstChild("HumanoidRootPart")
+				if not hum or not root then return end
+				if _G._currentEmoteTrack then
+					pcall(function() _G._currentEmoteTrack:Stop(0.3) end)
+				end
+				hum.PlatformStand = true
+				local bv = Instance.new("BodyVelocity")
+				bv.MaxForce = Vector3.new(50000, 0, 50000)
+				bv.Velocity = root.CFrame.LookVector * 30
+				bv.Parent = root
+				local bav = Instance.new("BodyAngularVelocity")
+				bav.AngularVelocity = Vector3.new(0, 0, 20)
+				bav.MaxTorque = Vector3.new(0, 0, 50000)
+				bav.P = 1000
+				bav.Parent = root
+				playSound(6042053626, 0.2)
+				task.delay(3, function()
+					pcall(function()
+						bv:Destroy()
+						bav:Destroy()
+						hum.PlatformStand = false
+					end)
+				end)
+			end)
+		end
+
+		-- Helper: saut custom (bounce)
+		local function customBounce()
+			pcall(function()
+				local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+				local hum = char:FindFirstChildOfClass("Humanoid")
+				local root = char:FindFirstChild("HumanoidRootPart")
+				if not hum or not root then return end
+				if _G._currentEmoteTrack then
+					pcall(function() _G._currentEmoteTrack:Stop(0.3) end)
+				end
+				local bv = Instance.new("BodyVelocity")
+				bv.MaxForce = Vector3.new(0, 50000, 0)
+				bv.Velocity = Vector3.new(0, 0, 0)
+				bv.Parent = root
+				local startTime = tick()
+				local danceConn
+				danceConn = game:GetService("RunService").Heartbeat:Connect(function()
+					if tick() - startTime > 4 then
+						danceConn:Disconnect()
+						pcall(function() bv:Destroy() end)
+						return
+					end
+					local t = tick() - startTime
+					bv.Velocity = Vector3.new(0, math.sin(t * 8) * 15, 0)
+				end)
+				playSound(6042053626, 0.2)
+			end)
+		end
+
+		-- Liste des emotes
+		local emotes = {
+			{label = "👋 Saluer", animId = 507770239, loop = false},
+			{label = "👆 Pointer", animId = 507770453, loop = false},
+			{label = "😄 Rire", animId = 507770818, loop = false},
+			{label = "🎉 Acclamer", animId = 507770677, loop = false},
+			{label = "🙇 S'incliner", animId = 507770143, loop = false},
+			{label = "💃 Danser 1", animId = 507771019, loop = false},
+			{label = "🕺 Danser 2", animId = 507771238, loop = false},
+			{label = "🕺 Danser 3", animId = 507771475, loop = false},
+			{label = "👏 Applaudir", animId = 507770239, loop = true},
+			{label = "🧍 S'asseoir", animId = 2506281703, loop = true},
+			{label = "🛌 S'allonger", animId = 14046439232, loop = true},
+			{label = "🔄 Rouler par terre", custom = "roll", loop = false},
+			{label = "🌀 Rebondir", custom = "bounce", loop = false},
+			{label = "⭐ Tournoyer", animId = 507771019, loop = true},
+			{label = "🎮 Poser gamin", animId = 507770677, loop = false},
+			{label = "👀 Observer", animId = 507770453, loop = true},
+		}
+
+		for idx, em in ipairs(emotes) do
+			local eBtn = Instance.new("TextButton")
+			eBtn.Size = UDim2.new(1, 0, 0, 28)
+			eBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+			eBtn.Text = em.label
+			eBtn.Font = Enum.Font.Gotham
+			eBtn.TextSize = 12
+			eBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
+			eBtn.BorderSizePixel = 0
+			eBtn.LayoutOrder = idx
+			eBtn.ZIndex = 201
+			eBtn.Parent = emoteScroll
+			createCorner(eBtn, 6)
+			eBtn.MouseEnter:Connect(function() tween(eBtn, {BackgroundColor3 = Color3.fromRGB(40, 40, 55)}, 0.12) end)
+			eBtn.MouseLeave:Connect(function() tween(eBtn, {BackgroundColor3 = Color3.fromRGB(25, 25, 35)}, 0.12) end)
+			eBtn.MouseButton1Click:Connect(function()
+				if em.custom == "roll" then
+					rollOnGround()
+				elseif em.custom == "bounce" then
+					customBounce()
+				else
+					playEmote(em.animId, em.loop)
+				end
+			end)
+		end
+
+		-- Bouton stop emote
+		local stopBtn = Instance.new("TextButton")
+		stopBtn.Size = UDim2.new(1, 0, 0, 30)
+		stopBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
+		stopBtn.Text = "⏹ Stop emote"
+		stopBtn.Font = Enum.Font.GothamBold
+		stopBtn.TextSize = 12
+		stopBtn.TextColor3 = Color3.fromRGB(255, 180, 180)
+		stopBtn.BorderSizePixel = 0
+		stopBtn.LayoutOrder = #emotes + 1
+		stopBtn.ZIndex = 201
+		stopBtn.Parent = emoteScroll
+		createCorner(stopBtn, 6)
+		stopBtn.MouseButton1Click:Connect(function()
+			pcall(function()
+				if _G._currentEmoteTrack then _G._currentEmoteTrack:Stop(0.3) end
+				local char = LocalPlayer.Character
+				if char then
+					local hum = char:FindFirstChildOfClass("Humanoid")
+					local root = char:FindFirstChild("HumanoidRootPart")
+					if hum then hum.PlatformStand = false end
+					if root then
+						for _, v in ipairs(root:GetChildren()) do
+							if v:IsA("BodyVelocity") or v:IsA("BodyAngularVelocity") then v:Destroy() end
+						end
+					end
+				end
+			end)
+			playSound(6042053626, 0.2)
+		end)
+
+		-- Dragging de la fenetre
+		local dragging = false
+		local dragStart, startPos
+		emoteTitleBar.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = true
+				dragStart = input.Position
+				startPos = emoteWin.Position
+			end
+		end)
+		emoteTitleBar.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = false
+			end
+		end)
+		game:GetService("UserInputService").InputChanged:Connect(function(input)
+			if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+				local delta = input.Position - dragStart
+				emoteWin.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+			end
+		end)
+
+		-- Toggle fenetre
+		emoteBtn.MouseButton1Click:Connect(function()
+			emoteWin.Visible = not emoteWin.Visible
+			playSound(6042053626, 0.2)
+		end)
+		emoteClose.MouseButton1Click:Connect(function()
+			emoteWin.Visible = false
+			playSound(6042053626, 0.2)
+		end)
+	end
+	_initEmotes()
 end)()
 
 local playersPage = createTab("Joueurs")
