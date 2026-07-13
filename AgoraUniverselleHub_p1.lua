@@ -324,7 +324,7 @@ local function httpGet(url)
 		ok, r = pcall(function() return req({Url=url, Method="GET"}).Body end)
 		if ok and r and r ~= "" then return r end
 	end
-_G.httpGet = httpGet
+
 	-- 7) request avec headers
 	if req then
 		ok, r = pcall(function() return req({
@@ -339,6 +339,7 @@ _G.httpGet = httpGet
 	if ok and r and r ~= "" then return r end
 	return nil
 end
+_G.httpGet = httpGet
 
 local function httpPost(url, body)
 	-- 1) game:HttpPostJSON / HttpGet avec body
@@ -917,7 +918,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-		versionLabel.Text = "v39.30"
+	versionLabel.Text = "v39.30"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -961,9 +962,11 @@ _=(function()
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
-		"v39.30 — Switch 'Tout activer/desactiver' dans Protections",
-		"  Un seul switch en haut de l'onglet qui bascule les 11 protections d'un coup",
-		"v39.21 — FIX CRITIQUE: safety net p1 + joinOrIndi local + buildRegistrySection export",
+		"v39.30 — FIX compteurs live (lancements + en ligne)",
+		"  Edge Function: action=launch retourne maintenant total_launches + online_users",
+		"  Table agora_hub_launches creee dans Supabase",
+		"  Fix: _G.httpGet deplace hors de la fonction (etait inside)",
+	"v39.21 — FIX CRITIQUE: safety net p1 + joinOrIndi local + buildRegistrySection export",
 		"  p1: 8 _G exports misplaced INSIDE functions (createSwitch, createSlider, startFly, stopFly, computePathTo, reparentChildrenToLocalScroll, _initRegistrySearch, jumpState bridge)",
 		"  p2: local joinOrIndi (nil dans sandbox loadstring)",
 		"  p2: _G.buildRegistrySection deplace hors de joinOrIndi (bug misplaced)",
