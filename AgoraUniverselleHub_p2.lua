@@ -36,6 +36,7 @@ local rootPart = _G._P1.rootPart
 local screenGui = _G._P1.screenGui
 local walkSpeedState = _G._P1.walkSpeedState
 local zeroGSwitch = _G._P1.zeroGSwitch
+local jumpState = _G._P1.jumpState
 
 -- RESTORE UTILITY FUNCTIONS FROM _G (loadstring sandbox doesn't share globals)
 local createCorner = _G.createCorner
