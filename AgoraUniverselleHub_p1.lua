@@ -2275,7 +2275,8 @@ local function showRestorePopup(lastName)
 	popup:TweenPosition(UDim2.new(0.5, -150, 0.5, -65), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.25, true)
 end
 
-_G.createPlayerEntry = function(plr)
+local addPlayerCard, removePlayerCard, refreshPlayersList  -- forward-declares
+local function createPlayerEntry(plr)
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(1, -8, 0, 196)
 	card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
@@ -3426,15 +3427,17 @@ _G.showRestorePopup = showRestorePopup
 					return card
 					end
 
-local function addPlayerCard(plr)
+function addPlayerCard(plr)
 	if plr == LocalPlayer then return end
 	if playerCards[plr] and playerCards[plr].Parent then return end
 	createPlayerEntry(plr)
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
+
+_G.createPlayerEntry = createPlayerEntry
 _G.addPlayerCard = addPlayerCard
 
-local function removePlayerCard(plr)
+function removePlayerCard(plr)
 	if playerCards[plr] then
 		playerCards[plr]:Destroy()
 		playerCards[plr] = nil
@@ -3448,7 +3451,7 @@ _G.removePlayerCard = removePlayerCard
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
 
-local function refreshPlayersList()
+function refreshPlayersList()
 	local existing = {}
 	for plr, card in pairs(playerCards) do
 		if card and card.Parent then
@@ -3456,7 +3459,6 @@ local function refreshPlayersList()
 		else
 			playerCards[plr] = nil
 		end
-_G.refreshPlayersList = refreshPlayersList
 	end
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr ~= LocalPlayer and not existing[plr] then
@@ -3465,6 +3467,8 @@ _G.refreshPlayersList = refreshPlayersList
 	end
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
+
+_G.refreshPlayersList = refreshPlayersList
 
 Players.PlayerAdded:Connect(function(plr)
 	task.wait(0.3)
