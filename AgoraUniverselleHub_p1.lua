@@ -643,6 +643,7 @@ _=(function()
 		pcall(function() if bootGui and bootGui.Parent then bootGui:Destroy() end end)
 		pcall(function()
 			_mainFrame.Visible = true
+			_mainFrame.BackgroundTransparency = 0.35
 		end)
 	end)
 end)()
@@ -916,7 +917,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.27"
+	versionLabel.Text = "v39.28"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -5164,6 +5165,7 @@ task.delay(8, function()
 		if mainFrame and not mainFrame.Visible then
 			warn("[AGORA] Safety net: forcing panel visible (p2 may have failed)")
 			mainFrame.Visible = true
+			mainFrame.BackgroundTransparency = 0.35
 		end
 	end)
 	pcall(function()
