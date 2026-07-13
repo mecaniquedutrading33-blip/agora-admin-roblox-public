@@ -916,7 +916,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.25"
+	versionLabel.Text = "v39.26"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -3549,7 +3549,7 @@ local function buildESP(plr)
 	local char = plr.Character
 	if not char then return end
 	local hum = char:FindFirstChildOfClass("Humanoid")
-	local targetPart = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+	local targetPart = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso") or char:FindFirstChildWhichIsA("BasePart")
 	if not targetPart then return end
 
 	if data.hl and data.hl.Adornee ~= char then data.hl:Destroy() data.hl = nil end
@@ -3703,7 +3703,7 @@ end)
 local function applyGlobalESPToPlayer(plr)
 	if plr == LocalPlayer then return end
 	if not plr.Character then return end
-	local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+	local hrp = plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character:FindFirstChild("Torso") or plr.Character:FindFirstChild("UpperTorso") or plr.Character:FindFirstChildWhichIsA("BasePart")
 	if not hrp then
 		task.delay(0.5, function() applyGlobalESPToPlayer(plr) end)
 		return
