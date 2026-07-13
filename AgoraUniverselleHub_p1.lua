@@ -917,7 +917,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.28"
+	versionLabel.Text = "v39.29"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -2368,6 +2368,7 @@ local function createPlayerEntry(plr)
 	local lastMoveReason = ""
 	local MOVE_FLAG_DURATION = 3
 	local lastChatCheck = 0
+	local lastKnownPos = nil
 
 	local infoLeft = Instance.new("TextLabel")
 	infoLeft.Size = UDim2.new(0.55, -6, 0, 14)
@@ -2922,18 +2923,63 @@ _G.showRestorePopup = showRestorePopup
 						local flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
 						local vSpeed = math.abs(vel.Y)
 						local floorY = hrp.Position.Y - 3
-						-- Seuil d'airborne plus fiable : ignore les sauts legit grâce à HumanoidState
-						local isAirborne = (floorY > 20 and vSpeed > 15) or (vSpeed > 70)
+						-- Check si le joueur est dans un véhicule / siège
+						local inVehicle = h.SeatPart ~= nil
+						-- Seuil d'airborne plus fiable : ignore les sauts legit
+						-- NE PAS flagger si en véhicule (avion, voiture, bateau)
+						local isAirborne = (floorY > 50 and vSpeed > 20) or (vSpeed > 120)
+						if inVehicle then isAirborne = false end
 						if flatSpeed > 2 then
 							stateText = (h.WalkSpeed > 18 or flatSpeed > 18) and "Running" or "Walking"
 						end
-						-- Flag info uniquement : vitesse réelle trop haute (et pas juste en train de sauter)
-						-- + vitesse verticale extrême + airborne suspect avec peu de WalkSpeed
-						local suspiciousHorizontal = (flatSpeed > 55) or (flatSpeed > 35 and flatSpeed > h.WalkSpeed * 2.2)
-						local suspiciousVertical = (vSpeed > 90)
-						local suspiciousAirborne = isAirborne and (flatSpeed > 25 or vSpeed > 60)
-						local now = tick()
+						if inVehicle then stateText = "In Vehicle" end
+						-- Détection de cheat AMÉLIORÉE v39.29 :
+						-- 1. Ignore les véhicules (avions, voitures, bateaux)
+						-- 2. Seuils plus hauts pour éviter les faux positifs
+						-- 3. Détection God Mode + Noclip + Téléportation
+						local suspiciousHorizontal = false
+						local suspiciousVertical = false
+						local suspiciousAirborne = false
+						local suspiciousTeleport = false
+						local suspiciousGodMode = false
+						local suspiciousNoclip = false
 						local reason = ""
+						if not inVehicle then
+							suspiciousHorizontal = (flatSpeed > 80) or (flatSpeed > 50 and flatSpeed > h.WalkSpeed * 3)
+							suspiciousVertical = (vSpeed > 150) and not (h:GetState() == Enum.HumanoidStateType.Freefall)
+							suspiciousAirborne = isAirborne and (flatSpeed > 40 or vSpeed > 80)
+						else
+							suspiciousHorizontal = (flatSpeed > 300) -- Véhicule: seulement extrême
+						end
+						-- God Mode
+						if h.Health > h.MaxHealth and h.MaxHealth > 0 then
+							suspiciousGodMode = true
+							reason = "God Mode " .. math.floor(h.Health) .. "/" .. math.floor(h.MaxHealth)
+						end
+						-- Téléportation instantanée
+						if lastKnownPos and not inVehicle then
+							local tpDelta = (hrp.Position - lastKnownPos).Magnitude
+							if tpDelta > 300 then
+								suspiciousTeleport = true
+								if reason == "" then reason = "TP " .. math.floor(tpDelta) .. " studs" end
+							end
+						end
+						lastKnownPos = hrp.Position
+						-- Noclip (character dans un mur)
+						if not inVehicle and not flyState.flying and not noclipState.enabled then
+							pcall(function()
+								local params = RaycastParams.new()
+									params.FilterType = Enum.RaycastFilterType.Include
+									params.FilterDescendantsInstances = {hrp}
+									local hit = Workspace:Raycast(hrp.Position, hrp.Size, params)
+									if hit and hit.Instance and not hit.Instance:IsDescendantOf(char) then
+										suspiciousNoclip = true
+										if reason == "" then reason = "Noclip (dans un mur)" end
+									end
+							end)
+						end
+						local now = tick()
+						if reason == "" then
 						if suspiciousHorizontal then
 							reason = "Vit. " .. math.floor(flatSpeed) .. " (max " .. math.floor(h.WalkSpeed) .. ")"
 						elseif suspiciousVertical then
@@ -2941,7 +2987,8 @@ _G.showRestorePopup = showRestorePopup
 						elseif suspiciousAirborne then
 							reason = "Airborne " .. math.floor(flatSpeed) .. "/s"
 						end
-						if suspiciousHorizontal or suspiciousVertical or suspiciousAirborne then
+						end
+						if suspiciousHorizontal or suspiciousVertical or suspiciousAirborne or suspiciousTeleport or suspiciousGodMode or suspiciousNoclip then
 							lastMoveFlagAt = now
 							lastMoveReason = reason
 							moveFlag = true
