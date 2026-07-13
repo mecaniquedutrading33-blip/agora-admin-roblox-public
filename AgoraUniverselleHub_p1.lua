@@ -649,9 +649,9 @@ end)()
 
 
 local topBar = Instance.new("Frame")
-topBar.Size = UDim2.new(1, 0, 0, 0)
-topBar.BackgroundTransparency = 1
--- topBar.BackgroundTransparency = 0.45  -- overridden
+topBar.Size = UDim2.new(1, 0, 0, 38)
+topBar.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+topBar.BackgroundTransparency = 0.45
 topBar.BorderSizePixel = 0
 topBar.Parent = mainFrame
 topBar.ZIndex = 2
@@ -799,7 +799,7 @@ _G.createButton = createButton
 
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1, -20, 0, 34)
-tabBar.Position = UDim2.new(0, 10, 0, 6)
+tabBar.Position = UDim2.new(0, 10, 0, 44)
 tabBar.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 tabBar.BorderSizePixel = 0
 tabBar.Parent = mainFrame
@@ -916,7 +916,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.18"
+	versionLabel.Text = "v39.19"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -960,11 +960,12 @@ _=(function()
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
-	"v39.18 — FIX CRITIQUE: fonctions utilitaires restorees dans Part 2",
-		"  Part 2 utilisait createSwitch/createButton/createCorner/tween/etc",
-		"  sans alias local -> nil dans Solara -> tout crash silencieusement",
-		"  18 fonctions maintenant restaurees via _G au debut de Part 2",
-		"- Barre grise supprimee, onglets repositionnes",
+	"v39.19 — RESTAURATION header bar (topBar 38px)",
+		"  Le commit precedent avait mis topBar a 0px -> header invisible",
+		"  Restaure: topBar 38px + tabBar Y=44 + logo + titre + boutons",
+		"v39.18 — FIX Part 2: 18 fonctions utilitaires restaurees",
+		"  createSwitch/createButton/createCorner/tween/etc nil dans Solara",
+	"- Barre grise supprimee, onglets repositionnes",
 		"v38.97 — Tri remotes + traduction langue",
 		"+ Remotes interceptes tries en haut de la liste",
 		"+ Auto-refresh remotes toutes les 5s",
