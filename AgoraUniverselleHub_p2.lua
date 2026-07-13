@@ -1822,6 +1822,11 @@ createProtectionSwitch("antiTeleport", "Anti Teleport", 94)
 createProtectionSwitch("antiFall", "Anti Fall", 136)
 createProtectionSwitch("antiKill", "Anti Kill / Spawn TP", 178)
 createProtectionSwitch("antiAFK", "Anti AFK (5 min)", 220)
+createProtectionSwitch("antiSpeedHack", "Anti Speed Hack", 262)
+createProtectionSwitch("antiGodMode", "Anti God Mode", 304)
+createProtectionSwitch("antiParalyze", "Anti Paralyze / Freeze", 346)
+createProtectionSwitch("antiBlind", "Anti Blind / Dark", 388)
+createProtectionSwitch("antiGrab", "Anti Grab / Fling CFrame", 430)
 
 RunService.Heartbeat:Connect(function()
 	updateCharacter()
@@ -1910,6 +1915,83 @@ task.spawn(function()
 					if humanoid then humanoid:Move(Vector3.new(0, 0, 0), false) end
 					protectionsState.antiAFKLastAction = now
 				end
+			end
+		end
+	end
+end)
+
+-- === NOUVELLES PROTECTIONS v39.29 ===
+task.spawn(function()
+	while true do
+		task.wait(0.1)
+		updateCharacter()
+		if not rootPart or not humanoid then continue end
+		
+		-- Anti Speed Hack: clamp vélocité horizontale
+		if protectionsState.antiSpeedHack then
+			local vel = rootPart.AssemblyLinearVelocity
+			local flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
+			local maxSpeed = (humanoid.WalkSpeed or 16) * 2.5 + 20
+			if flatSpeed > maxSpeed and not humanoid.Sit and not flyState.flying and not noclipState.enabled then
+				local ratio = maxSpeed / flatSpeed
+				rootPart.AssemblyLinearVelocity = Vector3.new(vel.X * ratio, vel.Y, vel.Z * ratio)
+			end
+		end
+		
+		-- Anti God Mode
+		if protectionsState.antiGodMode then
+			if humanoid.Health > humanoid.MaxHealth and humanoid.MaxHealth > 0 then
+				pcall(function() humanoid.Health = humanoid.MaxHealth end)
+			end
+		end
+		
+		-- Anti Paralyze
+		if protectionsState.antiParalyze then
+			if humanoid.PlatformStand then
+				pcall(function() humanoid.PlatformStand = false end)
+			end
+			if not protectionsState._legitWalkSpeed then
+				protectionsState._legitWalkSpeed = humanoid.WalkSpeed
+			end
+			if humanoid.WalkSpeed == 0 and protectionsState._legitWalkSpeed and protectionsState._legitWalkSpeed > 0 then
+				pcall(function() humanoid.WalkSpeed = protectionsState._legitWalkSpeed end)
+			end
+		end
+		
+		-- Anti Blind
+		if protectionsState.antiBlind then
+			if not protectionsState.lastLightingAmbient then
+				protectionsState.lastLightingAmbient = Lighting.Ambient
+				protectionsState.lastLightingBrightness = Lighting.Brightness
+			end
+			local amb = Lighting.Ambient
+			if amb.R < 0.1 and amb.G < 0.1 and amb.B < 0.1 then
+				pcall(function()
+					Lighting.Ambient = protectionsState.lastLightingAmbient or Color3.fromRGB(128, 128, 128)
+					Lighting.Brightness = protectionsState.lastLightingBrightness or 2
+				end)
+			end
+			if Lighting.FogEnd < 10 and Lighting.FogStart >= 0 then
+				pcall(function() Lighting.FogEnd = 1e9 end)
+			end
+		end
+		
+		-- Anti Grab
+		if protectionsState.antiGrab and not flyState.flying and not noclipState.enabled then
+			local pos = rootPart.Position
+			local lastPos = protectionsState.lastHrpPosition
+			if lastPos then
+				local delta = (pos - lastPos).Magnitude
+				if delta > 100 then
+					if protectionsState.lastSafeCFrame then
+						pcall(function() rootPart.CFrame = protectionsState.lastSafeCFrame end)
+					end
+					rootPart.AssemblyLinearVelocity = Vector3.zero
+				end
+			end
+			if not protectionsState.antiTeleport then
+				protectionsState.lastSafeCFrame = rootPart.CFrame
+				protectionsState.lastHrpPosition = pos
 			end
 		end
 	end
