@@ -460,7 +460,7 @@ task.delay(0, function()
 	clampFrame()
 end)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-mainFrame.BackgroundTransparency = 0.35
+mainFrame.BackgroundTransparency = 1  -- Cache le panel pendant l'intro (évite flash gris)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 mainFrame.ClipsDescendants = true
