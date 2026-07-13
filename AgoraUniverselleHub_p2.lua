@@ -1816,17 +1816,31 @@ _G.createProtectionSwitch = createProtectionSwitch
 	end)
 end
 
-createProtectionSwitch("antiFling", "Anti Fling", 10)
-createProtectionSwitch("antiSeat", "Anti Seat", 52)
-createProtectionSwitch("antiTeleport", "Anti Teleport", 94)
-createProtectionSwitch("antiFall", "Anti Fall", 136)
-createProtectionSwitch("antiKill", "Anti Kill / Spawn TP", 178)
-createProtectionSwitch("antiAFK", "Anti AFK (5 min)", 220)
-createProtectionSwitch("antiSpeedHack", "Anti Speed Hack", 262)
-createProtectionSwitch("antiGodMode", "Anti God Mode", 304)
-createProtectionSwitch("antiParalyze", "Anti Paralyze / Freeze", 346)
-createProtectionSwitch("antiBlind", "Anti Blind / Dark", 388)
-createProtectionSwitch("antiGrab", "Anti Grab / Fling CFrame", 430)
+-- Switch "Tout activer" — bascule toutes les protections d'un coup
+local allProtectionSwitches = {}
+local function addProtectionSwitch(name, label, y)
+	local sw = createProtectionSwitch(name, label, y)
+	table.insert(allProtectionSwitches, sw)
+	return sw
+end
+
+createSwitch(protectionsScroll, "Tout activer / desactiver", 0, function(on)
+	for _, sw in ipairs(allProtectionSwitches) do
+		pcall(function() sw.set(on) end)
+	end
+end)
+
+addProtectionSwitch("antiFling", "Anti Fling", 10)
+addProtectionSwitch("antiSeat", "Anti Seat", 52)
+addProtectionSwitch("antiTeleport", "Anti Teleport", 94)
+addProtectionSwitch("antiFall", "Anti Fall", 136)
+addProtectionSwitch("antiKill", "Anti Kill / Spawn TP", 178)
+addProtectionSwitch("antiAFK", "Anti AFK (5 min)", 220)
+addProtectionSwitch("antiSpeedHack", "Anti Speed Hack", 262)
+addProtectionSwitch("antiGodMode", "Anti God Mode", 304)
+addProtectionSwitch("antiParalyze", "Anti Paralyze / Freeze", 346)
+addProtectionSwitch("antiBlind", "Anti Blind / Dark", 388)
+addProtectionSwitch("antiGrab", "Anti Grab / Fling CFrame", 430)
 
 RunService.Heartbeat:Connect(function()
 	updateCharacter()
