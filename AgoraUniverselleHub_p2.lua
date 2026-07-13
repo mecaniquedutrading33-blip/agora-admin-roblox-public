@@ -3627,11 +3627,9 @@ buildRegistrySection(registryPage)
 -- Wrap dans une IIFE anonyme avec ';' pour économiser les registres du chunk
 ;(function(rp, rs, rl)
 	for _, child in ipairs(rp:GetChildren()) do
-		if child ~= rs and child:IsA("GuiObject") and child.Position.Y.Offset < 40 then
-			-- Search box + bouton X + suggestions: restent sur registryPage au-dessus du scroll
-		elseif child ~= rs then
+		if child ~= rs then
 			child.Parent = rs
-			if child.LayoutOrder == 0 then
+			if child:IsA("GuiObject") and child.LayoutOrder == 0 then
 				child.LayoutOrder = (#rs:GetChildren() - 1)
 			end
 		end
