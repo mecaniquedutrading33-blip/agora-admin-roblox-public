@@ -3714,8 +3714,8 @@ local function applyGlobalESPToPlayer(plr)
 		if data.hl then data.hl.Enabled = true end
 		if data.bill then data.bill.Enabled = true end
 	end
-_G.applyGlobalESPToPlayer = applyGlobalESPToPlayer
 end
+_G.applyGlobalESPToPlayer = applyGlobalESPToPlayer
 
 for _, plr in ipairs(Players:GetPlayers()) do
 	if plr ~= LocalPlayer then
