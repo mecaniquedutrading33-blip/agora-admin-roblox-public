@@ -1612,6 +1612,154 @@ local panicEnabled = false
 createSwitch(extraScroll, "Bouton panique (Shift+P)", 0, function(on)
 	panicEnabled = on
 end)
+-- === SERVER AUTHORITY DETECTION + DISABLE ===
+_=(function()
+	-- Frame container
+	local saCard = Instance.new("Frame")
+	saCard.Name = "ServerAuthorityCard"
+	saCard.Size = UDim2.new(1, -10, 0, 0)
+	saCard.AutomaticSize = Enum.AutomaticSize.Y
+	saCard.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	saCard.BorderSizePixel = 0
+	saCard.LayoutOrder = 999
+	saCard.Parent = extraScroll
+	createCorner(saCard, 8)
+	createStroke(saCard, Color3.fromRGB(80, 80, 120), 1)
+
+	local saPad = Instance.new("UIPadding")
+	saPad.PaddingTop = UDim.new(0, 8)
+	saPad.PaddingBottom = UDim.new(0, 8)
+	saPad.PaddingLeft = UDim.new(0, 12)
+	saPad.PaddingRight = UDim.new(0, 12)
+	saPad.Parent = saCard
+
+	-- Title
+	local saTitle = Instance.new("TextLabel")
+	saTitle.Size = UDim2.new(1, 0, 0, 16)
+	saTitle.BackgroundTransparency = 1
+	saTitle.Text = "Server Authority"
+	saTitle.Font = Enum.Font.GothamBold
+	saTitle.TextSize = 12
+	saTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
+	saTitle.TextXAlignment = Enum.TextXAlignment.Left
+	saTitle.Parent = saCard
+
+	-- Status label
+	local saStatus = Instance.new("TextLabel")
+	saStatus.Size = UDim2.new(1, 0, 0, 14)
+	saStatus.Position = UDim2.new(0, 0, 0, 18)
+	saStatus.BackgroundTransparency = 1
+	saStatus.Text = "Detection..."
+	saStatus.Font = Enum.Font.GothamSemibold
+	saStatus.TextSize = 11
+	saStatus.TextColor3 = Color3.fromRGB(150, 150, 160)
+	saStatus.TextXAlignment = Enum.TextXAlignment.Left
+	saStatus.Parent = saCard
+
+	-- Detect Server Authority
+	local saActive = false
+	local saMode = "Inconnu"
+	pcall(function()
+		local ws = game:GetService("Workspace")
+		if ws:FindFirstChild("AuthorityMode") or ws:IsA("Instance") then
+			local am = ws.AuthorityMode
+			if am == Enum.AuthorityMode.Server then
+				saActive = true
+				saMode = "ACTIF"
+			elseif am == Enum.AuthorityMode.Client then
+				saActive = false
+				saMode = "Desactive"
+			else
+				saMode = tostring(am)
+			end
+		else
+			-- AuthorityMode property might not exist (old games)
+			local ok2 = pcall(function()
+				local am = ws:GetAttribute("AuthorityMode")
+				if am then
+					saMode = tostring(am)
+					saActive = (am == "Server" or am == 1)
+				end
+			end)
+			if not ok2 then
+				saMode = "Non supporte"
+			end
+		end
+	end)
+
+	-- Update status display
+	if saActive then
+		saStatus.Text = "Status: ACTIF (fly/noclip bloques)"
+		saStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
+	else
+		saStatus.Text = "Status: " .. saMode .. " (fly/noclip OK)"
+		saStatus.TextColor3 = Color3.fromRGB(100, 220, 120)
+	end
+
+	-- Info label
+	local saInfo = Instance.new("TextLabel")
+	saInfo.Size = UDim2.new(1, 0, 0, 14)
+	saInfo.Position = UDim2.new(0, 0, 0, 36)
+	saInfo.BackgroundTransparency = 1
+	saInfo.Text = "Tenter de desactiver localement:"
+	saInfo.Font = Enum.Font.Gotham
+	saInfo.TextSize = 10
+	saInfo.TextColor3 = Color3.fromRGB(160, 160, 170)
+	saInfo.TextXAlignment = Enum.TextXAlignment.Left
+	saInfo.Parent = saCard
+
+	-- Disable button
+	local saBtn = Instance.new("TextButton")
+	saBtn.Size = UDim2.new(1, 0, 0, 30)
+	saBtn.Position = UDim2.new(0, 0, 0, 54)
+	saBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+	saBtn.Text = "Tenter de desactiver"
+	saBtn.Font = Enum.Font.GothamSemibold
+	saBtn.TextSize = 12
+	saBtn.TextColor3 = Color3.new(1, 1, 1)
+	saBtn.BorderSizePixel = 0
+	saBtn.AutoButtonColor = false
+	saBtn.Parent = saCard
+	createCorner(saBtn, 8)
+
+	saBtn.MouseButton1Click:Connect(function()
+		pcall(function()
+			local ws = game:GetService("Workspace")
+			-- Try setting AuthorityMode to Client
+			pcall(function()
+				ws.AuthorityMode = Enum.AuthorityMode.Client
+			end)
+			-- Try removing other SA properties
+			pcall(function()
+				if ws.NextGenerationReplication then ws.NextGenerationReplication = false end
+			end)
+			pcall(function()
+				if ws.PlayerScriptsUseInputActionSystem then ws.PlayerScriptsUseInputActionSystem = false end
+			end)
+			pcall(function()
+				if ws.UseFixedSimulation then ws.UseFixedSimulation = false end
+			end)
+		end)
+		-- Re-check
+		local stillActive = false
+		pcall(function()
+			local ws = game:GetService("Workspace")
+			if ws.AuthorityMode == Enum.AuthorityMode.Server then
+				stillActive = true
+			end
+		end)
+		if stillActive then
+			saStatus.Text = "Status: ACTIF (desactivation echouee)"
+			saStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
+			saBtn.Text = "Reessayer"
+		else
+			saStatus.Text = "Status: Desactive localement"
+			saStatus.TextColor3 = Color3.fromRGB(100, 220, 120)
+			saBtn.Text = "Reactiver"
+			saBtn.BackgroundColor3 = Color3.fromRGB(100, 180, 100)
+		end
+	end)
+end)()
 
 UserInputService.InputBegan:Connect(function(input, gpe)
 	if gpe then return end
