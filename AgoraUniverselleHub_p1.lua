@@ -916,7 +916,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.20"
+	versionLabel.Text = "v39.21"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -960,8 +960,8 @@ _=(function()
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
-	"v39.20 — FIX CRITIQUE: safety net p1 + joinOrIndi local + buildRegistrySection export",
-		"  p1: safety net 8s force visible + destroy loading si p2 crash",
+	"v39.21 — FIX CRITIQUE: safety net p1 + joinOrIndi local + buildRegistrySection export",
+		"  p1: 8 _G exports misplaced INSIDE functions (createSwitch, createSlider, startFly, stopFly, computePathTo, reparentChildrenToLocalScroll, _initRegistrySearch, jumpState bridge)",
 		"  p2: local joinOrIndi (nil dans sandbox loadstring)",
 		"  p2: _G.buildRegistrySection deplace hors de joinOrIndi (bug misplaced)",
 		"  p2: error logging sur runtime crash",
@@ -1417,7 +1417,6 @@ local function _initRegistrySearch()
 		if string.sub(name, 1, #query) == query then
 			return 1000 - #name -- plus court = mieux
 		end
-_G._initRegistrySearch = _initRegistrySearch
 
 		-- Sous-string match = bon score
 		local sPos = string.find(name, query, 1, true)
@@ -1556,6 +1555,8 @@ _G._initRegistrySearch = _initRegistrySearch
 	-- Cliquer sur le frame parent (registryPage) en dehors de la search box
 	-- cache les suggestions (pour pas qu'elles restent flottantes)
 end
+
+_G._initRegistrySearch = _initRegistrySearch
 _initRegistrySearch()
 
 -- ============= REGISTRY SCROLL =============
@@ -1993,7 +1994,6 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 		tween(track, {BackgroundColor3 = state and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(60, 60, 70)}, dur)
 		tween(knob, {Position = state and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)}, dur)
 	end
-_G.createSwitch = createSwitch
 	update(false)
 
 	local function toggle()
@@ -2026,6 +2026,8 @@ _G.createSwitch = createSwitch
 		get = function() return state end
 	}
 end
+
+_G.createSwitch = createSwitch
 
 updateLoad(0.08, "Modules joueurs...")
 task.wait(0.05)
@@ -4540,7 +4542,6 @@ local function createSlider(parent, labelText, yPos, min, max, default, callback
 		local mult = 10 ^ decimals
 		return math.floor(v * mult + 0.5) / mult
 	end
-_G.createSlider = createSlider
 	local container = Instance.new("Frame")
 	container.Size = UDim2.new(1, -16, 0, 50)
 	container.Position = UDim2.new(0, 8, 0, yPos)
@@ -4639,6 +4640,8 @@ _G.createSlider = createSlider
 	}
 end
 
+_G.createSlider = createSlider
+
 local flySwitch = createSwitch(movePage, "Fly", 10, function(on)
 	if on then startFly() else stopFly() end
 end)
@@ -4730,7 +4733,6 @@ local function computePathTo(targetPos)
 		local hit = Workspace:Raycast(from, dir.Unit * dist, params)
 		return hit == nil
 	end
-_G.computePathTo = computePathTo
 
 	-- Helper: find best height for a direction
 	local function findBestHeight(from, dir, dist)
@@ -4876,6 +4878,9 @@ _G.computePathTo = computePathTo
 	end
 	return {}
 end
+
+_G.computePathTo = computePathTo
+
 local gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, function(on)
 	gotoWalkState.enabled = on
 	if not on then
@@ -5141,6 +5146,7 @@ _G._P1.rootPart = rootPart
 _G._P1.screenGui = screenGui
 _G._P1.walkSpeedState = walkSpeedState
 _G._P1.zeroGSwitch = zeroGSwitch
+_G._P1.jumpState = jumpState
 
 -- SAFETY NET: reveal panel + switchTab + destroy loading GUI even if Part 2 crashes
 -- This runs in p1 so the panel is ALWAYS visible even if p2 fails to load
