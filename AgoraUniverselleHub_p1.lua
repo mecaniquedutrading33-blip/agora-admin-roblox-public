@@ -590,7 +590,7 @@ _=(function()
 	task.spawn(function()
 		local ok, err = pcall(function()
 			-- Étape 1 : fade in du backdrop depuis noir + whoosh grave
-			playSound(9114850423, 0.5)
+			playSound(4590662766, 0.5)
 			backdrop.BackgroundTransparency = 0
 
 			-- Étape 2 : titre "Agora Hub" fade in (0.5s) + ding doux
@@ -916,7 +916,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.21"
+	versionLabel.Text = "v39.22"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -1629,10 +1629,11 @@ local function reparentChildrenToLocalScroll()
 			if child:IsA("GuiObject") and child.LayoutOrder == 0 then
 				child.LayoutOrder = (#localScroll:GetChildren() - 1)
 			end
-_G.reparentChildrenToLocalScroll = reparentChildrenToLocalScroll
 		end
 	end
 end
+
+_G.reparentChildrenToLocalScroll = reparentChildrenToLocalScroll
 
 local dragging, dragStart, startPos
 
@@ -4326,6 +4327,7 @@ local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
 local platformState = { enabled = false, part = nil, y = 0, offset = 0 }
 
+local flySwitch  -- forward-declare (assigned later)
 local function stopFly()
 	if not flyState.flying then return end
 	flyState.flying = false
@@ -4344,8 +4346,9 @@ local function stopFly()
 	if protectionsState then
 		protectionsState.antiTeleportGraceUntil = tick() + 0.4
 	end
-_G.stopFly = stopFly
 end
+
+_G.stopFly = stopFly
 
 -- ============= FLY MOBILE JOYSTICK (auto-show on touch devices) =============
 ;(function(_fly, _screenGui)
@@ -4504,7 +4507,6 @@ local function startFly()
 	if flyState.isMobile and flyState.isMobile() and flyState.showMobileUi then
 		flyState.showMobileUi(true)
 	end
-_G.startFly = startFly
 
 	flyState.loop = RunService.RenderStepped:Connect(function()
 		updateCharacter()
@@ -4534,6 +4536,8 @@ _G.startFly = startFly
 		end
 	end)
 end
+
+_G.startFly = startFly
 
 local function createSlider(parent, labelText, yPos, min, max, default, callback, color, decimals, step)
 	decimals = decimals or 0
@@ -4642,7 +4646,7 @@ end
 
 _G.createSlider = createSlider
 
-local flySwitch = createSwitch(movePage, "Fly", 10, function(on)
+flySwitch = createSwitch(movePage, "Fly", 10, function(on)
 	if on then startFly() else stopFly() end
 end)
 
