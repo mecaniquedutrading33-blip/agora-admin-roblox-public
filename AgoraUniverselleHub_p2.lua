@@ -37,6 +37,27 @@ local screenGui = _G._P1.screenGui
 local walkSpeedState = _G._P1.walkSpeedState
 local zeroGSwitch = _G._P1.zeroGSwitch
 
+-- RESTORE UTILITY FUNCTIONS FROM _G (loadstring sandbox doesn't share globals)
+local createCorner = _G.createCorner
+local createStroke = _G.createStroke
+local createButton = _G.createButton
+local createSwitch = _G.createSwitch
+local createSlider = _G.createSlider
+local switchTab = _G.switchTab
+local updateLoad = _G.updateLoad
+local tween = _G.tween
+local shutdownPanel = _G.shutdownPanel
+local startFly = _G.startFly
+local stopFly = _G.stopFly
+local updateCharacter = _G.updateCharacter
+local refreshESP = _G.refreshESP
+local clearESP = _G.clearESP
+local computePathTo = _G.computePathTo
+local visualizeWaypoints = _G.visualizeWaypoints
+local clearWalkVisuals = _G.clearWalkVisuals
+local reparentChildrenToLocalScroll = _G.reparentChildrenToLocalScroll
+local httpGet = _G.httpGet
+
 -- ============= AUTO CLICKER =============
 local autoClickState = {
 	toolActive = false,   -- le switch (faux tool dans le backpack)
