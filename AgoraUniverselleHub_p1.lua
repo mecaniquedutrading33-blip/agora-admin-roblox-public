@@ -238,6 +238,7 @@ local function _resolveCanChat(target, callback)
 		pcall(function() callback(result, src) end)
 	end)
 end
+_G._resolveCanChat = _resolveCanChat
 
 -- Client-only chat detection: remember players whose public messages we actually saw
 _G._chatSeenPlayers = {}
@@ -915,7 +916,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.22"
+	versionLabel.Text = "v39.24"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -2084,6 +2085,7 @@ playersScroll.Position = UDim2.new(0, 5, 0, 40)
 playersScroll.BackgroundTransparency = 1
 playersScroll.ScrollBarThickness = 4
 playersScroll.BorderSizePixel = 0
+playersScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 playersScroll.Parent = playersPage
 
 -- Stats serveur déplacées vers l'onglet Extra (card "Stats serveur")
@@ -2274,7 +2276,8 @@ local function showRestorePopup(lastName)
 	popup:TweenPosition(UDim2.new(0.5, -150, 0.5, -65), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.25, true)
 end
 
-_G.createPlayerEntry = function(plr)
+local addPlayerCard, removePlayerCard, refreshPlayersList  -- forward-declares
+local function createPlayerEntry(plr)
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(1, -8, 0, 196)
 	card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
@@ -2555,6 +2558,7 @@ _G.createPlayerEntry = function(plr)
 		if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and rootPart then
 			rootPart.CFrame = plr.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
 		end
+_G.showRestorePopup = showRestorePopup
 	end)
 
 	specBtn.MouseButton1Click:Connect(function()
@@ -2884,7 +2888,6 @@ _G.createPlayerEntry = function(plr)
 	task.spawn(function()
 		while card.Parent do
 			task.wait(0.6)
-			pcall(function()
 			updateCharacter()
 			local char = plr.Character
 			if char and rootPart then
@@ -2991,8 +2994,7 @@ _G.createPlayerEntry = function(plr)
 				speedLbl.Text = "Vit: N/A | Saut: N/A"
 				statusLbl.Text = "Statut: N/A"
 			end
-		end) -- close pcall
-	end
+		end
 	end)
 
 	-- === ENRICHISSEMENT v37.1 : temps de connexion + badge ordre d'arrivée ===
@@ -3426,15 +3428,17 @@ _G.createPlayerEntry = function(plr)
 					return card
 					end
 
-local function addPlayerCard(plr)
+function addPlayerCard(plr)
 	if plr == LocalPlayer then return end
 	if playerCards[plr] and playerCards[plr].Parent then return end
 	createPlayerEntry(plr)
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
+
+_G.createPlayerEntry = createPlayerEntry
 _G.addPlayerCard = addPlayerCard
 
-local function removePlayerCard(plr)
+function removePlayerCard(plr)
 	if playerCards[plr] then
 		playerCards[plr]:Destroy()
 		playerCards[plr] = nil
@@ -3448,7 +3452,7 @@ _G.removePlayerCard = removePlayerCard
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
 
-local function refreshPlayersList()
+function refreshPlayersList()
 	local existing = {}
 	for plr, card in pairs(playerCards) do
 		if card and card.Parent then
@@ -3459,15 +3463,17 @@ local function refreshPlayersList()
 	end
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr ~= LocalPlayer and not existing[plr] then
-			pcall(createPlayerEntry, plr)
+			createPlayerEntry(plr)
 		end
 	end
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end
 
+_G.refreshPlayersList = refreshPlayersList
+
 Players.PlayerAdded:Connect(function(plr)
 	task.wait(0.3)
-	pcall(addPlayerCard, plr)
+	addPlayerCard(plr)
 end)
 Players.PlayerRemoving:Connect(function(plr)
 	task.wait(0.1)
