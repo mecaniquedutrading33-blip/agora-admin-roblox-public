@@ -916,7 +916,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.19"
+	versionLabel.Text = "v39.20"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -960,7 +960,12 @@ _=(function()
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
-	"v39.19 — RESTAURATION header bar (topBar 38px)",
+	"v39.20 — FIX CRITIQUE: safety net p1 + joinOrIndi local + buildRegistrySection export",
+		"  p1: safety net 8s force visible + destroy loading si p2 crash",
+		"  p2: local joinOrIndi (nil dans sandbox loadstring)",
+		"  p2: _G.buildRegistrySection deplace hors de joinOrIndi (bug misplaced)",
+		"  p2: error logging sur runtime crash",
+		"v39.19 — RESTAURATION header bar (topBar 38px)",
 		"  Le commit precedent avait mis topBar a 0px -> header invisible",
 		"  Restaure: topBar 38px + tabBar Y=44 + logo + titre + boutons",
 		"v39.18 — FIX Part 2: 18 fonctions utilitaires restaurees",
@@ -5136,6 +5141,27 @@ _G._P1.screenGui = screenGui
 _G._P1.walkSpeedState = walkSpeedState
 _G._P1.zeroGSwitch = zeroGSwitch
 
+-- SAFETY NET: reveal panel + switchTab + destroy loading GUI even if Part 2 crashes
+-- This runs in p1 so the panel is ALWAYS visible even if p2 fails to load
+task.delay(8, function()
+	pcall(function()
+		if mainFrame and not mainFrame.Visible then
+			warn("[AGORA] Safety net: forcing panel visible (p2 may have failed)")
+			mainFrame.Visible = true
+		end
+	end)
+	pcall(function()
+		if pages and pages["Home"] and not pages["Home"].Visible then
+			switchTab("Home")
+		end
+	end)
+	pcall(function()
+		if loadingGui and loadingGui.Parent then
+			loadingGui:Destroy()
+		end
+	end)
+end)
+
 -- AUTO-LOAD PART 2 (split for Solara 200KB limit)
 task.spawn(function()
 	local url = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p2.lua&nocache=" .. tick()
@@ -5145,7 +5171,10 @@ task.spawn(function()
 	if ok and code and #code > 100 then
 		local fn, err = loadstring(code)
 		if fn then
-			pcall(fn)
+			local ok2, err2 = pcall(fn)
+			if not ok2 then
+				warn("[AGORA] Part 2 runtime error: " .. tostring(err2))
+			end
 		else
 			warn("[AGORA] Part 2 load error: " .. tostring(err))
 		end
