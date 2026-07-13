@@ -57,6 +57,17 @@ local visualizeWaypoints = _G.visualizeWaypoints
 local clearWalkVisuals = _G.clearWalkVisuals
 local reparentChildrenToLocalScroll = _G.reparentChildrenToLocalScroll
 local httpGet = _G.httpGet
+local joinOrIndi = _G.joinOrIndi or function(list, sep, max)
+	if not list or type(list) ~= "table" or #list == 0 then
+		return "Indisponible"
+	end
+	local n = math.min(#list, max or #list)
+	local parts = {}
+	for i = 1, n do
+		parts[#parts + 1] = tostring(list[i])
+	end
+	return table.concat(parts, sep)
+end
 
 -- ============= AUTO CLICKER =============
 local autoClickState = {
@@ -2388,9 +2399,10 @@ _G.joinOrIndi = function(list, sep, max)
 	for i = 1, n do
 		parts[#parts + 1] = tostring(list[i])
 	end
-_G.buildRegistrySection = buildRegistrySection
 	return table.concat(parts, sep)
 end
+
+_G.buildRegistrySection = buildRegistrySection
 
 -- ============= TAGS CUSTOMS + BARRE D'ACTIONS + DEVICE DETECTION =============
 -- Tout est wrappé dans une IIFE pour économiser les locals top-level (limite CLI Luau 200)
