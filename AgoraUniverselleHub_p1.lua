@@ -1901,7 +1901,6 @@ local function shutdownPanel()
 			for _, p in ipairs(character:GetDescendants()) do
 				if p:IsA("BasePart") then p.CanCollide = true end
 			end
-_G.shutdownPanel = shutdownPanel
 		end
 	end
 	if globalESPSwitch and globalESPSwitch.get and globalESPSwitch.get() then
@@ -1945,6 +1944,8 @@ _G.shutdownPanel = shutdownPanel
 		Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
 	end)
 end
+
+_G.shutdownPanel = shutdownPanel
 
 local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	local container = Instance.new("Frame")
@@ -5161,6 +5162,9 @@ task.delay(8, function()
 		end
 	end)
 end)
+
+-- Destroy loading GUI early (it was never visible anyway, all transparency=1)
+pcall(function() if loadingGui and loadingGui.Parent then loadingGui:Destroy() end end)
 
 -- AUTO-LOAD PART 2 (split for Solara 200KB limit)
 task.spawn(function()
