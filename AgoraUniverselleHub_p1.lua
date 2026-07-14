@@ -595,13 +595,13 @@ _=(function()
 			backdrop.BackgroundTransparency = 0
 
 			-- Étape 2 : titre "Agora Hub" fade in (0.5s) + ding doux
-			task.wait(0.3)
-			_tween(title, {TextTransparency = 0}, 0.5)
-			_tween(subtitle, {TextTransparency = 0}, 0.5)
-			playSound(6042053626, 0.25)
+			task.wait(0.15)
+			_tween(title, {TextTransparency = 0}, 0.3)
+			_tween(subtitle, {TextTransparency = 0}, 0.3)
+			playSound(6042053626, 0.2)
 
-			-- Étape 3 : pause 1s pour lire le titre
-			task.wait(1.0)
+			-- Étape 3 : pause courte pour lire le titre
+			task.wait(0.4)
 
 			-- Étape 4 : BOUM - flash blanc brutal + tag scale 0→1.3→1 + boom impact fort
 			flash.BackgroundTransparency = 0
@@ -621,8 +621,8 @@ _=(function()
 			-- Stabilise à la taille finale avec la bonne rotation
 			_tween(uniTag, {Size = UDim2.new(1.1, 0, 0, 130), Rotation = -8}, 0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-			-- Étape 5 : le tag reste affiché 1.2s
-			task.wait(1.2)
+			-- Étape 5 : le tag reste affiché brièvement
+			task.wait(0.5)
 
 			-- Étape 6 : fade out de tout
 			_tween(title, {TextTransparency = 1}, 0.3)
@@ -630,10 +630,10 @@ _=(function()
 			_tween(uniTag, {TextTransparency = 1, Rotation = -12}, 0.4)
 			_tween(stampTop, {BackgroundTransparency = 1}, 0.3)
 			_tween(stampBot, {BackgroundTransparency = 1}, 0.3)
-			_tween(vignette, {ImageTransparency = 1}, 0.3)
-			task.wait(0.3)
-			_tween(backdrop, {BackgroundTransparency = 1}, 0.4)
-			task.wait(0.5)
+			_tween(vignette, {ImageTransparency = 1}, 0.2)
+			task.wait(0.15)
+			_tween(backdrop, {BackgroundTransparency = 1}, 0.25)
+			task.wait(0.2)
 		end)
 
 		if not ok then
@@ -918,7 +918,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.39"
+	versionLabel.Text = "v39.40"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -4573,6 +4573,20 @@ local function startFly()
 
 	if humanoid then humanoid.PlatformStand = true end
 
+	-- SURELEVATION: lever le personnage pendant 1s pour eviter le bruit de marche
+	flyState.liftOffTime = tick() + 1.0
+	task.spawn(function()
+		while flyState.flying and tick() < (flyState.liftOffTime or 0) do
+			task.wait(0.03)
+			if rootPart and flyState.vel then
+				-- Monter lentement de 3 studs pendant la 1ere seconde
+				local remaining = (flyState.liftOffTime or 0) - tick()
+				local liftSpeed = math.max(remaining, 0) * 8  -- decroit de 8 a 0
+				flyState.vel.Velocity = Vector3.new(0, liftSpeed, 0)
+			end
+		end
+	end)
+
 	-- Show mobile UI on touch devices
 	if flyState.isMobile and flyState.isMobile() and flyState.showMobileUi then
 		flyState.showMobileUi(true)
@@ -4584,42 +4598,37 @@ local function startFly()
 		-- Re-attach body movers if rootPart changed (respawn)
 		if flyState.gyro and flyState.gyro.Parent ~= rootPart then flyState.gyro.Parent = rootPart end
 		if flyState.vel and flyState.vel.Parent ~= rootPart then flyState.vel.Parent = rootPart end
-		if flyState.gyro then
-			-- Personnage droit par defaut + penche naturellement quand il bouge
-			local camLook = Camera.CFrame.LookVector
-			local flatLook = Vector3.new(camLook.X, 0, camLook.Z)
-			if flatLook.Magnitude > 0.01 then
-				-- Yaw = direction horizontale de la camera
-				local yawCFrame = CFrame.new(rootPart.Position, rootPart.Position + flatLook)
-				-- Si on bouge, on penche legerement dans la direction du mouvement
-				local pitch = 0
-				if move.Magnitude > 0.1 then
-					-- Pencher vers l'avant (positif) ou l'arriere (negatif) selon le mouvement
-					local forwardDot = move:Dot(Camera.CFrame.LookVector)
-					local rightDot = move:Dot(Camera.CFrame.RightVector)
-					-- Pitch: max ~25 degres vers l'avant, 15 vers l'arriere
-					pitch = math.clamp(forwardDot * 0.15, -0.26, 0.44)
-				end
-				-- Appliquer yaw + pitch (pencher sur l'axe X local)
-				flyState.gyro.CFrame = yawCFrame * CFrame.Angles(pitch, 0, 0)
-			end
-		end
 
+		-- Calculer le mouvement AVANT le gyro (evite le forward-ref nil)
 		local move = Vector3.zero
-		-- PC controls (clavier)
 		if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move = move + Camera.CFrame.LookVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - Camera.CFrame.LookVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then move = move - Camera.CFrame.RightVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + Camera.CFrame.RightVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
 		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move = move - Vector3.new(0, 1, 0) end
-		-- Mobile controls (joystick + boutons)
 		if flyState.mobileInput and flyState.mobileInput.Magnitude > 0 then
 			move = move + Camera.CFrame.LookVector * flyState.mobileInput.Z + Camera.CFrame.RightVector * flyState.mobileInput.X
 		end
 		if flyState.mobileUpHeld then move = move + Vector3.new(0, 1, 0) end
 		if flyState.mobileDownHeld then move = move - Vector3.new(0, 1, 0) end
 
+		-- Gyro: personnage droit + penche naturellement quand il bouge
+		if flyState.gyro then
+			local camLook = Camera.CFrame.LookVector
+			local flatLook = Vector3.new(camLook.X, 0, camLook.Z)
+			if flatLook.Magnitude > 0.01 then
+				local yawCFrame = CFrame.new(rootPart.Position, rootPart.Position + flatLook)
+				local pitch = 0
+				if move.Magnitude > 0.1 then
+					local forwardDot = move:Dot(Camera.CFrame.LookVector)
+					pitch = math.clamp(forwardDot * 0.15, -0.26, 0.44)
+				end
+				flyState.gyro.CFrame = yawCFrame * CFrame.Angles(pitch, 0, 0)
+			end
+		end
+
+		-- Velocity
 		if flyState.vel then
 			flyState.vel.Velocity = move.Magnitude > 0 and move.Unit * flyState.speed or Vector3.zero
 		end

@@ -1906,16 +1906,12 @@ _=(function()
 			customLoop:Disconnect()
 			customLoop = nil
 		end
-		-- Reset character
+		-- Reset character sans casser la rotation naturelle
 		pcall(function()
 			local char, hum, root = getChar()
-			if root then
-				-- Remettre le personnage droit
-				root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, select(2, root.CFrame:ToEulerAnglesYXZ()))
-			end
 			if hum then
 				hum.JumpPower = 50
-				hum.WalkSpeed = 16
+				hum.WalkSpeed = (_G._P1 and _G._P1.walkSpeedState and _G._P1.walkSpeedState.value) or 16
 				hum.PlatformStand = false
 			end
 		end)
@@ -1988,9 +1984,8 @@ _=(function()
 		-- Tourne le personnage sur le cote (axe X)
 		root.CFrame = root.CFrame * CFrame.Angles(dt * 6, 0, 0)
 		-- Leve legerement pour ne pas clip dans le sol
-		if root.Velocity.Y < 0 then
-			root.Velocity = Vector3.new(0, 5, 0)
-		end
+		-- Ne pas override la velocity naturelle
+		pcall(function() root.AssemblyLinearVelocity = Vector3.new(0, 5, 0) end)
 	end
 
 	-- 2. CRISE D'EPILEPSIE - tremblements rapides + rotation aleatoire
@@ -2049,7 +2044,7 @@ _=(function()
 	local function doHelicopter(dt, char, hum, root, torso)
 		root.CFrame = root.CFrame * CFrame.Angles(0, dt * 10, 0)
 		-- Leve legerement
-		root.Velocity = Vector3.new(0, 30, 0)
+		pcall(function() root.AssemblyLinearVelocity = Vector3.new(0, 30, 0) end)
 	end
 
 	-- 7. NAGE A SEC - mouvement de nage sur terre
@@ -2141,6 +2136,24 @@ _=(function()
 			fn()
 		end)
 	end
+
+	-- === RESET CHARACTER (en cas de jambes figees) ===
+	addCategory("🔧 RESET", 50)
+	addEmote("🔄 Reset personnage", function()
+		stopAll()
+		task.wait(0.1)
+		pcall(function()
+			local char, hum, root = getChar()
+			if hum then
+				hum.PlatformStand = false
+				hum.JumpPower = 50
+				hum.WalkSpeed = (_G._P1 and _G._P1.walkSpeedState and _G._P1.walkSpeedState.value) or 16
+				hum:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
+				hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+			end
+			if notify then notify("Reset", "Personnage reinitialise!") end
+		end)
+	end, 51)
 
 	-- === ANIMATIONS SCRIPTEES (marchent partout, pas besoin d'IDs) ===
 	addCategory("🤣 MOVEMENTS FUN (custom)", 100)
