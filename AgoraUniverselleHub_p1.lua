@@ -918,7 +918,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.37"
+	versionLabel.Text = "v39.38"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -4584,7 +4584,14 @@ local function startFly()
 		-- Re-attach body movers if rootPart changed (respawn)
 		if flyState.gyro and flyState.gyro.Parent ~= rootPart then flyState.gyro.Parent = rootPart end
 		if flyState.vel and flyState.vel.Parent ~= rootPart then flyState.vel.Parent = rootPart end
-		if flyState.gyro then flyState.gyro.CFrame = Camera.CFrame end
+		if flyState.gyro then
+			-- Garder le personnage DROIT: uniquement rotation Y (yaw) de la camera
+			local camLook = Camera.CFrame.LookVector
+			local flatLook = Vector3.new(camLook.X, 0, camLook.Z)
+			if flatLook.Magnitude > 0.01 then
+				flyState.gyro.CFrame = CFrame.new(rootPart.Position, rootPart.Position + flatLook)
+			end
+		end
 
 		local move = Vector3.zero
 		-- PC controls (clavier)
