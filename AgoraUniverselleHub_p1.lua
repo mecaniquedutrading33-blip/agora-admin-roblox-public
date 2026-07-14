@@ -918,7 +918,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.38"
+	versionLabel.Text = "v39.39"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -4585,11 +4585,23 @@ local function startFly()
 		if flyState.gyro and flyState.gyro.Parent ~= rootPart then flyState.gyro.Parent = rootPart end
 		if flyState.vel and flyState.vel.Parent ~= rootPart then flyState.vel.Parent = rootPart end
 		if flyState.gyro then
-			-- Garder le personnage DROIT: uniquement rotation Y (yaw) de la camera
+			-- Personnage droit par defaut + penche naturellement quand il bouge
 			local camLook = Camera.CFrame.LookVector
 			local flatLook = Vector3.new(camLook.X, 0, camLook.Z)
 			if flatLook.Magnitude > 0.01 then
-				flyState.gyro.CFrame = CFrame.new(rootPart.Position, rootPart.Position + flatLook)
+				-- Yaw = direction horizontale de la camera
+				local yawCFrame = CFrame.new(rootPart.Position, rootPart.Position + flatLook)
+				-- Si on bouge, on penche legerement dans la direction du mouvement
+				local pitch = 0
+				if move.Magnitude > 0.1 then
+					-- Pencher vers l'avant (positif) ou l'arriere (negatif) selon le mouvement
+					local forwardDot = move:Dot(Camera.CFrame.LookVector)
+					local rightDot = move:Dot(Camera.CFrame.RightVector)
+					-- Pitch: max ~25 degres vers l'avant, 15 vers l'arriere
+					pitch = math.clamp(forwardDot * 0.15, -0.26, 0.44)
+				end
+				-- Appliquer yaw + pitch (pencher sur l'axe X local)
+				flyState.gyro.CFrame = yawCFrame * CFrame.Angles(pitch, 0, 0)
 			end
 		end
 

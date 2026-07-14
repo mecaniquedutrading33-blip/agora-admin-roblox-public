@@ -1838,13 +1838,13 @@ _=(function()
 
 	-- Bouton STOP toujours visible (dans la title bar)
 	local stopBtn = Instance.new("TextButton")
-	stopBtn.Size = UDim2.new(0, 70, 0, 24)
-	stopBtn.Position = UDim2.new(1, -108, 0, 6)
-	stopBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
+	stopBtn.Size = UDim2.new(0, 80, 0, 28)
+	stopBtn.Position = UDim2.new(1, -120, 0, 4)
+	stopBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
 	stopBtn.Text = "⏹ Stop"
 	stopBtn.Font = Enum.Font.GothamBold
-	stopBtn.TextSize = 11
-	stopBtn.TextColor3 = Color3.fromRGB(255, 180, 180)
+	stopBtn.TextSize = 13
+	stopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	stopBtn.BorderSizePixel = 0
 	stopBtn.ZIndex = 302
 	stopBtn.Parent = emoteTitleBar
@@ -1852,18 +1852,18 @@ _=(function()
 
 	-- Bouton X CIRCULAIRE (UICorner direct, radius = moitie de la taille = cercle parfait)
 	local emoteClose = Instance.new("TextButton")
-	emoteClose.Size = UDim2.new(0, 24, 0, 24)
-	emoteClose.Position = UDim2.new(1, -30, 0, 6)
+	emoteClose.Size = UDim2.new(0, 28, 0, 28)
+	emoteClose.Position = UDim2.new(1, -34, 0, 4)
 	emoteClose.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
 	emoteClose.Text = "✕"
 	emoteClose.Font = Enum.Font.GothamBold
-	emoteClose.TextSize = 12
+	emoteClose.TextSize = 14
 	emoteClose.TextColor3 = Color3.new(1, 1, 1)
 	emoteClose.BorderSizePixel = 0
 	emoteClose.ZIndex = 302
 	emoteClose.Parent = emoteTitleBar
 	-- CIRCULAIRE: UICorner radius 12 = moitie de 24px = cercle
-	corner(emoteClose, 12)
+	corner(emoteClose, 14)
 
 	-- Scroll des emotes
 	local emoteScroll = Instance.new("ScrollingFrame")
@@ -1910,22 +1910,32 @@ _=(function()
 		pcall(function()
 			local char, hum, root = getChar()
 			if root then
-				root.CFrame = root.CFrame * CFrame.Angles(0, 0, 0)
+				-- Remettre le personnage droit
+				root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, select(2, root.CFrame:ToEulerAnglesYXZ()))
 			end
 			if hum then
 				hum.JumpPower = 50
 				hum.WalkSpeed = 16
+				hum.PlatformStand = false
 			end
 		end)
 		if playSound then playSound(6042053626, 0.2) end
+		-- Reset active button highlight
+		if activeEmoteBtn then
+			pcall(tween, activeEmoteBtn, {BackgroundColor3 = Color3.fromRGB(25, 25, 35)}, 0.2)
+			activeEmoteBtn = nil
+		end
 	end
 
 	-- Jouer une animation Roblox (par ID)
 	local function playAnim(animId, isLoop)
 		stopAll()
-		pcall(function()
+		local ok, err = pcall(function()
 			local char, hum = getChar()
-			if not hum then return end
+			if not hum then 
+				if notify then notify("Pas de personnage", "Reviens a la vie d'abord!") end
+				return 
+			end
 			local animator = hum:FindFirstChildOfClass("Animator")
 			if not animator then
 				animator = Instance.new("Animator")
@@ -1945,6 +1955,9 @@ _=(function()
 				end)
 			end
 		end)
+		if not ok and notify then
+			notify("Emote erreur", "Animation invalide ou bloquee")
+		end
 		if playSound then playSound(6042053626, 0.2) end
 	end
 
@@ -1955,10 +1968,17 @@ _=(function()
 	local function startCustom(fn)
 		stopAll()
 		local char, hum, root, torso = getChar()
-		if not root then return end
+		if not root then 
+			if notify then notify("Pas de personnage", "Reviens a la vie d'abord!") end
+			return 
+		end
 		if playSound then playSound(6042053626, 0.2) end
 		customLoop = RunService.RenderStepped:Connect(function(dt)
-			pcall(fn, dt, char, hum, root, torso)
+			-- Re-fetch character chaque frame pour survivre respawns
+			local c, h, r, t = getChar()
+			if r then
+				pcall(fn, dt, c, h, r, t)
+			end
 		end)
 	end
 
@@ -2092,6 +2112,7 @@ _=(function()
 		cat.Parent = emoteScroll
 	end
 
+	local activeEmoteBtn = nil
 	local function addEmote(label, fn, order)
 		local eBtn = Instance.new("TextButton")
 		eBtn.Size = UDim2.new(1, 0, 0, 28)
@@ -2105,9 +2126,20 @@ _=(function()
 		eBtn.ZIndex = 301
 		eBtn.Parent = emoteScroll
 		corner(eBtn, 6)
+		local origColor = Color3.fromRGB(25, 25, 35)
 		eBtn.MouseEnter:Connect(function() pcall(tween, eBtn, {BackgroundColor3 = Color3.fromRGB(40, 40, 55)}, 0.12) end)
-		eBtn.MouseLeave:Connect(function() pcall(tween, eBtn, {BackgroundColor3 = Color3.fromRGB(25, 25, 35)}, 0.12) end)
-		eBtn.MouseButton1Click:Connect(fn)
+		eBtn.MouseLeave:Connect(function() pcall(tween, eBtn, {BackgroundColor3 = origColor}, 0.12) end)
+		eBtn.MouseButton1Click:Connect(function()
+			-- Reset previous active button
+			if activeEmoteBtn and activeEmoteBtn ~= eBtn then
+				pcall(tween, activeEmoteBtn, {BackgroundColor3 = Color3.fromRGB(25, 25, 35)}, 0.2)
+				activeEmoteBtn = nil
+			end
+			-- Highlight this button
+			pcall(tween, eBtn, {BackgroundColor3 = Color3.fromRGB(60, 40, 80)}, 0.15)
+			activeEmoteBtn = eBtn
+			fn()
+		end)
 	end
 
 	-- === ANIMATIONS SCRIPTEES (marchent partout, pas besoin d'IDs) ===
