@@ -918,7 +918,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.36"
+	versionLabel.Text = "v39.37"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -962,6 +962,7 @@ _=(function()
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
+		"v39.37 — Fix noclip: personnage stale apres respawn, HRP collision restore, 41 animations",
 		"v39.36 — 41 animations: danses, gymnastique, fun, emotes classiques + 10 custom CFrame",
 		"v39.35 — Emotes: 10 mouvements custom (roulade buche, epilepsie, etc), X circulaire, stop visible",
 		"v39.34 — Emotes deplace vers Extra, X circulaire, stop toujours visible",
@@ -1915,9 +1916,10 @@ local function shutdownPanel()
 	if noclipState and noclipState.enabled then
 		noclipState.enabled = false
 		if noclipSwitch then noclipSwitch.set(false) end
-		if character then
-			for _, p in ipairs(character:GetDescendants()) do
-				if p:IsA("BasePart") then p.CanCollide = true end
+		local char = LocalPlayer.Character
+		if char then
+			for _, p in ipairs(char:GetDescendants()) do
+				if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = true end
 			end
 		end
 	end
@@ -4726,9 +4728,10 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 	noclipState.enabled = on
 	if not on then
 		updateCharacter()
-		if character then
-			for _, p in ipairs(character:GetDescendants()) do
-				if p:IsA("BasePart") then p.CanCollide = true end
+		local char = LocalPlayer.Character
+		if char then
+			for _, p in ipairs(char:GetDescendants()) do
+				if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = true end
 			end
 		end
 		-- Active la grâce anti-TP après sortie du noclip

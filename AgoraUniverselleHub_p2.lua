@@ -870,13 +870,13 @@ end)
 
 RunService.Stepped:Connect(function(_, dt)
 	updateCharacter()
-	if noclipState.enabled then
-		local char = LocalPlayer.Character
-		if char then
-			for _, p in ipairs(char:GetDescendants()) do
-				if p:IsA("BasePart") then p.CanCollide = false end
-			end
+	local char = LocalPlayer.Character
+	if noclipState.enabled and char then
+		for _, p in ipairs(char:GetDescendants()) do
+			if p:IsA("BasePart") then p.CanCollide = false end
 		end
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		if hrp then hrp.CanCollide = false end
 	end
 	if platformState.enabled and platformState.part then
 		-- Plate FIXE en X/Z : on ne tracke plus la position, on ajuste juste la hauteur
