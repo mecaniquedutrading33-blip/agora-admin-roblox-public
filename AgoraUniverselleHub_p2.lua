@@ -870,9 +870,12 @@ end)
 
 RunService.Stepped:Connect(function(_, dt)
 	updateCharacter()
-	if noclipState.enabled and character then
-		for _, p in ipairs(character:GetDescendants()) do
-			if p:IsA("BasePart") then p.CanCollide = false end
+	if noclipState.enabled then
+		local char = LocalPlayer.Character
+		if char then
+			for _, p in ipairs(char:GetDescendants()) do
+				if p:IsA("BasePart") then p.CanCollide = false end
+			end
 		end
 	end
 	if platformState.enabled and platformState.part then
