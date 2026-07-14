@@ -1760,6 +1760,282 @@ _=(function()
 		end
 	end)
 end)()
+-- === EMOTES SYSTEM (deplace de Home vers Extra) ===
+_=(function()
+	local screenGui = _G._P1.screenGui or _G._P1.loadingGui
+	local LocalPlayer = _G._P1.LocalPlayer
+	local playSound = _G._P1.playSound or function() end
+	local createCorner = _G._P1.createCorner or function() end
+	local createStroke = _G._P1.createStroke or function() end
+	local tween = _G._P1.tween or function() end
+
+	-- Bouton Emotes dans Extra
+	local emoteBtn = Instance.new("TextButton")
+	emoteBtn.Size = UDim2.new(1, -10, 0, 32)
+	emoteBtn.BackgroundColor3 = Color3.fromRGB(35, 25, 50)
+	emoteBtn.Text = "🎭 Emotes"
+	emoteBtn.Font = Enum.Font.GothamSemibold
+	emoteBtn.TextSize = 13
+	emoteBtn.TextColor3 = Color3.fromRGB(220, 180, 255)
+	emoteBtn.BorderSizePixel = 0
+	emoteBtn.AutoButtonColor = true
+	emoteBtn.LayoutOrder = 500
+	emoteBtn.Parent = extraScroll
+	createCorner(emoteBtn, 8)
+	createStroke(emoteBtn, Color3.fromRGB(80, 60, 120), 1)
+	emoteBtn.MouseEnter:Connect(function() tween(emoteBtn, {BackgroundColor3 = Color3.fromRGB(50, 35, 70)}, 0.15) end)
+	emoteBtn.MouseLeave:Connect(function() tween(emoteBtn, {BackgroundColor3 = Color3.fromRGB(35, 25, 50)}, 0.15) end)
+
+	-- Fenetre draggable
+	local emoteWin = Instance.new("Frame")
+	emoteWin.Size = UDim2.new(0, 250, 0, 420)
+	emoteWin.Position = UDim2.new(0.5, -125, 0.2, 0)
+	emoteWin.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	emoteWin.BorderSizePixel = 0
+	emoteWin.Visible = false
+	emoteWin.ZIndex = 300
+	emoteWin.Parent = screenGui
+	createCorner(emoteWin, 10)
+	createStroke(emoteWin, Color3.fromRGB(100, 80, 140), 1.5)
+
+	-- Barre de titre (draggable) + stop emote always visible
+	local emoteTitleBar = Instance.new("Frame")
+	emoteTitleBar.Size = UDim2.new(1, 0, 0, 36)
+	emoteTitleBar.BackgroundColor3 = Color3.fromRGB(30, 25, 45)
+	emoteTitleBar.BorderSizePixel = 0
+	emoteTitleBar.ZIndex = 301
+	emoteTitleBar.Parent = emoteWin
+	createCorner(emoteTitleBar, 10)
+
+	local emoteTitle = Instance.new("TextLabel")
+	emoteTitle.Size = UDim2.new(0, 80, 1, 0)
+	emoteTitle.Position = UDim2.new(0, 8, 0, 0)
+	emoteTitle.BackgroundTransparency = 1
+	emoteTitle.Text = "🎭 Emotes"
+	emoteTitle.Font = Enum.Font.GothamBold
+	emoteTitle.TextSize = 14
+	emoteTitle.TextColor3 = Color3.fromRGB(200, 170, 255)
+	emoteTitle.TextXAlignment = Enum.TextXAlignment.Left
+	emoteTitle.ZIndex = 302
+	emoteTitle.Parent = emoteTitleBar
+
+	-- Bouton STOP toujours visible (dans la title bar, pas dans le scroll)
+	local stopBtn = Instance.new("TextButton")
+	stopBtn.Size = UDim2.new(0, 70, 0, 24)
+	stopBtn.Position = UDim2.new(1, -104, 0, 6)
+	stopBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
+	stopBtn.Text = "⏹ Stop"
+	stopBtn.Font = Enum.Font.GothamBold
+	stopBtn.TextSize = 11
+	stopBtn.TextColor3 = Color3.fromRGB(255, 180, 180)
+	stopBtn.BorderSizePixel = 0
+	stopBtn.ZIndex = 302
+	stopBtn.Parent = emoteTitleBar
+	createCorner(stopBtn, 6)
+
+	-- Bouton X CIRCULAIRE (pas rectangle)
+	local emoteClose = Instance.new("TextButton")
+	emoteClose.Size = UDim2.new(0, 22, 0, 22)
+	emoteClose.Position = UDim2.new(1, -28, 0, 7)
+	emoteClose.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+	emoteClose.Text = "✕"
+	emoteClose.Font = Enum.Font.GothamBold
+	emoteClose.TextSize = 11
+	emoteClose.TextColor3 = Color3.new(1, 1, 1)
+	emoteClose.BorderSizePixel = 0
+	emoteClose.ZIndex = 302
+	emoteClose.Parent = emoteTitleBar
+	-- CIRCULAIRE: cornerRadius = moitie de la taille
+	createCorner(emoteClose, 11)
+
+	-- Scroll des emotes
+	local emoteScroll = Instance.new("ScrollingFrame")
+	emoteScroll.Size = UDim2.new(1, -10, 1, -44)
+	emoteScroll.Position = UDim2.new(0, 5, 0, 38)
+	emoteScroll.BackgroundTransparency = 1
+	emoteScroll.BorderSizePixel = 0
+	emoteScroll.ScrollBarThickness = 4
+	emoteScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	emoteScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	emoteScroll.ZIndex = 301
+	emoteScroll.Parent = emoteWin
+
+	local emoteLayout = Instance.new("UIListLayout")
+	emoteLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	emoteLayout.Padding = UDim.new(0, 3)
+	emoteLayout.Parent = emoteScroll
+
+	-- Helper: jouer une animation
+	local currentTrack = nil
+	local currentAnim = nil
+	local function playEmote(animId, isLoop)
+		pcall(function()
+			local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+			local hum = char:FindFirstChildOfClass("Humanoid")
+			if not hum then return end
+			local animator = hum:FindFirstChildOfClass("Animator")
+			if not animator then
+				animator = Instance.new("Animator")
+				animator.Parent = hum
+			end
+			-- Stop emote precedent
+			if currentTrack then
+				pcall(function() currentTrack:Stop(0.3) end)
+			end
+			local anim = Instance.new("Animation")
+			anim.AnimationId = "rbxassetid://" .. tostring(animId)
+			local track = animator:LoadAnimation(anim)
+			track.Looped = isLoop or false
+			track:Play()
+			currentTrack = track
+			currentAnim = anim
+			_G._currentEmoteTrack = track
+			if not isLoop then
+				task.delay(track.Length + 0.5, function()
+					pcall(function()
+						if track then track:Stop(0.3) end
+					end)
+				end)
+			end
+			if playSound then playSound(6042053626, 0.2) end
+		end)
+	end
+
+	-- Stop function (utilise par le bouton stop et le cleanup)
+	local function stopEmote()
+		pcall(function()
+			if currentTrack then currentTrack:Stop(0.3) end
+			if _G._currentEmoteTrack then _G._currentEmoteTrack:Stop(0.3) end
+			currentTrack = nil
+		end)
+		if playSound then playSound(6042053626, 0.2) end
+	end
+
+	stopBtn.MouseButton1Click:Connect(stopEmote)
+
+	-- Categories
+	local function addCategory(text, order)
+		local cat = Instance.new("TextLabel")
+		cat.Size = UDim2.new(1, 0, 0, 20)
+		cat.BackgroundTransparency = 1
+		cat.Text = text
+		cat.Font = Enum.Font.GothamBold
+		cat.TextSize = 11
+		cat.TextColor3 = Color3.fromRGB(150, 130, 200)
+		cat.TextXAlignment = Enum.TextXAlignment.Left
+		cat.LayoutOrder = order
+		cat.ZIndex = 301
+		cat.Parent = emoteScroll
+	end
+
+	local function addEmote(label, animId, isLoop, order)
+		local eBtn = Instance.new("TextButton")
+		eBtn.Size = UDim2.new(1, 0, 0, 28)
+		eBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+		eBtn.Text = label
+		eBtn.Font = Enum.Font.Gotham
+		eBtn.TextSize = 12
+		eBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
+		eBtn.BorderSizePixel = 0
+		eBtn.LayoutOrder = order
+		eBtn.ZIndex = 301
+		eBtn.Parent = emoteScroll
+		createCorner(eBtn, 6)
+		eBtn.MouseEnter:Connect(function() tween(eBtn, {BackgroundColor3 = Color3.fromRGB(40, 40, 55)}, 0.12) end)
+		eBtn.MouseLeave:Connect(function() tween(eBtn, {BackgroundColor3 = Color3.fromRGB(25, 25, 35)}, 0.12) end)
+		eBtn.MouseButton1Click:Connect(function()
+			playEmote(animId, isLoop)
+		end)
+	end
+
+	-- === DANSES (IDs verifies qui marchent) ===
+	addCategory("💃 DANSES", 100)
+	addEmote("💃 Danse classique", 507771019, false, 101)
+	addEmote("🕺 Danse swing", 507771238, false, 102)
+	addEmote("🤸 Breakdance", 507771475, false, 103)
+	addEmote("🎉 Danse folle", 5915756891, false, 104)
+	addEmote("💃 Floss", 4562795588, false, 105)
+	addEmote("🕺 Shuffle", 6164593276, false, 106)
+	addEmote("🤖 Robot dance", 6164569961, false, 107)
+
+	-- === COMBAT ===
+	addCategory("🥊 COMBAT", 200)
+	addEmote("🥊 Coup de poing", 182436052, false, 201)
+	addEmote("👊 Jab", 182436156, false, 202)
+	addEmote("💥 Uppercut", 182436290, false, 203)
+	addEmote("🦵 Coup de pied", 182435832, false, 204)
+	addEmote("⚔️ Ninja kick", 182435998, false, 205)
+	addEmote("🤼 Combat stance", 5846584755, true, 206)
+
+	-- === ACROBATIES ===
+	addCategory("🤸 ACROBATIES", 300)
+	addEmote("🔄 Backflip", 522635514, false, 301)
+	addEmote("⬆️ Front flip", 4485146495, false, 302)
+	addEmote("🤸 Cartwheel", 5913751499, false, 303)
+	addEmote("✨ Acrobatic combo", 5915732965, false, 304)
+	addEmote("🩰 Spin tournoyant", 507771475, true, 305)
+
+	-- === FUN ===
+	addCategory("😜 FUN", 400)
+	addEmote("😄 Rire aux eclats", 507770818, false, 401)
+	addEmote("🎉 Acclamer", 507770677, true, 402)
+	addEmote("🙇 S'incliner", 507770143, false, 403)
+	addEmote("👋 Saluer", 507770239, false, 404)
+	addEmote("👀 Observer", 507770453, true, 405)
+	addEmote("😱 Peur/panique", 128856001, false, 406)
+	addEmote("😴 S'endormir", 5846585438, true, 407)
+	addEmote("🤯 Tomber de chaise", 1088597938, false, 408)
+	addEmote("💪 Pompes", 5915678342, true, 409)
+	addEmote("🧎 Sit-ups", 5915677948, true, 410)
+	addEmote("🛌 S'allonger", 14046439232, true, 411)
+	addEmote("🧍 S'asseoir", 2506281703, true, 412)
+
+	-- Dragging de la fenetre
+	local dragging = false
+	local dragStart, startPos
+	emoteTitleBar.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = emoteWin.Position
+		end
+	end)
+	emoteTitleBar.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end)
+	_G._P1.UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local delta = input.Position - dragStart
+			emoteWin.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+
+	-- Toggle fenetre
+	emoteBtn.MouseButton1Click:Connect(function()
+		emoteWin.Visible = not emoteWin.Visible
+		if playSound then playSound(6042053626, 0.2) end
+	end)
+	emoteClose.MouseButton1Click:Connect(function()
+		emoteWin.Visible = false
+		if playSound then playSound(6042053626, 0.2) end
+	end)
+
+	-- Cleanup au shutdown
+	if _G._shutdownCallbacks then
+		_G._shutdownCallbacks[#_G._shutdownCallbacks + 1] = function()
+			pcall(function()
+				if currentTrack then currentTrack:Stop(0.3) end
+				if emoteWin then emoteWin:Destroy() end
+			end)
+		end
+	end
+
+	-- Export pour p2
+	_G._stopEmote = stopEmote
+	_G._playEmote = playEmote
+end)()
 
 UserInputService.InputBegan:Connect(function(input, gpe)
 	if gpe then return end
