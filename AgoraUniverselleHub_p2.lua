@@ -1760,14 +1760,30 @@ _=(function()
 		end
 	end)
 end)()
--- === EMOTES SYSTEM (deplace de Home vers Extra) ===
+-- === EMOTES SYSTEM (deplace de Home vers Extra, animations custom) ===
 _=(function()
 	local screenGui = _G._P1.screenGui or _G._P1.loadingGui
 	local LocalPlayer = _G._P1.LocalPlayer
+	local UserInputService = _G._P1.UserInputService
+	local RunService = _G._P1.RunService
 	local playSound = _G.playSound or function() end
-	local createCorner = _G.createCorner or function() end
-	local createStroke = _G.createStroke or function() end
 	local tween = _G.tween or function() end
+
+	-- Helper: UICorner direct (pas de reliance sur createCorner)
+	local function corner(obj, r)
+		local c = Instance.new("UICorner")
+		c.CornerRadius = UDim.new(0, r or 6)
+		c.Parent = obj
+		return c
+	end
+	local function stroke(obj, color, thick)
+		local s = Instance.new("UIStroke")
+		s.Color = color or Color3.fromRGB(80, 80, 100)
+		s.Thickness = thick or 1
+		s.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+		s.Parent = obj
+		return s
+	end
 
 	-- Bouton Emotes dans Extra
 	local emoteBtn = Instance.new("TextButton")
@@ -1781,22 +1797,20 @@ _=(function()
 	emoteBtn.AutoButtonColor = true
 	emoteBtn.LayoutOrder = 500
 	emoteBtn.Parent = extraScroll
-	createCorner(emoteBtn, 8)
-	createStroke(emoteBtn, Color3.fromRGB(80, 60, 120), 1)
-	emoteBtn.MouseEnter:Connect(function() tween(emoteBtn, {BackgroundColor3 = Color3.fromRGB(50, 35, 70)}, 0.15) end)
-	emoteBtn.MouseLeave:Connect(function() tween(emoteBtn, {BackgroundColor3 = Color3.fromRGB(35, 25, 50)}, 0.15) end)
+	corner(emoteBtn, 8)
+	stroke(emoteBtn, Color3.fromRGB(80, 60, 120), 1)
 
 	-- Fenetre draggable
 	local emoteWin = Instance.new("Frame")
-	emoteWin.Size = UDim2.new(0, 250, 0, 420)
-	emoteWin.Position = UDim2.new(0.5, -125, 0.2, 0)
+	emoteWin.Size = UDim2.new(0, 260, 0, 460)
+	emoteWin.Position = UDim2.new(0.5, -130, 0.15, 0)
 	emoteWin.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
 	emoteWin.BorderSizePixel = 0
 	emoteWin.Visible = false
 	emoteWin.ZIndex = 300
 	emoteWin.Parent = screenGui
-	createCorner(emoteWin, 10)
-	createStroke(emoteWin, Color3.fromRGB(100, 80, 140), 1.5)
+	corner(emoteWin, 10)
+	stroke(emoteWin, Color3.fromRGB(100, 80, 140), 1.5)
 
 	-- Barre de titre (draggable) + stop emote always visible
 	local emoteTitleBar = Instance.new("Frame")
@@ -1805,7 +1819,7 @@ _=(function()
 	emoteTitleBar.BorderSizePixel = 0
 	emoteTitleBar.ZIndex = 301
 	emoteTitleBar.Parent = emoteWin
-	createCorner(emoteTitleBar, 10)
+	corner(emoteTitleBar, 10)
 
 	local emoteTitle = Instance.new("TextLabel")
 	emoteTitle.Size = UDim2.new(0, 80, 1, 0)
@@ -1819,10 +1833,10 @@ _=(function()
 	emoteTitle.ZIndex = 302
 	emoteTitle.Parent = emoteTitleBar
 
-	-- Bouton STOP toujours visible (dans la title bar, pas dans le scroll)
+	-- Bouton STOP toujours visible (dans la title bar)
 	local stopBtn = Instance.new("TextButton")
 	stopBtn.Size = UDim2.new(0, 70, 0, 24)
-	stopBtn.Position = UDim2.new(1, -104, 0, 6)
+	stopBtn.Position = UDim2.new(1, -108, 0, 6)
 	stopBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
 	stopBtn.Text = "⏹ Stop"
 	stopBtn.Font = Enum.Font.GothamBold
@@ -1831,22 +1845,22 @@ _=(function()
 	stopBtn.BorderSizePixel = 0
 	stopBtn.ZIndex = 302
 	stopBtn.Parent = emoteTitleBar
-	createCorner(stopBtn, 6)
+	corner(stopBtn, 6)
 
-	-- Bouton X CIRCULAIRE (pas rectangle)
+	-- Bouton X CIRCULAIRE (UICorner direct, radius = moitie de la taille = cercle parfait)
 	local emoteClose = Instance.new("TextButton")
-	emoteClose.Size = UDim2.new(0, 22, 0, 22)
-	emoteClose.Position = UDim2.new(1, -28, 0, 7)
+	emoteClose.Size = UDim2.new(0, 24, 0, 24)
+	emoteClose.Position = UDim2.new(1, -30, 0, 6)
 	emoteClose.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
 	emoteClose.Text = "✕"
 	emoteClose.Font = Enum.Font.GothamBold
-	emoteClose.TextSize = 11
+	emoteClose.TextSize = 12
 	emoteClose.TextColor3 = Color3.new(1, 1, 1)
 	emoteClose.BorderSizePixel = 0
 	emoteClose.ZIndex = 302
 	emoteClose.Parent = emoteTitleBar
-	-- CIRCULAIRE: cornerRadius = moitie de la taille
-	createCorner(emoteClose, 11)
+	-- CIRCULAIRE: UICorner radius 12 = moitie de 24px = cercle
+	corner(emoteClose, 12)
 
 	-- Scroll des emotes
 	local emoteScroll = Instance.new("ScrollingFrame")
@@ -1865,22 +1879,54 @@ _=(function()
 	emoteLayout.Padding = UDim.new(0, 3)
 	emoteLayout.Parent = emoteScroll
 
-	-- Helper: jouer une animation
+	-- === SYSTEME D'ANIMATION ===
 	local currentTrack = nil
 	local currentAnim = nil
-	local function playEmote(animId, isLoop)
+	local customLoop = nil  -- pour animations scriptees (CFrame)
+
+	local function getChar()
+		local char = LocalPlayer.Character
+		if not char then return nil, nil end
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		local root = char:FindFirstChild("HumanoidRootPart")
+		local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso") or char:FindFirstChild("HumanoidRootPart")
+		return char, hum, root, torso
+	end
+
+	local function stopAll()
 		pcall(function()
-			local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-			local hum = char:FindFirstChildOfClass("Humanoid")
+			if currentTrack then currentTrack:Stop(0.3) end
+			if _G._currentEmoteTrack then _G._currentEmoteTrack:Stop(0.3) end
+			currentTrack = nil
+		end)
+		if customLoop then
+			customLoop:Disconnect()
+			customLoop = nil
+		end
+		-- Reset character
+		pcall(function()
+			local char, hum, root = getChar()
+			if root then
+				root.CFrame = root.CFrame * CFrame.Angles(0, 0, 0)
+			end
+			if hum then
+				hum.JumpPower = 50
+				hum.WalkSpeed = 16
+			end
+		end)
+		if playSound then playSound(6042053626, 0.2) end
+	end
+
+	-- Jouer une animation Roblox (par ID)
+	local function playAnim(animId, isLoop)
+		stopAll()
+		pcall(function()
+			local char, hum = getChar()
 			if not hum then return end
 			local animator = hum:FindFirstChildOfClass("Animator")
 			if not animator then
 				animator = Instance.new("Animator")
 				animator.Parent = hum
-			end
-			-- Stop emote precedent
-			if currentTrack then
-				pcall(function() currentTrack:Stop(0.3) end)
 			end
 			local anim = Instance.new("Animation")
 			anim.AnimationId = "rbxassetid://" .. tostring(animId)
@@ -1892,26 +1938,141 @@ _=(function()
 			_G._currentEmoteTrack = track
 			if not isLoop then
 				task.delay(track.Length + 0.5, function()
-					pcall(function()
-						if track then track:Stop(0.3) end
-					end)
+					pcall(function() if track then track:Stop(0.3) end end)
 				end)
 			end
-			if playSound then playSound(6042053626, 0.2) end
-		end)
-	end
-
-	-- Stop function (utilise par le bouton stop et le cleanup)
-	local function stopEmote()
-		pcall(function()
-			if currentTrack then currentTrack:Stop(0.3) end
-			if _G._currentEmoteTrack then _G._currentEmoteTrack:Stop(0.3) end
-			currentTrack = nil
 		end)
 		if playSound then playSound(6042053626, 0.2) end
 	end
 
-	stopBtn.MouseButton1Click:Connect(stopEmote)
+	-- === ANIMATIONS SCRIPTEES (CFrame, pas besoin d'IDs) ===
+	-- Ces animations manipulent directement les CFrame des body parts
+	-- Elles marchent PARTOUT (pas besoin de permission animation)
+
+	local function startCustom(fn)
+		stopAll()
+		local char, hum, root, torso = getChar()
+		if not root then return end
+		if playSound then playSound(6042053626, 0.2) end
+		customLoop = RunService.RenderStepped:Connect(function(dt)
+			pcall(fn, dt, char, hum, root, torso)
+		end)
+	end
+
+	-- 1. ROULADE DE BUCHE (log roll) - tourne sur le cote
+	local function doLogRoll(dt, char, hum, root, torso)
+		local t = tick()
+		-- Tourne le personnage sur le cote (axe X)
+		root.CFrame = root.CFrame * CFrame.Angles(dt * 6, 0, 0)
+		-- Leve legerement pour ne pas clip dans le sol
+		if root.Velocity.Y < 0 then
+			root.Velocity = Vector3.new(0, 5, 0)
+		end
+	end
+
+	-- 2. CRISE D'EPILEPSIE - tremblements rapides + rotation aleatoire
+	local function doSeizure(dt, char, hum, root, torso)
+		local t = tick()
+		-- Tremblements rapides en position
+		local shakeX = math.random(-100, 100) / 1000
+		local shakeY = math.random(-100, 100) / 1000
+		local shakeZ = math.random(-100, 100) / 1000
+		root.CFrame = root.CFrame * CFrame.new(shakeX, shakeY, shakeZ)
+		-- Rotation rapide aleatoire
+		root.CFrame = root.CFrame * CFrame.Angles(math.random(-50, 50) / 100, math.random(-50, 50) / 100, math.random(-50, 50) / 100)
+		-- Sauts aleatoires
+		if math.random() < 0.3 then
+			hum.Jump = true
+		end
+	end
+
+	-- 3. SPIN FOU - tourne sur place rapidement
+	local function doSpin(dt, char, hum, root, torso)
+		root.CFrame = root.CFrame * CFrame.Angles(0, dt * 15, 0)
+	end
+
+	-- 4. BAGARRE INVISIBLE - coups de poing dans le vide
+	local function doGhostFight(dt, char, hum, root, torso)
+		local t = tick()
+		local punchPhase = math.sin(t * 8)
+		if punchPhase > 0.5 then
+			-- Coup droit
+			root.CFrame = root.CFrame * CFrame.Angles(0, 0, math.rad(-20))
+		elseif punchPhase < -0.5 then
+			-- Coup gauche
+			root.CFrame = root.CFrame * CFrame.Angles(0, 0, math.rad(20))
+		else
+			root.CFrame = root.CFrame * CFrame.Angles(0, 0, 0)
+		end
+		-- Petit saut occasionnel
+		if math.random() < 0.05 then
+			hum.Jump = true
+		end
+	end
+
+	-- 5. DANSE DU VERMISSEAU - le personnage rampe et ondule
+	local function doWormDance(dt, char, hum, root, torso)
+		local t = tick()
+		-- Ondulation verticale
+		local wave = math.sin(t * 6) * 3
+		root.CFrame = root.CFrame * CFrame.new(0, wave, 0)
+		-- Inclinaison avant/arriere
+		root.CFrame = root.CFrame * CFrame.Angles(math.sin(t * 4) * 0.3, 0, 0)
+		-- Lentement avance
+		root.CFrame = root.CFrame * CFrame.new(0, 0, -dt * 2)
+	end
+
+	-- 6. HELICOPTERE - tourne les bras (rotation Y complete)
+	local function doHelicopter(dt, char, hum, root, torso)
+		root.CFrame = root.CFrame * CFrame.Angles(0, dt * 10, 0)
+		-- Leve legerement
+		root.Velocity = Vector3.new(0, 30, 0)
+	end
+
+	-- 7. NAGE A SEC - mouvement de nage sur terre
+	local function doDrySwim(dt, char, hum, root, torso)
+		local t = tick()
+		-- Alternance bras gauche/droit
+		local phase = math.sin(t * 5)
+		root.CFrame = root.CFrame * CFrame.Angles(math.rad(15), 0, phase * 0.3)
+		-- Avance lentement
+		root.CFrame = root.CFrame * CFrame.new(0, 0, -dt * 1.5)
+	end
+
+	-- 8. TREMBLEMENT DE TERRE - sautillements rapides
+	local function doEarthquake(dt, char, hum, root, torso)
+		local t = tick()
+		if math.sin(t * 12) > 0 then
+			hum.Jump = true
+		end
+		root.CFrame = root.CFrame * CFrame.new(math.random(-50, 50) / 200, 0, math.random(-50, 50) / 200)
+	end
+
+	-- 9. MOONWALK - recule en moonwalk
+	local function doMoonwalk(dt, char, hum, root, torso)
+		local t = tick()
+		-- Incline en arriere
+		root.CFrame = root.CFrame * CFrame.Angles(math.rad(-10), 0, 0)
+		-- Recule
+		root.CFrame = root.CFrame * CFrame.new(0, 0, dt * 8)
+		-- Petit bounce
+		if math.sin(t * 8) > 0.7 then
+			hum.Jump = true
+		end
+	end
+
+	-- 10. POULE QUI COURT - petites strides rapides + tressautement
+	local function doChickenRun(dt, char, hum, root, torso)
+		local t = tick()
+		-- Tressautement rapide
+		root.CFrame = root.CFrame * CFrame.new(0, math.abs(math.sin(t * 15)) * 1.5, 0)
+		-- Penche en avant
+		root.CFrame = root.CFrame * CFrame.Angles(math.rad(20), 0, 0)
+		-- Court vers l'avant
+		root.CFrame = root.CFrame * CFrame.new(0, 0, -dt * 6)
+	end
+
+	stopBtn.MouseButton1Click:Connect(stopAll)
 
 	-- Categories
 	local function addCategory(text, order)
@@ -1928,7 +2089,7 @@ _=(function()
 		cat.Parent = emoteScroll
 	end
 
-	local function addEmote(label, animId, isLoop, order)
+	local function addEmote(label, fn, order)
 		local eBtn = Instance.new("TextButton")
 		eBtn.Size = UDim2.new(1, 0, 0, 28)
 		eBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
@@ -1940,55 +2101,43 @@ _=(function()
 		eBtn.LayoutOrder = order
 		eBtn.ZIndex = 301
 		eBtn.Parent = emoteScroll
-		createCorner(eBtn, 6)
-		eBtn.MouseEnter:Connect(function() tween(eBtn, {BackgroundColor3 = Color3.fromRGB(40, 40, 55)}, 0.12) end)
-		eBtn.MouseLeave:Connect(function() tween(eBtn, {BackgroundColor3 = Color3.fromRGB(25, 25, 35)}, 0.12) end)
-		eBtn.MouseButton1Click:Connect(function()
-			playEmote(animId, isLoop)
-		end)
+		corner(eBtn, 6)
+		eBtn.MouseEnter:Connect(function() pcall(tween, eBtn, {BackgroundColor3 = Color3.fromRGB(40, 40, 55)}, 0.12) end)
+		eBtn.MouseLeave:Connect(function() pcall(tween, eBtn, {BackgroundColor3 = Color3.fromRGB(25, 25, 35)}, 0.12) end)
+		eBtn.MouseButton1Click:Connect(fn)
 	end
 
-	-- === DANSES (IDs verifies qui marchent) ===
-	addCategory("💃 DANSES", 100)
-	addEmote("💃 Danse classique", 507771019, false, 101)
-	addEmote("🕺 Danse swing", 507771238, false, 102)
-	addEmote("🤸 Breakdance", 507771475, false, 103)
-	addEmote("🎉 Danse folle", 5915756891, false, 104)
-	addEmote("💃 Floss", 4562795588, false, 105)
-	addEmote("🕺 Shuffle", 6164593276, false, 106)
-	addEmote("🤖 Robot dance", 6164569961, false, 107)
+	-- === ANIMATIONS SCRIPTEES (marchent partout, pas besoin d'IDs) ===
+	addCategory("🤣 MOVEMENTS FUN (custom)", 100)
+	addEmote("🪵 Roulade de buche", function() startCustom(doLogRoll) end, 101)
+	addEmote("😵 Crise d'epilepsie", function() startCustom(doSeizure) end, 102)
+	addEmote("🌀 Spin fou", function() startCustom(doSpin) end, 103)
+	addEmote("👻 Bagarre invisible", function() startCustom(doGhostFight) end, 104)
+	addEmote("🪱 Danse du vermisseau", function() startCustom(doWormDance) end, 105)
+	addEmote("🚁 Helicoptere", function() startCustom(doHelicopter) end, 106)
+	addEmote("🏊 Nage a sec", function() startCustom(doDrySwim) end, 107)
+	addEmote("🌍 Tremblement de terre", function() startCustom(doEarthquake) end, 108)
+	addEmote("🕺 Moonwalk", function() startCustom(doMoonwalk) end, 109)
+	addEmote("🐔 Poule qui court", function() startCustom(doChickenRun) end, 110)
 
-	-- === COMBAT ===
-	addCategory("🥊 COMBAT", 200)
-	addEmote("🥊 Coup de poing", 182436052, false, 201)
-	addEmote("👊 Jab", 182436156, false, 202)
-	addEmote("💥 Uppercut", 182436290, false, 203)
-	addEmote("🦵 Coup de pied", 182435832, false, 204)
-	addEmote("⚔️ Ninja kick", 182435998, false, 205)
-	addEmote("🤼 Combat stance", 5846584755, true, 206)
+	-- === ANIMATIONS ROBLOX (IDs verifies) ===
+	addCategory("💃 DANSES (animations)", 200)
+	addEmote("💃 Danse classique", function() playAnim(507771019, false) end, 201)
+	addEmote("🕺 Danse swing", function() playAnim(507771238, false) end, 202)
+	addEmote("🤸 Breakdance", function() playAnim(507771475, false) end, 203)
+	addEmote("🎉 Danse folle", function() playAnim(5915756891, false) end, 204)
+	addEmote("💃 Floss", function() playAnim(4562795588, false) end, 205)
 
-	-- === ACROBATIES ===
-	addCategory("🤸 ACROBATIES", 300)
-	addEmote("🔄 Backflip", 522635514, false, 301)
-	addEmote("⬆️ Front flip", 4485146495, false, 302)
-	addEmote("🤸 Cartwheel", 5913751499, false, 303)
-	addEmote("✨ Acrobatic combo", 5915732965, false, 304)
-	addEmote("🩰 Spin tournoyant", 507771475, true, 305)
-
-	-- === FUN ===
-	addCategory("😜 FUN", 400)
-	addEmote("😄 Rire aux eclats", 507770818, false, 401)
-	addEmote("🎉 Acclamer", 507770677, true, 402)
-	addEmote("🙇 S'incliner", 507770143, false, 403)
-	addEmote("👋 Saluer", 507770239, false, 404)
-	addEmote("👀 Observer", 507770453, true, 405)
-	addEmote("😱 Peur/panique", 128856001, false, 406)
-	addEmote("😴 S'endormir", 5846585438, true, 407)
-	addEmote("🤯 Tomber de chaise", 1088597938, false, 408)
-	addEmote("💪 Pompes", 5915678342, true, 409)
-	addEmote("🧎 Sit-ups", 5915677948, true, 410)
-	addEmote("🛌 S'allonger", 14046439232, true, 411)
-	addEmote("🧍 S'asseoir", 2506281703, true, 412)
+	-- === FUN (IDs) ===
+	addCategory("😜 FUN (animations)", 300)
+	addEmote("😄 Rire aux eclats", function() playAnim(507770818, false) end, 301)
+	addEmote("🎉 Acclamer", function() playAnim(507770677, true) end, 302)
+	addEmote("🙇 S'incliner", function() playAnim(507770143, false) end, 303)
+	addEmote("👋 Saluer", function() playAnim(507770239, false) end, 304)
+	addEmote("👀 Observer", function() playAnim(507770453, true) end, 305)
+	addEmote("😱 Peur/panique", function() playAnim(128856001, false) end, 306)
+	addEmote("😴 S'endormir", function() playAnim(5846585438, true) end, 307)
+	addEmote("🤯 Tomber de chaise", function() playAnim(1088597938, false) end, 308)
 
 	-- Dragging de la fenetre
 	local dragging = false
@@ -2026,15 +2175,14 @@ _=(function()
 	if _G._shutdownCallbacks then
 		_G._shutdownCallbacks[#_G._shutdownCallbacks + 1] = function()
 			pcall(function()
-				if currentTrack then currentTrack:Stop(0.3) end
+				stopAll()
 				if emoteWin then emoteWin:Destroy() end
 			end)
 		end
 	end
 
-	-- Export pour p2
-	_G._stopEmote = stopEmote
-	_G._playEmote = playEmote
+	_G._stopEmote = stopAll
+	_G._playEmote = playAnim
 end)()
 
 UserInputService.InputBegan:Connect(function(input, gpe)
