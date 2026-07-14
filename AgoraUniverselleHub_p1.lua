@@ -1321,7 +1321,7 @@ _=(function()
 	credits.TextSize = 10
 	credits.TextColor3 = Color3.fromRGB(80, 80, 100)
 	credits.Parent = bgFrame
-
+end)()
 
 local playersPage = createTab("Joueurs")
 local movePage = createTab("Move")

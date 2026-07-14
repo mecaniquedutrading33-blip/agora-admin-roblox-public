@@ -1764,10 +1764,10 @@ end)()
 _=(function()
 	local screenGui = _G._P1.screenGui or _G._P1.loadingGui
 	local LocalPlayer = _G._P1.LocalPlayer
-	local playSound = _G._P1.playSound or function() end
-	local createCorner = _G._P1.createCorner or function() end
-	local createStroke = _G._P1.createStroke or function() end
-	local tween = _G._P1.tween or function() end
+	local playSound = _G.playSound or function() end
+	local createCorner = _G.createCorner or function() end
+	local createStroke = _G.createStroke or function() end
+	local tween = _G.tween or function() end
 
 	-- Bouton Emotes dans Extra
 	local emoteBtn = Instance.new("TextButton")
@@ -2005,7 +2005,7 @@ _=(function()
 			dragging = false
 		end
 	end)
-	_G._P1.UserInputService.InputChanged:Connect(function(input)
+	UserInputService.InputChanged:Connect(function(input)
 		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 			local delta = input.Position - dragStart
 			emoteWin.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
