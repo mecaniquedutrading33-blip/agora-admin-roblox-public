@@ -918,7 +918,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.40"
+	versionLabel.Text = "v39.41"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -962,6 +962,7 @@ _=(function()
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
+		"v39.41 — Fly: perso s'incline haut/bas selon ou on regarde (pitch camera + mouvement)",
 		"v39.37 — Fix noclip: personnage stale apres respawn, HRP collision restore, 41 animations",
 		"v39.36 — 41 animations: danses, gymnastique, fun, emotes classiques + 10 custom CFrame",
 		"v39.35 — Emotes: 10 mouvements custom (roulade buche, epilepsie, etc), X circulaire, stop visible",
@@ -4613,18 +4614,23 @@ local function startFly()
 		if flyState.mobileUpHeld then move = move + Vector3.new(0, 1, 0) end
 		if flyState.mobileDownHeld then move = move - Vector3.new(0, 1, 0) end
 
-		-- Gyro: personnage droit + penche naturellement quand il bouge
+		-- Gyro: personnage droit + penche naturellement quand il bouge + s'incline selon ou on regarde
 		if flyState.gyro then
 			local camLook = Camera.CFrame.LookVector
 			local flatLook = Vector3.new(camLook.X, 0, camLook.Z)
 			if flatLook.Magnitude > 0.01 then
 				local yawCFrame = CFrame.new(rootPart.Position, rootPart.Position + flatLook)
-				local pitch = 0
+				-- Pitch de la camera (regarder haut/bas incline le perso)
+				local camPitch = math.asin(math.clamp(camLook.Y, -1, 1))
+				-- Pitch de mouvement (penche vers l'avant quand on avance)
+				local movePitch = 0
 				if move.Magnitude > 0.1 then
 					local forwardDot = move:Dot(Camera.CFrame.LookVector)
-					pitch = math.clamp(forwardDot * 0.15, -0.26, 0.44)
+					movePitch = math.clamp(forwardDot * 0.15, -0.26, 0.44)
 				end
-				flyState.gyro.CFrame = yawCFrame * CFrame.Angles(pitch, 0, 0)
+				-- Combiner: pitch camera + pitch mouvement, clamp pour pas exagerer
+				local totalPitch = math.clamp(camPitch * 0.6 + movePitch, -0.7, 0.7)
+				flyState.gyro.CFrame = yawCFrame * CFrame.Angles(totalPitch, 0, 0)
 			end
 		end
 
