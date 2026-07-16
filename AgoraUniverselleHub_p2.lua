@@ -1692,7 +1692,7 @@ _=(function()
 
 	-- Update status display
 	if saActive then
-		saStatus.Text = "Status: ACTIF (fly/noclip bloques)"
+		saStatus.Text = "Status: ACTIF (fly bypass disponible!)"
 		saStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
 	else
 		saStatus.Text = "Status: " .. saMode .. " (fly/noclip OK)"
