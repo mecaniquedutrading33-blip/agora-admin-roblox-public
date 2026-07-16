@@ -918,7 +918,7 @@ _=(function()
 	versionLabel.Size = UDim2.new(1, -20, 0, 18)
 	versionLabel.Position = UDim2.new(0, 10, 0, 82)
 	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = "v39.41"
+	versionLabel.Text = "v39.42"
 	versionLabel.Font = Enum.Font.GothamSemibold
 	versionLabel.TextSize = 12
 	versionLabel.TextColor3 = Color3.fromRGB(100, 220, 120)
@@ -962,6 +962,7 @@ _=(function()
 	changelogLayout.Parent = changelogScroll
 	
 	local changelogEntries = {
+		"v39.42 -- Server Authority bypass: fly adaptatif (Anchored+CFrame quand SA actif), noclip SA, fix diverses",
 		"v39.41 — Fly: perso s'incline haut/bas selon ou on regarde (pitch camera + mouvement)",
 		"v39.37 — Fix noclip: personnage stale apres respawn, HRP collision restore, 41 animations",
 		"v39.36 — 41 animations: danses, gymnastique, fun, emotes classiques + 10 custom CFrame",
@@ -4392,7 +4393,7 @@ end
 updateLoad(0.30, "Mouvement...")
 task.wait(0.05)
 -- ============= MOVE =============
-local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
+local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false, saMode = false, anchored = false }
 local noclipState = { enabled = false }
 local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
@@ -4403,8 +4404,22 @@ local function stopFly()
 	if not flyState.flying then return end
 	flyState.flying = false
 	if flyState.loop then flyState.loop:Disconnect() flyState.loop = nil end
-	if flyState.gyro then flyState.gyro:Destroy() flyState.gyro = nil end
-	if flyState.vel then flyState.vel:Destroy() flyState.vel = nil end
+
+	if flyState.saMode then
+		-- SA mode: unanchor
+		pcall(function()
+			local char = LocalPlayer.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				char.HumanoidRootPart.Anchored = false
+			end
+		end)
+		flyState.anchored = false
+	else
+		-- Normal mode: destroy body movers
+		if flyState.gyro then flyState.gyro:Destroy() flyState.gyro = nil end
+		if flyState.vel then flyState.vel:Destroy() flyState.vel = nil end
+	end
+
 	flyState.mobileInput = Vector3.zero
 	flyState.mobileUpHeld = false
 	flyState.mobileDownHeld = false
@@ -4413,7 +4428,7 @@ local function stopFly()
 	updateCharacter()
 	if humanoid then humanoid.PlatformStand = false end
 	flySwitch.set(false)
-	-- Active la grâce anti-TP pour réinitialiser la baseline sans bounce
+	-- Active la grace anti-TP pour reinitialiser la baseline sans bounce
 	if protectionsState then
 		protectionsState.antiTeleportGraceUntil = tick() + 0.4
 	end
@@ -4556,37 +4571,55 @@ _G.stopFly = stopFly
 	_fly.isMobile = isMobile
 end)(flyState, screenGui)
 
+local function isServerAuthority()
+	local ws = game:GetService("Workspace")
+	local ok, am = pcall(function() return ws.AuthorityMode end)
+	if ok and am == Enum.AuthorityMode.Server then return true end
+	return false
+end
+
 local function startFly()
 	updateCharacter()
 	if flyState.flying or not rootPart then return end
 	flyState.flying = true
+	flyState.saMode = isServerAuthority()
 
-	flyState.gyro = Instance.new("BodyGyro")
-	flyState.gyro.P = 9e4
-	flyState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-	flyState.gyro.CFrame = rootPart.CFrame
-	flyState.gyro.Parent = rootPart
-
-	flyState.vel = Instance.new("BodyVelocity")
-	flyState.vel.Velocity = Vector3.zero
-	flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-	flyState.vel.Parent = rootPart
-
-	if humanoid then humanoid.PlatformStand = true end
-
-	-- SURELEVATION: lever le personnage pendant 1s pour eviter le bruit de marche
-	flyState.liftOffTime = tick() + 1.0
-	task.spawn(function()
-		while flyState.flying and tick() < (flyState.liftOffTime or 0) do
-			task.wait(0.03)
-			if rootPart and flyState.vel then
-				-- Monter lentement de 3 studs pendant la 1ere seconde
-				local remaining = (flyState.liftOffTime or 0) - tick()
-				local liftSpeed = math.max(remaining, 0) * 8  -- decroit de 8 a 0
-				flyState.vel.Velocity = Vector3.new(0, liftSpeed, 0)
-			end
+	if flyState.saMode then
+		-- SERVER AUTHORITY BYPASS: Anchored + CFrame (BodyVelocity rolled back by server)
+		if humanoid then humanoid.PlatformStand = true end
+		flyState.anchored = true
+		pcall(function() rootPart.Anchored = true end)
+		if humanoid then
+			pcall(function() humanoid.PlatformStand = true end)
 		end
-	end)
+	else
+		-- NORMAL MODE: BodyVelocity + BodyGyro
+		flyState.gyro = Instance.new("BodyGyro")
+		flyState.gyro.P = 9e4
+		flyState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+		flyState.gyro.CFrame = rootPart.CFrame
+		flyState.gyro.Parent = rootPart
+
+		flyState.vel = Instance.new("BodyVelocity")
+		flyState.vel.Velocity = Vector3.zero
+		flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+		flyState.vel.Parent = rootPart
+
+		if humanoid then humanoid.PlatformStand = true end
+
+		-- SURELEVATION: lever le personnage pendant 1s pour eviter le bruit de marche
+		flyState.liftOffTime = tick() + 1.0
+		task.spawn(function()
+			while flyState.flying and tick() < (flyState.liftOffTime or 0) do
+				task.wait(0.03)
+				if rootPart and flyState.vel then
+					local remaining = (flyState.liftOffTime or 0) - tick()
+					local liftSpeed = math.max(remaining, 0) * 8
+					flyState.vel.Velocity = Vector3.new(0, liftSpeed, 0)
+				end
+			end
+		end)
+	end
 
 	-- Show mobile UI on touch devices
 	if flyState.isMobile and flyState.isMobile() and flyState.showMobileUi then
@@ -4596,9 +4629,6 @@ local function startFly()
 	flyState.loop = RunService.RenderStepped:Connect(function()
 		updateCharacter()
 		if not flyState.flying or not rootPart or not rootPart.Parent then return end
-		-- Re-attach body movers if rootPart changed (respawn)
-		if flyState.gyro and flyState.gyro.Parent ~= rootPart then flyState.gyro.Parent = rootPart end
-		if flyState.vel and flyState.vel.Parent ~= rootPart then flyState.vel.Parent = rootPart end
 
 		-- Calculer le mouvement AVANT le gyro (evite le forward-ref nil)
 		local move = Vector3.zero
@@ -4614,29 +4644,58 @@ local function startFly()
 		if flyState.mobileUpHeld then move = move + Vector3.new(0, 1, 0) end
 		if flyState.mobileDownHeld then move = move - Vector3.new(0, 1, 0) end
 
-		-- Gyro: personnage droit + penche naturellement quand il bouge + s'incline selon ou on regarde
-		if flyState.gyro then
+		if flyState.saMode then
+			-- SA BYPASS: CFrame-based fly (Anchored parts bypass server physics)
+			local cf = rootPart.CFrame
+			if move.Magnitude > 0.1 then
+				local delta = move.Unit * flyState.speed * 0.016
+				pcall(function() rootPart.CFrame = cf + delta end)
+			end
+			-- Orientation: yaw + dynamic pitch (same as normal fly)
 			local camLook = Camera.CFrame.LookVector
 			local flatLook = Vector3.new(camLook.X, 0, camLook.Z)
 			if flatLook.Magnitude > 0.01 then
 				local yawCFrame = CFrame.new(rootPart.Position, rootPart.Position + flatLook)
-				-- Pitch de la camera (regarder haut/bas incline le perso)
 				local camPitch = math.asin(math.clamp(camLook.Y, -1, 1))
-				-- Pitch de mouvement (penche vers l'avant quand on avance)
 				local movePitch = 0
 				if move.Magnitude > 0.1 then
 					local forwardDot = move:Dot(Camera.CFrame.LookVector)
 					movePitch = math.clamp(forwardDot * 0.15, -0.26, 0.44)
 				end
-				-- Combiner: pitch camera + pitch mouvement, clamp pour pas exagerer
 				local totalPitch = math.clamp(camPitch * 0.6 + movePitch, -0.7, 0.7)
-				flyState.gyro.CFrame = yawCFrame * CFrame.Angles(totalPitch, 0, 0)
+				pcall(function() rootPart.CFrame = yawCFrame * CFrame.Angles(totalPitch, 0, 0) end)
 			end
-		end
+		else
+			-- NORMAL MODE: BodyVelocity + BodyGyro
+			-- Re-attach body movers if rootPart changed (respawn)
+			if flyState.gyro and flyState.gyro.Parent ~= rootPart then flyState.gyro.Parent = rootPart end
+			if flyState.vel and flyState.vel.Parent ~= rootPart then flyState.vel.Parent = rootPart end
 
-		-- Velocity
-		if flyState.vel then
-			flyState.vel.Velocity = move.Magnitude > 0 and move.Unit * flyState.speed or Vector3.zero
+			-- Gyro: personnage droit + penche naturellement quand il bouge + s'incline selon ou on regarde
+			if flyState.gyro then
+				local camLook = Camera.CFrame.LookVector
+				local flatLook = Vector3.new(camLook.X, 0, camLook.Z)
+				if flatLook.Magnitude > 0.01 then
+					local yawCFrame = CFrame.new(rootPart.Position, rootPart.Position + flatLook)
+					local camPitch = math.asin(math.clamp(camLook.Y, -1, 1))
+					local movePitch = 0
+					if move.Magnitude > 0.1 then
+						local forwardDot = move:Dot(Camera.CFrame.LookVector)
+						movePitch = math.clamp(forwardDot * 0.15, -0.26, 0.44)
+					end
+					local totalPitch = math.clamp(camPitch * 0.6 + movePitch, -0.7, 0.7)
+					flyState.gyro.CFrame = yawCFrame * CFrame.Angles(totalPitch, 0, 0)
+				end
+			end
+
+			-- Velocity
+			if flyState.vel then
+				if move.Magnitude > 0 then
+					flyState.vel.Velocity = move.Unit * flyState.speed
+				else
+					flyState.vel.Velocity = Vector3.zero
+				end
+			end
 		end
 	end)
 end
