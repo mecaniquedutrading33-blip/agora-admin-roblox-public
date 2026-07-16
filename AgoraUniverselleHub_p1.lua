@@ -5362,210 +5362,131 @@ task.spawn(function()
 	end
 end)
 
--- AUTO-UPDATE SYSTEM
-if _G._agoraUpdateCheckerRunning then
-	-- Already running from a previous load, skip
-else
-_G._agoraUpdateCheckerRunning = true
-local CURRENT_VERSION = "v39.42"
-local UPDATE_CHECK_URL = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_version.lua&nocache="
-local updatePopup = nil
-local lastUpdateCheck = 0
-local updateDismissed = false
-
-local function checkForUpdate()
-	if updatePopup or updateDismissed then return end
-	if tick() - lastUpdateCheck < 55 then return end
-	lastUpdateCheck = tick()
-	
+-- AUTO-UPDATE
+if _G._agoraAU then return end
+_G._agoraAU = true
+local CV = "v39.42"
+local VURL = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_version.lua&nocache="
+local uP, lUC, uD = nil, 0, false
+local function cFU()
+	if uP or uD then return end
+	if tick()-lUC<55 then return end
+	lUC=tick()
 	task.spawn(function()
-		local url = UPDATE_CHECK_URL .. tostring(tick())
-		local ok, result = pcall(function()
-			return game:HttpGet(url, true)
-		end)
-		if not ok or not result or #result < 5 then return end
-		
-		-- Parse version from "return \"vXX.XX\""
-		local remoteVersion = result:match('return%s+"(v[%d%.]+)"')
-		if not remoteVersion then return end
-		
-		if remoteVersion ~= CURRENT_VERSION then
-			-- Show update popup bottom-right
-			task.spawn(function()
-				local sg = Instance.new("ScreenGui")
-				sg.Name = "AgoraUpdatePopup"
-				sg.ResetOnSpawn = false
-				sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-				sg.DisplayOrder = 99999
-				-- Try CoreGui first, fallback to PlayerGui
-				local okGui, parent = pcall(function() return game:GetService("CoreGui") end)
-				if not okGui or not parent then
-					parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
-				end
-				sg.Parent = parent
-				
-				local frame = Instance.new("Frame")
-				frame.Size = UDim2.new(0, 280, 0, 120)
-				frame.Position = UDim2.new(1, -300, 1, -140)
-				frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-				frame.BorderSizePixel = 0
-				frame.ZIndex = 10
-				frame.Parent = sg
-				
-				local corner = Instance.new("UICorner")
-				corner.CornerRadius = UDim.new(0, 10)
-				corner.Parent = frame
-				
-				local stroke = Instance.new("UIStroke")
-				stroke.Color = Color3.fromRGB(100, 200, 255)
-				stroke.Thickness = 2
-				stroke.Parent = frame
-				
-				local title = Instance.new("TextLabel")
-				title.Size = UDim2.new(1, 0, 0, 30)
-				title.Position = UDim2.new(0, 0, 0, 0)
-				title.BackgroundTransparency = 1
-				title.Text = "\xe2\x9c\x85 Mise a jour disponible"
-				title.TextColor3 = Color3.fromRGB(100, 200, 255)
-				title.Font = Enum.Font.GothamBold
-				title.TextSize = 15
-				title.Parent = frame
-				
-				local desc = Instance.new("TextLabel")
-				desc.Size = UDim2.new(1, -20, 0, 35)
-				desc.Position = UDim2.new(0, 10, 0, 32)
-				desc.BackgroundTransparency = 1
-				desc.Text = "Version " .. remoteVersion .. " disponible\nVous avez " .. CURRENT_VERSION
-				desc.TextColor3 = Color3.fromRGB(200, 200, 210)
-				desc.Font = Enum.Font.Gotham
-				desc.TextSize = 13
-				desc.TextWrapped = true
-				desc.Parent = frame
-				
-				local yesBtn = Instance.new("TextButton")
-				yesBtn.Size = UDim2.new(0, 100, 0, 32)
-				yesBtn.Position = UDim2.new(0, 15, 0, 75)
-				yesBtn.BackgroundColor3 = Color3.fromRGB(80, 180, 100)
-				yesBtn.Text = "Oui"
-				yesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-				yesBtn.Font = Enum.Font.GothamBold
-				yesBtn.TextSize = 14
-				yesBtn.Parent = frame
-				local yCorner = Instance.new("UICorner")
-				yCorner.CornerRadius = UDim.new(0, 6)
-				yCorner.Parent = yesBtn
-				
-				local noBtn = Instance.new("TextButton")
-				noBtn.Size = UDim2.new(0, 100, 0, 32)
-				noBtn.Position = UDim2.new(0, 130, 0, 75)
-				noBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-				noBtn.Text = "Plus tard"
-				noBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
-				noBtn.Font = Enum.Font.Gotham
-				noBtn.TextSize = 14
-				noBtn.Parent = frame
-				local nCorner = Instance.new("UICorner")
-				nCorner.CornerRadius = UDim.new(0, 6)
-				nCorner.Parent = noBtn
-				
-				updatePopup = sg
-				
-				yesBtn.MouseButton1Click:Connect(function()
-					-- Shutdown everything
-					if _G._agoraShutdown then _G._agoraShutdown() end
-					if shutdownPanel then shutdownPanel() end
-					-- Destroy popup
-					sg:Destroy()
-					updatePopup = nil
-					
-					-- Small update animation (not full screen)
-					task.spawn(function()
-						local animGui = Instance.new("ScreenGui")
-						animGui.Name = "AgoraUpdateAnim"
-						animGui.ResetOnSpawn = false
-						animGui.DisplayOrder = 99999
-						local okGui2, parent2 = pcall(function() return game:GetService("CoreGui") end)
-						if not okGui2 or not parent2 then
-							parent2 = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
-						end
-						animGui.Parent = parent2
-						
-						local animFrame = Instance.new("Frame")
-						animFrame.Size = UDim2.new(0, 320, 0, 80)
-						animFrame.Position = UDim2.new(0.5, -160, 0.5, -40)
-						animFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-						animFrame.BorderSizePixel = 0
-						animFrame.Parent = animGui
-						local aCorner = Instance.new("UICorner")
-						aCorner.CornerRadius = UDim.new(0, 12)
-						aCorner.Parent = animFrame
-						local aStroke = Instance.new("UIStroke")
-						aStroke.Color = Color3.fromRGB(100, 200, 255)
-						aStroke.Thickness = 2
-						aStroke.Parent = animFrame
-						
-						local animLabel = Instance.new("TextLabel")
-						animLabel.Size = UDim2.new(1, 0, 1, 0)
-						animLabel.BackgroundTransparency = 1
-						animLabel.Text = "Mise a jour en cours..."
-						animLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
-						animLabel.Font = Enum.Font.GothamBold
-						animLabel.TextSize = 16
-						animLabel.Parent = animFrame
-						
-						-- Wait a moment for shutdown to complete
-						task.wait(1.5)
-						
-						-- Destroy all Agora GUIs
-						pcall(function()
-							for _, gui in ipairs(parent2:GetChildren()) do
-								if gui:IsA("ScreenGui") and (gui.Name:match("Agora") or gui.Name:match("Milan")) then
-									gui:Destroy()
-								end
-							end
-						end)
-						
-						animLabel.Text = "Redemarrage..."
-						task.wait(0.5)
-						
-						-- Reload p1
-						local reloadUrl = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache=" .. tostring(tick())
-						local okReload, code = pcall(function()
-							return game:HttpGet(reloadUrl, true)
-						end)
-						if okReload and code and #code > 100 then
-							animGui:Destroy()
-							local fn, err = loadstring(code)
-							if fn then
-								pcall(fn)
-							end
-						else
-							animLabel.Text = "Erreur de chargement"
-							task.wait(2)
-							animGui:Destroy()
+		local ok,r=pcall(function() return game:HttpGet(VURL..tostring(tick()),true) end)
+		if not ok or not r or #r<5 then return end
+		local rv=r:match('return%s+"(v[%d%.]+)"')
+		if not rv or rv==CV then return end
+		task.spawn(function()
+			local sg=Instance.new("ScreenGui")
+			sg.Name="AgoraUpd"
+			sg.ResetOnSpawn=false
+			sg.DisplayOrder=99999
+			local ok2,par=pcall(function() return game:GetService("CoreGui") end)
+			if not ok2 or not par then par=game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") end
+			sg.Parent=par
+			local f=Instance.new("Frame")
+			f.Size=UDim2.new(0,280,0,120)
+			f.Position=UDim2.new(1,-300,1,-140)
+			f.BackgroundColor3=Color3.fromRGB(30,30,40)
+			f.BorderSizePixel=0
+			f.Parent=sg
+			local c=Instance.new("UICorner") c.CornerRadius=UDim.new(0,10) c.Parent=f
+			local s=Instance.new("UIStroke") s.Color=Color3.fromRGB(100,200,255) s.Thickness=2 s.Parent=f
+			local t=Instance.new("TextLabel")
+			t.Size=UDim2.new(1,0,0,30)
+			t.BackgroundTransparency=1
+			t.Text="Mise a jour disponible"
+			t.TextColor3=Color3.fromRGB(100,200,255)
+			t.Font=Enum.Font.GothamBold
+			t.TextSize=15
+			t.Parent=f
+			local d=Instance.new("TextLabel")
+			d.Size=UDim2.new(1,-20,0,35)
+			d.Position=UDim2.new(0,10,0,32)
+			d.BackgroundTransparency=1
+			d.Text="Version "..rv.." disponible\nVous avez "..CV
+			d.TextColor3=Color3.fromRGB(200,200,210)
+			d.Font=Enum.Font.Gotham
+			d.TextSize=13
+			d.TextWrapped=true
+			d.Parent=f
+			local yB=Instance.new("TextButton")
+			yB.Size=UDim2.new(0,100,0,32)
+			yB.Position=UDim2.new(0,15,0,75)
+			yB.BackgroundColor3=Color3.fromRGB(80,180,100)
+			yB.Text="Oui"
+			yB.TextColor3=Color3.fromRGB(255,255,255)
+			yB.Font=Enum.Font.GothamBold
+			yB.TextSize=14
+			yB.Parent=f
+			local yC=Instance.new("UICorner") yC.CornerRadius=UDim.new(0,6) yC.Parent=yB
+			local nB=Instance.new("TextButton")
+			nB.Size=UDim2.new(0,100,0,32)
+			nB.Position=UDim2.new(0,130,0,75)
+			nB.BackgroundColor3=Color3.fromRGB(60,60,70)
+			nB.Text="Plus tard"
+			nB.TextColor3=Color3.fromRGB(200,200,210)
+			nB.Font=Enum.Font.Gotham
+			nB.TextSize=14
+			nB.Parent=f
+			local nC=Instance.new("UICorner") nC.CornerRadius=UDim.new(0,6) nC.Parent=nB
+			uP=sg
+			yB.MouseButton1Click:Connect(function()
+				if _G._agoraShutdown then _G._agoraShutdown() end
+				if shutdownPanel then shutdownPanel() end
+				sg:Destroy() uP=nil
+				task.spawn(function()
+					local aG=Instance.new("ScreenGui")
+					aG.Name="AgoraUpdAnim"
+					aG.ResetOnSpawn=false
+					aG.DisplayOrder=99999
+					local ok3,par2=pcall(function() return game:GetService("CoreGui") end)
+					if not ok3 or not par2 then par2=game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") end
+					aG.Parent=par2
+					local aF=Instance.new("Frame")
+					aF.Size=UDim2.new(0,320,0,80)
+					aF.Position=UDim2.new(0.5,-160,0.5,-40)
+					aF.BackgroundColor3=Color3.fromRGB(25,25,35)
+					aF.BorderSizePixel=0
+					aF.Parent=aG
+					local aC2=Instance.new("UICorner") aC2.CornerRadius=UDim.new(0,12) aC2.Parent=aF
+					local aS2=Instance.new("UIStroke") aS2.Color=Color3.fromRGB(100,200,255) aS2.Thickness=2 aS2.Parent=aF
+					local aL=Instance.new("TextLabel")
+					aL.Size=UDim2.new(1,0,1,0)
+					aL.BackgroundTransparency=1
+					aL.Text="Mise a jour en cours..."
+					aL.TextColor3=Color3.fromRGB(100,200,255)
+					aL.Font=Enum.Font.GothamBold
+					aL.TextSize=16
+					aL.Parent=aF
+					task.wait(1.5)
+					pcall(function()
+						for _,g in ipairs(par2:GetChildren()) do
+							if g:IsA("ScreenGui") and (g.Name:match("Agora") or g.Name:match("Milan")) then g:Destroy() end
 						end
 					end)
-				end)
-				
-				noBtn.MouseButton1Click:Connect(function()
-					sg:Destroy()
-					updatePopup = nil
-					updateDismissed = true
-					-- Re-check in 5 minutes
-					task.delay(300, function()
-						updateDismissed = false
-					end)
+					aL.Text="Redemarrage..."
+					task.wait(0.5)
+					local rU="https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache="..tostring(tick())
+					local okR,code=pcall(function() return game:HttpGet(rU,true) end)
+					if okR and code and #code>100 then
+						aG:Destroy()
+						local fn=loadstring(code)
+						if fn then pcall(fn) end
+					else
+						aL.Text="Erreur de chargement"
+						task.wait(2) aG:Destroy()
+					end
 				end)
 			end)
-		end
+			nB.MouseButton1Click:Connect(function()
+				sg:Destroy() uP=nil uD=true
+				task.delay(300,function() uD=false end)
+			end)
+		end)
 	end)
 end
-
--- Start update checker after 10s, then every 60s
-task.delay(10, function()
-	while true do
-		pcall(checkForUpdate)
-		task.wait(60)
-	end
+task.delay(10,function()
+	while true do pcall(cFU) task.wait(60) end
 end)
-end -- end of if _G._agoraUpdateCheckerRunning
