@@ -248,8 +248,8 @@ screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui", 10)
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 460, 0, 520)
-mainFrame.Position = UDim2.new(0.5, -230, 0.5, -260)
+mainFrame.Size = UDim2.new(0, 480, 0, 520)
+mainFrame.Position = UDim2.new(0.5, -240, 0.5, -260)
 mainFrame.Visible = false  -- Sera révélé après l'intro
 -- S'assure que le panel reste visible et ne se fait pas pousser par le chat au démarrage
 task.delay(0, function()
@@ -764,7 +764,7 @@ local function _initRegistrySearch()
 		"Stephen", "Taylor", "Thomas", "Tyler", "Victoria",
 		"William", "Zoe", "Xx_Shadow_xX", "Dark_Mage", "ProGamer123",
 		-- Pseudos spécifiques (connus / populaires)
-		"Vzlom_Emk", "MilanAC", "Eme_Giroux", "RobloxDev", "TestAccount",
+		"Vzlom_Emk", "AlexPro", "NovaStar", "RobloxDev", "TestAccount",
 	}
 
 	-- Helper : calcule un score de match entre query et name
@@ -1121,7 +1121,7 @@ local minimized = false
 			_topBar.Visible = true
 			_minimizeBtn.Visible = true
 			_closeBtn.Visible = true
-			_tween(_mainFrame, {Size = UDim2.new(0, 460, 0, 520), BackgroundTransparency = 0.35}, 0.25)
+			_tween(_mainFrame, {Size = UDim2.new(0, 480, 0, 520), BackgroundTransparency = 0.35}, 0.25)
 			btn.Visible = false
 		end)
 
