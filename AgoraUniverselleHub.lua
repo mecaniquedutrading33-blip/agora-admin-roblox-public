@@ -22,7 +22,7 @@ local HttpService = game:GetService("HttpService")
 local SoundService = game:GetService("SoundService")
 
 -- Helper multi-fallback pour vérifier si un joueur peut chatter (client-only, pas d'accès serveur)
-_G._resolveCanChat = function(target, callback)
+local _resolveCanChat = function(target, callback)
 	task.spawn(function()
 		local result, src = nil, "non vérifiable"
 		local uid = (typeof(target) == "Instance" and target:IsA("Player") and target.UserId) or tonumber(target)
@@ -69,12 +69,12 @@ _G._resolveCanChat = function(target, callback)
 			if ok then result, src = r, "TextChannels" end
 		end
 		-- 5) On a VU le joueur parler dans le chat public → il peut nous parler
-		if result == nil and uid and _G._chatSeenPlayers[uid] then
-			local since = tick() - _G._chatSeenPlayers[uid]
+		if result == nil and uid and _chatSeenPlayers[uid] then
+			local since = tick() - _chatSeenPlayers[uid]
 			if since <= 600 then
 				result, src = true, "Vu parler"
 			else
-				_G._chatSeenPlayers[uid] = nil
+				_chatSeenPlayers[uid] = nil
 			end
 		end
 		pcall(function() callback(result, src) end)
@@ -82,7 +82,7 @@ _G._resolveCanChat = function(target, callback)
 end
 
 -- Client-only chat detection: remember players whose public messages we actually saw
-_G._chatSeenPlayers = {}
+local _chatSeenPlayers = {}
 task.spawn(function()
 	local ok, svc = pcall(function() return game:GetService("TextChatService") end)
 	if not ok or not svc then return end
@@ -91,7 +91,7 @@ task.spawn(function()
 			if not (msg and msg.TextSource and msg.TextSource.UserId) then return end
 			local uid = tonumber(msg.TextSource.UserId)
 			if uid then
-				_G._chatSeenPlayers[uid] = tick()
+				_chatSeenPlayers[uid] = tick()
 			end
 		end)
 	end)
@@ -104,7 +104,7 @@ task.spawn(function()
 				if ev then
 					ev.OnClientEvent:Connect(function(data)
 						local uid = tonumber(data and data.SpeakerUserId)
-						if uid then _G._chatSeenPlayers[uid] = tick() end
+						if uid then _chatSeenPlayers[uid] = tick() end
 					end)
 				end
 			end
@@ -172,10 +172,10 @@ local Camera = Workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
 
 -- Mémoire client : sauvegarde persistante entre réouvertures du panel
-if not _G.PanelMemory then
-	_G.PanelMemory = { dontAskRestore = false, lastEchoPlayerName = nil }
+if not PanelMemory then
+	local PanelMemory = { dontAskRestore = false, lastEchoPlayerName = nil }
 end
-local panelMemory = _G.PanelMemory
+local panelMemory = PanelMemory
 
 local character, humanoid, rootPart
 local function updateCharacter()
@@ -265,7 +265,17 @@ task.delay(0, function()
 	clampFrame()
 end)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-mainFrame.BackgroundTransparency = 0.35
+mainFrame.BackgroundTransparency = 1  -- v39.45: no flash, restored after intro
+-- SAFETY NET: force panel visible after 8s even if intro crashes
+task.delay(8, function()
+	pcall(function()
+		if mainFrame and not mainFrame.Visible then
+			mainFrame.Visible = true
+			mainFrame.BackgroundTransparency = 0.35
+			pcall(function() switchTab("Home") end)
+		end
+	end)
+end)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 mainFrame.ClipsDescendants = true
@@ -2084,7 +2094,7 @@ local function createPlayerEntry(plr)
 			for _, item in ipairs(items) do
 				if item.Tool and item.Tool.Parent then
 					item.Tool:Clone().Parent = myBackpack
-					stolen += 1
+					stolen = stolen + 1
 				end
 			end
 			if notify then notify("Volés: " .. stolen .. " item(s)", 2) end
@@ -2130,7 +2140,7 @@ local function createPlayerEntry(plr)
 					end
 				end
 				clone.Parent = character
-				copied += 1
+				copied = copied + 1
 			end
 		end
 		local hum = character:FindFirstChildOfClass("Humanoid")
@@ -3716,18 +3726,18 @@ local function startFly()
 
 		local move = Vector3.zero
 		-- PC controls (clavier)
-		if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move += Camera.CFrame.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= Camera.CFrame.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then move -= Camera.CFrame.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += Camera.CFrame.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
-		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0, 1, 0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move = move + Camera.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - Camera.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then move = move - Camera.CFrame.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + Camera.CFrame.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move = move - Vector3.new(0, 1, 0) end
 		-- Mobile controls (joystick + boutons)
 		if flyState.mobileInput and flyState.mobileInput.Magnitude > 0 then
-			move += Camera.CFrame.LookVector * flyState.mobileInput.Z + Camera.CFrame.RightVector * flyState.mobileInput.X
+			move = move + Camera.CFrame.LookVector * flyState.mobileInput.Z + Camera.CFrame.RightVector * flyState.mobileInput.X
 		end
-		if flyState.mobileUpHeld then move += Vector3.new(0, 1, 0) end
-		if flyState.mobileDownHeld then move -= Vector3.new(0, 1, 0) end
+		if flyState.mobileUpHeld then move = move + Vector3.new(0, 1, 0) end
+		if flyState.mobileDownHeld then move = move - Vector3.new(0, 1, 0) end
 
 		if flyState.vel then
 			flyState.vel.Velocity = move.Magnitude > 0 and move.Unit * flyState.speed or Vector3.zero
@@ -4971,10 +4981,10 @@ RunService.Stepped:Connect(function(_, dt)
 		-- Plate FIXE en X/Z : on ne tracke plus la position, on ajuste juste la hauteur
 		-- avec les touches +/-
 		if UserInputService:IsKeyDown(Enum.KeyCode.Equals) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadPlus) then
-			platformState.offset += 25 * dt
+			platformState.offset = platformState.offset + 25 * dt
 		end
 		if UserInputService:IsKeyDown(Enum.KeyCode.Minus) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadMinus) then
-			platformState.offset -= 25 * dt
+			platformState.offset = platformState.offset - 25 * dt
 		end
 		-- Lissage de la position verticale (évite les sauts secs)
 		local smoothing = math.min(1, dt * 12)
