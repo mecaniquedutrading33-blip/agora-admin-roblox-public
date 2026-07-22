@@ -518,25 +518,52 @@ local function main()
 		-- Implementation omitted for brevity
 	end
 
-	-- ============= LOAD PARTS =============
-	-- Load other parts of the UI (tabs, buttons, etc.) - simplified for this example
-	-- In the actual script, these are defined elsewhere and assigned to the _G._P1 table
-
-	-- ============= INITIALIZATION =============
-	updateLoad(0.10, "Initialisation des services...")
-	task.wait(0.05)
-	updateLoad(0.20, "Configuration du fly...")
-	task.wait(0.05)
-	updateLoad(0.30, "Mouvement...")
-	task.wait(0.05)
-	updateLoad(0.40, "Chargement de l'interface...")
-	task.wait(0.05)
-	updateLoad(0.50, "Initialisation terminée.")
-	task.wait(0.2)
+	-- ============= LOAD PART 2 =============
+	updateLoad(0.10, "Telechargement du panel...")
+	task.wait(0.3)
+	updateLoad(0.25, "Connexion au serveur...")
+	
+	local p2ok, p2code = pcall(function()
+		local url = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p2.lua&nocache=" .. tick()
+		return game:HttpGet(url)
+	end)
+	
+	if not p2ok or not p2code or #p2code < 1000 then
+		updateLoad(1.0, "ERREUR: Impossible de charger le panel")
+		task.wait(2)
+		loadingGui:Destroy()
+		warn("[AGORA] Failed to load p2: " .. tostring(p2code))
+		return
+	end
+	
+	updateLoad(0.50, "Panel charge (" .. #p2code .. " octets)")
+	task.wait(0.3)
+	updateLoad(0.65, "Initialisation des modules...")
+	task.wait(0.3)
+	updateLoad(0.80, "Preparation de l'interface...")
+	task.wait(0.3)
+	updateLoad(0.95, "Demarrage...")
+	task.wait(0.3)
+	
+	-- Execute p2
+	local p2fn, p2err = loadstring(p2code)
+	if not p2fn then
+		updateLoad(1.0, "ERREUR: " .. tostring(p2err))
+		task.wait(2)
+		loadingGui:Destroy()
+		warn("[AGORA] p2 syntax error: " .. tostring(p2err))
+		return
+	end
+	
+	updateLoad(1.0, "Pret!")
+	task.wait(0.3)
 	loadingGui:Destroy()
-
-	-- Expose toggleFly globally for keybind or button
-	_G.toggleFly = toggleFly
+	
+	-- Run p2
+	local ok, err = pcall(p2fn)
+	if not ok then
+		warn("[AGORA] p2 runtime error: " .. tostring(err))
+	end
 end
 
 -- Run the main function
