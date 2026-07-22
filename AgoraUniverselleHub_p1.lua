@@ -1,5 +1,6 @@
 -- Agora Hub [UNIVERSELLE] - Panel Roblox universel
 -- LocalScript dans StarterPlayerScripts ou exécuteur
+-- v39.42-fix1
 
 _G.SETTINGS = {
 	SpiderSpeed = 16,
