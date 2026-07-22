@@ -8029,7 +8029,7 @@ end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlay
 	credits.Size = UDim2.new(1, 0, 0, 18)
 	credits.Position = UDim2.new(0, 0, 1, -20)
 	credits.BackgroundTransparency = 1
-	credits.Text = "Agora Universelle"
+	credits.Text = "by Emerick"
 	credits.Font = Enum.Font.GothamBold
 	credits.TextSize = 11
 	credits.TextColor3 = Color3.fromRGB(140, 140, 180)
