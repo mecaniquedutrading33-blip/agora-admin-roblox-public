@@ -1699,7 +1699,7 @@ _=(function()
 		saStatus.TextColor3 = Color3.fromRGB(100, 220, 120)
 	end
 
-	-- Info label
+	-- Info label (visible only if SA active)
 	local saInfo = Instance.new("TextLabel")
 	saInfo.Size = UDim2.new(1, 0, 0, 14)
 	saInfo.Position = UDim2.new(0, 0, 0, 36)
@@ -1709,9 +1709,10 @@ _=(function()
 	saInfo.TextSize = 10
 	saInfo.TextColor3 = Color3.fromRGB(160, 160, 170)
 	saInfo.TextXAlignment = Enum.TextXAlignment.Left
+	saInfo.Visible = saActive
 	saInfo.Parent = saCard
 
-	-- Disable button
+	-- Disable button (visible only if SA active)
 	local saBtn = Instance.new("TextButton")
 	saBtn.Size = UDim2.new(1, 0, 0, 30)
 	saBtn.Position = UDim2.new(0, 0, 0, 54)
@@ -1722,6 +1723,7 @@ _=(function()
 	saBtn.TextColor3 = Color3.new(1, 1, 1)
 	saBtn.BorderSizePixel = 0
 	saBtn.AutoButtonColor = false
+	saBtn.Visible = saActive
 	saBtn.Parent = saCard
 	createCorner(saBtn, 8)
 
