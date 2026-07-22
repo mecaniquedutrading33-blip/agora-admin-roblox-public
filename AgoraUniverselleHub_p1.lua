@@ -265,6 +265,33 @@ local function main()
 
 	-- Shared state between parts
 	_G._P1 = {}
+	_G._P1.Camera = Workspace.CurrentCamera
+	_G._P1.HttpService = game:GetService("HttpService")
+	_G._P1.Lighting = game:GetService("Lighting")
+	_G._P1.LocalPlayer = LocalPlayer
+	_G._P1.Mouse = LocalPlayer:GetMouse()
+	_G._P1.Players = Players
+	_G._P1.ReplicatedStorage = game:GetService("ReplicatedStorage")
+	_G._P1.RunService = RunService
+	_G._P1.UserInputService = UserInputService
+	_G._P1.Workspace = Workspace
+	_G._P1.character = character
+	_G._P1.closeBtn = closeBtn
+	_G._P1.gotoWalkState = gotoWalkState
+	_G._P1.humanoid = humanoid
+	_G._P1.loadingGui = loadingGui
+	_G._P1.localScroll = localScroll
+	_G._P1.localState = localState
+	_G._P1.mainFrame = mainFrame
+	_G._P1.noclipSwitch = noclipSwitch
+	_G._P1.pages = pages
+	_G._P1.panelMemory = panelMemory
+	_G._P1.protectionsScroll = protectionsScroll
+	_G._P1.registryLayout = registryLayout
+	_G._P1.registryScroll = registryScroll
+	_G._P1.rootPart = rootPart
+	_G._P1.screenGui = screenGui
+	_G._P1.zeroGSwitch = zeroGSwitch
 
 	-- ============= FLY STATE =============
 	local flyState = {
