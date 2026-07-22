@@ -639,6 +639,75 @@ local function main()
 	updateLoad(0.95, "Demarrage...")
 	task.wait(0.3)
 	
+	-- Export all utility functions to _G so p2 can see them (loadstring scope)
+	_G.createCorner = createCorner
+	_G.createStroke = createStroke
+	_G.tween = tween
+	_G.createSwitch = createSwitch
+	_G.createButton = createButton
+	_G.createSlider = createSlider
+	_G.createTab = createTab
+	_G.switchTab = switchTab
+	_G.shutdownPanel = shutdownPanel
+	_G.startFly = startFly
+	_G.stopFly = stopFly
+	_G.updateLoad = updateLoad
+	_G.updateCharacter = updateCharacter
+	_G.createToggle = createToggle
+	_G.createSection = createSection
+	_G.createInput = createInput
+	_G.createDropdown = createDropdown
+	_G.fullbrightSwitch = fullbrightSwitch
+	_G.espSwitch = espSwitch
+	_G.noclipState = noclipState
+	_G.walkSpeedState = walkSpeedState
+	_G.jumpState = jumpState
+	_G.platformState = platformState
+	_G.espState = espState
+	_G.flyState = flyState
+	_G.flySwitch = flySwitch
+	_G.zeroGSwitch = zeroGSwitch
+	_G.fullbrightState = fullbrightState
+	_G.clickTPState = clickTPState
+	_G.hitboxState = hitboxState
+	_G.protectionsState = protectionsState
+	_G.autoClickState = autoClickState
+	_G.gotoWalkState = gotoWalkState
+	_G.localState = localState
+	_G.panelMemory = panelMemory
+	_G.extraScroll = extraScroll
+	_G.localScroll = localScroll
+	_G.protectionsScroll = protectionsScroll
+	_G.registryScroll = registryScroll
+	_G.registryLayout = registryLayout
+	_G.serverScroll = serverScroll
+	_G.extraPage = extraPage
+	_G.movePage = movePage
+	_G.remotesPage = remotesPage
+	_G.registryPage = registryPage
+	_G.localPage = localPage
+	_G.protectionsPage = protectionsPage
+	_G.settingsPage = settingsPage
+	_G.aboutPage = aboutPage
+	_G.pages = pages
+	_G.mainFrame = mainFrame
+	_G.screenGui = screenGui
+	_G.closeBtn = closeBtn
+	_G.loadingGui = loadingGui
+	_G.rootPart = rootPart
+	_G.humanoid = humanoid
+	_G.character = character
+	_G.Camera = Workspace.CurrentCamera
+	_G.HttpService = game:GetService("HttpService")
+	_G.Lighting = game:GetService("Lighting")
+	_G.LocalPlayer = LocalPlayer
+	_G.Mouse = LocalPlayer:GetMouse()
+	_G.Players = Players
+	_G.ReplicatedStorage = game:GetService("ReplicatedStorage")
+	_G.RunService = RunService
+	_G.UserInputService = UserInputService
+	_G.Workspace = Workspace
+
 	-- Execute p2
 	local p2fn, p2err = loadstring(p2code)
 	if not p2fn then
