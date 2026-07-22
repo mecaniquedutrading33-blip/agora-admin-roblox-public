@@ -15,8 +15,8 @@ _G.SETTINGS = {
 _G._game = nil
 if game then _game = game end
 if not _game then
-	_G.ok, envGame = pcall(function() return getfenv().game end)
-	if ok and envGame then _game = envG
+	local ok, envGame = pcall(function() return getfenv().game end)
+	if ok and envGame then _game = envGame end
 end
 if not _game then
 	local ok, sharedGame = pcall(function() return shared and shared.game end)
