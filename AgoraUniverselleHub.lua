@@ -272,7 +272,7 @@ task.delay(0, function()
 	clampFrame()
 end)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-mainFrame.BackgroundTransparency = 1  -- v39.47: no flash, restored after intro
+mainFrame.BackgroundTransparency = 0.35  -- v39.47: no flash, restored after intro
 -- SAFETY NET: force panel visible after 8s even if intro crashes
 task.delay(8, function()
 	pcall(function()
@@ -687,6 +687,7 @@ local function createTab(name)
 	return page
 end
 
+homePage = createTab("Home")
 local playersPage = createTab("Joueurs")
 local movePage = createTab("Move")
 local extraPage = createTab("Extra")
@@ -694,7 +695,6 @@ local remotesPage = createTab("Remotes")
 local registryPage = createTab("Registry")
 local localPage = createTab("Local")
 local protectionsPage = createTab("Protections")
-homePage = createTab("Home")
 -- ============= HOME PAGE CONTENT =============
 ;(function()
 	local _homePage = homePage
@@ -716,7 +716,7 @@ homePage = createTab("Home")
 	local _TextChatService = TextChatService
 
 	-- Version
-	local CURRENT_VERSION = "v39.47"
+	local CURRENT_VERSION = "v39.48"
 
 	-- Changelog
 	local changelogEntries = {
