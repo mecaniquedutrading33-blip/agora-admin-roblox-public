@@ -681,10 +681,10 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	local CURRENT_VERSION = "v39.50"
+	local CURRENT_VERSION = "v39.51"
 	
 	local changelogEntries = {
-		"v39.50: Home restauré depuis v39.43 + 8 onglets",
+		"v39.51: Emojis ASCII + master switch Protections",
 		"v39.43: Enrichissement joueurs (connexion, badges)",
 		"v39.42: Fix fly + noclip + ESP + aimbot",
 		"v39.41: Angel Fly + notifications + top bar overlay",
@@ -867,7 +867,7 @@ local protectionsPage = createTab("Protections")
 	discordBtn.Size = UDim2.new(1, -20, 0, 36)
 	discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
 	discordBtn.BorderSizePixel = 0
-	discordBtn.Text = "🎮 Rejoindre le Discord"
+	discordBtn.Text = "[Discord] Rejoindre"
 	discordBtn.Font = Enum.Font.GothamBold
 	discordBtn.TextSize = 14
 	discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -876,8 +876,8 @@ local protectionsPage = createTab("Protections")
 	createCorner(discordBtn, 8)
 	discordBtn.MouseButton1Click:Connect(function()
 		pcall(function() setclipboard("https://discord.gg/fVw2rzAMb") end)
-		discordBtn.Text = "✅ Lien copié !"
-		task.delay(2, function() discordBtn.Text = "🎮 Rejoindre le Discord" end)
+		discordBtn.Text = "[OK] Lien copie !"
+		task.delay(2, function() discordBtn.Text = "[Discord] Rejoindre" end)
 	end)
 	
 	local discordLabel = discordBtn
@@ -898,7 +898,7 @@ local protectionsPage = createTab("Protections")
 	langBtn.Size = UDim2.new(1, -20, 0, 34)
 	langBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 	langBtn.BorderSizePixel = 0
-	langBtn.Text = "🌍 Français"
+	langBtn.Text = "FR Francais"
 	langBtn.Font = Enum.Font.Gotham
 	langBtn.TextSize = 13
 	langBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
@@ -1017,7 +1017,7 @@ local function _initRegistrySearch()
 	registrySearchBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 	registrySearchBox.BackgroundTransparency = 0.2
 	registrySearchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
-	registrySearchBox.PlaceholderText = "🔍 Rechercher un pseudo Roblox..."
+	registrySearchBox.PlaceholderText = "> Rechercher un pseudo..."
 	registrySearchBox.Text = ""
 	registrySearchBox.Font = Enum.Font.Gotham
 	registrySearchBox.TextSize = 12
@@ -1705,7 +1705,7 @@ playerSearchBox.Position = UDim2.new(0, 5, 0, 8)
 playerSearchBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 playerSearchBox.BackgroundTransparency = 0.4 -- plus discret que la search box Registry
 playerSearchBox.TextColor3 = Color3.fromRGB(200, 200, 200)
-playerSearchBox.PlaceholderText = "🔎 Filtrer la liste des joueurs..."
+playerSearchBox.PlaceholderText = "> Filtrer la liste..."
 playerSearchBox.Text = ""
 playerSearchBox.Font = Enum.Font.Gotham
 playerSearchBox.TextSize = 11
@@ -1755,7 +1755,7 @@ playersLayout.Padding = UDim.new(0, 6)
 playersLayout.SortOrder = Enum.SortOrder.LayoutOrder
 playersLayout.Parent = playersScroll
 
--- === CARTE "👑 MOI" (LocalPlayer) — auto-créée, toujours en haut ===
+-- === CARTE "* MOI" (LocalPlayer) — auto-créée, toujours en haut ===
 ;(function(_createCorner, _createStroke)
 	local myCard = Instance.new("Frame")
 	myCard.Name = "MyCard"
@@ -1768,7 +1768,7 @@ playersLayout.Parent = playersScroll
 	_createCorner(myCard, 8)
 	_createStroke(myCard, Color3.fromRGB(180, 130, 255), 1.5)
 
-	-- Titre "👑 TOI — @pseudo"
+	-- Titre "* TOI — @pseudo"
 	local myTitle = Instance.new("TextLabel")
 	myTitle.Size = UDim2.new(1, -16, 0, 22)
 	myTitle.Position = UDim2.new(0, 8, 0, 6)
@@ -1825,7 +1825,7 @@ playersLayout.Parent = playersScroll
 			local myGame = tostring(game.GameId or "?")
 			local myPlace = tostring(game.PlaceId or "?")
 
-			myTitle.Text = "👑 TOI — @" .. myName .. " (" .. myDisp .. ")"
+			myTitle.Text = "* TOI — @" .. myName .. " (" .. myDisp .. ")"
 			myContent.Text = table.concat({
 				"UserId      : " .. myUid,
 				"Compte      : " .. myYears .. " an(s) " .. myRem .. "j (" .. myAgeDays .. " jours)",
@@ -1958,7 +1958,7 @@ local function createPlayerEntry(plr)
 	moveBadge.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
 	moveBadge.BackgroundTransparency = 0.2
 	moveBadge.BorderSizePixel = 0
-	moveBadge.Text = "⚠ mouv. anormal"
+	moveBadge.Text = "! mouv. anormal"
 	moveBadge.Font = Enum.Font.GothamSemibold
 	moveBadge.TextSize = 9
 	moveBadge.TextColor3 = Color3.fromRGB(255, 140, 120)
@@ -2035,7 +2035,7 @@ local function createPlayerEntry(plr)
 	chatLbl.Size = UDim2.new(0.55, -6, 0, 14)
 	chatLbl.Position = UDim2.new(0, 6, 0, 80)
 	chatLbl.BackgroundTransparency = 1
-	chatLbl.Text = "💬 can_chat: chargement..."
+	chatLbl.Text = "Chat: chargement..."
 	chatLbl.Font = Enum.Font.Gotham
 	chatLbl.TextSize = 10
 	chatLbl.TextColor3 = Color3.fromRGB(180, 180, 180)
@@ -2046,22 +2046,22 @@ local function createPlayerEntry(plr)
 		if chatLbl and chatLbl.Parent then
 			if src == "CanTalkWithMe" then
 				if canChat == true then
-					chatLbl.Text = "💬 Peut me parler"
+					chatLbl.Text = "Chat: OK"
 					chatLbl.TextColor3 = Color3.fromRGB(120, 220, 140)
 				else
-					chatLbl.Text = "🚫 Ne peut pas me parler"
+					chatLbl.Text = "Chat: bloque"
 					chatLbl.TextColor3 = Color3.fromRGB(220, 120, 120)
 				end
 			else
 				-- Pas de serveur : on montre juste si le joueur a le chat activé
 				if canChat == true then
-					chatLbl.Text = "💬 Chat activé (" .. src .. ")"
+					chatLbl.Text = "Chat: active (" .. src .. ")"
 					chatLbl.TextColor3 = Color3.fromRGB(180, 180, 180)
 				elseif canChat == false then
-					chatLbl.Text = "🚫 Chat désactivé (" .. src .. ")"
+					chatLbl.Text = "Chat: desactive (" .. src .. ")"
 					chatLbl.TextColor3 = Color3.fromRGB(180, 120, 120)
 				else
-					chatLbl.Text = "💬 Chat: non vérifiable"
+					chatLbl.Text = "Chat: ?"
 					chatLbl.TextColor3 = Color3.fromRGB(180, 180, 180)
 				end
 			end
@@ -2665,7 +2665,7 @@ local function createPlayerEntry(plr)
 			copyBtn.Size = UDim2.new(0, 60, 0, 22)
 			copyBtn.Position = UDim2.new(1, -100, 0, 6)
 			copyBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
-			copyBtn.Text = "📋 Copier"
+			copyBtn.Text = "[Copy]"
 			copyBtn.Font = Enum.Font.GothamBold
 			copyBtn.TextSize = 11
 			copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -2753,11 +2753,11 @@ local function createPlayerEntry(plr)
 						toclipboard(txt)
 					end
 				end)
-				copyBtn.Text = "✓ Copié"
+				copyBtn.Text = "[v] Copie"
 				copyBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 100)
 				task.delay(1.5, function()
 					if copyBtn and copyBtn.Parent then
-						copyBtn.Text = "📋 Copier"
+						copyBtn.Text = "[Copy]"
 						copyBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
 					end
 				end)
@@ -2836,7 +2836,7 @@ local function createPlayerEntry(plr)
 				end)
 				if not apiOk then
 					table.insert(extra, "---")
-					table.insert(extra, "⚠ APIs Roblox bloquées par l'exécuteur")
+					table.insert(extra, "! APIs bloquees par l'exécuteur")
 					table.insert(extra, "(présence, favoris, profil détaillés indisponibles)")
 				else
 					-- Présence actuelle : est-ce qu'il joue EN CE MOMENT à ce jeu précis ?
@@ -2857,7 +2857,7 @@ local function createPlayerEntry(plr)
 									statusIcon = "○"
 								elseif t == 2 then
 									status = "Au Studio (développeur)"
-									statusIcon = "🛠"
+									statusIcon = ""
 								elseif t == 1 then
 									-- Il joue à un jeu
 									if p.lastLocation and p.lastLocation ~= "" then
@@ -2867,7 +2867,7 @@ local function createPlayerEntry(plr)
 									end
 									statusIcon = "▶"
 									if p.universeId and tostring(p.universeId) == tostring(game.GameId) then
-										status = "★ JOUE À CE JEU : " .. tostring(p.lastLocation or "")
+										status = "* JOUE A CE JEU : " .. tostring(p.lastLocation or "")
 										statusIcon = "★"
 									end
 								elseif t == 0 then
@@ -2925,7 +2925,7 @@ local function createPlayerEntry(plr)
 										local favName = g.name:sub(1, 40) .. (g.name:len() > 40 and "..." or "")
 										local favNote = ""
 										if g.universeId and tostring(g.universeId) == tostring(game.GameId) then
-											favNote = " ★ (CE JEU)"
+											favNote = " * (CE JEU)"
 										end
 										table.insert(extra, "• " .. favName .. favNote)
 									end
@@ -2938,12 +2938,12 @@ local function createPlayerEntry(plr)
 					-- Membership (Premium/BC)
 					local mt = tostring(plr.MembershipType):gsub("Enum.MembershipType.", "")
 					local isPremium = (mt == "Premium" or plr.MembershipType == Enum.MembershipType.Premium)
-					table.insert(extra, "💎 " .. (isPremium and "Premium" or "Non-Premium") .. (mt ~= "None" and mt ~= "Premium" and (" (" .. mt .. ")") or ""))
+					table.insert(extra, " " .. (isPremium and "Premium" or "Non-Premium") .. (mt ~= "None" and mt ~= "Premium" and (" (" .. mt .. ")") or ""))
 					-- Network ping (latence)
 					pcall(function()
 						local ping = plr:GetNetworkPing()
-						local pingIcon = "🟢"
-						if ping > 0.2 then pingIcon = "🟡" elseif ping > 0.4 then pingIcon = "🔴" end
+						local pingIcon = ""
+						if ping > 0.2 then pingIcon = "" elseif ping > 0.4 then pingIcon = "" end
 						table.insert(extra, pingIcon .. " Ping : " .. math.floor(ping * 1000) .. " ms")
 					end)
 					-- Ami avec moi ?
@@ -2951,7 +2951,7 @@ local function createPlayerEntry(plr)
 						pcall(function()
 							local isFriend = LocalPlayer:IsFriendsWith(plr.UserId)
 							if isFriend then
-								table.insert(extra, "👥 Ami avec toi : OUI")
+								table.insert(extra, "Ami: OUI")
 							end
 						end)
 					end
@@ -2963,7 +2963,7 @@ local function createPlayerEntry(plr)
 						end)
 						-- Si le player est dans CE JEU, son GameId = placeId
 						if plr.GameId and tostring(plr.GameId) == tostring(placeId) then
-							table.insert(extra, "★ EST DANS CE JEU MAINTENANT")
+							table.insert(extra, "* DANS CE JEU")
 						end
 					end
 					end
@@ -3202,7 +3202,7 @@ RunService.RenderStepped:Connect(function()
 					local hp = data.humanoid and math.floor(data.humanoid.Health) or 0
 					local chatSym = ""
 					if data.canChatSrc == "CanTalkWithMe" then
-						chatSym = data.canChat == true and " 💬" or " 🚫"
+						chatSym = data.canChat == true and "" or ""
 					elseif data.canChat ~= nil then
 						chatSym = data.canChat == true and " 📢" or " 🔕"
 					end
@@ -3215,8 +3215,8 @@ RunService.RenderStepped:Connect(function()
 				if data.label then
 					local hp = data.humanoid and math.floor(data.humanoid.Health) or 0
 					local chatSym = ""
-					if data.canChat == true then chatSym = " 💬"
-					elseif data.canChat == false then chatSym = " 🚫"
+					if data.canChat == true then chatSym = ""
+					elseif data.canChat == false then chatSym = ""
 					end
 					data.label.Text = plr.Name .. " [" .. math.floor(dist) .. " studs] HP:" .. hp .. chatSym
 					data.label.TextColor3 = col
@@ -6154,12 +6154,51 @@ local function createProtectionSwitch(name, label, y)
 	end)
 end
 
-createProtectionSwitch("antiFling", "Anti Fling", 10)
-createProtectionSwitch("antiSeat", "Anti Seat", 52)
-createProtectionSwitch("antiTeleport", "Anti Teleport", 94)
-createProtectionSwitch("antiFall", "Anti Fall", 136)
-createProtectionSwitch("antiKill", "Anti Kill / Spawn TP", 178)
-createProtectionSwitch("antiAFK", "Anti AFK (5 min)", 220)
+-- Master switch: tout activer/desactiver
+createSwitch(protectionsScroll, "TOUT ACTIVER / DESACTIVER", 10, function(on)
+	protectionsState.antiFling = on
+	protectionsState.antiSeat = on
+	protectionsState.antiTeleport = on
+	protectionsState.antiFall = on
+	protectionsState.antiKill = on
+	protectionsState.antiAFK = on
+	-- Mettre a jour les switches visuels
+	for _, child in ipairs(protectionsScroll:GetChildren()) do
+		if child:IsA("TextButton") and child:FindFirstChild("Track") then
+			local knob = child.Track:FindFirstChild("Knob")
+			if knob then
+				knob.Position = on and UDim2.new(1, -18, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
+				child.Track.BackgroundColor3 = on and Color3.fromRGB(60, 180, 255) or Color3.fromRGB(60, 60, 80)
+			end
+		end
+	end
+	if on then
+		updateCharacter()
+		if rootPart then
+			protectionsState.lastSafeCFrame = rootPart.CFrame
+			protectionsState.lastHrpPosition = rootPart.Position
+		end
+	else
+		if protectionsState.antiSeatWatcher then
+			protectionsState.antiSeatWatcher:Disconnect()
+			protectionsState.antiSeatWatcher = nil
+		end
+		if protectionsState.antiSeatSitWatcher then
+			protectionsState.antiSeatSitWatcher:Disconnect()
+			protectionsState.antiSeatSitWatcher = nil
+		end
+		for _, obj in ipairs(Workspace:GetDescendants()) do
+			restoreSeat(obj)
+		end
+	end
+end)
+
+createProtectionSwitch("antiFling", "Anti Fling", 52)
+createProtectionSwitch("antiSeat", "Anti Seat", 94)
+createProtectionSwitch("antiTeleport", "Anti Teleport", 136)
+createProtectionSwitch("antiFall", "Anti Fall", 178)
+createProtectionSwitch("antiKill", "Anti Kill / Spawn TP", 220)
+createProtectionSwitch("antiAFK", "Anti AFK (5 min)", 262)
 
 RunService.Heartbeat:Connect(function()
 	updateCharacter()
@@ -6938,7 +6977,7 @@ local function renderResult(data, parent)
 			p.BackgroundTransparency = 0.15
 			p.BorderSizePixel = 0
 			p.Font = Enum.Font.GothamBlack
-			p.Text = "💎 PREMIUM"
+			p.Text = " PREMIUM"
 			p.TextSize = 9
 			p.TextColor3 = Color3.fromRGB(60, 40, 0)
 			p.ZIndex = 5
@@ -7086,7 +7125,7 @@ local function renderResult(data, parent)
 
 	local presenceText = "Indisponible"
 	if data.presenceType == 0 then presenceText = "🔘 Hors ligne"
-	elseif data.presenceType == 1 then presenceText = "🟢 En ligne"
+	elseif data.presenceType == 1 then presenceText = " En ligne"
 	elseif data.presenceType == 2 then presenceText = "🎮 En jeu"
 	elseif data.presenceType == 3 then presenceText = "🎨 Dans Studio"
 	end
@@ -7105,7 +7144,7 @@ local function renderResult(data, parent)
 
 	local lines = {}
 	table.insert(lines, "━━━━━━━━━ " .. (data.username or "?") .. " ━━━━━━━━━")
-	table.insert(lines, "  💬 Can chat        : [CHATSTATUS]")
+	table.insert(lines, "  Can chat        : [CHATSTATUS]")
 	table.insert(lines, "  🆔 User ID          : " .. (data.userId or "Indisponible"))
 
 	-- Mise à jour async du statut chat (API native Roblox)
@@ -7114,11 +7153,11 @@ local function renderResult(data, parent)
 			local chatText
 			if src == "CanTalkWithMe" then
 				if result == true then
-					chatText = "  💬 Peut me parler    : oui"
+					chatText = "  Chat: OK    : oui"
 				elseif result == false then
-					chatText = "  🚫 Peut me parler    : non"
+					chatText = "  Peut me parler    : non"
 				else
-					chatText = "  💬 Peut me parler    : inconnu"
+					chatText = "  Chat: OK    : inconnu"
 				end
 			else
 				if result == true then
@@ -7126,12 +7165,12 @@ local function renderResult(data, parent)
 				elseif result == false then
 					chatText = "  🔕 Chat activé       : non (" .. src .. ")"
 				else
-					chatText = "  💬 Chat                : non vérifiable"
+					chatText = "  Chat                : non vérifiable"
 				end
 			end
 			if big and big.Parent then
 				pcall(function()
-					big.Text = big.Text:gsub("  💬 Can chat        : %[CHATSTATUS%]", chatText, 1)
+					big.Text = big.Text:gsub("  Can chat        : %[CHATSTATUS%]", chatText, 1)
 				end)
 			end
 		end)
@@ -7153,14 +7192,14 @@ local function renderResult(data, parent)
 	table.insert(lines, "  🔞 Âge du compte    : " .. (data.accountAge or "Indisponible"))
 	if data.idHint then table.insert(lines, "  🆔 Heuristique ID   : " .. data.idHint) end
 	table.insert(lines, "  ⭐ Vérifié          : " .. (data.hasVerifiedBadge == true and "OUI" or (data.hasVerifiedBadge == false and "non" or "Indisponible")))
-	table.insert(lines, "  💎 Premium          : " .. (data.isPremium == true and "OUI" or (data.isPremium == false and "non" or "Indisponible")))
+	table.insert(lines, "   Premium          : " .. (data.isPremium == true and "OUI" or (data.isPremium == false and "non" or "Indisponible")))
 	if data.premiumUntil then table.insert(lines, "  ⭐ Premium jusqu'au : " .. tostring(data.premiumUntil):sub(1, 10)) end
 	table.insert(lines, "  📧 Email lié        : " .. (data.hasEmail == true and "oui" or (data.hasEmail == false and "non" or "Indisponible")))
 	table.insert(lines, "  ✓  Email vérifié    : " .. (data.emailVerified == true and "oui" or (data.emailVerified == false and "non" or "Indisponible")))
 	table.insert(lines, "  🌐 Langue du compte : " .. (data.locale or "Indisponible"))
-	table.insert(lines, "  🚫 Statut compte    : " .. (data.isBanned == true and "🔴 Banni" or (data.isBanned == false and "🟢 Actif" or "Indisponible")))
+	table.insert(lines, "  Statut compte    : " .. (data.isBanned == true and " Banni" or (data.isBanned == false and " Actif" or "Indisponible")))
 	table.insert(lines, "  📛 Banni            : " .. (data.banReason or (data.isBanned and "Oui (raison indisponible)" or "Non")))
-	table.insert(lines, "  🟢 Présence actuelle : " .. presenceText)
+	table.insert(lines, "   Présence actuelle : " .. presenceText)
 	table.insert(lines, "  🎮 En jeu (placeId) : " .. (data.presencePlaceId or "Indisponible"))
 	table.insert(lines, "  ⏰ Dernière connexion : " .. (data.lastOnlineText or "Indisponible"))
 	table.insert(lines, "  💱 Trade privacy    : " .. (data.tradePrivacy or "Indisponible"))
@@ -7189,7 +7228,7 @@ local function renderResult(data, parent)
 				local _hp = "?"
 				local _maxHp = "?"
 				pcall(function() if _humOk then local h = target.Character:FindFirstChildOfClass("Humanoid"); _hp = tostring(math.floor(h.Health)); _maxHp = tostring(math.floor(h.MaxHealth)) end end)
-				table.insert(lines, "  🔴 Présent ici     : OUI (connecté à ce serveur)")
+				table.insert(lines, "   Présent ici     : OUI (connecté à ce serveur)")
 				table.insert(lines, "  ├─ AccountAge      : " .. _ageYears .. " an(s) " .. _ageRem .. "j (" .. _ageDays .. " jours)")
 				table.insert(lines, "  ├─ Membership      : " .. _mt)
 				table.insert(lines, "  ├─ Team            : " .. _teamName)
@@ -7813,17 +7852,17 @@ function runRegistrySearch(query)
 				-- Détecter si l'ID est très petit (compte ancien) ou très grand (compte récent)
 				if userId then
 					if userId < 1000000 then
-						data.idHint = "🟢 Compte ANCIEN (beta tester probable)"
+						data.idHint = " Compte ANCIEN (beta tester probable)"
 					elseif userId < 10000000 then
-						data.idHint = "🟢 Compte ancien (2010+)"
+						data.idHint = " Compte ancien (2010+)"
 					elseif userId < 100000000 then
-						data.idHint = "🟡 Compte ~2010-2015"
+						data.idHint = " Compte ~2010-2015"
 					elseif userId < 1000000000 then
-						data.idHint = "🟡 Compte ~2015-2020"
+						data.idHint = " Compte ~2015-2020"
 					elseif userId < 10000000000 then
 						data.idHint = "🟠 Compte ~2020-2024"
 					else
-						data.idHint = "🔴 Compte TRÈS RÉCENT (2024+)"
+						data.idHint = " Compte TRÈS RÉCENT (2024+)"
 					end
 				end
 
