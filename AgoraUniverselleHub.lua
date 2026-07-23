@@ -544,7 +544,7 @@ local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 28, 0, 28)
 closeBtn.Position = UDim2.new(1, -34, 0, 5)
 closeBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
-closeBtn.Text = ""
+closeBtn.Text = "X"
 closeBtn.AutoButtonColor = false
 closeBtn.BorderSizePixel = 0
 closeBtn.Parent = topBar
@@ -742,7 +742,7 @@ local protectionsPage = createTab("Protections")
 		langCode = code
 		writefile("agora_lang.txt", code)
 		local t = translations[code] or translations["FR"]
-		pcall(function() if titleLabel then titleLabel.Text = t.Home end end)
+		-- topBar title preserved (Agora Hub)
 		pcall(function() if nouveautesLabel then nouveautesLabel.Text = t.nouveautes end end)
 		pcall(function() if discordLabel then discordLabel.Text = t.discord end end)
 		pcall(function() if langueLabel then langueLabel.Text = t.langue end end)
