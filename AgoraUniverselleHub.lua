@@ -6498,6 +6498,37 @@ local function _wrapRemotes()
 	argsBox.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
 	argsBox.BorderSizePixel = 0
 	argsBox.Text = ""
+		-- Bouton pour afficher les outils disponibles dans le jeu
+		local showToolsBtn = Instance.new("TextButton")
+		showToolsBtn.Size = UDim2.new(0, 100, 0, 26)
+		showToolsBtn.Position = UDim2.new(0, 10, 0, 100)
+		showToolsBtn.Text = "Outils jeu"
+		showToolsBtn.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+		showToolsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		showToolsBtn.Font = Enum.Font.GothamBold
+		showToolsBtn.Parent = remoteHeader
+		
+		-- Bouton pour obtenir l'outil dans l'inventaire
+		local getToolBtn = Instance.new("TextButton")
+		getToolBtn.Size = UDim2.new(0, 100, 0, 26)
+		getToolBtn.Position = UDim2.new(0, 120, 0, 100)
+		getToolBtn.Text = "Prendre outil"
+		getToolBtn.BackgroundColor3 = Color3.fromRGB(70, 180, 130)
+		getToolBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		getToolBtn.Font = Enum.Font.GothamBold
+		getToolBtn.Parent = remoteHeader
+		
+		-- Label pour expliquer les boutons
+		local toolsInfo = Instance.new("TextLabel")
+		toolsInfo.Size = UDim2.new(1, -140, 0, 20)
+		toolsInfo.Position = UDim2.new(0, 10, 0, 130)
+		toolsInfo.Text = "Outils jeu = lister | Prendre outil = ajouter à votre inventaire"
+		toolsInfo.BackgroundTransparency = 1
+		toolsInfo.TextColor3 = Color3.fromRGB(200, 200, 200)
+		toolsInfo.Font = Enum.Font.Gotham
+		toolsInfo.TextSize = 10
+		toolsInfo.Parent = remoteHeader
+
 	argsBox.PlaceholderText = "args (ex: \"hello\", 42, true)"
 	argsBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
 	argsBox.TextColor3 = Color3.fromRGB(220, 220, 240)
