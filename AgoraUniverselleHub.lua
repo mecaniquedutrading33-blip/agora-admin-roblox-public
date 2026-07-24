@@ -6812,6 +6812,141 @@ local function _wrapRemotes()
 	refreshRemotesBtn.Parent = remoteHeader
 	createCorner(refreshRemotesBtn, 4)
 
+	-- Bouton Outils du jeu (liste tous les Tools)
+	local toolsBtn = Instance.new("TextButton")
+	toolsBtn.Size = UDim2.new(0, 80, 0, 22)
+	toolsBtn.Position = UDim2.new(1, -70, 0, 5)
+	toolsBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 90)
+	toolsBtn.BorderSizePixel = 0
+	toolsBtn.Text = "Outils"
+	toolsBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
+	toolsBtn.TextSize = 11
+	toolsBtn.Font = Enum.Font.GothamBold
+	toolsBtn.Parent = remoteHeader
+	createCorner(toolsBtn, 4)
+
+	-- Popup liste des outils
+	local toolsPopup = Instance.new("Frame")
+	toolsPopup.Size = UDim2.new(1, -8, 0, 200)
+	toolsPopup.Position = UDim2.new(0, 4, 0, 60)
+	toolsPopup.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	toolsPopup.BorderSizePixel = 0
+	toolsPopup.Visible = false
+	toolsPopup.ZIndex = 50
+	toolsPopup.Parent = serverScroll
+	createCorner(toolsPopup, 8)
+	createStroke(toolsPopup, Color3.fromRGB(80, 80, 120), 1)
+
+	local toolsPopupTitle = Instance.new("TextLabel")
+	toolsPopupTitle.Size = UDim2.new(1, -30, 0, 24)
+	toolsPopupTitle.Position = UDim2.new(0, 8, 0, 4)
+	toolsPopupTitle.BackgroundTransparency = 1
+	toolsPopupTitle.Text = "Outils du jeu"
+	toolsPopupTitle.TextColor3 = Color3.fromRGB(200, 200, 220)
+	toolsPopupTitle.TextSize = 13
+	toolsPopupTitle.Font = Enum.Font.GothamBold
+	toolsPopupTitle.TextXAlignment = Enum.TextXAlignment.Left
+	toolsPopupTitle.ZIndex = 51
+	toolsPopupTitle.Parent = toolsPopup
+
+	local toolsPopupClose = Instance.new("TextButton")
+	toolsPopupClose.Size = UDim2.new(0, 22, 0, 22)
+	toolsPopupClose.Position = UDim2.new(1, -26, 0, 4)
+	toolsPopupClose.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
+	toolsPopupClose.BorderSizePixel = 0
+	toolsPopupClose.Text = "X"
+	toolsPopupClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+	toolsPopupClose.TextSize = 12
+	toolsPopupClose.Font = Enum.Font.GothamBold
+	toolsPopupClose.ZIndex = 52
+	toolsPopupClose.Parent = toolsPopup
+	createCorner(toolsPopupClose, 4)
+
+	local toolsListFrame = Instance.new("ScrollingFrame")
+	toolsListFrame.Size = UDim2.new(1, -8, 1, -36)
+	toolsListFrame.Position = UDim2.new(0, 4, 0, 32)
+	toolsListFrame.BackgroundTransparency = 1
+	toolsListFrame.BorderSizePixel = 0
+	toolsListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+	toolsListFrame.ScrollBarThickness = 4
+	toolsListFrame.ZIndex = 51
+	toolsListFrame.Parent = toolsPopup
+
+	local toolsListLayout = Instance.new("UIListLayout")
+	toolsListLayout.Padding = UDim.new(0, 3)
+	toolsListLayout.SortOrder = Enum.SortOrder.Name
+	toolsListLayout.Parent = toolsListFrame
+
+	toolsListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		toolsListFrame.CanvasSize = UDim2.new(0, 0, 0, toolsListLayout.AbsoluteContentSize.Y + 6)
+	end)
+
+	local function refreshToolsList()
+		for _, child in ipairs(toolsListFrame:GetChildren()) do
+			if child:IsA("TextButton") or child:IsA("TextLabel") then
+				child:Destroy()
+			end
+		end
+		local found = {}
+		local function scanTools(parent)
+			for _, obj in ipairs(parent:GetChildren()) do
+				if obj:IsA("Tool") then
+					table.insert(found, obj)
+				end
+				if not obj:IsA("Player") and not obj:IsA("Backpack") then
+					scanTools(obj)
+				end
+			end
+		end
+		scanTools(Workspace)
+		scanTools(game:GetService("Lighting"))
+		scanTools(game:GetService("ReplicatedStorage"))
+		scanTools(game:GetService("ServerStorage"))
+		if #found == 0 then
+			local noTools = Instance.new("TextLabel")
+			noTools.Size = UDim2.new(1, 0, 0, 20)
+			noTools.BackgroundTransparency = 1
+			noTools.Text = "Aucun outil trouve dans le jeu"
+			noTools.TextColor3 = Color3.fromRGB(150, 150, 170)
+			noTools.TextSize = 11
+			noTools.Font = Enum.Font.Gotham
+			noTools.Parent = toolsListFrame
+		else
+			for _, tool in ipairs(found) do
+				local toolRow = Instance.new("TextButton")
+				toolRow.Size = UDim2.new(1, 0, 0, 24)
+				toolRow.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+				toolRow.BorderSizePixel = 0
+				toolRow.Text = "  " .. tool.Name .. "  [" .. tool:GetFullName() .. "]"
+				toolRow.TextColor3 = Color3.fromRGB(200, 200, 220)
+				toolRow.TextSize = 10
+				toolRow.Font = Enum.Font.Gotham
+				toolRow.TextXAlignment = Enum.TextXAlignment.Left
+				toolRow.TextTruncate = Enum.TextTruncate.AtEnd
+				toolRow.AutoButtonColor = true
+				toolRow.Parent = toolsListFrame
+				createCorner(toolRow, 4)
+				toolRow.MouseButton1Click:Connect(function()
+					pcall(function()
+						local clone = tool:Clone()
+						clone.Parent = LocalPlayer.Backpack
+					end)
+				end)
+			end
+		end
+	end
+
+	toolsBtn.MouseButton1Click:Connect(function()
+		toolsPopup.Visible = not toolsPopup.Visible
+		if toolsPopup.Visible then
+			refreshToolsList()
+		end
+	end)
+
+	toolsPopupClose.MouseButton1Click:Connect(function()
+		toolsPopup.Visible = false
+	end)
+
 	-- Barre de recherche pour filtrer les remotes par nom
 	local remotesSearchBox = Instance.new("TextBox")
 	remotesSearchBox.Size = UDim2.new(1, -8, 0, 28)
@@ -6897,37 +7032,6 @@ local function _wrapRemotes()
 	argsBox.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
 	argsBox.BorderSizePixel = 0
 	argsBox.Text = ""
-		-- Bouton pour afficher les outils disponibles dans le jeu
-		local showToolsBtn = Instance.new("TextButton")
-		showToolsBtn.Size = UDim2.new(0, 100, 0, 26)
-		showToolsBtn.Position = UDim2.new(0, 10, 0, 100)
-		showToolsBtn.Text = "Outils jeu"
-		showToolsBtn.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
-		showToolsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-		showToolsBtn.Font = Enum.Font.GothamBold
-		showToolsBtn.Parent = remoteHeader
-		
-		-- Bouton pour obtenir l'outil dans l'inventaire
-		local getToolBtn = Instance.new("TextButton")
-		getToolBtn.Size = UDim2.new(0, 100, 0, 26)
-		getToolBtn.Position = UDim2.new(0, 120, 0, 100)
-		getToolBtn.Text = "Prendre outil"
-		getToolBtn.BackgroundColor3 = Color3.fromRGB(70, 180, 130)
-		getToolBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-		getToolBtn.Font = Enum.Font.GothamBold
-		getToolBtn.Parent = remoteHeader
-		
-		-- Label pour expliquer les boutons
-		local toolsInfo = Instance.new("TextLabel")
-		toolsInfo.Size = UDim2.new(1, -140, 0, 20)
-		toolsInfo.Position = UDim2.new(0, 10, 0, 130)
-		toolsInfo.Text = "Outils jeu = lister | Prendre outil = ajouter a votre inventaire"
-		toolsInfo.BackgroundTransparency = 1
-		toolsInfo.TextColor3 = Color3.fromRGB(200, 200, 200)
-		toolsInfo.Font = Enum.Font.Gotham
-		toolsInfo.TextSize = 10
-		toolsInfo.Parent = remoteHeader
-
 	argsBox.PlaceholderText = "args (ex: \"hello\", 42, true)"
 	argsBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
 	argsBox.TextColor3 = Color3.fromRGB(220, 220, 240)
