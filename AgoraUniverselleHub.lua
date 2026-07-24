@@ -6862,9 +6862,26 @@ local function _wrapRemotes()
 	toolsPopupClose.Parent = toolsPopup
 	createCorner(toolsPopupClose, 4)
 
+	-- Mini barre de recherche
+	local toolsSearchBox = Instance.new("TextBox")
+	toolsSearchBox.Size = UDim2.new(1, -8, 0, 22)
+	toolsSearchBox.Position = UDim2.new(0, 4, 0, 30)
+	toolsSearchBox.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+	toolsSearchBox.BorderSizePixel = 0
+	toolsSearchBox.Text = ""
+	toolsSearchBox.PlaceholderText = " Filtrer les outils..."
+	toolsSearchBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
+	toolsSearchBox.Font = Enum.Font.Gotham
+	toolsSearchBox.TextSize = 11
+	toolsSearchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
+	toolsSearchBox.ClearTextOnFocus = false
+	toolsSearchBox.ZIndex = 52
+	toolsSearchBox.Parent = toolsPopup
+	createCorner(toolsSearchBox, 4)
+
 	local toolsListFrame = Instance.new("ScrollingFrame")
-	toolsListFrame.Size = UDim2.new(1, -8, 1, -36)
-	toolsListFrame.Position = UDim2.new(0, 4, 0, 32)
+	toolsListFrame.Size = UDim2.new(1, -8, 1, -60)
+	toolsListFrame.Position = UDim2.new(0, 4, 0, 56)
 	toolsListFrame.BackgroundTransparency = 1
 	toolsListFrame.BorderSizePixel = 0
 	toolsListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -6923,6 +6940,8 @@ local function _wrapRemotes()
 				toolRow.AutoButtonColor = true
 				toolRow.Parent = toolsListFrame
 				createCorner(toolRow, 4)
+				-- Stocker le nom pour le filtre
+				toolRow.Name = "ToolRow_" .. tool.Name
 				toolRow.MouseButton1Click:Connect(function()
 					-- Essayer de prendre l'outil pour de vrai
 					local taken = false
@@ -6963,6 +6982,17 @@ local function _wrapRemotes()
 			toolsListFrame.CanvasSize = UDim2.new(0, 0, 0, toolsListLayout.AbsoluteContentSize.Y + 6)
 		end)
 	end
+
+	-- Filtre en temps reel
+	toolsSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+		local query = toolsSearchBox.Text:lower()
+		for _, child in ipairs(toolsListFrame:GetChildren()) do
+			if child:IsA("TextButton") then
+				local name = child.Text:lower()
+				child.Visible = query == "" or name:find(query, 1, true) ~= nil
+			end
+		end
+	end)
 
 	toolsBtn.MouseButton1Click:Connect(function()
 		toolsPopup.Visible = not toolsPopup.Visible
