@@ -318,7 +318,7 @@ createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 	title.Position = UDim2.new(0.05, 0, 0.45, -10)
 	title.BackgroundTransparency = 1
 	title.Font = Enum.Font.GothamBlack
-	title.Text = "Agora Admin"
+	title.Text = "Agora Hub"
 	title.TextSize = 38
 	title.TextColor3 = Color3.fromRGB(220, 220, 240)
 	title.TextTransparency = 1
@@ -334,7 +334,7 @@ createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 	subtitle.Position = UDim2.new(0.05, 0, 0.45, 36)
 	subtitle.BackgroundTransparency = 1
 	subtitle.Font = Enum.Font.Gotham
-	subtitle.Text = "by Agora Admin"
+	subtitle.Text = "by Emerick"
 	subtitle.TextSize = 13
 	subtitle.TextColor3 = Color3.fromRGB(150, 150, 170)
 	subtitle.TextTransparency = 1
@@ -804,7 +804,7 @@ local protectionsPage = createTab("Protections")
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.Size = UDim2.new(1, -20, 0, 28)
 	titleLabel.BackgroundTransparency = 1
-	titleLabel.Text = "Accueil"
+	titleLabel.Text = "Agora Hub"
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.TextSize = 22
 	titleLabel.TextColor3 = Color3.fromRGB(60, 180, 255)
@@ -6805,7 +6805,7 @@ local function _wrapRemotes()
 	refreshRemotesBtn.Position = UDim2.new(1, -36, 0, 5)
 	refreshRemotesBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
 	refreshRemotesBtn.BorderSizePixel = 0
-	refreshRemotesBtn.Text = ""
+	refreshRemotesBtn.Text = "R"
 	refreshRemotesBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
 	refreshRemotesBtn.TextSize = 16
 	refreshRemotesBtn.Font = Enum.Font.GothamBold
