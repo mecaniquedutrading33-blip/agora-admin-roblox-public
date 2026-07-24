@@ -6869,6 +6869,7 @@ local function _wrapRemotes()
 	toolsListFrame.BorderSizePixel = 0
 	toolsListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 	toolsListFrame.ScrollBarThickness = 4
+	toolsListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	toolsListFrame.ZIndex = 51
 	toolsListFrame.Parent = toolsPopup
 
@@ -6934,6 +6935,9 @@ local function _wrapRemotes()
 				end)
 			end
 		end
+		task.defer(function()
+			toolsListFrame.CanvasSize = UDim2.new(0, 0, 0, toolsListLayout.AbsoluteContentSize.Y + 6)
+		end)
 	end
 
 	toolsBtn.MouseButton1Click:Connect(function()
