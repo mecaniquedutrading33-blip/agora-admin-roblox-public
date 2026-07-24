@@ -4200,7 +4200,23 @@ end)
 
 local PathfindingService = game:GetService("PathfindingService")
 
-local gotoWalkState = { enabled = false, active = false, target = nil, path = {}, visuals = {}, lastClick = 0, lastMoveTo = nil, recompute = nil, busy = false }
+local gotoWalkState = {
+	enabled = false,
+	active = false,
+	target = nil,
+	path = {},
+	visuals = {},
+	lastClick = 0,
+	lastMoveTo = nil,
+	recompute = nil,
+	busy = false,
+	followConnection = nil,
+	stuckTimer = 0,
+	stuckPos = nil,
+	stuckJumps = 0,
+	currentWaypointIdx = 1,
+	lastJumpTime = 0,
+}
 
 local function clearWalkVisuals()
 	for _, v in ipairs(gotoWalkState.visuals) do
@@ -4256,7 +4272,7 @@ local function computePathTo(targetPos)
 			AgentHeight = 5,
 			AgentCanJump = true,
 			AgentCanClimb = false,
-			WaypointSpacing = 4,
+			WaypointSpacing = 3,
 		})
 		p:ComputeAsync(rootPart.Position, targetPos)
 		return p:GetWaypoints()
@@ -4299,13 +4315,112 @@ local function computePathTo(targetPos)
 	return {}
 end
 
+-- Boucle de suivi RenderStepped : suit les waypoints, detecte les blocages, saute
+local function manageFollowLoop(start)
+	if start then
+		-- Stop existing loop first
+		if gotoWalkState.followConnection then
+			gotoWalkState.followConnection:Disconnect()
+			gotoWalkState.followConnection = nil
+		end
+
+		gotoWalkState.stuckTimer = tick()
+		gotoWalkState.stuckPos = rootPart and rootPart.Position or nil
+		gotoWalkState.stuckJumps = 0
+		gotoWalkState.currentWaypointIdx = 1
+		gotoWalkState.lastJumpTime = 0
+
+		gotoWalkState.followConnection = RunService.RenderStepped:Connect(function(dt)
+			if not gotoWalkState.active then return end
+			updateCharacter()
+			if not rootPart or not humanoid then return end
+
+			local path = gotoWalkState.path
+			if not path or #path == 0 then return end
+
+			local idx = gotoWalkState.currentWaypointIdx
+			if idx > #path then
+				-- Arrive a destination : NE PAS desactiver, juste rester
+				return
+			end
+
+			local wp = path[idx]
+			local dist = (rootPart.Position - wp).Magnitude
+
+			-- Assez proche du waypoint actuel ? Avancer au suivant
+			if dist < 4 then
+				gotoWalkState.currentWaypointIdx = idx + 1
+				gotoWalkState.stuckTimer = tick()
+				gotoWalkState.stuckPos = rootPart.Position
+				gotoWalkState.stuckJumps = 0
+				if idx + 1 <= #path then
+					humanoid:MoveTo(path[idx + 1])
+				end
+				return
+			end
+
+			-- Detection de blocage
+			local moved = gotoWalkState.stuckPos and (rootPart.Position - gotoWalkState.stuckPos).Magnitude or 999
+			local timeStuck = tick() - gotoWalkState.stuckTimer
+
+			if moved < 2 and timeStuck > 3 then
+				-- Bloque : tenter de sauter
+				if gotoWalkState.stuckJumps < 2 and tick() - gotoWalkState.lastJumpTime > 0.5 then
+					humanoid.Jump = true
+					gotoWalkState.stuckJumps = gotoWalkState.stuckJumps + 1
+					gotoWalkState.lastJumpTime = tick()
+					gotoWalkState.stuckTimer = tick()
+				else
+					-- Trop de sauts echoues : recalculer le chemin
+					local newPath = computePathTo(gotoWalkState.target or wp)
+					if #newPath > 0 then
+						gotoWalkState.path = newPath
+						gotoWalkState.currentWaypointIdx = 1
+						gotoWalkState.stuckJumps = 0
+						gotoWalkState.stuckTimer = tick()
+						gotoWalkState.stuckPos = rootPart.Position
+						humanoid:MoveTo(newPath[1])
+						visualizeWaypoints(newPath)
+					end
+				end
+			elseif moved >= 2 then
+				-- Bouge normalement : reset stuck timer
+				gotoWalkState.stuckTimer = tick()
+				gotoWalkState.stuckPos = rootPart.Position
+				gotoWalkState.stuckJumps = 0
+			end
+
+			-- Auto-jump si le waypoint est significativement plus haut
+			local heightDiff = wp.Y - rootPart.Position.Y
+			if heightDiff > 3 and tick() - gotoWalkState.lastJumpTime > 0.5 then
+				humanoid.Jump = true
+				gotoWalkState.lastJumpTime = tick()
+			end
+
+			-- Relancer MoveTo periodiquement pour eviter que le humanoid s'arrete
+			if tick() - (gotoWalkState.lastMoveTo or 0) > 0.5 then
+				humanoid:MoveTo(wp)
+				gotoWalkState.lastMoveTo = tick()
+			end
+		end)
+	else
+		-- Stop the loop
+		if gotoWalkState.followConnection then
+			gotoWalkState.followConnection:Disconnect()
+			gotoWalkState.followConnection = nil
+		end
+	end
+end
+
 local gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, function(on)
 	gotoWalkState.enabled = on
-	gotoWalkState.active = on
-	if not on then
-		gotoWalkState.target = nil
-		gotoWalkState.path = {}
+	if on then
+		gotoWalkState.active = true
+	else
+		gotoWalkState.active = false
+		manageFollowLoop(false)
 		clearWalkVisuals()
+		-- Garder target et path pour pouvoir reprendre
 	end
 end)
 
