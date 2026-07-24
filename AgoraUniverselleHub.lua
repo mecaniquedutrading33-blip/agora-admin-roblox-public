@@ -6027,10 +6027,6 @@ end)()
 	end
 	_initEmotes()
 
-local playersPage = createTab("Joueurs")
-local movePage = createTab("Move")
-local extraPage = createTab("Extra")
-
 -- ============= AIMBOT =============
 -- Verrouille la souris sur la TETE du joueur le plus proche du CENTRE de l'ecran
 -- - Filtre "pas a travers les murs" : raycast camera  head, verifie qu'on touche le character
