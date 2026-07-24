@@ -6888,21 +6888,17 @@ local function _wrapRemotes()
 				child:Destroy()
 			end
 		end
+		-- Scan TOUS les descendants du jeu (game:GetDescendants)
 		local found = {}
-		local function scanTools(parent)
-			for _, obj in ipairs(parent:GetChildren()) do
-				if obj:IsA("Tool") then
-					table.insert(found, obj)
-				end
-				if not obj:IsA("Player") and not obj:IsA("Backpack") then
-					scanTools(obj)
-				end
+		local seen = {}
+		for _, obj in ipairs(game:GetDescendants()) do
+			if obj:IsA("Tool") and not seen[obj] then
+				seen[obj] = true
+				table.insert(found, obj)
 			end
 		end
-		scanTools(Workspace)
-		scanTools(game:GetService("Lighting"))
-		scanTools(game:GetService("ReplicatedStorage"))
-		scanTools(game:GetService("ServerStorage"))
+		-- Afficher compteur
+		toolsPopupTitle.Text = "Outils du jeu (" .. #found .. " trouves)"
 		if #found == 0 then
 			local noTools = Instance.new("TextLabel")
 			noTools.Size = UDim2.new(1, 0, 0, 20)
@@ -6928,10 +6924,38 @@ local function _wrapRemotes()
 				toolRow.Parent = toolsListFrame
 				createCorner(toolRow, 4)
 				toolRow.MouseButton1Click:Connect(function()
+					-- Essayer de prendre l'outil pour de vrai
+					local taken = false
+					-- Methode 1: Cloner dans le Backpack
 					pcall(function()
 						local clone = tool:Clone()
 						clone.Parent = LocalPlayer.Backpack
+						taken = true
 					end)
+					-- Methode 2: Si le perso existe, equiper directement
+					if character and character:FindFirstChild("Humanoid") then
+						pcall(function()
+							local clone = tool:Clone()
+							clone.Parent = character
+							taken = true
+						end)
+					end
+					-- Methode 3: Chercher un RemoteEvent "GiveTool" / "GetTool" et le fire
+					pcall(function()
+						for _, remote in ipairs(game:GetDescendants()) do
+							if remote:IsA("RemoteEvent") and (remote.Name == "GiveTool" or remote.Name == "GetTool" or remote.Name == "GiveItem" or remote.Name == "ToolRequest") then
+								remote:FireServer(tool.Name, tool)
+								taken = true
+								break
+							end
+						end
+					end)
+					if not taken then
+						-- Fallback: essayer de prendre l'original directement
+						pcall(function()
+							tool.Parent = LocalPlayer.Backpack
+						end)
+					end
 				end)
 			end
 		end
