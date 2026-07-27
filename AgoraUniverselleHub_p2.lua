@@ -95,11 +95,12 @@ _G.pages["Home"] = homePage
 	local _TextChatService = game:GetService("TextChatService")
 
 	-- Version
-	local CURRENT_VERSION = "v39.49"
+	local CURRENT_VERSION = "v39.52"
 	_G.CURRENT_VERSION = CURRENT_VERSION
 
 	-- Changelog
 	local changelogEntries = {
+		"v39.52: Fix noclip - p1 reconstruit avec createTab/createSwitch/createSlider + flySwitch/noclipSwitch",
 		"v39.49: Home dans p2 + chargement dynamique corrigé",
 		"v39.48: Home premier onglet, fond corrigé",
 		"v39.47: Home recréé avec stats live",
