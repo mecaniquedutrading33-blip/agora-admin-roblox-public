@@ -1,5 +1,5 @@
 -- Agora Hub [UNIVERSELLE] - Panel Roblox universel
--- LocalScript dans StarterPlayerScripts ou exécuteur
+-- LocalScript dans StarterPlayerScripts ou executeur
 
 _G.SETTINGS = {
 	SpiderSpeed = 16,
@@ -163,7 +163,7 @@ _G.updateLoad = updateLoad
 	if loadingText then
 		loadingText.Text = msg or "Chargement..."
 	end
-	-- Petit wait pour étaler la charge
+	-- Petit wait pour etaler la charge
 	task.wait(0.05)
 end
 
@@ -179,13 +179,13 @@ local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local SoundService = game:GetService("SoundService")
 
--- Helper multi-fallback pour vérifier si un joueur peut chatter (client-only, pas d'accès serveur)
+-- Helper multi-fallback pour verifier si un joueur peut chatter (client-only, pas d'acces serveur)
 local function _resolveCanChat(target, callback)
 	task.spawn(function()
-		local result, src = nil, "non vérifiable"
+		local result, src = nil, "non verifiable"
 		local uid = (typeof(target) == "Instance" and target:IsA("Player") and target.UserId) or tonumber(target)
 
-		-- 1) VRAIE réponse serveur : RemoteFunction CanUsersChatAsync
+		-- 1) VRAIE reponse serveur : RemoteFunction CanUsersChatAsync
 		if uid and LocalPlayer then
 			local rf = ReplicatedStorage:FindFirstChild("AgoraCanChatRF")
 			if rf and rf:IsA("RemoteFunction") then
@@ -196,13 +196,13 @@ local function _resolveCanChat(target, callback)
 			end
 		end
 
-		-- 2) API client native (moins fiable, indique juste "a le chat activé")
+		-- 2) API client native (moins fiable, indique juste "a le chat active")
 		if result == nil and uid then
 			local ok, r = pcall(function() return TextChatService:CanUserChatAsync(uid) end)
 			if ok then result, src = r, "ChatEnabled" end
 		end
 
-		-- 3) Propriétés legacy
+		-- 3) Proprietes legacy
 		if result == nil and typeof(target) == "Instance" and target:IsA("Player") then
 			local ok, r = pcall(function() return target.CanChat end)
 			if ok then result, src = r, "Player.CanChat" end
@@ -226,7 +226,7 @@ local function _resolveCanChat(target, callback)
 			end)
 			if ok then result, src = r, "TextChannels" end
 		end
-		-- 5) On a VU le joueur parler dans le chat public → il peut nous parler
+		-- 5) On a VU le joueur parler dans le chat public -> il peut nous parler
 		if result == nil and uid and _G._chatSeenPlayers[uid] then
 			local since = tick() - _G._chatSeenPlayers[uid]
 			if since <= 600 then
@@ -271,7 +271,7 @@ task.spawn(function()
 	end
 end)
 
--- Wrapper de son multi-exécuteur (Solara, etc.) - pcall silencieux
+-- Wrapper de son multi-executeur (Solara, etc.) - pcall silencieux
 local function playSound(id, vol)
 	if not id then return end
 	pcall(function()
@@ -362,7 +362,7 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
 
--- Mémoire client : sauvegarde persistante entre réouvertures du panel
+-- Memoire client : sauvegarde persistante entre reouvertures du panel
 if not _G.PanelMemory then
 	_G.PanelMemory = { dontAskRestore = false, lastEchoPlayerName = nil }
 end
@@ -440,14 +440,14 @@ screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui", 10)
 
--- Backdrop retiré : il recouvrait tout l'écran en noir semi-transparent.
+-- Backdrop retire : il recouvrait tout l'ecran en noir semi-transparent.
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 460, 0, 520)
 mainFrame.Position = UDim2.new(0.5, -230, 0.5, -260)
-mainFrame.Visible = false  -- Sera révélé après l'intro
--- S'assure que le panel reste visible et ne se fait pas pousser par le chat au démarrage
+mainFrame.Visible = false  -- Sera revele apres l'intro
+-- S'assure que le panel reste visible et ne se fait pas pousser par le chat au demarrage
 task.delay(0, function()
 	local function clampFrame()
 		local abs = mainFrame.AbsoluteSize
@@ -461,7 +461,7 @@ task.delay(0, function()
 	clampFrame()
 end)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-mainFrame.BackgroundTransparency = 1  -- Cache le panel pendant l'intro (évite flash gris)
+mainFrame.BackgroundTransparency = 1  -- Cache le panel pendant l'intro (evite flash gris)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 mainFrame.ClipsDescendants = true
@@ -469,7 +469,7 @@ mainFrame.ZIndex = 1
 createCorner(mainFrame, 14)
 createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 
--- ===== INTRO CINÉMA : "Agora Hub" puis TAMPON "UNIVERSELLE" BOUM =====
+-- ===== INTRO CINEMA : "Agora Hub" puis TAMPON "UNIVERSELLE" BOUM =====
 -- Backdrop full screen noir pour masquer le panel pendant l'intro
 _=(function()
 	local _mainFrame = mainFrame
@@ -495,7 +495,7 @@ _=(function()
 	backdrop.ZIndex = 100
 	backdrop.Parent = bootGui
 
-	-- Vignette dorée subtile en arrière-plan
+	-- Vignette doree subtile en arriere-plan
 	local vignette = Instance.new("ImageLabel")
 	vignette.Name = "Vignette"
 	vignette.Size = UDim2.new(1.4, 0, 1.4, 0)
@@ -507,7 +507,7 @@ _=(function()
 	vignette.ZIndex = 101
 	vignette.Parent = bootGui
 
-	-- Titre "Agora Hub" - apparaît avec un fade in
+	-- Titre "Agora Hub" - apparait avec un fade in
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
 	title.Size = UDim2.new(0.9, 0, 0, 50)
@@ -537,7 +537,7 @@ _=(function()
 	subtitle.ZIndex = 102
 	subtitle.Parent = bootGui
 
-	-- Tag "UNIVERSELLE" - cachée au début, scale 0
+	-- Tag "UNIVERSELLE" - cachee au debut, scale 0
 	local uniTag = Instance.new("TextLabel")
 	uniTag.Name = "UniTag"
 	uniTag.Size = UDim2.new(1.1, 0, 0, 130)
@@ -587,44 +587,44 @@ _=(function()
 	flash.ZIndex = 110
 	flash.Parent = bootGui
 
-	-- === SÉQUENCE CINÉMA ===
+	-- === SEQUENCE CINEMA ===
 	task.spawn(function()
 		local ok, err = pcall(function()
-			-- Étape 1 : fade in du backdrop depuis noir + whoosh grave
+			-- Etape 1 : fade in du backdrop depuis noir + whoosh grave
 			playSound(4590662766, 0.5)
 			backdrop.BackgroundTransparency = 0
 
-			-- Étape 2 : titre "Agora Hub" fade in (0.5s) + ding doux
+			-- Etape 2 : titre "Agora Hub" fade in (0.5s) + ding doux
 			task.wait(0.15)
 			_tween(title, {TextTransparency = 0}, 0.3)
 			_tween(subtitle, {TextTransparency = 0}, 0.3)
 			playSound(6042053626, 0.2)
 
-			-- Étape 3 : pause courte pour lire le titre
+			-- Etape 3 : pause courte pour lire le titre
 			task.wait(0.4)
 
-			-- Étape 4 : BOUM - flash blanc brutal + tag scale 0→1.3→1 + boom impact fort
+			-- Etape 4 : BOUM - flash blanc brutal + tag scale 0->1.3->1 + boom impact fort
 			flash.BackgroundTransparency = 0
 			uniTag.TextTransparency = 0
 			stampTop.BackgroundTransparency = 0
 			stampBot.BackgroundTransparency = 0
 
-			-- Scale : commence à 0, monte à 1.3 puis 1 (impact élastique)
+			-- Scale : commence a 0, monte a 1.3 puis 1 (impact elastique)
 			uniTag.Size = UDim2.new(0, 0, 0, 0)
 			uniTag.Position = UDim2.new(0.5, 0, 0.5, 0)
 			uniTag.AnchorPoint = Vector2.new(0.5, 0.5)
-			uniTag.Rotation = 4  -- rotation d'entrée (corrigée à -8 à la fin)
+			uniTag.Rotation = 4  -- rotation d'entree (corrigee a -8 a la fin)
 			playSound(4590662766, 0.85)  -- boom impact
 			_tween(uniTag, {Size = UDim2.new(1.2, 0, 0, 140), Rotation = -10}, 0.12, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			_tween(flash, {BackgroundTransparency = 1}, 0.25)
 			task.wait(0.12)
-			-- Stabilise à la taille finale avec la bonne rotation
+			-- Stabilise a la taille finale avec la bonne rotation
 			_tween(uniTag, {Size = UDim2.new(1.1, 0, 0, 130), Rotation = -8}, 0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-			-- Étape 5 : le tag reste affiché brièvement
+			-- Etape 5 : le tag reste affiche brievement
 			task.wait(0.5)
 
-			-- Étape 6 : fade out de tout
+			-- Etape 6 : fade out de tout
 			_tween(title, {TextTransparency = 1}, 0.3)
 			_tween(subtitle, {TextTransparency = 1}, 0.3)
 			_tween(uniTag, {TextTransparency = 1, Rotation = -12}, 0.4)
@@ -640,7 +640,7 @@ _=(function()
 			warn("[MILAN] Intro crash: " .. tostring(err))
 		end
 
-		-- Cleanup + révélation du panel
+		-- Cleanup + revelation du panel
 		pcall(function() if bootGui and bootGui.Parent then bootGui:Destroy() end end)
 		pcall(function()
 			_mainFrame.Visible = true
@@ -660,7 +660,7 @@ topBar.ZIndex = 2
 createCorner(topBar, 14)
 createStroke(topBar, Color3.fromRGB(80, 80, 100), 0.8)
 
--- Logo à gauche du titre + badge "UNIVERSELLE" penché (mini) à droite du titre
+-- Logo a gauche du titre + badge "UNIVERSELLE" penche (mini) a droite du titre
 _=(function()
 	local _topBar = topBar
 	local _createCorner = createCorner
@@ -675,7 +675,7 @@ _=(function()
 	titleLogo.Image = "rbxassetid://73314612607499"
 	titleLogo.Parent = _topBar
 
-	-- Badge "UNIVERSELLE" petit et penché, à droite du titre
+	-- Badge "UNIVERSELLE" petit et penche, a droite du titre
 	local uniBadge = Instance.new("TextLabel")
 	uniBadge.Name = "UniBadge"
 	uniBadge.Size = UDim2.new(0, 90, 0, 18)
@@ -753,7 +753,7 @@ minimizeBtn.Name = "MinimizeBtn"
 minimizeBtn.Size = UDim2.new(0, 28, 0, 28)
 minimizeBtn.Position = UDim2.new(1, -68, 0, 5)
 minimizeBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
-minimizeBtn.Text = "—"
+minimizeBtn.Text = "-"
 minimizeBtn.Font = Enum.Font.GothamBold
 minimizeBtn.TextSize = 18
 minimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
@@ -774,7 +774,7 @@ local function makeIcon(btn, txt)
 end
 _G.makeIcon = makeIcon
 
-makeIcon(closeBtn, "×")
+makeIcon(closeBtn, "?")
 
 local function createButton(parent, text, yPos, color, callback)
 	local btn = Instance.new("TextButton")
@@ -872,7 +872,7 @@ local function createTab(name)
 end
 _G.createTab = createTab
 
--- ============= Home TAB — IIFE pour 0 top-level local =============
+-- ============= Home TAB - IIFE pour 0 top-level local =============
 _=(function()
 	local homePage = createTab("Home")
 	
@@ -963,34 +963,34 @@ _=(function()
 	
 	local changelogEntries = {
 		"v39.42 -- Server Authority bypass: fly adaptatif (Anchored+CFrame quand SA actif), noclip SA, fix diverses",
-		"v39.41 — Fly: perso s'incline haut/bas selon ou on regarde (pitch camera + mouvement)",
-		"v39.37 — Fix noclip: personnage stale apres respawn, HRP collision restore, 41 animations",
-		"v39.36 — 41 animations: danses, gymnastique, fun, emotes classiques + 10 custom CFrame",
-		"v39.35 — Emotes: 10 mouvements custom (roulade buche, epilepsie, etc), X circulaire, stop visible",
-		"v39.34 — Emotes deplace vers Extra, X circulaire, stop toujours visible",
-		"v39.33 — Server Authority: detection + bouton desactiver dans Extra",
-		"v39.32 — Emotes refait: 36 animations folles, 100% visibles par tous",
+		"v39.41 - Fly: perso s'incline haut/bas selon ou on regarde (pitch camera + mouvement)",
+		"v39.37 - Fix noclip: personnage stale apres respawn, HRP collision restore, 41 animations",
+		"v39.36 - 41 animations: danses, gymnastique, fun, emotes classiques + 10 custom CFrame",
+		"v39.35 - Emotes: 10 mouvements custom (roulade buche, epilepsie, etc), X circulaire, stop visible",
+		"v39.34 - Emotes deplace vers Extra, X circulaire, stop toujours visible",
+		"v39.33 - Server Authority: detection + bouton desactiver dans Extra",
+		"v39.32 - Emotes refait: 36 animations folles, 100% visibles par tous",
 		"  Categories: Danses, Combat (boxe/kick), Acrobaties (backflip), Fun",
 		"  Plus rien en local - tout en animations Roblox (replication auto)",
-		"v39.31 — Ajout systeme emotes (fenetre draggable + 16 emotes)",
+		"v39.31 - Ajout systeme emotes (fenetre draggable + 16 emotes)",
 		"  Emotes: saluer, danser, rire, rouler par terre, rebondir, etc.",
 		"  Fenetre draggable avec bouton X + bouton stop emote",
-		"v39.30 — FIX compteurs live (lancements + en ligne)",
+		"v39.30 - FIX compteurs live (lancements + en ligne)",
 		"  Edge Function: action=launch retourne maintenant total_launches + online_users",
 		"  Table agora_hub_launches creee dans Supabase",
 		"  Fix: _G.httpGet deplace hors de la fonction (etait inside)",
-	"v39.21 — FIX CRITIQUE: safety net p1 + joinOrIndi local + buildRegistrySection export",
+	"v39.21 - FIX CRITIQUE: safety net p1 + joinOrIndi local + buildRegistrySection export",
 		"  p1: 8 _G exports misplaced INSIDE functions (createSwitch, createSlider, startFly, stopFly, computePathTo, reparentChildrenToLocalScroll, _initRegistrySearch, jumpState bridge)",
 		"  p2: local joinOrIndi (nil dans sandbox loadstring)",
 		"  p2: _G.buildRegistrySection deplace hors de joinOrIndi (bug misplaced)",
 		"  p2: error logging sur runtime crash",
-		"v39.19 — RESTAURATION header bar (topBar 38px)",
+		"v39.19 - RESTAURATION header bar (topBar 38px)",
 		"  Le commit precedent avait mis topBar a 0px -> header invisible",
 		"  Restaure: topBar 38px + tabBar Y=44 + logo + titre + boutons",
-		"v39.18 — FIX Part 2: 18 fonctions utilitaires restaurees",
+		"v39.18 - FIX Part 2: 18 fonctions utilitaires restaurees",
 		"  createSwitch/createButton/createCorner/tween/etc nil dans Solara",
 	"- Barre grise supprimee, onglets repositionnes",
-		"v38.97 — Tri remotes + traduction langue",
+		"v38.97 - Tri remotes + traduction langue",
 		"+ Remotes interceptes tries en haut de la liste",
 		"+ Auto-refresh remotes toutes les 5s",
 		"+ Traduction 14 langues",
@@ -1058,20 +1058,20 @@ _=(function()
 	
 	-- === SELECTEUR DE LANGUE ===
 	local languages = {
-		{code = "FR", flag = "🇫🇷", name = "Français"},
-		{code = "EN", flag = "🇬🇧", name = "English"},
-		{code = "ES", flag = "🇪🇸", name = "Español"},
-		{code = "DE", flag = "🇩🇪", name = "Deutsch"},
-		{code = "IT", flag = "🇮🇹", name = "Italiano"},
-		{code = "PT", flag = "🇵🇹", name = "Português"},
-		{code = "RU", flag = "🇷🇺", name = "Русский"},
-		{code = "JP", flag = "🇯🇵", name = "日本語"},
-		{code = "ZH", flag = "🇨🇳", name = "中文"},
-		{code = "KR", flag = "🇰🇷", name = "한국어"},
-		{code = "AR", flag = "🇸🇦", name = "العربية"},
-		{code = "NL", flag = "🇳🇱", name = "Nederlands"},
-		{code = "PL", flag = "🇵🇱", name = "Polski"},
-		{code = "TR", flag = "🇹🇷", name = "Türkçe"},
+		{code = "FR", flag = "??", name = "Francais"},
+		{code = "EN", flag = "??", name = "English"},
+		{code = "ES", flag = "??", name = "Espa?ol"},
+		{code = "DE", flag = "??", name = "Deutsch"},
+		{code = "IT", flag = "??", name = "Italiano"},
+		{code = "PT", flag = "??", name = "Portugues"},
+		{code = "RU", flag = "??", name = "???????"},
+		{code = "JP", flag = "??", name = "???"},
+		{code = "ZH", flag = "??", name = "??"},
+		{code = "KR", flag = "??", name = "???"},
+		{code = "AR", flag = "??", name = "???????"},
+		{code = "NL", flag = "??", name = "Nederlands"},
+		{code = "PL", flag = "??", name = "Polski"},
+		{code = "TR", flag = "??", name = "Turkce"},
 	}
 
 	local function loadLang()
@@ -1100,7 +1100,7 @@ _=(function()
 	langBtn.Size = UDim2.new(0.7, 0, 0, 34)
 	langBtn.Position = UDim2.new(0.15, 0, 0, 275)
 	langBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
-	langBtn.Text = "🌍 Langue"
+	langBtn.Text = "? Langue"
 	langBtn.Font = Enum.Font.GothamSemibold
 	langBtn.TextSize = 14
 	langBtn.TextColor3 = Color3.fromRGB(200, 210, 255)
@@ -1148,11 +1148,11 @@ _=(function()
 	langMenuLayout.Parent = langMenuScroll
 
 	-- Find current language name for display
-	local currentLangName = "Français"
+	local currentLangName = "Francais"
 	for _, l in ipairs(languages) do
 		if l.code == selectedLang then currentLangName = l.name break end
 	end
-	langBtn.Text = "🌍 " .. currentLangName
+	langBtn.Text = "? " .. currentLangName
 
 	for _, lang in ipairs(languages) do
 		local lBtn = Instance.new("TextButton")
@@ -1171,7 +1171,7 @@ _=(function()
 		lBtn.MouseButton1Click:Connect(function()
 			selectedLang = lang.code
 			saveLang(lang.code)
-			langBtn.Text = "🌍 " .. lang.name
+			langBtn.Text = "? " .. lang.name
 			if _G._agoraApplyLang then _G._agoraApplyLang(lang.code) end
 			-- Update highlight
 			for _, child in ipairs(langMenuScroll:GetChildren()) do
@@ -1191,7 +1191,7 @@ _=(function()
 	langCloseBtn.Size = UDim2.new(0, 24, 0, 24)
 	langCloseBtn.Position = UDim2.new(1, -28, 0, 4)
 	langCloseBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-	langCloseBtn.Text = "✕"
+	langCloseBtn.Text = "?"
 	langCloseBtn.Font = Enum.Font.GothamBold
 	langCloseBtn.TextSize = 12
 	langCloseBtn.TextColor3 = Color3.new(1, 1, 1)
@@ -1216,11 +1216,11 @@ _=(function()
 		DE = { Home="Start", Joueurs="Spieler", Move="Bewegen", Extra="Extra", Remotes="Remotes", Registry="Register", Local="Lokal", Protections="Schutz", discord="Discord beitreten", langue="Sprache", nouveautes="Neuigkeiten", utilisateurs="Starts", enLigne="Online", credits="Agora Universelle" },
 		IT = { Home="Home", Joueurs="Giocatori", Move="Muovi", Extra="Extra", Remotes="Remotes", Registry="Registro", Local="Locale", Protections="Protezione", discord="Unisciti a Discord", langue="Lingua", nouveautes="Novita", utilisateurs="Avvii", enLigne="Online", credits="Agora Universelle" },
 		PT = { Home="Inicio", Joueurs="Jogadores", Move="Mover", Extra="Extra", Remotes="Remotes", Registry="Registro", Local="Local", Protections="Protecao", discord="Entrar no Discord", langue="Idioma", nouveautes="Novidades", usuarios="Usuarios", enLigne="Online", credits="Agora Universelle" },
-		RU = { Home="Главная", Joueurs="Игроки", Move="Движение", Extra="Доп", Remotes="Ремоуты", Registry="Реестр", Local="Локал", Protections="Защита", discord="Присоединиться к Discord", langue="Язык", nouveautes="Новое", utilisateurs="Запуски", enLigne="Онлайн", credits="Agora Universelle" },
-		JP = { Home="ホーム", Joueurs="プレイヤー", Move="移動", Extra="エクストラ", Remotes="リモート", Registry="レジストリ", Local="ローカル", Protections="保護", discord="Discordに参加", langue="言語", nouveautes="新着", utilisateurs="起動", enLigne="オンライン", credits="Agora Universelle" },
-		ZH = { Home="首页", Joueurs="玩家", Move="移动", Extra="额外", Remotes="远程", Registry="注册", Local="本地", Protections="保护", discord="加入Discord", langue="语言", nouveautes="新功能", utilisateurs="启动", enLigne="在线", credits="Agora Universelle" },
-		KR = { Home="홈", Joueurs="플레이어", Move="이동", Extra="추가", Remotes="리모트", Registry="레지스트리", Local="로컬", Protections="보호", discord="Discord 가입", langue="언어", nouveautes="새소식", utilisateurs="실행", enLigne="온라인", credits="Agora Universelle" },
-		AR = { Home="الرئيسية", Joueurs="اللاعبون", Move="تحريك", Extra="إضافي", Remotes="ريموت", Registry="السجل", Local="محلي", Protections="حماية", discord="انضم إلى Discord", langue="اللغة", nouveautes="جديد", utilisateurs="إطلاق", enLigne="متصل", credits="Agora Universelle" },
+		RU = { Home="???????", Joueurs="??????", Move="????????", Extra="???", Remotes="???????", Registry="??????", Local="?????", Protections="??????", discord="?????????????? ? Discord", langue="????", nouveautes="?????", utilisateurs="???????", enLigne="??????", credits="Agora Universelle" },
+		JP = { Home="???", Joueurs="?????", Move="??", Extra="?????", Remotes="????", Registry="?????", Local="????", Protections="??", discord="Discord???", langue="??", nouveautes="??", utilisateurs="??", enLigne="?????", credits="Agora Universelle" },
+		ZH = { Home="??", Joueurs="??", Move="??", Extra="??", Remotes="??", Registry="??", Local="??", Protections="??", discord="??Discord", langue="??", nouveautes="???", utilisateurs="??", enLigne="??", credits="Agora Universelle" },
+		KR = { Home="?", Joueurs="????", Move="??", Extra="??", Remotes="???", Registry="?????", Local="??", Protections="??", discord="Discord ??", langue="??", nouveautes="???", utilisateurs="??", enLigne="???", credits="Agora Universelle" },
+		AR = { Home="????????", Joueurs="????????", Move="?????", Extra="?????", Remotes="?????", Registry="?????", Local="????", Protections="?????", discord="???? ??? Discord", langue="?????", nouveautes="????", utilisateurs="?????", enLigne="????", credits="Agora Universelle" },
 		NL = { Home="Home", Joueurs="Spelers", Move="Bewegen", Extra="Extra", Remotes="Remotes", Registry="Register", Local="Lokaal", Protections="Bescherming", discord="Join Discord", langue="Taal", nouveautes="Nieuws", utilisateurs="Starts", enLigne="Online", credits="Agora Universelle" },
 		PL = { Home="Home", Joueurs="Gracze", Move="Ruch", Extra="Extra", Remotes="Remotes", Registry="Rejestr", Local="Lokal", Protections="Ochrona", discord="Dolacz do Discord", langue="Jezyk", nouveautes="Nowosci", utilisateurs="Uruchomienia", enLigne="Online", credits="Agora Universelle" },
 		TR = { Home="Ana Sayfa", Joueurs="Oyuncular", Move="Hareket", Extra="Ekstra", Remotes="Remoteler", Registry="Kayit", Local="Yerel", Protections="Koruma", discord="Discord'a Katil", langue="Dil", nouveautes="Yenilikler", utilisateurs="Baslatma", enLigne="Cevrimici", credits="Agora Universelle" },
@@ -1235,7 +1235,7 @@ _=(function()
 			end
 			-- Translate Home elements
 			if t.discord and discordBtn then discordBtn.Text = t.discord end
-			if t.langue and langBtn then langBtn.Text = "🌍 " .. (t.langue or "Langue") end
+			if t.langue and langBtn then langBtn.Text = "? " .. (t.langue or "Langue") end
 			if t.nouveautes and changelogTitle then changelogTitle.Text = t.nouveautes end
 			if t.utilisateurs and totalLabel then totalLabel.Text = (t.utilisateurs or "Lancements") .. ": " .. tostring((_G._agoraStats and _G._agoraStats.totalLaunches) or 0) end
 			if t.enLigne and onlineLabel then onlineLabel.Text = (t.enLigne or "En ligne") .. ": " .. tostring((_G._agoraStats and _G._agoraStats.onlineUsers) or 0) end
@@ -1355,7 +1355,7 @@ local function _initRegistrySearch()
 	createCorner(registrySearchBox, 8)
 	createStroke(registrySearchBox, Color3.fromRGB(80, 80, 100), 1)
 
-	-- Bouton X pour effacer la saisie (à droite de la searchBox)
+	-- Bouton X pour effacer la saisie (a droite de la searchBox)
 	local registryClearBtn = Instance.new("TextButton")
 	registryClearBtn.Size = UDim2.new(0, 22, 0, 22)
 	registryClearBtn.Position = UDim2.new(1, -28, 0, 8)
@@ -1365,7 +1365,7 @@ local function _initRegistrySearch()
 	registryClearBtn.Font = Enum.Font.GothamBold
 	registryClearBtn.TextSize = 11
 	registryClearBtn.BorderSizePixel = 0
-	registryClearBtn.Visible = false -- caché quand la searchBox est vide
+	registryClearBtn.Visible = false -- cache quand la searchBox est vide
 	registryClearBtn.ZIndex = registrySearchBox.ZIndex + 1
 	registryClearBtn.AutoButtonColor = true
 	registryClearBtn.Parent = registryPage
@@ -1387,7 +1387,7 @@ local function _initRegistrySearch()
 	suggestionsFrame.Position = UDim2.new(0, 5, 0, 38)
 	suggestionsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 	suggestionsFrame.BorderSizePixel = 0
-	suggestionsFrame.Visible = false -- caché par défaut
+	suggestionsFrame.Visible = false -- cache par defaut
 	suggestionsFrame.Parent = registryPage
 	createCorner(suggestionsFrame, 6)
 	createStroke(suggestionsFrame, Color3.fromRGB(70, 70, 100), 1)
@@ -1421,7 +1421,7 @@ local function _initRegistrySearch()
 		"Samuel", "Sara", "Savannah", "Sean", "Sophie",
 		"Stephen", "Taylor", "Thomas", "Tyler", "Victoria",
 		"William", "Zoe", "Xx_Shadow_xX", "Dark_Mage", "ProGamer123",
-		-- Pseudos spécifiques (connus / populaires)
+		-- Pseudos specifiques (connus / populaires)
 		"Vzlom_Emk", "MilanAC", "Eme_Giroux", "RobloxDev", "TestAccount",
 	}
 
@@ -1432,7 +1432,7 @@ local function _initRegistrySearch()
 		query = string.lower(query)
 		name = string.lower(name)
 
-		-- Préfixe exact = meilleur score
+		-- Prefixe exact = meilleur score
 		if string.sub(name, 1, #query) == query then
 			return 1000 - #name -- plus court = mieux
 		end
@@ -1443,7 +1443,7 @@ local function _initRegistrySearch()
 			return 500 - sPos
 		end
 
-		-- Match flou : tous les caractères de query présents dans name dans l'ordre
+		-- Match flou : tous les caracteres de query presents dans name dans l'ordre
 		local qi = 1
 		local lastPos = 0
 		local matches = 0
@@ -1456,13 +1456,13 @@ local function _initRegistrySearch()
 			end
 		end
 		if matches == #query then
-			return 100 - lastPos -- sous-séquence trouve, mais plus loin dans le nom
+			return 100 - lastPos -- sous-sequence trouve, mais plus loin dans le nom
 		end
 
 		return nil -- pas de match
 	end
 
-	-- Met à jour la liste de suggestions en fonction de queryText
+	-- Met a jour la liste de suggestions en fonction de queryText
 	local function updateSuggestions(queryText)
 		-- Nettoyer les anciennes suggestions
 		for _, child in ipairs(suggestionsFrame:GetChildren()) do
@@ -1474,7 +1474,7 @@ local function _initRegistrySearch()
 			return
 		end
 
-		-- Collecter tous les candidats (connectés + populaires)
+		-- Collecter tous les candidats (connectes + populaires)
 		local candidates = {}
 		for _, plr in ipairs(Players:GetPlayers()) do
 			table.insert(candidates, plr.Name)
@@ -1504,9 +1504,9 @@ local function _initRegistrySearch()
 			return
 		end
 
-		-- Créer les 3 boutons de suggestion
-		-- Pour les connectés : "NomComplet (ID: 12345678)"
-		-- Pour les hardcodés : "NomComplet" (pas d'ID connu)
+		-- Creer les 3 boutons de suggestion
+		-- Pour les connectes : "NomComplet (ID: 12345678)"
+		-- Pour les hardcodes : "NomComplet" (pas d'ID connu)
 		for i, name in ipairs(top3) do
 			local btn = Instance.new("TextButton")
 			btn.Size = UDim2.new(1, 0, 0, 22)
@@ -1559,7 +1559,7 @@ local function _initRegistrySearch()
 		updateSuggestions(registrySearchBox.Text)
 	end)
 
-	-- Enter = lancer la recherche Roblox officielle (relie à runRegistrySearch)
+	-- Enter = lancer la recherche Roblox officielle (relie a runRegistrySearch)
 	registrySearchBox.FocusLost:Connect(function(enterPressed)
 		if enterPressed then
 			pcall(function() runRegistrySearch(registrySearchBox.Text) end)
@@ -1579,7 +1579,7 @@ _G._initRegistrySearch = _initRegistrySearch
 _initRegistrySearch()
 
 -- ============= REGISTRY SCROLL =============
--- registryScroll commence juste après la search box + un peu de gap pour les suggestions
+-- registryScroll commence juste apres la search box + un peu de gap pour les suggestions
 local registryScroll = Instance.new("ScrollingFrame")
 registryScroll.Size = UDim2.new(1, 0, 1, -40) -- 40px = search box (33) + gap (7)
 registryScroll.Position = UDim2.new(0, 0, 0, 40)
@@ -1633,7 +1633,7 @@ protectionsLayout.Padding = UDim.new(0, 6)
 protectionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 protectionsLayout.Parent = protectionsScroll
 
--- FIX: CanvasSize handler manquant + force remeasure après 1er render
+-- FIX: CanvasSize handler manquant + force remeasure apres 1er render
 protectionsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, protectionsLayout.AbsoluteContentSize.Y + 10)
 end)
@@ -1679,7 +1679,7 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- Drag manuel du mini panel autoclick (clickControl) — déclenché par controlHeader
+-- Drag manuel du mini panel autoclick (clickControl) - declenche par controlHeader
 local ccInputConn = UserInputService.InputChanged:Connect(function(input)
 	if ccDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 		local delta = input.Position - ccDragStart
@@ -1965,6 +1965,20 @@ local function shutdownPanel()
 		Lighting.Ambient = Color3.fromRGB(128, 128, 128)
 		Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
 	end)
+	-- Destroy the panel GUI itself
+	pcall(function()
+		if screenGui and screenGui.Parent then
+			screenGui:Destroy()
+		end
+	end)
+	pcall(function()
+		for _, g in ipairs(game:GetService("CoreGui"):GetChildren()) do
+			if g:IsA("ScreenGui") and (g.Name:match("Agora") or g.Name:match("Milan")) then
+				g:Destroy()
+			end
+		end
+	end)
+	_G._agoraShutdownDone = true
 end
 
 _G.shutdownPanel = shutdownPanel
@@ -2032,8 +2046,8 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	hitbox.Parent = container
 	hitbox.ZIndex = 10
 
-	-- Pass-through : les enfants (label, track) doivent être cliquables si le hitbox ne les recouvre pas,
-	-- MAIS le container opaque empiète sur le texte des lignes voisines. On force le hitbox à s'arrêter à la taille du switch.
+	-- Pass-through : les enfants (label, track) doivent etre cliquables si le hitbox ne les recouvre pas,
+	-- MAIS le container opaque empiete sur le texte des lignes voisines. On force le hitbox a s'arreter a la taille du switch.
 	container.ClipsDescendants = true
 
 	hitbox.MouseButton1Click:Connect(toggle)
@@ -2056,7 +2070,7 @@ task.wait(0.05)
 local playerCards = {}
 local playerSearchQuery = "" -- query actuelle (vide = pas de filtre)
 
--- searchBox de Joueurs = FILTRE LOCAL de la liste des joueurs connectés
+-- searchBox de Joueurs = FILTRE LOCAL de la liste des joueurs connectes
 -- (la recherche officielle par username Roblox reste dans Registry)
 local playerSearchBox = Instance.new("TextBox")
 playerSearchBox.Size = UDim2.new(1, -10, 0, 26)
@@ -2064,7 +2078,7 @@ playerSearchBox.Position = UDim2.new(0, 5, 0, 8)
 playerSearchBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 playerSearchBox.BackgroundTransparency = 0.4 -- plus discret que la search box Registry
 playerSearchBox.TextColor3 = Color3.fromRGB(200, 200, 200)
-playerSearchBox.PlaceholderText = "🔎 Filtrer la liste des joueurs..."
+playerSearchBox.PlaceholderText = "? Filtrer la liste des joueurs..."
 playerSearchBox.Text = ""
 playerSearchBox.Font = Enum.Font.Gotham
 playerSearchBox.TextSize = 11
@@ -2108,7 +2122,7 @@ playersScroll.BorderSizePixel = 0
 playersScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 playersScroll.Parent = playersPage
 
--- Stats serveur déplacées vers l'onglet Extra (card "Stats serveur")
+-- Stats serveur deplacees vers l'onglet Extra (card "Stats serveur")
 -- playersScroll prend maintenant toute la place disponible sous la searchBox
 local playersLayout = Instance.new("UIListLayout")
 playersLayout.Padding = UDim.new(0, 6)
@@ -2122,7 +2136,7 @@ task.defer(function()
 	playersScroll.CanvasSize = UDim2.new(0, 0, 0, playersLayout.AbsoluteContentSize.Y + 10)
 end)
 
--- === CARTE "👑 MOI" (LocalPlayer) — auto-créée, toujours en haut ===
+-- === CARTE "* MOI" (LocalPlayer) - auto-creee, toujours en haut ===
 ;(function(_createCorner, _createStroke)
 	local myCard = Instance.new("Frame")
 	myCard.Name = "MyCard"
@@ -2135,7 +2149,7 @@ end)
 	_createCorner(myCard, 8)
 	_createStroke(myCard, Color3.fromRGB(180, 130, 255), 1.5)
 
-	-- Titre "👑 TOI — @pseudo"
+	-- Titre "* TOI - @pseudo"
 	local myTitle = Instance.new("TextLabel")
 	myTitle.Size = UDim2.new(1, -16, 0, 22)
 	myTitle.Position = UDim2.new(0, 8, 0, 6)
@@ -2192,7 +2206,7 @@ end)
 			local myGame = tostring(game.GameId or "?")
 			local myPlace = tostring(game.PlaceId or "?")
 
-			myTitle.Text = "👑 TOI — @" .. myName .. " (" .. myDisp .. ")"
+			myTitle.Text = "* TOI - @" .. myName .. " (" .. myDisp .. ")"
 			myContent.Text = table.concat({
 				"UserId      : " .. myUid,
 				"Compte      : " .. myYears .. " an(s) " .. myRem .. "j (" .. myAgeDays .. " jours)",
@@ -2261,7 +2275,7 @@ local function showRestorePopup(lastName)
 	msg.Size = UDim2.new(1, -20, 0, 44)
 	msg.Position = UDim2.new(0, 10, 0, 12)
 	msg.BackgroundTransparency = 1
-	msg.Text = "Restaurer les paramètres pour @" .. lastName .. " ?"
+	msg.Text = "Restaurer les parametres pour @" .. lastName .. " ?"
 	msg.Font = Enum.Font.GothamSemibold
 	msg.TextSize = 14
 	msg.TextColor3 = Color3.new(1, 1, 1)
@@ -2318,13 +2332,13 @@ local function createPlayerEntry(plr)
 	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
 	nameLbl.Parent = card
 
-	-- Badge chat activé sur le joueur — à GAUCHE haut, jamais sur les boutons
+	-- Badge chat active sur le joueur - a GAUCHE haut, jamais sur les boutons
 	local playerChatBadge = Instance.new("TextLabel")
 	playerChatBadge.Name = "PlayerChatBadge"
 	playerChatBadge.Size = UDim2.new(0, 24, 0, 20)
 	playerChatBadge.Position = UDim2.new(0, 6, 0, 4)
 	playerChatBadge.BackgroundTransparency = 1
-	playerChatBadge.Text = "💬"
+	playerChatBadge.Text = "?"
 	playerChatBadge.Font = Enum.Font.GothamBold
 	playerChatBadge.TextSize = 14
 	playerChatBadge.TextColor3 = Color3.fromRGB(220, 220, 255)
@@ -2333,18 +2347,18 @@ local function createPlayerEntry(plr)
 	playerChatBadge.Parent = card
 	playerChatBadge.ZIndex = 6
 
-	-- Nom décalé si badge chat présent
+	-- Nom decale si badge chat present
 	nameLbl.Size = UDim2.new(1, -108, 0, 18)
 	nameLbl.Position = UDim2.new(0, 30, 0, 4)
 
-	-- Badge local "mouvement anormal" — à droite, plus haut pour pas toucher les boutons
+	-- Badge local "mouvement anormal" - a droite, plus haut pour pas toucher les boutons
 	local moveBadge = Instance.new("TextLabel")
 	moveBadge.Name = "MoveBadge"
 	moveBadge.Size = UDim2.new(0, 24, 0, 20)
 	moveBadge.Position = UDim2.new(1, -32, 0, 2)
 	moveBadge.BackgroundTransparency = 1
 	moveBadge.BorderSizePixel = 0
-	moveBadge.Text = "🔺"
+	moveBadge.Text = "?"
 	moveBadge.Font = Enum.Font.GothamBold
 	moveBadge.TextSize = 15
 	moveBadge.TextColor3 = Color3.fromRGB(255, 80, 80)
@@ -2353,7 +2367,7 @@ local function createPlayerEntry(plr)
 	moveBadge.Parent = card
 	moveBadge.ZIndex = 6
 
-	-- Label détail du mouvement suspect (rouge, petit)
+	-- Label detail du mouvement suspect (rouge, petit)
 	local moveDetail = Instance.new("TextLabel")
 	moveDetail.Name = "MoveDetail"
 	moveDetail.Size = UDim2.new(1, -12, 0, 14)
@@ -2367,7 +2381,7 @@ local function createPlayerEntry(plr)
 	moveDetail.TextWrapped = true
 	moveDetail.Parent = card
 
-	-- Bloc notes détection de cheat (rouge, sous les infos principales)
+	-- Bloc notes detection de cheat (rouge, sous les infos principales)
 	local cheatNotes = Instance.new("TextLabel")
 	cheatNotes.Name = "CheatNotes"
 	cheatNotes.Size = UDim2.new(1, -12, 0, 34)
@@ -2382,7 +2396,7 @@ local function createPlayerEntry(plr)
 	cheatNotes.TextYAlignment = Enum.TextYAlignment.Top
 	cheatNotes.Parent = card
 
-	-- Timer de cooldown du badge (évite les flashs à chaque frame)
+	-- Timer de cooldown du badge (evite les flashs a chaque frame)
 	local lastMoveFlagAt = 0
 	local lastMoveReason = ""
 	local MOVE_FLAG_DURATION = 3
@@ -2396,14 +2410,14 @@ local function createPlayerEntry(plr)
 	local days = plr.AccountAge
 	local years = math.floor(days / 365)
 	local remainingDays = days - (years * 365)
-	infoLeft.Text = "ID: " .. plr.UserId .. " | Âge: " .. days .. "j (" .. years .. (years <= 1 and " an" or " ans") .. ")"
+	infoLeft.Text = "ID: " .. plr.UserId .. " | Age: " .. days .. "j (" .. years .. (years <= 1 and " an" or " ans") .. ")"
 	infoLeft.Font = Enum.Font.Gotham
 	infoLeft.TextSize = 10
 	infoLeft.TextColor3 = Color3.fromRGB(180, 180, 180)
 	infoLeft.TextXAlignment = Enum.TextXAlignment.Left
 	infoLeft.Parent = card
 
-	-- === Colonne droite : statut Roblox + jeu actuel + dernière connexion ===
+	-- === Colonne droite : statut Roblox + jeu actuel + derniere connexion ===
 	local statusCol = Instance.new("TextLabel")
 	statusCol.Name = "StatusCol"
 	statusCol.Size = UDim2.new(0.42, -6, 0, 60)
@@ -2456,7 +2470,7 @@ local function createPlayerEntry(plr)
 	chatLbl.Size = UDim2.new(0.55, -6, 0, 14)
 	chatLbl.Position = UDim2.new(0, 6, 0, 80)
 	chatLbl.BackgroundTransparency = 1
-	chatLbl.Text = "💬 can_chat: chargement..."
+	chatLbl.Text = "? can_chat: chargement..."
 	chatLbl.Font = Enum.Font.Gotham
 	chatLbl.TextSize = 10
 	chatLbl.TextColor3 = Color3.fromRGB(180, 180, 180)
@@ -2467,22 +2481,22 @@ local function createPlayerEntry(plr)
 		if chatLbl and chatLbl.Parent then
 			if src == "CanTalkWithMe" then
 				if canChat == true then
-					chatLbl.Text = "💬 Peut me parler"
+					chatLbl.Text = "? Peut me parler"
 					chatLbl.TextColor3 = Color3.fromRGB(120, 220, 140)
 				else
-					chatLbl.Text = "🚫 Ne peut pas me parler"
+					chatLbl.Text = "? Ne peut pas me parler"
 					chatLbl.TextColor3 = Color3.fromRGB(220, 120, 120)
 				end
 			else
-				-- Pas de serveur : on montre juste si le joueur a le chat activé
+				-- Pas de serveur : on montre juste si le joueur a le chat active
 				if canChat == true then
-					chatLbl.Text = "💬 Chat activé (" .. src .. ")"
+					chatLbl.Text = "? Chat active (" .. src .. ")"
 					chatLbl.TextColor3 = Color3.fromRGB(180, 180, 180)
 				elseif canChat == false then
-					chatLbl.Text = "🚫 Chat désactivé (" .. src .. ")"
+					chatLbl.Text = "? Chat desactive (" .. src .. ")"
 					chatLbl.TextColor3 = Color3.fromRGB(180, 120, 120)
 				else
-					chatLbl.Text = "💬 Chat: non vérifiable"
+					chatLbl.Text = "? Chat: non verifiable"
 					chatLbl.TextColor3 = Color3.fromRGB(180, 180, 180)
 				end
 			end
@@ -2636,7 +2650,7 @@ _G.showRestorePopup = showRestorePopup
 			local arrowText = Instance.new("TextLabel")
 			arrowText.Size = UDim2.new(1, 0, 1, 0)
 			arrowText.BackgroundTransparency = 1
-			arrowText.Text = "▼"
+			arrowText.Text = "?"
 			arrowText.Font = Enum.Font.GothamBlack
 			arrowText.TextSize = 36
 			arrowText.TextColor3 = Color3.fromRGB(0, 255, 120)
@@ -2679,7 +2693,7 @@ _G.showRestorePopup = showRestorePopup
 	end)
 
 	local function showInventoryGui()
-		-- Fermer toute fenêtre d'inventaire déjà ouverte pour ce joueur
+		-- Fermer toute fenetre d'inventaire deja ouverte pour ce joueur
 		local existing = screenGui:FindFirstChild("_InvPanel_" .. plr.Name)
 		if existing then existing:Destroy() end
 
@@ -2712,7 +2726,7 @@ _G.showRestorePopup = showRestorePopup
 		closeX.Size = UDim2.new(0, 26, 0, 26)
 		closeX.Position = UDim2.new(1, -32, 0, 4)
 		closeX.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-		closeX.Text = "×"
+		closeX.Text = "?"
 		closeX.Font = Enum.Font.GothamBold
 		closeX.TextSize = 16
 		closeX.TextColor3 = Color3.new(1, 1, 1)
@@ -2819,7 +2833,7 @@ _G.showRestorePopup = showRestorePopup
 						local myBackpack = LocalPlayer:FindFirstChild("Backpack")
 						if not myBackpack then return end
 						clone.Parent = myBackpack
-						if notify then notify("Item volé: " .. clone.Name, 2) end
+						if notify then notify("Item vole: " .. clone.Name, 2) end
 						task.wait(0.1)
 						refreshList()
 					end)
@@ -2839,14 +2853,14 @@ _G.showRestorePopup = showRestorePopup
 					stolen = stolen + 1
 				end
 			end
-			if notify then notify("Volés: " .. stolen .. " item(s)", 2) end
+			if notify then notify("Voles: " .. stolen .. " item(s)", 2) end
 			task.wait(0.1)
 			refreshList()
 		end)
 
 		refreshList()
 
-		-- Auto-refresh toutes les 2s tant que la fenêtre est ouverte
+		-- Auto-refresh toutes les 2s tant que la fenetre est ouverte
 		local refreshConn
 		refreshConn = task.spawn(function()
 			while win and win.Parent do
@@ -2866,7 +2880,7 @@ _G.showRestorePopup = showRestorePopup
 		if not target then return end
 		updateCharacter()
 		if not character then return end
-		-- Copie locale des vêtements/corps uniquement (local uniquement)
+		-- Copie locale des vetements/corps uniquement (local uniquement)
 		local copied = 0
 		for _, part in ipairs(target:GetDescendants()) do
 			if part:IsA("Clothing") or part:IsA("BodyColors") or part:IsA("Accessory") or part:IsA("ShirtGraphic") then
@@ -2893,7 +2907,7 @@ _G.showRestorePopup = showRestorePopup
 		note.Size = UDim2.new(0, 220, 0, 30)
 		note.Position = UDim2.new(0.5, -110, 0, 80)
 		note.BackgroundTransparency = 1
-		note.Text = copied > 0 and "Skin copié en local (" .. copied .. ")" or "Rien à copier"
+		note.Text = copied > 0 and "Skin copie en local (" .. copied .. ")" or "Rien a copier"
 		note.Font = Enum.Font.GothamBold
 		note.TextSize = 13
 		note.TextColor3 = copied > 0 and Color3.fromRGB(120, 255, 180) or Color3.fromRGB(255, 120, 120)
@@ -2942,20 +2956,20 @@ _G.showRestorePopup = showRestorePopup
 						local flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
 						local vSpeed = math.abs(vel.Y)
 						local floorY = hrp.Position.Y - 3
-						-- Check si le joueur est dans un véhicule / siège
+						-- Check si le joueur est dans un vehicule / siege
 						local inVehicle = h.SeatPart ~= nil
 						-- Seuil d'airborne plus fiable : ignore les sauts legit
-						-- NE PAS flagger si en véhicule (avion, voiture, bateau)
+						-- NE PAS flagger si en vehicule (avion, voiture, bateau)
 						local isAirborne = (floorY > 50 and vSpeed > 20) or (vSpeed > 120)
 						if inVehicle then isAirborne = false end
 						if flatSpeed > 2 then
 							stateText = (h.WalkSpeed > 18 or flatSpeed > 18) and "Running" or "Walking"
 						end
 						if inVehicle then stateText = "In Vehicle" end
-						-- Détection de cheat AMÉLIORÉE v39.29 :
-						-- 1. Ignore les véhicules (avions, voitures, bateaux)
-						-- 2. Seuils plus hauts pour éviter les faux positifs
-						-- 3. Détection God Mode + Noclip + Téléportation
+						-- Detection de cheat AMELIOREE v39.29 :
+						-- 1. Ignore les vehicules (avions, voitures, bateaux)
+						-- 2. Seuils plus hauts pour eviter les faux positifs
+						-- 3. Detection God Mode + Noclip + Teleportation
 						local suspiciousHorizontal = false
 						local suspiciousVertical = false
 						local suspiciousAirborne = false
@@ -2968,14 +2982,14 @@ _G.showRestorePopup = showRestorePopup
 							suspiciousVertical = (vSpeed > 150) and not (h:GetState() == Enum.HumanoidStateType.Freefall)
 							suspiciousAirborne = isAirborne and (flatSpeed > 40 or vSpeed > 80)
 						else
-							suspiciousHorizontal = (flatSpeed > 300) -- Véhicule: seulement extrême
+							suspiciousHorizontal = (flatSpeed > 300) -- Vehicule: seulement extreme
 						end
 						-- God Mode
 						if h.Health > h.MaxHealth and h.MaxHealth > 0 then
 							suspiciousGodMode = true
 							reason = "God Mode " .. math.floor(h.Health) .. "/" .. math.floor(h.MaxHealth)
 						end
-						-- Téléportation instantanée
+						-- Teleportation instantanee
 						if lastKnownPos and not inVehicle then
 							local tpDelta = (hrp.Position - lastKnownPos).Magnitude
 							if tpDelta > 300 then
@@ -3019,10 +3033,10 @@ _G.showRestorePopup = showRestorePopup
 					pcall(function()
 						if moveFlag then
 							moveBadge.Visible = true
-							moveDetail.Text = "🔺 " .. lastMoveReason
+							moveDetail.Text = "? " .. lastMoveReason
 							-- ajout dans les notes avec heure
 							local ts = os.date("%H:%M:%S")
-							local line = "[" .. ts .. "] " .. stateText .. " — " .. lastMoveReason
+							local line = "[" .. ts .. "] " .. stateText .. " - " .. lastMoveReason
 							if not cheatNotes.Text:find(line, 1, true) then
 								if #cheatNotes.Text > 0 then
 									cheatNotes.Text = line .. "\n" .. cheatNotes.Text
@@ -3030,7 +3044,7 @@ _G.showRestorePopup = showRestorePopup
 									cheatNotes.Text = line
 								end
 								if #cheatNotes.Text > 240 then
-									cheatNotes.Text = cheatNotes.Text:sub(1, 240) .. "…"
+									cheatNotes.Text = cheatNotes.Text:sub(1, 240) .. "..."
 								end
 							end
 							card.BackgroundColor3 = Color3.fromRGB(38, 25, 25)
@@ -3041,7 +3055,7 @@ _G.showRestorePopup = showRestorePopup
 							card.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 							createStroke(card, Color3.fromRGB(45, 45, 55), 1)
 						end
-						-- badge chat en temps réel
+						-- badge chat en temps reel
 						local now2 = tick()
 						if now2 - lastChatCheck > 0.5 then
 							lastChatCheck = now2
@@ -3064,13 +3078,13 @@ _G.showRestorePopup = showRestorePopup
 		end
 	end)
 
-	-- === ENRICHISSEMENT v37.1 : temps de connexion + badge ordre d'arrivée ===
-	-- Ligne du bas : "Connecté depuis 12m 34s" + badge "Arrivé avant toi" / "Arrivé il y a Xs"
+	-- === ENRICHISSEMENT v37.1 : temps de connexion + badge ordre d'arrivee ===
+	-- Ligne du bas : "Connecte depuis 12m 34s" + badge "Arrive avant toi" / "Arrive il y a Xs"
 	local connTimeLbl = Instance.new("TextLabel")
 	connTimeLbl.Size = UDim2.new(0.55, -6, 0, 14)
 	connTimeLbl.Position = UDim2.new(0, 6, 0, 116)
 	connTimeLbl.BackgroundTransparency = 1
-	connTimeLbl.Text = "Connecté: ?"
+	connTimeLbl.Text = "Connecte: ?"
 	connTimeLbl.Font = Enum.Font.Gotham
 	connTimeLbl.TextSize = 10
 	connTimeLbl.TextColor3 = Color3.fromRGB(160, 200, 240)
@@ -3088,7 +3102,7 @@ _G.showRestorePopup = showRestorePopup
 	arrivalBadge.TextXAlignment = Enum.TextXAlignment.Left
 	arrivalBadge.Parent = card
 
-	-- Bouton "i" : ouvre un popup détail avec toutes les infos Roblox du joueur
+	-- Bouton "i" : ouvre un popup detail avec toutes les infos Roblox du joueur
 	local infoBtn = Instance.new("TextButton")
 	infoBtn.Size = UDim2.new(0, 24, 0, 24)
 	infoBtn.Position = UDim2.new(1, -32, 0, 4)
@@ -3102,9 +3116,9 @@ _G.showRestorePopup = showRestorePopup
 	infoBtn.Parent = card
 	createCorner(infoBtn, 12)
 
-	-- Boucle live : met à jour le timer et le badge toutes les secondes
-	-- Timestamp = moment où le panel a vu ce player pour la 1ère fois
-	-- Pour les players déjà là au boot, c'est approximatif (= temps depuis l'ouverture du panel)
+	-- Boucle live : met a jour le timer et le badge toutes les secondes
+	-- Timestamp = moment ou le panel a vu ce player pour la 1ere fois
+	-- Pour les players deja la au boot, c'est approximatif (= temps depuis l'ouverture du panel)
 	local firstSeenTick = tick()
 	_JOIN_TIMESTAMPS = _JOIN_TIMESTAMPS or {}
 	_JOIN_TIMESTAMPS[plr] = firstSeenTick
@@ -3119,21 +3133,21 @@ _G.showRestorePopup = showRestorePopup
 				local mins = math.floor(since / 60) % 60
 				local hrs = math.floor(since / 3600)
 				if hrs > 0 then
-					connTimeLbl.Text = string.format("Connecté: %dh %dm %ds", hrs, mins, secs)
+					connTimeLbl.Text = string.format("Connecte: %dh %dm %ds", hrs, mins, secs)
 				elseif mins > 0 then
-					connTimeLbl.Text = string.format("Connecté: %dm %ds", mins, secs)
+					connTimeLbl.Text = string.format("Connecte: %dm %ds", mins, secs)
 				else
-					connTimeLbl.Text = string.format("Connecté: %ds", secs)
+					connTimeLbl.Text = string.format("Connecte: %ds", secs)
 				end
 
-				-- Badge "arrivée" : compare au 1er player tracké
+				-- Badge "arrivee" : compare au 1er player tracke
 				local bootRef = _JOIN_TIMESTAMPS["__panelBoot__"] or firstSeenTick
 				if seen <= bootRef + 0.5 then
-					arrivalBadge.Text = "● Là depuis l'ouverture du panel"
+					arrivalBadge.Text = "? La depuis l'ouverture du panel"
 					arrivalBadge.TextColor3 = Color3.fromRGB(120, 200, 255)
 				else
 					local late = math.floor(now - seen)
-					arrivalBadge.Text = string.format("● Arrivé il y a %ds", late)
+					arrivalBadge.Text = string.format("? Arrive il y a %ds", late)
 					arrivalBadge.TextColor3 = Color3.fromRGB(180, 220, 140)
 				end
 				end) -- ferme pcall
@@ -3141,7 +3155,7 @@ _G.showRestorePopup = showRestorePopup
 				end -- ferme while
 				end) -- ferme task.spawn
 
-				-- Popup de détails complet sur clic "i"
+				-- Popup de details complet sur clic "i"
 	infoBtn.MouseButton1Click:Connect(function()
 		pcall(function()
 			local existing = screenGui:FindFirstChild("_InfoPanel_" .. plr.Name)
@@ -3164,19 +3178,19 @@ _G.showRestorePopup = showRestorePopup
 			title.Size = UDim2.new(1, -100, 0, 28)
 			title.Position = UDim2.new(0, 10, 0, 0)
 			title.BackgroundTransparency = 1
-			title.Text = "Détails : @" .. plr.Name
+			title.Text = "Details : @" .. plr.Name
 			title.Font = Enum.Font.GothamBold
 			title.TextSize = 14
 			title.TextColor3 = Color3.fromRGB(255, 255, 255)
 			title.TextXAlignment = Enum.TextXAlignment.Left
 			title.Parent = win
 
-			-- Bouton Copier (à gauche du X)
+			-- Bouton Copier (a gauche du X)
 			local copyBtn = Instance.new("TextButton")
 			copyBtn.Size = UDim2.new(0, 60, 0, 22)
 			copyBtn.Position = UDim2.new(1, -100, 0, 6)
 			copyBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
-			copyBtn.Text = "📋 Copier"
+			copyBtn.Text = "? Copier"
 			copyBtn.Font = Enum.Font.GothamBold
 			copyBtn.TextSize = 11
 			copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -3264,11 +3278,11 @@ _G.showRestorePopup = showRestorePopup
 						toclipboard(txt)
 					end
 				end)
-				copyBtn.Text = "✓ Copié"
+				copyBtn.Text = "OK Copie"
 				copyBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 100)
 				task.delay(1.5, function()
 					if copyBtn and copyBtn.Parent then
-						copyBtn.Text = "📋 Copier"
+						copyBtn.Text = "? Copier"
 						copyBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
 					end
 				end)
@@ -3291,12 +3305,12 @@ _G.showRestorePopup = showRestorePopup
 				"Team : " .. tostring(plr.Team and plr.Team.Name or "Aucune"),
 				"Neutral : " .. tostring(plr.Neutral),
 				"PlaceId : " .. tostring(game.PlaceId),
-				"JobId : " .. (game.JobId ~= "" and game.JobId or "(même serveur)"),
+				"JobId : " .. (game.JobId ~= "" and game.JobId or "(meme serveur)"),
 				"Ami avec toi : " .. (isFriend and "OUI" or "non"),
 				"--- Chargement Roblox API... ---"
 			})
 
-			-- Fetch détails Roblox (async, pcall, timeout 5s)
+			-- Fetch details Roblox (async, pcall, timeout 5s)
 			task.spawn(function()
 				local extra = {}
 				pcall(function()
@@ -3304,7 +3318,7 @@ _G.showRestorePopup = showRestorePopup
 					if resp and resp ~= "" then
 						local d = HttpService:JSONDecode(resp)
 						if d then
-							table.insert(extra, "Créé le : " .. tostring(d.created or "?"))
+							table.insert(extra, "Cree le : " .. tostring(d.created or "?"))
 							table.insert(extra, "Banni : " .. tostring(d.isBanned and "OUI" or "non"))
 							if d.description and d.description ~= "" then
 								local blurb = d.description:sub(1, 200)
@@ -3336,21 +3350,21 @@ _G.showRestorePopup = showRestorePopup
 						end
 					end
 				end)
-				-- Test rapide des APIs Roblox (peuvent être bloquées par l'exécuteur)
+				-- Test rapide des APIs Roblox (peuvent etre bloquees par l'executeur)
 				local apiOk = false
 				pcall(function()
 					if game and game.HttpGet then
-						-- Test court : la 1ère API Roblox accessible
+						-- Test court : la 1ere API Roblox accessible
 						local test = game:HttpGet("https://users.roblox.com/v1/users/" .. plr.UserId)
 						if test and test ~= "" then apiOk = true end
 					end
 				end)
 				if not apiOk then
 					table.insert(extra, "---")
-					table.insert(extra, "! APIs Roblox bloquees par l'exécuteur")
-					table.insert(extra, "(présence, favoris, profil détaillés indisponibles)")
+					table.insert(extra, "! APIs Roblox bloquees par l'executeur")
+					table.insert(extra, "(presence, favoris, profil detailles indisponibles)")
 				else
-					-- Présence actuelle : est-ce qu'il joue EN CE MOMENT à ce jeu précis ?
+					-- Presence actuelle : est-ce qu'il joue EN CE MOMENT a ce jeu precis ?
 					pcall(function()
 						local resp = game:HttpGet("https://presence.roblox.com/v1/presence/users", true, HttpService:JSONEncode({userIds = {plr.UserId}}))
 						if resp and resp ~= "" then
@@ -3360,70 +3374,70 @@ _G.showRestorePopup = showRestorePopup
 								-- userPresenceType: 0=Online, 1=InGame, 2=InStudio, 3=Offline
 								-- userPresenceType+1: 1=Online, 2=InGame, 3=InStudio, 4=Offline (selon versions API)
 								local t = tonumber(p.userPresenceType) or 0
-								-- Détection plus fine du statut
+								-- Detection plus fine du statut
 								local status = "Inconnu"
-								local statusIcon = "○"
+								local statusIcon = "?"
 								if t == 3 then
 									status = "Hors ligne"
-									statusIcon = "○"
+									statusIcon = "?"
 								elseif t == 2 then
-									status = "Au Studio (développeur)"
-									statusIcon = "🛠"
+									status = "Au Studio (developpeur)"
+									statusIcon = "?"
 								elseif t == 1 then
-									-- Il joue à un jeu
+									-- Il joue a un jeu
 									if p.lastLocation and p.lastLocation ~= "" then
 										status = "En jeu : " .. tostring(p.lastLocation)
 									else
 										status = "En jeu"
 									end
-									statusIcon = "▶"
+									statusIcon = "?"
 									if p.universeId and tostring(p.universeId) == tostring(game.GameId) then
-										status = "★ JOUE À CE JEU : " .. tostring(p.lastLocation or "")
-										statusIcon = "★"
+										status = "? JOUE A CE JEU : " .. tostring(p.lastLocation or "")
+										statusIcon = "?"
 									end
 								elseif t == 0 then
-									-- Online : peut être sur le site web / chat / pas dans un jeu
+									-- Online : peut etre sur le site web / chat / pas dans un jeu
 									if p.lastLocation and p.lastLocation ~= "" then
-										-- Last location = dernier JEU où il a joué
+										-- Last location = dernier JEU ou il a joue
 										status = "En ligne (dernier jeu : " .. tostring(p.lastLocation) .. ")"
-										statusIcon = "●"
+										statusIcon = "?"
 									else
 										status = "En ligne (sur le site Roblox, pas dans un jeu)"
-										statusIcon = "●"
+										statusIcon = "?"
 									end
 								end
 								table.insert(extra, statusIcon .. " Statut : " .. status)
 								if p.lastLocation and p.lastLocation ~= "" then
-									table.insert(extra, "  • Dernier jeu : " .. tostring(p.lastLocation))
+									table.insert(extra, "  ? Dernier jeu : " .. tostring(p.lastLocation))
 								end
 								if p.universeId then
-									table.insert(extra, "  • UniverseId : " .. tostring(p.universeId) .. (tostring(p.universeId) == tostring(game.GameId) and " (= CE JEU)" or ""))
+									table.insert(extra, "  ? UniverseId : " .. tostring(p.universeId) .. (tostring(p.universeId) == tostring(game.GameId) and " (= CE JEU)" or ""))
 								end
 								if p.lastOnline then
-									-- Parser lastOnline ISO -> délai relatif
+									-- Parser lastOnline ISO -> delai relatif
 									local y, mo, da, h, mi, s = p.lastOnline:match("^(%d+)%-(%d+)%-(%d+)T(%d+):(%d+):(%d+)")
 									if y then
 										local epochThen = os.time({year=tonumber(y), month=tonumber(mo), day=tonumber(da), hour=tonumber(h), min=tonumber(mi), sec=tonumber(s)})
 										local diff = os.time() - epochThen
 										if diff < 60 then
-											table.insert(extra, "  • Vu il y a : à l'instant")
+											table.insert(extra, "  ? Vu il y a : a l'instant")
 										elseif diff < 3600 then
-											table.insert(extra, "  • Vu il y a : " .. math.floor(diff/60) .. " min")
+											table.insert(extra, "  ? Vu il y a : " .. math.floor(diff/60) .. " min")
 										elseif diff < 86400 then
-											table.insert(extra, "  • Vu il y a : " .. math.floor(diff/3600) .. "h " .. math.floor((diff%3600)/60) .. "min")
+											table.insert(extra, "  ? Vu il y a : " .. math.floor(diff/3600) .. "h " .. math.floor((diff%3600)/60) .. "min")
 										elseif diff < 2592000 then
-											table.insert(extra, "  • Vu il y a : " .. math.floor(diff/86400) .. "j " .. math.floor((diff%86400)/3600) .. "h")
+											table.insert(extra, "  ? Vu il y a : " .. math.floor(diff/86400) .. "j " .. math.floor((diff%86400)/3600) .. "h")
 										else
-											table.insert(extra, "  • Vu le : " .. tostring(p.lastOnline))
+											table.insert(extra, "  ? Vu le : " .. tostring(p.lastOnline))
 										end
 									else
-										table.insert(extra, "  • Vu la dernière fois : " .. tostring(p.lastOnline))
+										table.insert(extra, "  ? Vu la derniere fois : " .. tostring(p.lastOnline))
 									end
 								end
 							end
 						end
 					end)
-					-- Jeux favoris (jusqu'à 5)
+					-- Jeux favoris (jusqu'a 5)
 					pcall(function()
 						local resp = game:HttpGet("https://games.roblox.com/v1/users/" .. plr.UserId .. "/favorite/games?sortOrder=Desc&limit=5")
 						if resp and resp ~= "" then
@@ -3436,25 +3450,25 @@ _G.showRestorePopup = showRestorePopup
 										local favName = g.name:sub(1, 40) .. (g.name:len() > 40 and "..." or "")
 										local favNote = ""
 										if g.universeId and tostring(g.universeId) == tostring(game.GameId) then
-											favNote = " ★ (CE JEU)"
+											favNote = " ? (CE JEU)"
 										end
-										table.insert(extra, "• " .. favName .. favNote)
+										table.insert(extra, "? " .. favName .. favNote)
 									end
 								end
 							end
 						end
 					end)
-					-- Méthodes natives Roblox (marchent même si l'exécuteur bloque HttpGet)
+					-- Methodes natives Roblox (marchent meme si l'executeur bloque HttpGet)
 					table.insert(extra, "---")
 					-- Membership (Premium/BC)
 					local mt = tostring(plr.MembershipType):gsub("Enum.MembershipType.", "")
 					local isPremium = (mt == "Premium" or plr.MembershipType == Enum.MembershipType.Premium)
-					table.insert(extra, "💎 " .. (isPremium and "Premium" or "Non-Premium") .. (mt ~= "None" and mt ~= "Premium" and (" (" .. mt .. ")") or ""))
+					table.insert(extra, "? " .. (isPremium and "Premium" or "Non-Premium") .. (mt ~= "None" and mt ~= "Premium" and (" (" .. mt .. ")") or ""))
 					-- Network ping (latence)
 					pcall(function()
 						local ping = plr:GetNetworkPing()
-						local pingIcon = "🟢"
-						if ping > 0.2 then pingIcon = "🟡" elseif ping > 0.4 then pingIcon = "🔴" end
+						local pingIcon = "?"
+						if ping > 0.2 then pingIcon = "?" elseif ping > 0.4 then pingIcon = "?" end
 						table.insert(extra, pingIcon .. " Ping : " .. math.floor(ping * 1000) .. " ms")
 					end)
 					-- Ami avec moi ?
@@ -3462,11 +3476,11 @@ _G.showRestorePopup = showRestorePopup
 						pcall(function()
 							local isFriend = LocalPlayer:IsFriendsWith(plr.UserId)
 							if isFriend then
-								table.insert(extra, "👥 Ami avec toi : OUI")
+								table.insert(extra, "? Ami avec toi : OUI")
 							end
 						end)
 					end
-					-- Joue à CE JEU (vérif locale, pas besoin d'API)
+					-- Joue a CE JEU (verif locale, pas besoin d'API)
 					if plr ~= LocalPlayer then
 						local placeId = game.PlaceId
 						pcall(function()
@@ -3474,7 +3488,7 @@ _G.showRestorePopup = showRestorePopup
 						end)
 						-- Si le player est dans CE JEU, son GameId = placeId
 						if plr.GameId and tostring(plr.GameId) == tostring(placeId) then
-							table.insert(extra, "★ EST DANS CE JEU MAINTENANT")
+							table.insert(extra, "? EST DANS CE JEU MAINTENANT")
 						end
 					end
 					end
@@ -3551,16 +3565,16 @@ playersLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 end)
 refreshPlayersList()
 
--- Pop-up de restauration au démarrage
+-- Pop-up de restauration au demarrage
 if panelMemory.lastEchoPlayerName and not panelMemory.dontAskRestore then
 	task.delay(1.5, function()
 		showRestorePopup(panelMemory.lastEchoPlayerName)
 	end)
 end
 
--- searchBox de Joueurs supprimée (doublon avec Registry)
+-- searchBox de Joueurs supprimee (doublon avec Registry)
 -- Plus de filtre local ici, le filtrage se fait dans Registry
--- Toutes les cartes sont toujours visibles par défaut
+-- Toutes les cartes sont toujours visibles par defaut
 for plr, card in pairs(playerCards) do
 	if card then
 		card.Visible = true
