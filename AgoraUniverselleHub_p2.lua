@@ -1,4 +1,5 @@
 -- BRIDGE: restore Part 1 locals
+_G._P1 = _G._P1 or {}
 local Camera = _G._P1.Camera
 local HttpService = _G._P1.HttpService
 local Lighting = _G._P1.Lighting
@@ -51,12 +52,12 @@ local shutdownPanel = _G.shutdownPanel
 local startFly = _G.startFly
 local stopFly = _G.stopFly
 local updateCharacter = _G.updateCharacter
-local refreshESP = _G.refreshESP
-local clearESP = _G.clearESP
-local computePathTo = _G.computePathTo
-local visualizeWaypoints = _G.visualizeWaypoints
-local clearWalkVisuals = _G.clearWalkVisuals
-local reparentChildrenToLocalScroll = _G.reparentChildrenToLocalScroll
+local refreshESP = _G.refreshESP or function() end
+local clearESP = _G.clearESP or function() end
+local computePathTo = _G.computePathTo or function() end
+local visualizeWaypoints = _G.visualizeWaypoints or function() end
+local clearWalkVisuals = _G.clearWalkVisuals or function() end
+local reparentChildrenToLocalScroll = _G.reparentChildrenToLocalScroll or function() end
 local httpGet = _G.httpGet
 local joinOrIndi = _G.joinOrIndi or function(list, sep, max)
 	if not list or type(list) ~= "table" or #list == 0 then
@@ -286,7 +287,7 @@ _G.pages["Home"] = homePage
 	discordBtn.Size = UDim2.new(1, -20, 0, 36)
 	discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
 	discordBtn.BorderSizePixel = 0
-	discordBtn.Text = "G Rejoindre le Discord"
+	discordBtn.Text = "? Rejoindre le Discord"
 	discordBtn.Font = Enum.Font.GothamBold
 	discordBtn.TextSize = 14
 	discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -295,8 +296,8 @@ _G.pages["Home"] = homePage
 	_createCorner(discordBtn, 8)
 	discordBtn.MouseButton1Click:Connect(function()
 		pcall(function() setclipboard("https://discord.gg/fVw2rzAMb") end)
-		discordBtn.Text = "OK Lien copie !"
-		task.delay(2, function() discordBtn.Text = "G Rejoindre le Discord" end)
+		discordBtn.Text = "? Lien copie !"
+		task.delay(2, function() discordBtn.Text = "? Rejoindre le Discord" end)
 	end)
 
 	local discordLabel = discordBtn
@@ -1460,7 +1461,7 @@ local function _initServerStatsCard()
 	local statsTitle = Instance.new("TextLabel")
 	statsTitle.Size = UDim2.new(1, 0, 0, 16)
 	statsTitle.BackgroundTransparency = 1
-	statsTitle.Text = "C Stats serveur"
+	statsTitle.Text = "? Stats serveur"
 	statsTitle.Font = Enum.Font.GothamBold
 	statsTitle.TextSize = 12
 	statsTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
@@ -1615,26 +1616,26 @@ local function _initServerInfoCard()
 				local lines = {}
 				local okCreator, creatorId = pcall(function() return game.CreatorId end)
 				if okCreator and creatorId and creatorId ~= 0 then
-					table.insert(lines, "  G Createur du jeu (CreatorId) : " .. tostring(creatorId))
+					table.insert(lines, "  ? Createur du jeu (CreatorId) : " .. tostring(creatorId))
 					local okCreatorType, creatorType = pcall(function() return game.CreatorType end)
 					if okCreatorType then
-						table.insert(lines, "  P Type createur    : " .. tostring(creatorType))
+						table.insert(lines, "  ? Type createur    : " .. tostring(creatorType))
 					end
 _G._initServerInfoCard = _initServerInfoCard
 					local okName, gameName = pcall(function() return game.Name end)
 					if okName then
-						table.insert(lines, "  O Nom du jeu       : " .. tostring(gameName))
+						table.insert(lines, "  ? Nom du jeu       : " .. tostring(gameName))
 					end
 					local okVIP, vipOwnerId = pcall(function() return game.VIPServerOwnerId end)
 					if okVIP and vipOwnerId and vipOwnerId ~= 0 then
-						table.insert(lines, "  * Proprio VIP     : " .. tostring(vipOwnerId))
+						table.insert(lines, "  ? Proprio VIP     : " .. tostring(vipOwnerId))
 					end
 					local okVIPId, vipId = pcall(function() return game.VIPServerId end)
 					if okVIPId and vipId and vipId ~= "" then
-						table.insert(lines, "  KEY VIP Server ID    : " .. tostring(vipId):sub(1, 24))
+						table.insert(lines, "  ? VIP Server ID    : " .. tostring(vipId):sub(1, 24))
 					end
 				else
-					table.insert(lines, "  G Createur : Indisponible")
+					table.insert(lines, "  ? Createur : Indisponible")
 				end
 				serverInfoText.Text = table.concat(lines, "\n")
 			end)
@@ -1682,7 +1683,7 @@ local function _initAimbot()
 	local aimbotTitle = Instance.new("TextLabel")
 	aimbotTitle.Size = UDim2.new(1, 0, 0, 16)
 	aimbotTitle.BackgroundTransparency = 1
-	aimbotTitle.Text = "O Aimbot (verrouille le centre ecran sur la cible)"
+	aimbotTitle.Text = "? Aimbot (verrouille le centre ecran sur la cible)"
 	aimbotTitle.Font = Enum.Font.GothamBold
 	aimbotTitle.TextSize = 12
 	aimbotTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
@@ -1862,7 +1863,7 @@ _G._initAimbot = _initAimbot
 			pcall(function() mousemoverel(smoothX, smoothY) end)
 			aimCircle.Position = UDim2.new(0, bestTarget.screen.X - 30, 0, bestTarget.screen.Y - 30)
 			if not aimCircle.Visible then aimCircle.Visible = true end
-			aimStatusLabel.Text = "O Verrouille : " .. bestTarget.player.DisplayName .. " (dist: " .. math.floor(bestDistFromCenter) .. "px)"
+			aimStatusLabel.Text = "? Verrouille : " .. bestTarget.player.DisplayName .. " (dist: " .. math.floor(bestDistFromCenter) .. "px)"
 			aimStatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 			if _G._agoraAimbotAutoClick and tick() - lastClickTick > 0.1 then
 				pcall(function() mouse1click() end)
@@ -2498,7 +2499,7 @@ _=(function()
 
 	-- === RESET CHARACTER (en cas de jambes figees) ===
 	addCategory("? RESET", 50)
-	addEmote("R Reset personnage", function()
+	addEmote("? Reset personnage", function()
 		stopAll()
 		task.wait(0.1)
 		pcall(function()
@@ -2519,7 +2520,7 @@ _=(function()
 	addEmote("? Roulade de buche", function() startCustom(doLogRoll) end, 101)
 	addEmote("? Crise d'epilepsie", function() startCustom(doSeizure) end, 102)
 	addEmote("? Spin fou", function() startCustom(doSpin) end, 103)
-	addEmote("O Bagarre invisible", function() startCustom(doGhostFight) end, 104)
+	addEmote("? Bagarre invisible", function() startCustom(doGhostFight) end, 104)
 	addEmote("? Danse du vermisseau", function() startCustom(doWormDance) end, 105)
 	addEmote("? Helicoptere", function() startCustom(doHelicopter) end, 106)
 	addEmote("? Nage a sec", function() startCustom(doDrySwim) end, 107)
@@ -2545,14 +2546,14 @@ _=(function()
 	addEmote("? Danse 3 / Breakdance", function() playAnim(507771475, false) end, 303)
 	addEmote("? Floss", function() playAnim(4562795588, false) end, 304)
 	addEmote("? Danse folle", function() playAnim(5915756891, false) end, 305)
-	addEmote("B The Robot", function() playAnim(4145675840, false) end, 306)
-	addEmote("B The Robot 2", function() playAnim(4145721148, false) end, 307)
-	addEmote("B The Robot 3", function() playAnim(4145739796, false) end, 308)
-	addEmote("N Pop Lock", function() playAnim(5145477480, false) end, 309)
+	addEmote("? The Robot", function() playAnim(4145675840, false) end, 306)
+	addEmote("? The Robot 2", function() playAnim(4145721148, false) end, 307)
+	addEmote("? The Robot 3", function() playAnim(4145739796, false) end, 308)
+	addEmote("? Pop Lock", function() playAnim(5145477480, false) end, 309)
 	addEmote("?? Kazachok", function() playAnim(3360689775, false) end, 310)
-	addEmote("N Bhangra", function() playAnim(3341856292, false) end, 311)
-	addEmote("! Hype", function() playAnim(5227113470, false) end, 312)
-	addEmote("! Hype 2", function() playAnim(6102658794, false) end, 313)
+	addEmote("? Bhangra", function() playAnim(3341856292, false) end, 311)
+	addEmote("? Hype", function() playAnim(5227113470, false) end, 312)
+	addEmote("? Hype 2", function() playAnim(6102658794, false) end, 313)
 	addEmote("? T-Pose", function() playAnim(6180856777, false) end, 314)
 
 	-- === FUN & DROLE ===
@@ -3353,14 +3354,14 @@ _G._wrapRemotes = _wrapRemotes
 			local ok, err = pcall(function()
 				if isFunction then
 					local result = remote:InvokeServer(unpack(args))
-					resultLbl.Text = "OK Reponse : " .. tostring(result)
+					resultLbl.Text = "? Reponse : " .. tostring(result)
 				else
 					remote:FireServer(unpack(args))
-					resultLbl.Text = "OK Fire envoye (" .. #args .. " args)"
+					resultLbl.Text = "? Fire envoye (" .. #args .. " args)"
 				end
 			end)
 			if not ok then
-				resultLbl.Text = "X Erreur : " .. tostring(err)
+				resultLbl.Text = "? Erreur : " .. tostring(err)
 				resultLbl.TextColor3 = Color3.fromRGB(255, 100, 100)
 			else
 				resultLbl.TextColor3 = Color3.fromRGB(120, 220, 160)
@@ -3703,7 +3704,7 @@ do
 			local gamepadOn = UserInputService.GamepadEnabled
 			local vrOn = UserInputService.VREnabled
 			if vrOn then return "? VR (casque)"
-			elseif gamepadOn and not kbOn and not mouseOn then return "G Console (manette)"
+			elseif gamepadOn and not kbOn and not mouseOn then return "? Console (manette)"
 			elseif touchOn and not kbOn and not mouseOn then return "? Mobile (tactile)"
 			elseif touchOn and kbOn then return "? PC + tactile (tablette/laptop)"
 			elseif kbOn and mouseOn then return "? PC (clavier+souris)"
@@ -3744,7 +3745,7 @@ local function renderResult(data, parent)
 			v.BackgroundTransparency = 0.2
 			v.BorderSizePixel = 0
 			v.Font = Enum.Font.GothamBlack
-			v.Text = "OK VERIFIE"
+			v.Text = "? VERIFIE"
 			v.TextSize = 9
 			v.TextColor3 = Color3.fromRGB(220, 240, 255)
 			v.ZIndex = 5
@@ -3909,8 +3910,8 @@ _G.renderResult = renderResult
 	local presenceText = "Indisponible"
 	if data.presenceType == 0 then presenceText = "? Hors ligne"
 	elseif data.presenceType == 1 then presenceText = "? En ligne"
-	elseif data.presenceType == 2 then presenceText = "G En jeu"
-	elseif data.presenceType == 3 then presenceText = "A Dans Studio"
+	elseif data.presenceType == 2 then presenceText = "? En jeu"
+	elseif data.presenceType == 3 then presenceText = "? Dans Studio"
 	end
 	if data.presenceLastOnline and data.presenceLastOnline ~= "" then
 		presenceText = presenceText .. "  (derniere: " .. data.presenceLastOnline .. ")"
@@ -3974,17 +3975,17 @@ _G.renderResult = renderResult
 	table.insert(lines, "  ? Date d'inscription : " .. (data.created or (data.createdEst and ("~" .. data.createdEst .. " (estime via ID)") or "Indisponible")))
 	table.insert(lines, "  ? Age du compte    : " .. (data.accountAge or "Indisponible"))
 	if data.idHint then table.insert(lines, "  ? Heuristique ID   : " .. data.idHint) end
-	table.insert(lines, "  * Verifie          : " .. (data.hasVerifiedBadge == true and "OUI" or (data.hasVerifiedBadge == false and "non" or "Indisponible")))
+	table.insert(lines, "  ? Verifie          : " .. (data.hasVerifiedBadge == true and "OUI" or (data.hasVerifiedBadge == false and "non" or "Indisponible")))
 	table.insert(lines, "  ? Premium          : " .. (data.isPremium == true and "OUI" or (data.isPremium == false and "non" or "Indisponible")))
-	if data.premiumUntil then table.insert(lines, "  * Premium jusqu'au : " .. tostring(data.premiumUntil):sub(1, 10)) end
+	if data.premiumUntil then table.insert(lines, "  ? Premium jusqu'au : " .. tostring(data.premiumUntil):sub(1, 10)) end
 	table.insert(lines, "  ? Email lie        : " .. (data.hasEmail == true and "oui" or (data.hasEmail == false and "non" or "Indisponible")))
-	table.insert(lines, "  OK  Email verifie    : " .. (data.emailVerified == true and "oui" or (data.emailVerified == false and "non" or "Indisponible")))
-	table.insert(lines, "  W Langue du compte : " .. (data.locale or "Indisponible"))
+	table.insert(lines, "  ?  Email verifie    : " .. (data.emailVerified == true and "oui" or (data.emailVerified == false and "non" or "Indisponible")))
+	table.insert(lines, "  ? Langue du compte : " .. (data.locale or "Indisponible"))
 	table.insert(lines, "  ? Statut compte    : " .. (data.isBanned == true and "? Banni" or (data.isBanned == false and "? Actif" or "Indisponible")))
 	table.insert(lines, "  ? Banni            : " .. (data.banReason or (data.isBanned and "Oui (raison indisponible)" or "Non")))
 	table.insert(lines, "  ? Presence actuelle : " .. presenceText)
-	table.insert(lines, "  G En jeu (placeId) : " .. (data.presencePlaceId or "Indisponible"))
-	table.insert(lines, "  T Derniere connexion : " .. (data.lastOnlineText or "Indisponible"))
+	table.insert(lines, "  ? En jeu (placeId) : " .. (data.presencePlaceId or "Indisponible"))
+	table.insert(lines, "  ? Derniere connexion : " .. (data.lastOnlineText or "Indisponible"))
 	table.insert(lines, "  ? Trade privacy    : " .. (data.tradePrivacy or "Indisponible"))
 	table.insert(lines, "  ? Trades entrants  : " .. (data.tradesInbound or "Indisponible"))
 	table.insert(lines, "  ? Trades sortants  : " .. (data.tradesOutbound or "Indisponible"))
@@ -4046,12 +4047,12 @@ _G.renderResult = renderResult
 						local bs = game:GetService("BadgeService")
 						return bs and bs:UserHasBadgeAsync(_t.UserId, 1)
 					end)
-					if ok2 and has then _ll:insert("  ?? O? Badge Administrator : OUI") end
+					if ok2 and has then _ll:insert("  ?? ?? Badge Administrator : OUI") end
 					local ok3, hasOfficial = pcall(function()
 						local bs = game:GetService("BadgeService")
 						return bs and bs:UserHasBadgeAsync(_t.UserId, 2)
 					end)
-					if ok3 and hasOfficial then _ll:insert("  ?? O? Badge Official : OUI") end
+					if ok3 and hasOfficial then _ll:insert("  ?? ?? Badge Official : OUI") end
 				end)(target, lines, LocalPlayer)
 			end
 		end)
@@ -4070,10 +4071,10 @@ _G.renderResult = renderResult
 	table.insert(lines, "  ? Total hats       : " .. (data.avatarHatCount or "Indisponible"))
 	table.insert(lines, "  ? Body colors      : " .. (data.avatarBody or "Indisponible"))
 	table.insert(lines, "  ? Groupes (role)   : " .. groupsText)
-	table.insert(lines, "  G Jeux crees       : " .. gamesText)
-	table.insert(lines, "  * Jeux favoris     : " .. favText)
+	table.insert(lines, "  ? Jeux crees       : " .. gamesText)
+	table.insert(lines, "  ? Jeux favoris     : " .. favText)
 	table.insert(lines, "  ? Tenues sauvegardees : " .. outfitText)
-	table.insert(lines, "  R Anciens usernames : " .. histText)
+	table.insert(lines, "  ? Anciens usernames : " .. histText)
 	table.insert(lines, "  ? Inventaire (total) : " .. invText)
 
 	-- Animation typewriter: apparition ligne par ligne (toutes les 25ms = ~40 lignes/sec)
@@ -4162,15 +4163,15 @@ _G.renderResult = renderResult
 			makeActionBtn("?? Tag", Color3.fromRGB(180, 100, 220), 1, function()
 				openTagPopup(data.userId, data.username, screenGui)
 			end)
-			makeActionBtn("L ID", Color3.fromRGB(80, 130, 200), 2, function()
+			makeActionBtn("? ID", Color3.fromRGB(80, 130, 200), 2, function()
 				pcall(function() setclipboard(tostring(data.userId)) end)
 			end)
-			makeActionBtn("L Profil", Color3.fromRGB(80, 180, 120), 3, function()
+			makeActionBtn("? Profil", Color3.fromRGB(80, 180, 120), 3, function()
 				pcall(function() setclipboard("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile") end)
 			end)
 			-- Rejoindre ce joueur : tente TeleportToPlaceInstance avec son gameId si dispo
 			if data.gameId or data.placeId then
-				makeActionBtn("W Rejoindre", Color3.fromRGB(70, 130, 200), 4, function()
+				makeActionBtn("? Rejoindre", Color3.fromRGB(70, 130, 200), 4, function()
 					pcall(function()
 						local TS = game:GetService("TeleportService")
 						local pid = data.placeId or data.gameId
@@ -4182,7 +4183,7 @@ _G.renderResult = renderResult
 					end)
 				end)
 			else
-				makeActionBtn("W Profil web", Color3.fromRGB(70, 130, 200), 4, function()
+				makeActionBtn("? Profil web", Color3.fromRGB(70, 130, 200), 4, function()
 					pcall(function() setclipboard("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile") end)
 				end)
 			end
@@ -4219,7 +4220,7 @@ function runRegistrySearch(query)
 				username = "UserId:" .. asNumber
 				displayName = "?"
 			else
-				statusLbl.Text = "X Username introuvable : @" .. query
+				statusLbl.Text = "? Username introuvable : @" .. query
 				statusLbl.TextColor3 = Color3.fromRGB(220, 100, 100)
 				return
 			end
@@ -4675,7 +4676,7 @@ function runRegistrySearch(query)
 				data.profileUrl = "https://www.roblox.com/users/" .. tostring(userId) .. "/profile"
 
 				if data.apiOk then
-					statusLbl.Text = "OK " .. apiSuccessCount .. " APIs OK pour @" .. username
+					statusLbl.Text = "? " .. apiSuccessCount .. " APIs OK pour @" .. username
 					statusLbl.TextColor3 = Color3.fromRGB(120, 220, 140)
 				else
 					statusLbl.Text = "! @" .. username .. " (ID:" .. userId .. ") - APIs externes bloquees par l'executeur. Lien : " .. data.profileUrl
