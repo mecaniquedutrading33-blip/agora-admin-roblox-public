@@ -1,434 +1,115 @@
--- BRIDGE: restore Part 1 locals
+-- Agora Hub Part 2 (auto-loaded by Part 1)
+-- Restore locals from _G._P1
 _G._P1 = _G._P1 or {}
-local Camera = _G._P1.Camera
-local HttpService = _G._P1.HttpService
-local Lighting = _G._P1.Lighting
-local LocalPlayer = _G._P1.LocalPlayer
-local Mouse = _G._P1.Mouse
-local Players = _G._P1.Players
-local ReplicatedStorage = _G._P1.ReplicatedStorage
-local RunService = _G._P1.RunService
-local UserInputService = _G._P1.UserInputService
-local Workspace = _G._P1.Workspace
-local character = _G._P1.character
-local closeBtn = _G._P1.closeBtn
-local espState = _G._P1.espState
-local extraPage = _G._P1.extraPage
-local flyState = _G._P1.flyState
-local flySwitch = _G._P1.flySwitch
-local gotoWalkState = _G._P1.gotoWalkState
-local humanoid = _G._P1.humanoid
-local loadingGui = _G._P1.loadingGui
-local localPage = _G._P1.localPage
-local localScroll = _G._P1.localScroll
-local localState = _G._P1.localState
-local mainFrame = _G._P1.mainFrame
-local noclipState = _G._P1.noclipState
-local noclipSwitch = _G._P1.noclipSwitch
-local pages = _G._P1.pages
-local panelMemory = _G._P1.panelMemory
-local platformState = _G._P1.platformState
-local protectionsScroll = _G._P1.protectionsScroll
-local registryLayout = _G._P1.registryLayout
-local registryPage = _G._P1.registryPage
-local registryScroll = _G._P1.registryScroll
-local remotesPage = _G._P1.remotesPage
-local rootPart = _G._P1.rootPart
-local screenGui = _G._P1.screenGui
-local walkSpeedState = _G._P1.walkSpeedState
-local zeroGSwitch = _G._P1.zeroGSwitch
-local jumpState = _G._P1.jumpState
+local Players = _G._P1["Players"]
+local RunService = _G._P1["RunService"]
+local UserInputService = _G._P1["UserInputService"]
+local Workspace = _G._P1["Workspace"]
+local Lighting = _G._P1["Lighting"]
+local ReplicatedStorage = _G._P1["ReplicatedStorage"]
+local TweenService = game:GetService("TweenService")
+local HttpService = _G._P1["HttpService"]
+local SoundService = game:GetService("SoundService")
+local TextChatService = game:GetService("TextChatService")
+local LocalPlayer = _G._P1["LocalPlayer"]
+local Mouse = _G._P1["Mouse"]
+local Camera = _G._P1["Camera"]
 
--- RESTORE UTILITY FUNCTIONS FROM _G (loadstring sandbox doesn't share globals)
-local createCorner = _G.createCorner
-local createStroke = _G.createStroke
-local createButton = _G.createButton
-local createSwitch = _G.createSwitch
-local createSlider = _G.createSlider
-local switchTab = _G.switchTab
-local updateLoad = _G.updateLoad
-local tween = _G.tween
-local shutdownPanel = _G.shutdownPanel
-local startFly = _G.startFly
-local stopFly = _G.stopFly
-local updateCharacter = _G.updateCharacter
-local refreshESP = _G.refreshESP or function() end
-local clearESP = _G.clearESP or function() end
-local computePathTo = _G.computePathTo or function() end
-local visualizeWaypoints = _G.visualizeWaypoints or function() end
-local clearWalkVisuals = _G.clearWalkVisuals or function() end
-local reparentChildrenToLocalScroll = _G.reparentChildrenToLocalScroll or function() end
-local httpGet = _G.httpGet
-local joinOrIndi = _G.joinOrIndi or function(list, sep, max)
-	if not list or type(list) ~= "table" or #list == 0 then
-		return "Indisponible"
-	end
-	local n = math.min(#list, max or #list)
-	local parts = {}
-	for i = 1, n do
-		parts[#parts + 1] = tostring(list[i])
-	end
-	return table.concat(parts, sep)
+-- Restore UI builders
+local createCorner = _G["createCorner"]
+local createStroke = _G["createStroke"]
+local createButton = _G["createButton"]
+local createSwitch = _G["createSwitch"]
+local createSlider = _G["createSlider"]
+local createTab = _G["createTab"]
+local createToggle = _G["createToggle"]
+local createSection = _G["createSection"]
+local createInput = _G["createInput"]
+local createDropdown = _G["createDropdown"]
+local tween = _G["tween"]
+local playSound = _G["playSound"]
+local switchTab = _G["switchTab"]
+local shutdownPanel = _G["shutdownPanel"]
+local httpGet = _G["httpGet"]
+local startFly = _G["startFly"]
+local stopFly = _G["stopFly"]
+local updateCharacter = _G["updateCharacter"]
+local updateLoad = _G["updateLoad"]
+
+-- Restore state
+local flyState = _G["flyState"]
+local flySwitch = _G["flySwitch"]
+local noclipState = _G["noclipState"]
+local noclipSwitch = _G["noclipSwitch"]
+local walkSpeedState = _G["walkSpeedState"]
+local jumpState = _G["jumpState"]
+local platformState = _G["platformState"]
+local espState = _G["espState"]
+local gotoWalkState = _G._P1["gotoWalkState"]
+local zeroGSwitch = _G._P1["zeroGSwitch"]
+local humanoid = _G["humanoid"]
+local rootPart = _G["rootPart"]
+local character = _G["character"]
+local mainFrame = _G["mainFrame"]
+local screenGui = _G["screenGui"]
+local closeBtn = _G["closeBtn"]
+local loadingGui = _G["loadingGui"]
+local pages = _G["pages"]
+local extraPage = _G["extraPage"]
+local movePage = _G["movePage"]
+local remotesPage = _G["remotesPage"]
+local registryPage = _G["registryPage"]
+local localPage = _G["localPage"]
+local protectionsPage = _G["protectionsPage"]
+local settingsPage = _G["settingsPage"]
+local aboutPage = _G["aboutPage"]
+local localScroll = _G["localScroll"]
+local protectionsScroll = _G["protectionsScroll"]
+local registryScroll = _G["registryScroll"]
+local registryLayout = _G["registryLayout"]
+local serverScroll = _G["serverScroll"]
+local localState = _G["localState"]
+local panelMemory = _G["panelMemory"]
+local fullbrightSwitch = _G["fullbrightSwitch"]
+local espSwitch = _G["espSwitch"]
+local refreshESP = _G["refreshESP"] or function() end
+local clearESP = _G["clearESP"] or function() end
+local computePathTo = _G["computePathTo"] or function() end
+local visualizeWaypoints = _G["visualizeWaypoints"] or function() end
+local clearWalkVisuals = _G["clearWalkVisuals"] or function() end
+local reparentChildrenToLocalScroll = _G["reparentChildrenToLocalScroll"] or function() end
+
+-- Safe helpers (in case some are nil from p1)
+if not createCorner then
+    createCorner = function(parent, radius)
+        local c = Instance.new("UICorner")
+        c.CornerRadius = UDim.new(0, radius or 6)
+        c.Parent = parent
+        return c
+    end
+end
+if not createStroke then
+    createStroke = function(parent, color, thickness)
+        local s = Instance.new("UIStroke")
+        s.Color = color or Color3.fromRGB(60, 60, 60)
+        s.Thickness = thickness or 1
+        s.Parent = parent
+        return s
+    end
+end
+if not tween then
+    tween = function(obj, props, time)
+        pcall(function()
+            local ti = TweenInfo.new(time or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            local tw = TweenService:Create(obj, ti, props)
+            tw:Play()
+        end)
+    end
+end
+if not playSound then
+    playSound = function() end
 end
 
-
--- ============= HOME PAGE =============
-local homePage = _G.createTab("Home")
-_G._P1.homePage = homePage
-_G.pages["Home"] = homePage
-
-;(function()
-	local _homePage = homePage
-	local _mainFrame = _G.mainFrame
-	local _tween = _G.tween
-	local _createCorner = _G.createCorner
-	local _createStroke = _G.createStroke
-	local _LocalPlayer = _G.LocalPlayer
-	local _Players = _G.Players
-	local _HttpService = _G.HttpService
-	local _TweenService = game:GetService("TweenService")
-	local _UserInputService = _G.UserInputService
-	local _Workspace = _G.Workspace
-	local _Lighting = _G.Lighting
-	local _ReplicatedStorage = _G.ReplicatedStorage
-	local _SoundService = game:GetService("SoundService")
-	local _RunService = _G.RunService
-	local _TextChatService = game:GetService("TextChatService")
-
-	-- Version
-	local CURRENT_VERSION = "v39.52"
-	_G.CURRENT_VERSION = CURRENT_VERSION
-
-	-- Changelog
-	local changelogEntries = {
-		"v39.52: Fix noclip - p1 reconstruit avec createTab/createSwitch/createSlider + flySwitch/noclipSwitch",
-		"v39.49: Home dans p2 + chargement dynamique corrige",
-		"v39.48: Home premier onglet, fond corrige",
-		"v39.47: Home recree avec stats live",
-		"v39.46: Fix intro cinema + boot safe 3 layers",
-		"v39.45: Bridge _G._P1 complet (68 vars)",
-		"v39.44: Auto-update + version check",
-		"v39.43: Enrichissement joueurs (connexion, badges)",
-		"v39.42: Fix fly + noclip + ESP + aimbot"
-	}
-
-	-- httpGet multi-fallback
-	local function httpGet(url)
-		local ok, result = pcall(function() return game:HttpGet(url) end)
-		if ok and result then return result end
-		ok, result = pcall(function() return _HttpService:GetAsync(url) end)
-		if ok and result then return result end
-		ok, result = pcall(function() return _HttpService:RequestAsync({Url = url, Method = "GET"}) end)
-		if ok and result and result.Body then return result.Body end
-		ok, result = pcall(function() return syn and syn.request({Url = url, Method = "GET"}) end)
-		if ok and result and result.Body then return result.Body end
-		return nil
-	end
-
-	-- Translations (14 langues)
-	local translations = {
-		FR = {Home="Accueil", Joueurs="Joueurs", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registre", Local="Local", Protections="Protections", nouveautes="Nouveautes", discord="Rejoindre le Discord", langue="Langue", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Utilisateurs", enLigne="En ligne"},
-		EN = {Home="Home", Joueurs="Players", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registry", Local="Local", Protections="Protections", nouveautes="Changelog", discord="Join Discord", langue="Language", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Users", enLigne="Online"},
-		ES = {Home="Inicio", Joueurs="Jugadores", Move="Mover", Extra="Extra", Remotes="Remotos", Registry="Registro", Local="Local", Protections="Protecciones", nouveautes="Novedades", discord="Unirse a Discord", langue="Idioma", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Usuarios", enLigne="En l?nea"},
-		DE = {Home="Start", Joueurs="Spieler", Move="Bewegen", Extra="Extra", Remotes="Remotes", Registry="Register", Local="Lokal", Protections="Schutz", nouveautes="Neuigkeiten", discord="Discord beitreten", langue="Sprache", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Benutzer", enLigne="Online"},
-		PT = {Home="In?cio", Joueurs="Jogadores", Move="Mover", Extra="Extra", Remotes="Remotos", Registry="Registro", Local="Local", Protections="Protec?es", nouveautes="Novidades", discord="Entrar no Discord", langue="Idioma", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Usu?rios", enLigne="Online"},
-		IT = {Home="Home", Joueurs="Giocatori", Move="Muovi", Extra="Extra", Remotes="Remoti", Registry="Registro", Local="Locale", Protections="Protezioni", nouveautes="Novita", discord="Unisciti a Discord", langue="Lingua", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Utenti", enLigne="Online"},
-		RU = {Home="???????", Joueurs="??????", Move="????????", Extra="??????", Remotes="?????????", Registry="??????", Local="????????", Protections="??????", nouveautes="???????", discord="Discord", langue="????", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="????????????", enLigne="??????"},
-		ZH = {Home="??", Joueurs="??", Move="??", Extra="??", Remotes="??", Registry="???", Local="??", Protections="??", nouveautes="????", discord="??Discord", langue="??", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="??", enLigne="??"},
-		JA = {Home="???", Joueurs="?????", Move="??", Extra="?????", Remotes="????", Registry="?????", Local="????", Protections="??", nouveautes="????", discord="Discord???", langue="??", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="????", enLigne="?????"},
-		KO = {Home="?", Joueurs="????", Move="??", Extra="??", Remotes="??", Registry="?????", Local="??", Protections="??", nouveautes="????", discord="Discord ??", langue="??", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="???", enLigne="???"},
-		AR = {Home="????????", Joueurs="????????", Move="?????", Extra="?????", Remotes="?? ???", Registry="?????", Local="????", Protections="?????", nouveautes="?????????", discord="???? ??? Discord", langue="?????", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="??????????", enLigne="????"},
-		NL = {Home="Home", Joueurs="Spelers", Move="Bewegen", Extra="Extra", Remotes="Extern", Registry="Register", Local="Lokaal", Protections="Bescherming", nouveautes="Nieuws", discord="Word lid van Discord", langue="Taal", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Gebruikers", enLigne="Online"},
-		PL = {Home="Strona g??wna", Joueurs="Gracze", Move="Ruch", Extra="Dodatki", Remotes="Zdalne", Registry="Rejestr", Local="Lokalne", Protections="Ochrona", nouveautes="Aktualno?ci", discord="Do??cz do Discord", langue="J?zyk", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="U?ytkownicy", enLigne="Online"},
-		TR = {Home="Ana Sayfa", Joueurs="Oyuncular", Move="Hareket", Extra="Ekstra", Remotes="Uzaktan", Registry="Kay?t", Local="Yerel", Protections="Koruma", nouveautes="Guncellemeler", discord="Discord'a Kat?l", langue="Dil", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Kullan?c?lar", enLigne="Cevrimici"}
-	}
-
-	-- Langue
-	local langCode = "FR"
-	local function writefile(name, data)
-		pcall(function() writefile(name, data) end)
-	end
-	local function readfile(name)
-		local ok, data = pcall(function() return readfile(name) end)
-		if ok and data then return data end
-		return nil
-	end
-	local savedLang = readfile("agora_lang.txt")
-	if savedLang and translations[savedLang] then langCode = savedLang end
-
-	local function applyLanguage(code)
-		langCode = code
-		writefile("agora_lang.txt", code)
-		local t = translations[code] or translations["FR"]
-		pcall(function() if titleLabel then titleLabel.Text = t.Home end end)
-		pcall(function() if nouveautesLabel then nouveautesLabel.Text = t.nouveautes end end)
-		pcall(function() if discordLabel then discordLabel.Text = t.discord end end)
-		pcall(function() if langueLabel then langueLabel.Text = t.langue end end)
-		pcall(function() if creditsLabel then creditsLabel.Text = t.credits end end)
-		pcall(function() if totalLabel then totalLabel.Text = t.utilisateurs .. ": ..." end end)
-		pcall(function() if onlineLabel then onlineLabel.Text = t.enLigne .. ": ..." end end)
-		pcall(function()
-			if _G.tabButtons then
-				for name, btn in pairs(_G.tabButtons) do
-					if t[name] then btn.Text = t[name] end
-				end
-			end
-		end)
-	end
-	_G.applyLanguage = applyLanguage
-
-	-- Stats live
-	local agoraStats = {totalLaunches = 0, onlineUsers = 0}
-	_G._agoraStats = agoraStats
-
-	local function fetchStats()
-		task.spawn(function()
-			local url = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?action=launch&user=" .. (_LocalPlayer and _LocalPlayer.Name or "Inconnu") .. "&uid=" .. (_LocalPlayer and tostring(_LocalPlayer.UserId) or "0") .. "&_=" .. math.random(100000,999999)
-			local data = httpGet(url)
-			if data then
-				local ok, json = pcall(function() return _HttpService:JSONDecode(data) end)
-				if ok and json then
-					agoraStats.totalLaunches = json.totalLaunches or 0
-					agoraStats.onlineUsers = json.onlineUsers or 0
-					pcall(function() if totalLabel then totalLabel.Text = (translations[langCode] or translations["FR"]).utilisateurs .. ": " .. agoraStats.totalLaunches end end)
-					pcall(function() if onlineLabel then onlineLabel.Text = (translations[langCode] or translations["FR"]).enLigne .. ": " .. agoraStats.onlineUsers end end)
-				end
-			end
-		end)
-	end
-
-	-- === BUILD HOME UI ===
-	local homeScroll = Instance.new("ScrollingFrame")
-	homeScroll.Name = "HomeScroll"
-	homeScroll.Size = UDim2.new(1, -10, 1, -10)
-	homeScroll.Position = UDim2.new(0, 5, 0, 5)
-	homeScroll.BackgroundTransparency = 1
-	homeScroll.BorderSizePixel = 0
-	homeScroll.ScrollBarThickness = 4
-	homeScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 180, 255)
-	homeScroll.CanvasSize = UDim2.new(0, 0, 0, 500)
-	homeScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	homeScroll.Parent = _homePage
-
-	local homeLayout = Instance.new("UIListLayout")
-	homeLayout.Padding = UDim.new(0, 8)
-	homeLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	homeLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	homeLayout.Parent = homeScroll
-
-	-- Title
-	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Size = UDim2.new(1, -20, 0, 28)
-	titleLabel.BackgroundTransparency = 1
-	titleLabel.Text = "Accueil"
-	titleLabel.Font = Enum.Font.GothamBold
-	titleLabel.TextSize = 22
-	titleLabel.TextColor3 = Color3.fromRGB(60, 180, 255)
-	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-	titleLabel.LayoutOrder = 1
-	titleLabel.Parent = homeScroll
-
-	-- Version
-	local versionLabel = Instance.new("TextLabel")
-	versionLabel.Size = UDim2.new(1, -20, 0, 20)
-	versionLabel.BackgroundTransparency = 1
-	versionLabel.Text = CURRENT_VERSION
-	versionLabel.Font = Enum.Font.Gotham
-	versionLabel.TextSize = 14
-	versionLabel.TextColor3 = Color3.fromRGB(120, 180, 255)
-	versionLabel.TextXAlignment = Enum.TextXAlignment.Left
-	versionLabel.LayoutOrder = 2
-	versionLabel.Parent = homeScroll
-
-	-- Separator
-	local sep1 = Instance.new("Frame")
-	sep1.Size = UDim2.new(1, -20, 0, 1)
-	sep1.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-	sep1.BorderSizePixel = 0
-	sep1.LayoutOrder = 3
-	sep1.Parent = homeScroll
-
-	-- Changelog title
-	local nouveautesLabel = Instance.new("TextLabel")
-	nouveautesLabel.Size = UDim2.new(1, -20, 0, 22)
-	nouveautesLabel.BackgroundTransparency = 1
-	nouveautesLabel.Text = "Nouveautes"
-	nouveautesLabel.Font = Enum.Font.GothamBold
-	nouveautesLabel.TextSize = 16
-	nouveautesLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-	nouveautesLabel.TextXAlignment = Enum.TextXAlignment.Left
-	nouveautesLabel.LayoutOrder = 4
-	nouveautesLabel.Parent = homeScroll
-
-	-- Changelog entries
-	for idx, entry in ipairs(changelogEntries) do
-		local entryLabel = Instance.new("TextLabel")
-		entryLabel.Size = UDim2.new(1, -20, 0, 18)
-		entryLabel.BackgroundTransparency = 1
-		entryLabel.Text = "? " .. entry
-		entryLabel.Font = Enum.Font.Gotham
-		entryLabel.TextSize = 12
-		entryLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
-		entryLabel.TextXAlignment = Enum.TextXAlignment.Left
-		entryLabel.LayoutOrder = 4 + idx
-		entryLabel.Parent = homeScroll
-	end
-
-	-- Separator 2
-	local sep2 = Instance.new("Frame")
-	sep2.Size = UDim2.new(1, -20, 0, 1)
-	sep2.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-	sep2.BorderSizePixel = 0
-	sep2.LayoutOrder = 14
-	sep2.Parent = homeScroll
-
-	-- Discord button
-	local discordBtn = Instance.new("TextButton")
-	discordBtn.Size = UDim2.new(1, -20, 0, 36)
-	discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
-	discordBtn.BorderSizePixel = 0
-	discordBtn.Text = "? Rejoindre le Discord"
-	discordBtn.Font = Enum.Font.GothamBold
-	discordBtn.TextSize = 14
-	discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	discordBtn.LayoutOrder = 15
-	discordBtn.Parent = homeScroll
-	_createCorner(discordBtn, 8)
-	discordBtn.MouseButton1Click:Connect(function()
-		pcall(function() setclipboard("https://discord.gg/fVw2rzAMb") end)
-		discordBtn.Text = "? Lien copie !"
-		task.delay(2, function() discordBtn.Text = "? Rejoindre le Discord" end)
-	end)
-
-	local discordLabel = discordBtn
-
-	-- Language selector
-	local langueLabel = Instance.new("TextLabel")
-	langueLabel.Size = UDim2.new(1, -20, 0, 20)
-	langueLabel.BackgroundTransparency = 1
-	langueLabel.Text = "Langue"
-	langueLabel.Font = Enum.Font.GothamBold
-	langueLabel.TextSize = 14
-	langueLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-	langueLabel.TextXAlignment = Enum.TextXAlignment.Left
-	langueLabel.LayoutOrder = 16
-	langueLabel.Parent = homeScroll
-
-	local langBtn = Instance.new("TextButton")
-	langBtn.Size = UDim2.new(1, -20, 0, 34)
-	langBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-	langBtn.BorderSizePixel = 0
-	langBtn.Text = "? Francais"
-	langBtn.Font = Enum.Font.Gotham
-	langBtn.TextSize = 13
-	langBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
-	langBtn.LayoutOrder = 17
-	langBtn.Parent = homeScroll
-	_createCorner(langBtn, 8)
-
-	local langPopup = nil
-	local langList = {
-		{code="FR", flag="??", name="Francais"},
-		{code="EN", flag="??", name="English"},
-		{code="ES", flag="??", name="Espa?ol"},
-		{code="DE", flag="??", name="Deutsch"},
-		{code="PT", flag="??", name="Portugues"},
-		{code="IT", flag="??", name="Italiano"},
-		{code="RU", flag="??", name="???????"},
-		{code="ZH", flag="??", name="??"},
-		{code="JA", flag="??", name="???"},
-		{code="KO", flag="??", name="???"},
-		{code="AR", flag="??", name="???????"},
-		{code="NL", flag="??", name="Nederlands"},
-		{code="PL", flag="??", name="Polski"},
-		{code="TR", flag="??", name="Turkce"}
-	}
-
-	langBtn.MouseButton1Click:Connect(function()
-		if langPopup then langPopup:Destroy() langPopup = nil return end
-		langPopup = Instance.new("Frame")
-		langPopup.Size = UDim2.new(1, -20, 0, 280)
-		langPopup.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
-		langPopup.BorderSizePixel = 0
-		langPopup.LayoutOrder = 18
-		langPopup.Parent = homeScroll
-		_createCorner(langPopup, 8)
-		_createStroke(langPopup, Color3.fromRGB(60, 180, 255), 1)
-
-		local popupLayout = Instance.new("UIListLayout")
-		popupLayout.Padding = UDim.new(0, 2)
-		popupLayout.Parent = langPopup
-
-		for _, lang in ipairs(langList) do
-			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(1, -10, 0, 28)
-			btn.Position = UDim2.new(0, 5, 0, 0)
-			btn.BackgroundColor3 = lang.code == langCode and Color3.fromRGB(60, 180, 255) or Color3.fromRGB(40, 40, 55)
-			btn.BorderSizePixel = 0
-			btn.Text = lang.flag .. " " .. lang.name
-			btn.Font = Enum.Font.Gotham
-			btn.TextSize = 12
-			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-			btn.Parent = langPopup
-			_createCorner(btn, 6)
-			btn.MouseButton1Click:Connect(function()
-				applyLanguage(lang.code)
-				langBtn.Text = lang.flag .. " " .. lang.name
-				langPopup:Destroy()
-				langPopup = nil
-			end)
-		end
-	end)
-
-	-- Stats
-	local totalLabel = Instance.new("TextLabel")
-	totalLabel.Size = UDim2.new(1, -20, 0, 18)
-	totalLabel.BackgroundTransparency = 1
-	totalLabel.Text = "Utilisateurs: ..."
-	totalLabel.Font = Enum.Font.Gotham
-	totalLabel.TextSize = 12
-	totalLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
-	totalLabel.TextXAlignment = Enum.TextXAlignment.Left
-	totalLabel.LayoutOrder = 19
-	totalLabel.Parent = homeScroll
-
-	local onlineLabel = Instance.new("TextLabel")
-	onlineLabel.Size = UDim2.new(1, -20, 0, 18)
-	onlineLabel.BackgroundTransparency = 1
-	onlineLabel.Text = "En ligne: ..."
-	onlineLabel.Font = Enum.Font.Gotham
-	onlineLabel.TextSize = 12
-	onlineLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
-	onlineLabel.TextXAlignment = Enum.TextXAlignment.Left
-	onlineLabel.LayoutOrder = 20
-	onlineLabel.Parent = homeScroll
-
-	-- Credits
-	local creditsLabel = Instance.new("TextLabel")
-	creditsLabel.Size = UDim2.new(1, -20, 0, 18)
-	creditsLabel.BackgroundTransparency = 1
-	creditsLabel.Text = "Agora Hub [UNIVERSELLE] - by Emerick"
-	creditsLabel.Font = Enum.Font.Gotham
-	creditsLabel.TextSize = 11
-	creditsLabel.TextColor3 = Color3.fromRGB(100, 100, 120)
-	creditsLabel.TextXAlignment = Enum.TextXAlignment.Center
-	creditsLabel.LayoutOrder = 21
-	creditsLabel.Parent = homeScroll
-
-	-- Fetch stats
-	fetchStats()
-	task.spawn(function()
-		while true do
-			task.wait(60)
-			fetchStats()
-		end
-	end)
-
-	-- Apply saved language
-	applyLanguage(langCode)
-end)()
-
--- ============= AUTO CLICKER =============
 local autoClickState = {
 	toolActive = false,   -- le switch (faux tool dans le backpack)
 	clickEnabled = false, -- le moteur d'autoclick actif
@@ -448,14 +129,12 @@ local function setAutoClickSave()
 	if acTarget and acTarget.targetType then
 		panelMemory.autoClick.targetType = acTarget.targetType
 	end
-_G.setAutoClickSave = setAutoClickSave
 end
 
 local function removeFakeTool()
 	if autoClickState.fakeTool and autoClickState.fakeTool.Parent then
 		autoClickState.fakeTool:Destroy()
 	end
-_G.removeFakeTool = removeFakeTool
 	autoClickState.fakeTool = nil
 end
 
@@ -487,14 +166,12 @@ local function createFakeTool()
 	autoClickState.fakeTool = tool
 	return tool
 end
-_G.createFakeTool = createFakeTool
 
 local function stopAutoClickEngine()
 	autoClickState.clickEnabled = false
 	if autoClickState.activeThread then
 		autoClickState.activeThread = nil
 	end
-_G.stopAutoClickEngine = stopAutoClickEngine
 	destroyAutoClickMarker()
 	statusLabel.Text = "Statut : arret"
 	statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -505,7 +182,6 @@ local function onToolDeactivated()
 	-- quand le tool est retire de l'inventaire / personnage mort
 	stopAutoClickEngine()
 end
-_G.onToolDeactivated = onToolDeactivated
 
 local VirtualInputManager
 pcall(function()
@@ -524,7 +200,7 @@ local acTarget = {
 }
 
 -- Fonctions marker autoclick: definies inline ci-dessous
-_=(function()
+;(function()
 	function destroyAutoClickMarker()
 		if acTarget.markerPart and acTarget.markerPart.Parent then
 			pcall(function() acTarget.markerPart:Destroy() end)
@@ -561,7 +237,6 @@ local function captureTargetFromCursor()
 	refreshAutoClickMarker()
 	return true
 end
-_G.captureTargetFromCursor = captureTargetFromCursor
 
 -- Trouve le bouton GUI au point (Vector2) en descendant l'arbre GUI
 local function findGuiButtonAt(point, root)
@@ -579,7 +254,6 @@ local function findGuiButtonAt(point, root)
 						if not best or (as.X * as.Y) < (best.AbsoluteSize.X * best.AbsoluteSize.Y) then
 							best = obj
 						end
-_G.findGuiButtonAt = findGuiButtonAt
 					end
 				end
 			end
@@ -593,7 +267,7 @@ _G.findGuiButtonAt = findGuiButtonAt
 	return best
 end
 
--- ClickDetector sous le point ecran - raycast camera vers l'arriere
+-- ClickDetector sous le point ecran  raycast camera vers l'arriere
 local function findClickDetectorAtScreen(point)
 	local camera = Workspace.CurrentCamera
 	if not camera then return nil end
@@ -609,7 +283,6 @@ local function findClickDetectorAtScreen(point)
 			local cd2 = inst.Parent:FindFirstChildOfClass("ClickDetector")
 			if cd2 then return cd2 end
 		end
-_G.findClickDetectorAtScreen = findClickDetectorAtScreen
 	end
 	return nil
 end
@@ -635,7 +308,6 @@ local function fireClickFixed(useNative)
 				end)
 				clicked = true
 			end
-_G.fireClickFixed = fireClickFixed
 		end
 	end
 
@@ -710,7 +382,6 @@ local function startAutoClickEngine()
 	if not acTarget.captured then
 		if not captureTargetFromCursor() then return end
 	end
-_G.startAutoClickEngine = startAutoClickEngine
 	autoClickState.clickEnabled = true
 	statusLabel.Text = "Statut : actif"
 	statusLabel.TextColor3 = Color3.fromRGB(80, 220, 120)
@@ -752,7 +423,7 @@ local infoLabel = Instance.new("TextLabel")
 infoLabel.Size = UDim2.new(1, -16, 0, 28)
 infoLabel.Position = UDim2.new(0, 8, 0, 22)
 infoLabel.BackgroundTransparency = 1
-infoLabel.Text = "1) Choisis la cible (Les 2 / Monde / GUI). 2) Place le curseur sur l'item. 3) Clic '1 Clic ici' OU 'Demarrer AutoClick' - la position est FIXEE a l'ecran et le clic est repete meme si tu bouges la souris."
+infoLabel.Text = "1) Choisis la cible (Les 2 / Monde / GUI). 2) Place le curseur sur l'item. 3) Clic '1 Clic ici' OU 'Demarrer AutoClick'  la position est FIXEE a l'ecran et le clic est repete meme si tu bouges la souris."
 infoLabel.Font = Enum.Font.Gotham
 infoLabel.TextSize = 10
 infoLabel.TextColor3 = Color3.fromRGB(160, 160, 160)
@@ -782,11 +453,9 @@ local function showMarkerAt(screenPos)
 	acMarker.Visible = true
 	acMarker.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
 end
-_G.showMarkerAt = showMarkerAt
 local function hideMarker()
 	acMarker.Visible = false
 end
-_G.hideMarker = hideMarker
 
 local _origCapture = captureTargetFromCursor
 captureTargetFromCursor = function()
@@ -883,7 +552,6 @@ local function speedFromX(x)
 	local rel = math.clamp((x - speedSliderTrack.AbsolutePosition.X) / speedSliderTrack.AbsoluteSize.X, 0, 1)
 	return 0.001 + rel * 0.199
 end
-_G.speedFromX = speedFromX
 local function setSpeed(s)
 	s = math.clamp(math.floor(s * 1000) / 1000, 0.001, 0.2)
 	autoClickState.speed = s
@@ -892,7 +560,6 @@ local function setSpeed(s)
 	if autoClickState.clickEnabled then startAutoClickEngine() end
 	setAutoClickSave()
 end
-_G.setSpeed = setSpeed
 setSpeed(0.05)
 
 speedSliderTrack.InputBegan:Connect(function(input)
@@ -1061,7 +728,7 @@ dragHandle.Name = "DragHandle"
 dragHandle.Size = UDim2.new(0, 22, 0, 22)
 dragHandle.Position = UDim2.new(1, -24, 1, -24)
 dragHandle.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-dragHandle.Text = "?"
+dragHandle.Text = ""
 dragHandle.Font = Enum.Font.GothamBold
 dragHandle.TextSize = 14
 dragHandle.TextColor3 = Color3.fromRGB(200, 200, 220)
@@ -1076,7 +743,6 @@ local function clampControl()
 	local y = math.clamp(clickControl.AbsolutePosition.Y, 0, math.max(0, s.Y - sz.Y))
 	clickControl.Position = UDim2.new(0, x, 0, y)
 end
-_G.clampControl = clampControl
 
 clickControl:GetPropertyChangedSignal("Position"):Connect(function()
 	task.defer(clampControl)
@@ -1189,7 +855,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 						capturedY = cf.Position.Y - size.Y / 2 - 1.5
 					end
 				end
-				if not capturedY and seatPart then
+				if not capturedY then
 					local cf = seatPart.CFrame
 					local size = seatPart.Size
 					capturedY = cf.Position.Y - size.Y / 2 - 1.5
@@ -1228,22 +894,19 @@ end)
 
 RunService.Stepped:Connect(function(_, dt)
 	updateCharacter()
-	local char = LocalPlayer.Character
-	if noclipState.enabled and char then
-		for _, p in ipairs(char:GetDescendants()) do
+	if noclipState.enabled and character then
+		for _, p in ipairs(character:GetDescendants()) do
 			if p:IsA("BasePart") then p.CanCollide = false end
 		end
-		local hrp = char:FindFirstChild("HumanoidRootPart")
-		if hrp then hrp.CanCollide = false end
 	end
 	if platformState.enabled and platformState.part then
 		-- Plate FIXE en X/Z : on ne tracke plus la position, on ajuste juste la hauteur
 		-- avec les touches +/-
 		if UserInputService:IsKeyDown(Enum.KeyCode.Equals) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadPlus) then
-			platformState.offset = platformState.offset + 25 * dt
+			platformState.offset += 25 * dt
 		end
 		if UserInputService:IsKeyDown(Enum.KeyCode.Minus) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadMinus) then
-			platformState.offset = platformState.offset - 25 * dt
+			platformState.offset -= 25 * dt
 		end
 		-- Lissage de la position verticale (evite les sauts secs)
 		local smoothing = math.min(1, dt * 12)
@@ -1256,104 +919,28 @@ RunService.Stepped:Connect(function(_, dt)
 	-- Go to Walk : deplace le humanoid vers chaque waypoint avec MoveTo + saut auto si bloque
 	if humanoid and rootPart and gotoWalkState.active and #gotoWalkState.path > 0 then
 		local wp = gotoWalkState.path[1]
-		local myPos = rootPart.Position
-		local flatDist = Vector3.new(myPos.X - wp.X, 0, myPos.Z - wp.Z).Magnitude
-		
-		-- === DETECTION DIMENSIONS PERSONNAGE ===
-		local charWidth = 2 -- largeur approximative du personnage (HumanoidRootPart size)
-		local charHeight = 5 -- hauteur approximative (tete + torse + jambes)
-		local crawlMode = false
-		
-		-- Raycast box pour verifier si on passe en hauteur
-		local function checkPassage(pos, height, width)
-			local params = RaycastParams.new()
-			params.FilterDescendantsInstances = {character}
-			params.FilterType = Enum.RaycastFilterType.Exclude
-			-- Check hauteur: raycast du sol vers le haut
-			local topHit = Workspace:Raycast(pos, Vector3.new(0, height, 0), params)
-			if topHit then
-				local clearance = (topHit.Position - pos).Y
-				if clearance < charHeight then
-					-- Trop bas pour marcher, verifie si on peut ramper
-					if clearance >= 1.5 then
-						crawlMode = true
-						return "crawl"
-					else
-						return "blocked"
-					end
-				end
-			end
-			-- Check largeur: raycast a gauche et droite
-			local leftHit = Workspace:Raycast(pos, Vector3.new(-width/2, 0, 0), params)
-			local rightHit = Workspace:Raycast(pos, Vector3.new(width/2, 0, 0), params)
-			if leftHit or rightHit then
-				return "tight"
-			end
-			return "clear"
-		end
-		
-		-- Verifie le passage au prochain waypoint
-		local passage = checkPassage(wp, charHeight, charWidth)
-		if passage == "crawl" then
-			-- Coucher le personnage (ramper)
-			pcall(function()
-				humanoid.HipHeight = 0
-				local root = rootPart
-				if root then
-					root.Size = Vector3.new(2, 1, 1)
-				end
-			end)
-		elseif passage == "clear" then
-			-- Restaurer la posture normale
-			pcall(function()
-				humanoid.HipHeight = 2
-				local root = rootPart
-				if root then
-					root.Size = Vector3.new(2, 5, 1)
-				end
-			end)
-		end
-		
-		-- === SAUT INTELLIGENT ===
-		-- Verifie si le prochain waypoint est plus haut que la position actuelle
-		local heightDiff = wp.Y - myPos.Y
-		if heightDiff > 2.5 and flatDist < 8 then
-			-- Le waypoint est plus haut et proche -> sauter
-			pcall(function()
-				humanoid.Jump = true
-			end)
-		end
-		-- Verifie aussi s'il y a un obstacle devant qui necessite un saut
-		local frontParams = RaycastParams.new()
-		frontParams.FilterDescendantsInstances = {character}
-		frontParams.FilterType = Enum.RaycastFilterType.Exclude
-		local frontRay = Workspace:Raycast(myPos, rootPart.CFrame.LookVector * 4, frontParams)
-		if frontRay and heightDiff > 0 then
-			-- Obstacle devant et on doit monter -> sauter
-			pcall(function()
-				humanoid.Jump = true
-			end)
-		end
-		
-		-- === DETECTION DE BLOCAGE ===
+		local flatDist = Vector3.new(rootPart.Position.X - wp.X, 0, rootPart.Position.Z - wp.Z).Magnitude
+		-- Detection de blocage : vitesse reelle trop faible par rapport a la distance
 		local vel = rootPart.AssemblyLinearVelocity
 		local flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
 		if flatDist > 3 and flatSpeed < 1 then
+			-- Bloque
 			if gotoWalkState.stuckSince == nil then gotoWalkState.stuckSince = tick() end
 			if tick() - gotoWalkState.stuckSince > 0.5 then
-				-- Sauter pour franchir l'obstacle
-				pcall(function() humanoid.Jump = true end)
-				-- Si toujours bloque apres 2s, recalcule
-				if tick() - gotoWalkState.stuckSince > 2 and gotoWalkState.target then
+				-- Raycast devant : si on touche un mur, on saute
+				local frontParams = RaycastParams.new()
+				frontParams.FilterDescendantsInstances = {character}
+				frontParams.FilterType = Enum.RaycastFilterType.Exclude
+				local frontRay = Workspace:Raycast(rootPart.Position, rootPart.CFrame.LookVector * 3, frontParams)
+				if frontRay then
+					humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+					task.wait(0.1)
+					humanoid.Jump = true
+				end
+				-- Si toujours bloque apres 2s, on recalcule le chemin
+				if tick() - gotoWalkState.stuckSince > 2.5 and gotoWalkState.target then
 					gotoWalkState.stuckSince = nil
 					local newPath = computePathTo(gotoWalkState.target)
-					if not newPath or #newPath == 0 then
-						local offsets = {Vector3.new(4,0,0), Vector3.new(-4,0,0), Vector3.new(0,0,4), Vector3.new(0,0,-4), Vector3.new(4,0,4), Vector3.new(-4,0,-4)}
-						for _, off in ipairs(offsets) do
-							newPath = computePathTo(gotoWalkState.target + off)
-							if newPath and #newPath > 0 then break end
-						end
-					end
 					if newPath and #newPath > 0 then
 						gotoWalkState.path = newPath
 						visualizeWaypoints(newPath)
@@ -1365,17 +952,19 @@ RunService.Stepped:Connect(function(_, dt)
 		else
 			gotoWalkState.stuckSince = nil
 		end
-		
 		if flatDist < 3 then
 			table.remove(gotoWalkState.path, 1)
 			if #gotoWalkState.path == 0 then
 				gotoWalkState.target = nil
+				gotoWalkState.active = false
+				gotoWalkSwitch.set(false)
 				clearWalkVisuals()
 			else
 				humanoid:MoveTo(gotoWalkState.path[1])
 				gotoWalkState.lastMoveTo = tick()
 			end
 		else
+			-- Re-emit MoveTo periodiquement car Roblox l'abandonne apres 8s
 			if tick() - (gotoWalkState.lastMoveTo or 0) > 4 then
 				humanoid:MoveTo(wp)
 				gotoWalkState.lastMoveTo = tick()
@@ -1406,8 +995,6 @@ RunService.Stepped:Connect(function(_, dt)
 	end)
 
 
-updateLoad(0.50, "Modules extra...")
-task.wait(0.05)
 -- ============= EXTRA =============
 local fullbrightState = { enabled = false, old = {} }
 local clickTPState = { enabled = false }
@@ -1437,9 +1024,9 @@ task.defer(function()
 	extraScroll.CanvasSize = UDim2.new(0, 0, 0, extraLayout.AbsoluteContentSize.Y + 10)
 end)
 
--- === Carte "Stats serveur" (6 stats en grille) - deplacee depuis Joueurs (trop large) ===
+-- === Carte "Stats serveur" (6 stats en grille)  deplacee depuis Joueurs (trop large) ===
 -- WRAP dans local function + appel pour isoler les locals
-local function _initServerStatsCard()
+;(function() -- _initServerStatsCard
 	local statsCard = Instance.new("Frame")
 	statsCard.Name = "StatsCard"
 	statsCard.Size = UDim2.new(1, -10, 0, 0)
@@ -1461,7 +1048,7 @@ local function _initServerStatsCard()
 	local statsTitle = Instance.new("TextLabel")
 	statsTitle.Size = UDim2.new(1, 0, 0, 16)
 	statsTitle.BackgroundTransparency = 1
-	statsTitle.Text = "? Stats serveur"
+	statsTitle.Text = " Stats serveur"
 	statsTitle.Font = Enum.Font.GothamBold
 	statsTitle.TextSize = 12
 	statsTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
@@ -1469,9 +1056,9 @@ local function _initServerStatsCard()
 	statsTitle.LayoutOrder = 1
 	statsTitle.Parent = statsCard
 
-	-- Container pour la grille de stats (2 lignes ? 3 colonnes)
+	-- Container pour la grille de stats (2 lignes  3 colonnes)
 	local statsGrid = Instance.new("Frame")
-	statsGrid.Size = UDim2.new(1, 0, 0, 90) -- 2 lignes ? 42 + gap 6 = 90
+	statsGrid.Size = UDim2.new(1, 0, 0, 90) -- 2 lignes  42 + gap 6 = 90
 	statsGrid.BackgroundTransparency = 1
 	statsGrid.LayoutOrder = 2
 	statsGrid.Parent = statsCard
@@ -1516,7 +1103,6 @@ local function _initServerStatsCard()
 		value.Parent = cell
 		return value
 	end
-_G._initServerStatsCard = _initServerStatsCard
 
 	-- Creer les 6 stats dans la grille (LayoutOrder 1-6)
 	local statPlayers = addGridStat(statsGrid, "Joueurs", 1)
@@ -1554,12 +1140,11 @@ _G._initServerStatsCard = _initServerStatsCard
 			end)
 		end
 	end)
-end
-_initServerStatsCard()
+end)()
 
--- === Carte "Infos serveur" (Createur du jeu) - deplacee depuis Joueurs (etait trop large) ===
+-- === Carte "Infos serveur" (Createur du jeu)  deplacee depuis Joueurs (etait trop large) ===
 -- WRAP dans local function + appel pour isoler les locals (reduit les 200 registres)
-local function _initServerInfoCard()
+;(function() -- _initServerInfoCard
 	local serverInfoCard = Instance.new("Frame")
 	serverInfoCard.Name = "ServerInfoCard"
 	serverInfoCard.Size = UDim2.new(1, -10, 0, 0)
@@ -1581,7 +1166,7 @@ local function _initServerInfoCard()
 	local serverInfoTitle = Instance.new("TextLabel")
 	serverInfoTitle.Size = UDim2.new(1, 0, 0, 16)
 	serverInfoTitle.BackgroundTransparency = 1
-	serverInfoTitle.Text = "?? Infos serveur"
+	serverInfoTitle.Text = " Infos serveur"
 	serverInfoTitle.Font = Enum.Font.GothamBold
 	serverInfoTitle.TextSize = 12
 	serverInfoTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
@@ -1616,44 +1201,323 @@ local function _initServerInfoCard()
 				local lines = {}
 				local okCreator, creatorId = pcall(function() return game.CreatorId end)
 				if okCreator and creatorId and creatorId ~= 0 then
-					table.insert(lines, "  ? Createur du jeu (CreatorId) : " .. tostring(creatorId))
+					table.insert(lines, "   Createur du jeu (CreatorId) : " .. tostring(creatorId))
 					local okCreatorType, creatorType = pcall(function() return game.CreatorType end)
 					if okCreatorType then
-						table.insert(lines, "  ? Type createur    : " .. tostring(creatorType))
+						table.insert(lines, "   Type createur    : " .. tostring(creatorType))
 					end
-_G._initServerInfoCard = _initServerInfoCard
 					local okName, gameName = pcall(function() return game.Name end)
 					if okName then
-						table.insert(lines, "  ? Nom du jeu       : " .. tostring(gameName))
+						table.insert(lines, "   Nom du jeu       : " .. tostring(gameName))
 					end
 					local okVIP, vipOwnerId = pcall(function() return game.VIPServerOwnerId end)
 					if okVIP and vipOwnerId and vipOwnerId ~= 0 then
-						table.insert(lines, "  ? Proprio VIP     : " .. tostring(vipOwnerId))
+						table.insert(lines, "   Proprio VIP     : " .. tostring(vipOwnerId))
 					end
 					local okVIPId, vipId = pcall(function() return game.VIPServerId end)
 					if okVIPId and vipId and vipId ~= "" then
-						table.insert(lines, "  ? VIP Server ID    : " .. tostring(vipId):sub(1, 24))
+						table.insert(lines, "   VIP Server ID    : " .. tostring(vipId):sub(1, 24))
 					end
 				else
-					table.insert(lines, "  ? Createur : Indisponible")
+					table.insert(lines, "   Createur : Indisponible")
 				end
 				serverInfoText.Text = table.concat(lines, "\n")
 			end)
 		end
 	end)
-end
-_initServerInfoCard()
+end)()
 
-updateLoad(0.60, "Aimbot...")
-task.wait(0.05)
+
+-- === SYSTEME D'EMOTES (fenetre draggable) ===
+	-- === SYSTEME D'EMOTES (fenetre draggable) ===
+	local function _initEmotes()
+		local emoteBtn = Instance.new("TextButton")
+		emoteBtn.Size = UDim2.new(0.7, 0, 0, 28)
+		emoteBtn.Position = UDim2.new(0.15, 0, 0, 312)
+		emoteBtn.BackgroundColor3 = Color3.fromRGB(35, 25, 50)
+		emoteBtn.Text = " Emotes"
+		emoteBtn.Font = Enum.Font.GothamSemibold
+		emoteBtn.TextSize = 13
+		emoteBtn.TextColor3 = Color3.fromRGB(220, 180, 255)
+		emoteBtn.BorderSizePixel = 0
+		emoteBtn.AutoButtonColor = true
+		emoteBtn.LayoutOrder = 5
+		emoteBtn.Parent = extraScroll
+		createCorner(emoteBtn, 8)
+		emoteBtn.MouseEnter:Connect(function() tween(emoteBtn, {BackgroundColor3 = Color3.fromRGB(50, 35, 70)}, 0.15) end)
+		emoteBtn.MouseLeave:Connect(function() tween(emoteBtn, {BackgroundColor3 = Color3.fromRGB(35, 25, 50)}, 0.15) end)
+
+		-- Fenetre draggable
+		local emoteWin = Instance.new("Frame")
+		emoteWin.Size = UDim2.new(0, 220, 0, 320)
+		emoteWin.Position = UDim2.new(0.5, -110, 0.3, 0)
+		emoteWin.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+		emoteWin.BorderSizePixel = 0
+		emoteWin.Visible = false
+		emoteWin.ZIndex = 200
+		emoteWin.Parent = screenGui
+		createCorner(emoteWin, 10)
+
+		-- Barre de titre (draggable)
+		local emoteTitleBar = Instance.new("Frame")
+		emoteTitleBar.Size = UDim2.new(1, 0, 0, 32)
+		emoteTitleBar.BackgroundColor3 = Color3.fromRGB(30, 25, 45)
+		emoteTitleBar.BorderSizePixel = 0
+		emoteTitleBar.ZIndex = 201
+		emoteTitleBar.Parent = emoteWin
+		createCorner(emoteTitleBar, 10)
+
+		local emoteTitle = Instance.new("TextLabel")
+		emoteTitle.Size = UDim2.new(1, -30, 1, 0)
+		emoteTitle.Position = UDim2.new(0, 8, 0, 0)
+		emoteTitle.BackgroundTransparency = 1
+		emoteTitle.Text = " Emotes"
+		emoteTitle.Font = Enum.Font.GothamBold
+		emoteTitle.TextSize = 14
+		emoteTitle.TextColor3 = Color3.fromRGB(200, 170, 255)
+		emoteTitle.TextXAlignment = Enum.TextXAlignment.Left
+		emoteTitle.ZIndex = 202
+		emoteTitle.Parent = emoteTitleBar
+
+		-- Bouton X
+		local emoteClose = Instance.new("TextButton")
+		emoteClose.Size = UDim2.new(0, 24, 0, 24)
+		emoteClose.Position = UDim2.new(1, -28, 0, 4)
+		emoteClose.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+		emoteClose.Text = ""
+		emoteClose.Font = Enum.Font.GothamBold
+		emoteClose.TextSize = 12
+		emoteClose.TextColor3 = Color3.new(1, 1, 1)
+		emoteClose.BorderSizePixel = 0
+		emoteClose.ZIndex = 202
+		emoteClose.Parent = emoteTitleBar
+		createCorner(emoteClose, 6)
+
+		-- Scroll des emotes
+		local emoteScroll = Instance.new("ScrollingFrame")
+		emoteScroll.Size = UDim2.new(1, -10, 1, -42)
+		emoteScroll.Position = UDim2.new(0, 5, 0, 36)
+		emoteScroll.BackgroundTransparency = 1
+		emoteScroll.BorderSizePixel = 0
+		emoteScroll.ScrollBarThickness = 3
+		emoteScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		emoteScroll.CanvasSize = UDim2.new(0, 0, 0, 400)
+		emoteScroll.ZIndex = 201
+		emoteScroll.Parent = emoteWin
+
+		local emoteLayout = Instance.new("UIListLayout")
+		emoteLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		emoteLayout.Padding = UDim.new(0, 3)
+		emoteLayout.Parent = emoteScroll
+
+		-- Helper: jouer une animation
+		local function playEmote(animId, isLoop)
+			pcall(function()
+				local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+				local hum = char:FindFirstChildOfClass("Humanoid")
+				if not hum then return end
+				local animator = hum:FindFirstChildOfClass("Animator")
+				if not animator then
+					animator = Instance.new("Animator")
+					animator.Parent = hum
+				end
+				if _G._currentEmoteTrack then
+					pcall(function() _G._currentEmoteTrack:Stop(0.3) end)
+				end
+				local anim = Instance.new("Animation")
+				anim.AnimationId = "rbxassetid://" .. tostring(animId)
+				local track = animator:LoadAnimation(anim)
+				track.Looped = isLoop or false
+				track:Play()
+				_G._currentEmoteTrack = track
+				if not isLoop then
+					task.delay(track.Length + 0.5, function()
+						pcall(function() if track then track:Stop(0.3) end end)
+					end)
+				end
+				playSound(6042053626, 0.2)
+			end)
+		end
+
+		-- Helper: rouler par terre
+		local function rollOnGround()
+			pcall(function()
+				local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+				local hum = char:FindFirstChildOfClass("Humanoid")
+				local root = char:FindFirstChild("HumanoidRootPart")
+				if not hum or not root then return end
+				if _G._currentEmoteTrack then
+					pcall(function() _G._currentEmoteTrack:Stop(0.3) end)
+				end
+				hum.PlatformStand = true
+				local bv = Instance.new("BodyVelocity")
+				bv.MaxForce = Vector3.new(50000, 0, 50000)
+				bv.Velocity = root.CFrame.LookVector * 30
+				bv.Parent = root
+				local bav = Instance.new("BodyAngularVelocity")
+				bav.AngularVelocity = Vector3.new(0, 0, 20)
+				bav.MaxTorque = Vector3.new(0, 0, 50000)
+				bav.P = 1000
+				bav.Parent = root
+				playSound(6042053626, 0.2)
+				task.delay(3, function()
+					pcall(function()
+						bv:Destroy()
+						bav:Destroy()
+						hum.PlatformStand = false
+					end)
+				end)
+			end)
+		end
+
+		-- Helper: saut custom (bounce)
+		local function customBounce()
+			pcall(function()
+				local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+				local hum = char:FindFirstChildOfClass("Humanoid")
+				local root = char:FindFirstChild("HumanoidRootPart")
+				if not hum or not root then return end
+				if _G._currentEmoteTrack then
+					pcall(function() _G._currentEmoteTrack:Stop(0.3) end)
+				end
+				local bv = Instance.new("BodyVelocity")
+				bv.MaxForce = Vector3.new(0, 50000, 0)
+				bv.Velocity = Vector3.new(0, 0, 0)
+				bv.Parent = root
+				local startTime = tick()
+				local danceConn
+				danceConn = game:GetService("RunService").Heartbeat:Connect(function()
+					if tick() - startTime > 4 then
+						danceConn:Disconnect()
+						pcall(function() bv:Destroy() end)
+						return
+					end
+					local t = tick() - startTime
+					bv.Velocity = Vector3.new(0, math.sin(t * 8) * 15, 0)
+				end)
+				playSound(6042053626, 0.2)
+			end)
+		end
+
+		-- Liste des emotes
+		local emotes = {
+			{label = " Saluer", animId = 507770239, loop = false},
+			{label = " Pointer", animId = 507770453, loop = false},
+			{label = " Rire", animId = 507770818, loop = false},
+			{label = " Acclamer", animId = 507770677, loop = false},
+			{label = " S'incliner", animId = 507770143, loop = false},
+			{label = " Danser 1", animId = 507771019, loop = false},
+			{label = " Danser 2", animId = 507771238, loop = false},
+			{label = " Danser 3", animId = 507771475, loop = false},
+			{label = " Applaudir", animId = 507770239, loop = true},
+			{label = " S'asseoir", animId = 2506281703, loop = true},
+			{label = " S'allonger", animId = 14046439232, loop = true},
+			{label = " Rouler par terre", custom = "roll", loop = false},
+			{label = " Rebondir", custom = "bounce", loop = false},
+			{label = " Tournoyer", animId = 507771019, loop = true},
+			{label = " Poser gamin", animId = 507770677, loop = false},
+			{label = " Observer", animId = 507770453, loop = true},
+		}
+
+		for idx, em in ipairs(emotes) do
+			local eBtn = Instance.new("TextButton")
+			eBtn.Size = UDim2.new(1, 0, 0, 28)
+			eBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+			eBtn.Text = em.label
+			eBtn.Font = Enum.Font.Gotham
+			eBtn.TextSize = 12
+			eBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
+			eBtn.BorderSizePixel = 0
+			eBtn.LayoutOrder = idx
+			eBtn.ZIndex = 201
+			eBtn.Parent = emoteScroll
+			createCorner(eBtn, 6)
+			eBtn.MouseEnter:Connect(function() tween(eBtn, {BackgroundColor3 = Color3.fromRGB(40, 40, 55)}, 0.12) end)
+			eBtn.MouseLeave:Connect(function() tween(eBtn, {BackgroundColor3 = Color3.fromRGB(25, 25, 35)}, 0.12) end)
+			eBtn.MouseButton1Click:Connect(function()
+				if em.custom == "roll" then
+					rollOnGround()
+				elseif em.custom == "bounce" then
+					customBounce()
+				else
+					playEmote(em.animId, em.loop)
+				end
+			end)
+		end
+
+		-- Bouton stop emote
+		local stopBtn = Instance.new("TextButton")
+		stopBtn.Size = UDim2.new(1, 0, 0, 30)
+		stopBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
+		stopBtn.Text = " Stop emote"
+		stopBtn.Font = Enum.Font.GothamBold
+		stopBtn.TextSize = 12
+		stopBtn.TextColor3 = Color3.fromRGB(255, 180, 180)
+		stopBtn.BorderSizePixel = 0
+		stopBtn.LayoutOrder = #emotes + 1
+		stopBtn.ZIndex = 201
+		stopBtn.Parent = emoteScroll
+		createCorner(stopBtn, 6)
+		stopBtn.MouseButton1Click:Connect(function()
+			pcall(function()
+				if _G._currentEmoteTrack then _G._currentEmoteTrack:Stop(0.3) end
+				local char = LocalPlayer.Character
+				if char then
+					local hum = char:FindFirstChildOfClass("Humanoid")
+					local root = char:FindFirstChild("HumanoidRootPart")
+					if hum then hum.PlatformStand = false end
+					if root then
+						for _, v in ipairs(root:GetChildren()) do
+							if v:IsA("BodyVelocity") or v:IsA("BodyAngularVelocity") then v:Destroy() end
+						end
+					end
+				end
+			end)
+			playSound(6042053626, 0.2)
+		end)
+
+		-- Dragging de la fenetre
+		local dragging = false
+		local dragStart, startPos
+		emoteTitleBar.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = true
+				dragStart = input.Position
+				startPos = emoteWin.Position
+			end
+		end)
+		emoteTitleBar.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = false
+			end
+		end)
+		game:GetService("UserInputService").InputChanged:Connect(function(input)
+			if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+				local delta = input.Position - dragStart
+				emoteWin.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+			end
+		end)
+
+		-- Toggle fenetre
+		emoteBtn.MouseButton1Click:Connect(function()
+			emoteWin.Visible = not emoteWin.Visible
+			playSound(6042053626, 0.2)
+		end)
+		emoteClose.MouseButton1Click:Connect(function()
+			emoteWin.Visible = false
+			playSound(6042053626, 0.2)
+		end)
+	end
+	_initEmotes()
+
 -- ============= AIMBOT =============
 -- Verrouille la souris sur la TETE du joueur le plus proche du CENTRE de l'ecran
--- - Filtre "pas a travers les murs" : raycast camera -> head, verifie qu'on touche le character
+-- - Filtre "pas a travers les murs" : raycast camera  head, verifie qu'on touche le character
 -- - Filtre "a l'ecran" : WorldToScreenPoint.Z > 0 et X/Y dans les bornes
 -- - Pas de visee amis (seulement les joueurs, pas le local player)
 -- - Option clic auto : mouse1click a chaque frame sur la cible
 -- Wrap dans local function + appel pour isoler les locals (limite 200 registers)
-local function _initAimbot()
+;(function() -- _initAimbot
 	local aimbotCard = Instance.new("Frame")
 	aimbotCard.Name = "AimbotCard"
 	aimbotCard.Size = UDim2.new(1, -10, 0, 0)
@@ -1683,7 +1547,7 @@ local function _initAimbot()
 	local aimbotTitle = Instance.new("TextLabel")
 	aimbotTitle.Size = UDim2.new(1, 0, 0, 16)
 	aimbotTitle.BackgroundTransparency = 1
-	aimbotTitle.Text = "? Aimbot (verrouille le centre ecran sur la cible)"
+	aimbotTitle.Text = " Aimbot (verrouille le centre ecran sur la cible)"
 	aimbotTitle.Font = Enum.Font.GothamBold
 	aimbotTitle.TextSize = 12
 	aimbotTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
@@ -1692,7 +1556,6 @@ local function _initAimbot()
 	aimbotTitle.Parent = aimbotCard
 
 	-- Toggle principal (aim ON/OFF)
-	_G._agoraAimbotEnabled = false
 	local aimbotEnabled = false
 	local aimbotAutoClick = false
 	local aimbotMaxDist = 300 -- studs (par defaut)
@@ -1701,7 +1564,7 @@ local function _initAimbot()
 	local aimStatusLabel = Instance.new("TextLabel")
 	aimStatusLabel.Size = UDim2.new(1, 0, 0, 16)
 	aimStatusLabel.BackgroundTransparency = 1
-	aimStatusLabel.Text = "? Aim inactif"
+	aimStatusLabel.Text = " Aim inactif"
 	aimStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
 	aimStatusLabel.Font = Enum.Font.Gotham
 	aimStatusLabel.TextSize = 10
@@ -1723,28 +1586,34 @@ local function _initAimbot()
 	mainSwitchLabel.TextSize = 11
 	mainSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
 	mainSwitchLabel.Parent = mainSwitchRow
-	mainSwitchLabel.ZIndex = 4
-	local mainSwitch = createSwitch(mainSwitchRow, "", 0, function(on)
+	local mainSwitch = createSwitch(mainSwitchRow, "", 1, function(on)
 		aimbotEnabled = on
-		_G._agoraAimbotEnabled = on
 	end)
-	mainSwitch.Size = UDim2.new(0.3, -4, 0.85, 0)
-	mainSwitch.Position = UDim2.new(0.7, 4, 0.075, 0)
-	mainSwitch.set(_G._agoraAimbotEnabled)
+	mainSwitch.Size = UDim2.new(0.3, -4, 1, 0)
+	mainSwitch.Position = UDim2.new(0.7, 4, 0, 0)
 
 	-- Toggle auto-clic
-	_G._agoraAimbotAutoClick = _G._agoraAimbotAutoClick or false
-	local clickSwitch = createSwitch(clickSwitchRow, "", 0, function(on)
+	local clickSwitchRow = Instance.new("Frame")
+	clickSwitchRow.Size = UDim2.new(1, 0, 0, 26)
+	clickSwitchRow.BackgroundTransparency = 1
+	clickSwitchRow.LayoutOrder = 4
+	clickSwitchRow.Parent = aimbotCard
+	local clickSwitchLabel = Instance.new("TextLabel")
+	clickSwitchLabel.Size = UDim2.new(0.7, 0, 1, 0)
+	clickSwitchLabel.BackgroundTransparency = 1
+	clickSwitchLabel.Text = " Clic auto sur cible"
+	clickSwitchLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+	clickSwitchLabel.Font = Enum.Font.Gotham
+	clickSwitchLabel.TextSize = 11
+	clickSwitchLabel.TextXAlignment = Enum.TextXAlignment.Left
+	clickSwitchLabel.Parent = clickSwitchRow
+	local clickSwitch = createSwitch(clickSwitchRow, "", 1, function(on)
 		aimbotAutoClick = on
-		_G._agoraAimbotAutoClick = on
 	end)
-	clickSwitch.Size = UDim2.new(0.3, -4, 0.85, 0)
-	clickSwitch.Position = UDim2.new(0.7, 4, 0.075, 0)
-	clickSwitch.set(_G._agoraAimbotAutoClick)
+	clickSwitch.Size = UDim2.new(0.3, -4, 1, 0)
+	clickSwitch.Position = UDim2.new(0.7, 4, 0, 0)
 
 	-- Slider de distance max (clic gauche = -25, clic droit = +25)
-	_G._agoraAimbotMaxDist = _G._agoraAimbotMaxDist or 300
-	local aimbotMaxDist = _G._agoraAimbotMaxDist or 300
 	local distRow = Instance.new("Frame")
 	distRow.Size = UDim2.new(1, 0, 0, 26)
 	distRow.BackgroundTransparency = 1
@@ -1753,7 +1622,7 @@ local function _initAimbot()
 	local distLabel = Instance.new("TextLabel")
 	distLabel.Size = UDim2.new(0.5, 0, 1, 0)
 	distLabel.BackgroundTransparency = 1
-	distLabel.Text = "? Distance max : " .. aimbotMaxDist .. " studs"
+	distLabel.Text = " Distance max : " .. aimbotMaxDist .. " studs"
 	distLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
 	distLabel.Font = Enum.Font.Gotham
 	distLabel.TextSize = 11
@@ -1764,7 +1633,7 @@ local function _initAimbot()
 	distSlider.Position = UDim2.new(0.5, 4, 0, 0)
 	distSlider.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
 	distSlider.BorderSizePixel = 0
-	distSlider.Text = "-   +"
+	distSlider.Text = "   +"
 	distSlider.TextColor3 = Color3.fromRGB(180, 180, 220)
 	distSlider.Font = Enum.Font.Gotham
 	distSlider.TextSize = 10
@@ -1772,20 +1641,18 @@ local function _initAimbot()
 	createCorner(distSlider, 4)
 	distSlider.MouseButton1Click:Connect(function()
 		aimbotMaxDist = math.max(50, aimbotMaxDist - 25)
-		_G._agoraAimbotMaxDist = aimbotMaxDist
-		distLabel.Text = "? Distance max : " .. aimbotMaxDist .. " studs"
+		distLabel.Text = " Distance max : " .. aimbotMaxDist .. " studs"
 	end)
 	distSlider.MouseButton2Click:Connect(function()
 		aimbotMaxDist = math.min(1000, aimbotMaxDist + 25)
-		_G._agoraAimbotMaxDist = aimbotMaxDist
-		distLabel.Text = "? Distance max : " .. aimbotMaxDist .. " studs"
+		distLabel.Text = " Distance max : " .. aimbotMaxDist .. " studs"
 	end)
 
 	-- Label d'aide sous les switches
 	local helpLbl = Instance.new("TextLabel")
 	helpLbl.Size = UDim2.new(1, 0, 0, 28)
 	helpLbl.BackgroundTransparency = 1
-	helpLbl.Text = "??  Active Aim puis vise une cible a l'ecran. Clic auto tire quand verrouille."
+	helpLbl.Text = "i  Active Aim puis vise une cible a l'ecran. Clic auto tire quand verrouille."
 	helpLbl.TextColor3 = Color3.fromRGB(150, 150, 170)
 	helpLbl.Font = Enum.Font.Gotham
 	helpLbl.TextSize = 10
@@ -1816,7 +1683,7 @@ local function _initAimbot()
 	local localPlayer = Players.LocalPlayer
 	local lastClickTick = 0
 	local renderConn = RunService.RenderStepped:Connect(function()
-		if not _G._agoraAimbotEnabled then
+		if not aimbotEnabled then
 			if aimCircle.Visible then aimCircle.Visible = false end
 			return
 		end
@@ -1832,7 +1699,7 @@ local function _initAimbot()
 			if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
 				local targetHead = plr.Character.Head
 				local targetPos = targetHead.Position
-				if (targetPos - myPos).Magnitude <= (_G._agoraAimbotMaxDist or 300) then
+				if (targetPos - myPos).Magnitude <= aimbotMaxDist then
 					local screenPos, onScreen = cam:WorldToScreenPoint(targetPos)
 					if onScreen and screenPos.Z > 0 then
 						local origin = cam.CFrame.Position
@@ -1849,7 +1716,6 @@ local function _initAimbot()
 								bestDistFromCenter = distFromCenter
 								bestTarget = {player = plr, head = targetHead, screen = Vector2.new(screenPos.X, screenPos.Y)}
 							end
-_G._initAimbot = _initAimbot
 						end
 					end
 				end
@@ -1863,20 +1729,19 @@ _G._initAimbot = _initAimbot
 			pcall(function() mousemoverel(smoothX, smoothY) end)
 			aimCircle.Position = UDim2.new(0, bestTarget.screen.X - 30, 0, bestTarget.screen.Y - 30)
 			if not aimCircle.Visible then aimCircle.Visible = true end
-			aimStatusLabel.Text = "? Verrouille : " .. bestTarget.player.DisplayName .. " (dist: " .. math.floor(bestDistFromCenter) .. "px)"
+			aimStatusLabel.Text = " Verrouille : " .. bestTarget.player.DisplayName .. " (dist: " .. math.floor(bestDistFromCenter) .. "px)"
 			aimStatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-			if _G._agoraAimbotAutoClick and tick() - lastClickTick > 0.1 then
+			if aimbotAutoClick and tick() - lastClickTick > 0.1 then
 				pcall(function() mouse1click() end)
 				lastClickTick = tick()
 			end
 		else
 			if aimCircle.Visible then aimCircle.Visible = false end
-			aimStatusLabel.Text = "Aucune cible visible (hors portee ou derriere un mur)"
+			aimStatusLabel.Text = " Aucune cible visible (hors portee ou derriere un mur)"
 			aimStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
 		end
 	end)
-end
-_initAimbot()
+end)()
 
 local fullbrightSwitch = createSwitch(extraScroll, "Fullbright", 0, function(on)
 	fullbrightState.enabled = on
@@ -1929,13 +1794,13 @@ end)
 -- Fallback notify global si le panel n'en fournit pas
 if type(notify) ~= "function" then
 	notify = function(msg, dur)
-		warn("[MilanEmerickPanel] " .. tostring(msg))
+		warn("[AgoraUniverselleHub] " .. tostring(msg))
 	end
 end
 
 -- === FEATURES UNIVERSELLES (marchent sur tous les jeux Roblox) ===
 local fpsBoostState = { enabled = false, saved = {} }
-createSwitch(extraScroll, "FPS Boost (qualite?)", 0, function(on)
+createSwitch(extraScroll, "FPS Boost (qualite)", 0, function(on)
 	fpsBoostState.enabled = on
 	if on then
 		fpsBoostState.saved = {
@@ -1973,663 +1838,6 @@ local panicEnabled = false
 createSwitch(extraScroll, "Bouton panique (Shift+P)", 0, function(on)
 	panicEnabled = on
 end)
--- === SERVER AUTHORITY DETECTION + DISABLE ===
-_=(function()
-	-- Frame container
-	local saCard = Instance.new("Frame")
-	saCard.Name = "ServerAuthorityCard"
-	saCard.Size = UDim2.new(1, -10, 0, 0)
-	saCard.AutomaticSize = Enum.AutomaticSize.Y
-	saCard.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
-	saCard.BorderSizePixel = 0
-	saCard.LayoutOrder = 999
-	saCard.Parent = extraScroll
-	createCorner(saCard, 8)
-	createStroke(saCard, Color3.fromRGB(80, 80, 120), 1)
-
-	local saPad = Instance.new("UIPadding")
-	saPad.PaddingTop = UDim.new(0, 8)
-	saPad.PaddingBottom = UDim.new(0, 8)
-	saPad.PaddingLeft = UDim.new(0, 12)
-	saPad.PaddingRight = UDim.new(0, 12)
-	saPad.Parent = saCard
-
-	-- Title
-	local saTitle = Instance.new("TextLabel")
-	saTitle.Size = UDim2.new(1, 0, 0, 16)
-	saTitle.BackgroundTransparency = 1
-	saTitle.Text = "Server Authority"
-	saTitle.Font = Enum.Font.GothamBold
-	saTitle.TextSize = 12
-	saTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
-	saTitle.TextXAlignment = Enum.TextXAlignment.Left
-	saTitle.Parent = saCard
-
-	-- Status label
-	local saStatus = Instance.new("TextLabel")
-	saStatus.Size = UDim2.new(1, 0, 0, 14)
-	saStatus.Position = UDim2.new(0, 0, 0, 18)
-	saStatus.BackgroundTransparency = 1
-	saStatus.Text = "Detection..."
-	saStatus.Font = Enum.Font.GothamSemibold
-	saStatus.TextSize = 11
-	saStatus.TextColor3 = Color3.fromRGB(150, 150, 160)
-	saStatus.TextXAlignment = Enum.TextXAlignment.Left
-	saStatus.Parent = saCard
-
-	-- Detect Server Authority
-	local saActive = false
-	local saMode = "Inconnu"
-	pcall(function()
-		local ws = game:GetService("Workspace")
-		if ws:FindFirstChild("AuthorityMode") or ws:IsA("Instance") then
-			local am = ws.AuthorityMode
-			if am == Enum.AuthorityMode.Server then
-				saActive = true
-				saMode = "ACTIF"
-			elseif am == Enum.AuthorityMode.Client then
-				saActive = false
-				saMode = "Desactive"
-			else
-				saMode = tostring(am)
-			end
-		else
-			-- AuthorityMode property might not exist (old games)
-			local ok2 = pcall(function()
-				local am = ws:GetAttribute("AuthorityMode")
-				if am then
-					saMode = tostring(am)
-					saActive = (am == "Server" or am == 1)
-				end
-			end)
-			if not ok2 then
-				saMode = "Non supporte"
-			end
-		end
-	end)
-
-	-- Update status display
-	if saActive then
-		saStatus.Text = "Status: ACTIF (fly bypass disponible!)"
-		saStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
-	else
-		saStatus.Text = "Status: " .. saMode .. " (fly/noclip OK)"
-		saStatus.TextColor3 = Color3.fromRGB(100, 220, 120)
-	end
-
-	-- Info label (visible only if SA active)
-	local saInfo = Instance.new("TextLabel")
-	saInfo.Size = UDim2.new(1, 0, 0, 14)
-	saInfo.Position = UDim2.new(0, 0, 0, 36)
-	saInfo.BackgroundTransparency = 1
-	saInfo.Text = "Tenter de desactiver localement:"
-	saInfo.Font = Enum.Font.Gotham
-	saInfo.TextSize = 10
-	saInfo.TextColor3 = Color3.fromRGB(160, 160, 170)
-	saInfo.TextXAlignment = Enum.TextXAlignment.Left
-	saInfo.Visible = saActive
-	saInfo.Parent = saCard
-
-	-- Disable button (visible only if SA active)
-	local saBtn = Instance.new("TextButton")
-	saBtn.Size = UDim2.new(1, 0, 0, 30)
-	saBtn.Position = UDim2.new(0, 0, 0, 54)
-	saBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-	saBtn.Text = "Tenter de desactiver"
-	saBtn.Font = Enum.Font.GothamSemibold
-	saBtn.TextSize = 12
-	saBtn.TextColor3 = Color3.new(1, 1, 1)
-	saBtn.BorderSizePixel = 0
-	saBtn.AutoButtonColor = false
-	saBtn.Visible = saActive
-	saBtn.Parent = saCard
-	createCorner(saBtn, 8)
-
-	saBtn.MouseButton1Click:Connect(function()
-		pcall(function()
-			local ws = game:GetService("Workspace")
-			-- Try setting AuthorityMode to Client
-			pcall(function()
-				ws.AuthorityMode = Enum.AuthorityMode.Client
-			end)
-			-- Try removing other SA properties
-			pcall(function()
-				if ws.NextGenerationReplication then ws.NextGenerationReplication = false end
-			end)
-			pcall(function()
-				if ws.PlayerScriptsUseInputActionSystem then ws.PlayerScriptsUseInputActionSystem = false end
-			end)
-			pcall(function()
-				if ws.UseFixedSimulation then ws.UseFixedSimulation = false end
-			end)
-		end)
-		-- Re-check
-		local stillActive = false
-		pcall(function()
-			local ws = game:GetService("Workspace")
-			if ws.AuthorityMode == Enum.AuthorityMode.Server then
-				stillActive = true
-			end
-		end)
-		if stillActive then
-			saStatus.Text = "Status: ACTIF (desactivation echouee)"
-			saStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
-			saBtn.Text = "Reessayer"
-		else
-			saStatus.Text = "Status: Desactive localement"
-			saStatus.TextColor3 = Color3.fromRGB(100, 220, 120)
-			saBtn.Text = "Reactiver"
-			saBtn.BackgroundColor3 = Color3.fromRGB(100, 180, 100)
-		end
-	end)
-end)()
--- === EMOTES SYSTEM (deplace de Home vers Extra, animations custom) ===
-_=(function()
-	local screenGui = _G._P1.screenGui or _G._P1.loadingGui
-	local LocalPlayer = _G._P1.LocalPlayer
-	local UserInputService = _G._P1.UserInputService
-	local RunService = _G._P1.RunService
-	local playSound = _G.playSound or function() end
-	local tween = _G.tween or function() end
-
-	-- Helper: UICorner direct (pas de reliance sur createCorner)
-	local function corner(obj, r)
-		local c = Instance.new("UICorner")
-		c.CornerRadius = UDim.new(0, r or 6)
-		c.Parent = obj
-		return c
-	end
-	local function stroke(obj, color, thick)
-		local s = Instance.new("UIStroke")
-		s.Color = color or Color3.fromRGB(80, 80, 100)
-		s.Thickness = thick or 1
-		s.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-		s.Parent = obj
-		return s
-	end
-
-	-- Bouton Emotes dans Extra
-	local emoteBtn = Instance.new("TextButton")
-	emoteBtn.Size = UDim2.new(1, -10, 0, 32)
-	emoteBtn.BackgroundColor3 = Color3.fromRGB(35, 25, 50)
-	emoteBtn.Text = "? Emotes"
-	emoteBtn.Font = Enum.Font.GothamSemibold
-	emoteBtn.TextSize = 13
-	emoteBtn.TextColor3 = Color3.fromRGB(220, 180, 255)
-	emoteBtn.BorderSizePixel = 0
-	emoteBtn.AutoButtonColor = true
-	emoteBtn.LayoutOrder = 500
-	emoteBtn.Parent = extraScroll
-	corner(emoteBtn, 8)
-	stroke(emoteBtn, Color3.fromRGB(80, 60, 120), 1)
-
-	-- Fenetre draggable
-	local emoteWin = Instance.new("Frame")
-	emoteWin.Size = UDim2.new(0, 260, 0, 460)
-	emoteWin.Position = UDim2.new(0.5, -130, 0.15, 0)
-	emoteWin.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
-	emoteWin.BorderSizePixel = 0
-	emoteWin.Visible = false
-	emoteWin.ZIndex = 300
-	emoteWin.Parent = screenGui
-	corner(emoteWin, 10)
-	stroke(emoteWin, Color3.fromRGB(100, 80, 140), 1.5)
-
-	-- Barre de titre (draggable) + stop emote always visible
-	local emoteTitleBar = Instance.new("Frame")
-	emoteTitleBar.Size = UDim2.new(1, 0, 0, 36)
-	emoteTitleBar.BackgroundColor3 = Color3.fromRGB(30, 25, 45)
-	emoteTitleBar.BorderSizePixel = 0
-	emoteTitleBar.ZIndex = 301
-	emoteTitleBar.Parent = emoteWin
-	corner(emoteTitleBar, 10)
-
-	local emoteTitle = Instance.new("TextLabel")
-	emoteTitle.Size = UDim2.new(0, 80, 1, 0)
-	emoteTitle.Position = UDim2.new(0, 8, 0, 0)
-	emoteTitle.BackgroundTransparency = 1
-	emoteTitle.Text = "? Emotes"
-	emoteTitle.Font = Enum.Font.GothamBold
-	emoteTitle.TextSize = 14
-	emoteTitle.TextColor3 = Color3.fromRGB(200, 170, 255)
-	emoteTitle.TextXAlignment = Enum.TextXAlignment.Left
-	emoteTitle.ZIndex = 302
-	emoteTitle.Parent = emoteTitleBar
-
-	-- Bouton STOP toujours visible (dans la title bar)
-	local stopBtn = Instance.new("TextButton")
-	stopBtn.Size = UDim2.new(0, 80, 0, 28)
-	stopBtn.Position = UDim2.new(1, -120, 0, 4)
-	stopBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-	stopBtn.Text = "? Stop"
-	stopBtn.Font = Enum.Font.GothamBold
-	stopBtn.TextSize = 13
-	stopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	stopBtn.BorderSizePixel = 0
-	stopBtn.ZIndex = 302
-	stopBtn.Parent = emoteTitleBar
-	corner(stopBtn, 6)
-
-	-- Bouton X CIRCULAIRE (UICorner direct, radius = moitie de la taille = cercle parfait)
-	local emoteClose = Instance.new("TextButton")
-	emoteClose.Size = UDim2.new(0, 28, 0, 28)
-	emoteClose.Position = UDim2.new(1, -34, 0, 4)
-	emoteClose.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-	emoteClose.Text = "?"
-	emoteClose.Font = Enum.Font.GothamBold
-	emoteClose.TextSize = 14
-	emoteClose.TextColor3 = Color3.new(1, 1, 1)
-	emoteClose.BorderSizePixel = 0
-	emoteClose.ZIndex = 302
-	emoteClose.Parent = emoteTitleBar
-	-- CIRCULAIRE: UICorner radius 12 = moitie de 24px = cercle
-	corner(emoteClose, 14)
-
-	-- Scroll des emotes
-	local emoteScroll = Instance.new("ScrollingFrame")
-	emoteScroll.Size = UDim2.new(1, -10, 1, -44)
-	emoteScroll.Position = UDim2.new(0, 5, 0, 38)
-	emoteScroll.BackgroundTransparency = 1
-	emoteScroll.BorderSizePixel = 0
-	emoteScroll.ScrollBarThickness = 4
-	emoteScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	emoteScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-	emoteScroll.ZIndex = 301
-	emoteScroll.Parent = emoteWin
-
-	local emoteLayout = Instance.new("UIListLayout")
-	emoteLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	emoteLayout.Padding = UDim.new(0, 3)
-	emoteLayout.Parent = emoteScroll
-
-	-- === SYSTEME D'ANIMATION ===
-	local currentTrack = nil
-	local currentAnim = nil
-	local customLoop = nil  -- pour animations scriptees (CFrame)
-
-	local function getChar()
-		local char = LocalPlayer.Character
-		if not char then return nil, nil end
-		local hum = char:FindFirstChildOfClass("Humanoid")
-		local root = char:FindFirstChild("HumanoidRootPart")
-		local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso") or char:FindFirstChild("HumanoidRootPart")
-		return char, hum, root, torso
-	end
-
-	local function stopAll()
-		pcall(function()
-			if currentTrack then currentTrack:Stop(0.3) end
-			if _G._currentEmoteTrack then _G._currentEmoteTrack:Stop(0.3) end
-			currentTrack = nil
-		end)
-		if customLoop then
-			customLoop:Disconnect()
-			customLoop = nil
-		end
-		-- Reset character sans casser la rotation naturelle
-		pcall(function()
-			local char, hum, root = getChar()
-			if hum then
-				hum.JumpPower = 50
-				hum.WalkSpeed = (_G._P1 and _G._P1.walkSpeedState and _G._P1.walkSpeedState.value) or 16
-				hum.PlatformStand = false
-			end
-		end)
-		if playSound then playSound(6042053626, 0.2) end
-		-- Reset active button highlight
-		if activeEmoteBtn then
-			pcall(tween, activeEmoteBtn, {BackgroundColor3 = Color3.fromRGB(25, 25, 35)}, 0.2)
-			activeEmoteBtn = nil
-		end
-	end
-
-	-- Jouer une animation Roblox (par ID)
-	local function playAnim(animId, isLoop)
-		stopAll()
-		local ok, err = pcall(function()
-			local char, hum = getChar()
-			if not hum then 
-				if notify then notify("Pas de personnage", "Reviens a la vie d'abord!") end
-				return 
-			end
-			local animator = hum:FindFirstChildOfClass("Animator")
-			if not animator then
-				animator = Instance.new("Animator")
-				animator.Parent = hum
-			end
-			local anim = Instance.new("Animation")
-			anim.AnimationId = "rbxassetid://" .. tostring(animId)
-			local track = animator:LoadAnimation(anim)
-			track.Looped = isLoop or false
-			track:Play()
-			currentTrack = track
-			currentAnim = anim
-			_G._currentEmoteTrack = track
-			if not isLoop then
-				task.delay(track.Length + 0.5, function()
-					pcall(function() if track then track:Stop(0.3) end end)
-				end)
-			end
-		end)
-		if not ok and notify then
-			notify("Emote erreur", "Animation invalide ou bloquee")
-		end
-		if playSound then playSound(6042053626, 0.2) end
-	end
-
-	-- === ANIMATIONS SCRIPTEES (CFrame, pas besoin d'IDs) ===
-	-- Ces animations manipulent directement les CFrame des body parts
-	-- Elles marchent PARTOUT (pas besoin de permission animation)
-
-	local function startCustom(fn)
-		stopAll()
-		local char, hum, root, torso = getChar()
-		if not root then 
-			if notify then notify("Pas de personnage", "Reviens a la vie d'abord!") end
-			return 
-		end
-		if playSound then playSound(6042053626, 0.2) end
-		customLoop = RunService.RenderStepped:Connect(function(dt)
-			-- Re-fetch character chaque frame pour survivre respawns
-			local c, h, r, t = getChar()
-			if r then
-				pcall(fn, dt, c, h, r, t)
-			end
-		end)
-	end
-
-	-- 1. ROULADE DE BUCHE (log roll) - tourne sur le cote
-	local function doLogRoll(dt, char, hum, root, torso)
-		local t = tick()
-		-- Tourne le personnage sur le cote (axe X)
-		root.CFrame = root.CFrame * CFrame.Angles(dt * 6, 0, 0)
-		-- Leve legerement pour ne pas clip dans le sol
-		-- Ne pas override la velocity naturelle
-		pcall(function() root.AssemblyLinearVelocity = Vector3.new(0, 5, 0) end)
-	end
-
-	-- 2. CRISE D'EPILEPSIE - tremblements rapides + rotation aleatoire
-	local function doSeizure(dt, char, hum, root, torso)
-		local t = tick()
-		-- Tremblements rapides en position
-		local shakeX = math.random(-100, 100) / 1000
-		local shakeY = math.random(-100, 100) / 1000
-		local shakeZ = math.random(-100, 100) / 1000
-		root.CFrame = root.CFrame * CFrame.new(shakeX, shakeY, shakeZ)
-		-- Rotation rapide aleatoire
-		root.CFrame = root.CFrame * CFrame.Angles(math.random(-50, 50) / 100, math.random(-50, 50) / 100, math.random(-50, 50) / 100)
-		-- Sauts aleatoires
-		if math.random() < 0.3 then
-			hum.Jump = true
-		end
-	end
-
-	-- 3. SPIN FOU - tourne sur place rapidement
-	local function doSpin(dt, char, hum, root, torso)
-		root.CFrame = root.CFrame * CFrame.Angles(0, dt * 15, 0)
-	end
-
-	-- 4. BAGARRE INVISIBLE - coups de poing dans le vide
-	local function doGhostFight(dt, char, hum, root, torso)
-		local t = tick()
-		local punchPhase = math.sin(t * 8)
-		if punchPhase > 0.5 then
-			-- Coup droit
-			root.CFrame = root.CFrame * CFrame.Angles(0, 0, math.rad(-20))
-		elseif punchPhase < -0.5 then
-			-- Coup gauche
-			root.CFrame = root.CFrame * CFrame.Angles(0, 0, math.rad(20))
-		else
-			root.CFrame = root.CFrame * CFrame.Angles(0, 0, 0)
-		end
-		-- Petit saut occasionnel
-		if math.random() < 0.05 then
-			hum.Jump = true
-		end
-	end
-
-	-- 5. DANSE DU VERMISSEAU - le personnage rampe et ondule
-	local function doWormDance(dt, char, hum, root, torso)
-		local t = tick()
-		-- Ondulation verticale
-		local wave = math.sin(t * 6) * 3
-		root.CFrame = root.CFrame * CFrame.new(0, wave, 0)
-		-- Inclinaison avant/arriere
-		root.CFrame = root.CFrame * CFrame.Angles(math.sin(t * 4) * 0.3, 0, 0)
-		-- Lentement avance
-		root.CFrame = root.CFrame * CFrame.new(0, 0, -dt * 2)
-	end
-
-	-- 6. HELICOPTERE - tourne les bras (rotation Y complete)
-	local function doHelicopter(dt, char, hum, root, torso)
-		root.CFrame = root.CFrame * CFrame.Angles(0, dt * 10, 0)
-		-- Leve legerement
-		pcall(function() root.AssemblyLinearVelocity = Vector3.new(0, 30, 0) end)
-	end
-
-	-- 7. NAGE A SEC - mouvement de nage sur terre
-	local function doDrySwim(dt, char, hum, root, torso)
-		local t = tick()
-		-- Alternance bras gauche/droit
-		local phase = math.sin(t * 5)
-		root.CFrame = root.CFrame * CFrame.Angles(math.rad(15), 0, phase * 0.3)
-		-- Avance lentement
-		root.CFrame = root.CFrame * CFrame.new(0, 0, -dt * 1.5)
-	end
-
-	-- 8. TREMBLEMENT DE TERRE - sautillements rapides
-	local function doEarthquake(dt, char, hum, root, torso)
-		local t = tick()
-		if math.sin(t * 12) > 0 then
-			hum.Jump = true
-		end
-		root.CFrame = root.CFrame * CFrame.new(math.random(-50, 50) / 200, 0, math.random(-50, 50) / 200)
-	end
-
-	-- 9. MOONWALK - recule en moonwalk
-	local function doMoonwalk(dt, char, hum, root, torso)
-		local t = tick()
-		-- Incline en arriere
-		root.CFrame = root.CFrame * CFrame.Angles(math.rad(-10), 0, 0)
-		-- Recule
-		root.CFrame = root.CFrame * CFrame.new(0, 0, dt * 8)
-		-- Petit bounce
-		if math.sin(t * 8) > 0.7 then
-			hum.Jump = true
-		end
-	end
-
-	-- 10. POULE QUI COURT - petites strides rapides + tressautement
-	local function doChickenRun(dt, char, hum, root, torso)
-		local t = tick()
-		-- Tressautement rapide
-		root.CFrame = root.CFrame * CFrame.new(0, math.abs(math.sin(t * 15)) * 1.5, 0)
-		-- Penche en avant
-		root.CFrame = root.CFrame * CFrame.Angles(math.rad(20), 0, 0)
-		-- Court vers l'avant
-		root.CFrame = root.CFrame * CFrame.new(0, 0, -dt * 6)
-	end
-
-	stopBtn.MouseButton1Click:Connect(stopAll)
-
-	-- Categories
-	local function addCategory(text, order)
-		local cat = Instance.new("TextLabel")
-		cat.Size = UDim2.new(1, 0, 0, 20)
-		cat.BackgroundTransparency = 1
-		cat.Text = text
-		cat.Font = Enum.Font.GothamBold
-		cat.TextSize = 11
-		cat.TextColor3 = Color3.fromRGB(150, 130, 200)
-		cat.TextXAlignment = Enum.TextXAlignment.Left
-		cat.LayoutOrder = order
-		cat.ZIndex = 301
-		cat.Parent = emoteScroll
-	end
-
-	local activeEmoteBtn = nil
-	local function addEmote(label, fn, order)
-		local eBtn = Instance.new("TextButton")
-		eBtn.Size = UDim2.new(1, 0, 0, 28)
-		eBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-		eBtn.Text = label
-		eBtn.Font = Enum.Font.Gotham
-		eBtn.TextSize = 12
-		eBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
-		eBtn.BorderSizePixel = 0
-		eBtn.LayoutOrder = order
-		eBtn.ZIndex = 301
-		eBtn.Parent = emoteScroll
-		corner(eBtn, 6)
-		local origColor = Color3.fromRGB(25, 25, 35)
-		eBtn.MouseEnter:Connect(function() pcall(tween, eBtn, {BackgroundColor3 = Color3.fromRGB(40, 40, 55)}, 0.12) end)
-		eBtn.MouseLeave:Connect(function() pcall(tween, eBtn, {BackgroundColor3 = origColor}, 0.12) end)
-		eBtn.MouseButton1Click:Connect(function()
-			-- Reset previous active button
-			if activeEmoteBtn and activeEmoteBtn ~= eBtn then
-				pcall(tween, activeEmoteBtn, {BackgroundColor3 = Color3.fromRGB(25, 25, 35)}, 0.2)
-				activeEmoteBtn = nil
-			end
-			-- Highlight this button
-			pcall(tween, eBtn, {BackgroundColor3 = Color3.fromRGB(60, 40, 80)}, 0.15)
-			activeEmoteBtn = eBtn
-			fn()
-		end)
-	end
-
-	-- === RESET CHARACTER (en cas de jambes figees) ===
-	addCategory("? RESET", 50)
-	addEmote("? Reset personnage", function()
-		stopAll()
-		task.wait(0.1)
-		pcall(function()
-			local char, hum, root = getChar()
-			if hum then
-				hum.PlatformStand = false
-				hum.JumpPower = 50
-				hum.WalkSpeed = (_G._P1 and _G._P1.walkSpeedState and _G._P1.walkSpeedState.value) or 16
-				hum:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
-				hum:ChangeState(Enum.HumanoidStateType.GettingUp)
-			end
-			if notify then notify("Reset", "Personnage reinitialise!") end
-		end)
-	end, 51)
-
-	-- === ANIMATIONS SCRIPTEES (marchent partout, pas besoin d'IDs) ===
-	addCategory("? MOVEMENTS FUN (custom)", 100)
-	addEmote("? Roulade de buche", function() startCustom(doLogRoll) end, 101)
-	addEmote("? Crise d'epilepsie", function() startCustom(doSeizure) end, 102)
-	addEmote("? Spin fou", function() startCustom(doSpin) end, 103)
-	addEmote("? Bagarre invisible", function() startCustom(doGhostFight) end, 104)
-	addEmote("? Danse du vermisseau", function() startCustom(doWormDance) end, 105)
-	addEmote("? Helicoptere", function() startCustom(doHelicopter) end, 106)
-	addEmote("? Nage a sec", function() startCustom(doDrySwim) end, 107)
-	addEmote("? Tremblement de terre", function() startCustom(doEarthquake) end, 108)
-	addEmote("? Moonwalk", function() startCustom(doMoonwalk) end, 109)
-	addEmote("? Poule qui court", function() startCustom(doChickenRun) end, 110)
-
-	-- === EMOTES CLASSIQUES (R15 built-in pack, toujours valides) ===
-	addCategory("? EMOTES CLASSIQUES", 200)
-	addEmote("? Saluer", function() playAnim(507770239, false) end, 201)
-	addEmote("? Pointer", function() playAnim(507770039, false) end, 202)
-	addEmote("? Me regarder", function() playAnim(507770453, true) end, 203)
-	addEmote("? Acclamer", function() playAnim(507770677, true) end, 204)
-	addEmote("? Rire aux eclats", function() playAnim(507770818, false) end, 205)
-	addEmote("? S'incliner", function() playAnim(507770143, false) end, 206)
-	addEmote("? Faire coucou", function() playAnim(507770018, false) end, 207)
-	addEmote("? Pleurer", function() playAnim(507771675, true) end, 208)
-
-	-- === DANSES ===
-	addCategory("? DANSES", 300)
-	addEmote("? Danse 1", function() playAnim(507771019, false) end, 301)
-	addEmote("? Danse 2", function() playAnim(507771238, false) end, 302)
-	addEmote("? Danse 3 / Breakdance", function() playAnim(507771475, false) end, 303)
-	addEmote("? Floss", function() playAnim(4562795588, false) end, 304)
-	addEmote("? Danse folle", function() playAnim(5915756891, false) end, 305)
-	addEmote("? The Robot", function() playAnim(4145675840, false) end, 306)
-	addEmote("? The Robot 2", function() playAnim(4145721148, false) end, 307)
-	addEmote("? The Robot 3", function() playAnim(4145739796, false) end, 308)
-	addEmote("? Pop Lock", function() playAnim(5145477480, false) end, 309)
-	addEmote("?? Kazachok", function() playAnim(3360689775, false) end, 310)
-	addEmote("? Bhangra", function() playAnim(3341856292, false) end, 311)
-	addEmote("? Hype", function() playAnim(5227113470, false) end, 312)
-	addEmote("? Hype 2", function() playAnim(6102658794, false) end, 313)
-	addEmote("? T-Pose", function() playAnim(6180856777, false) end, 314)
-
-	-- === FUN & DROLE ===
-	addCategory("? FUN", 400)
-	addEmote("? Panique", function() playAnim(128856001, false) end, 401)
-	addEmote("? S'endormir", function() playAnim(5846585438, true) end, 402)
-	addEmote("? Tomber de chaise", function() playAnim(1088597938, false) end, 403)
-	addEmote("? Faceplant", function() playAnim(5848298071, false) end, 404)
-	addEmote("? Tomber (falling)", function() playAnim(507771896, false) end, 405)
-	addEmote("? Pleurer a chaudes larmes", function() playAnim(507771675, true) end, 406)
-
-	-- === GYMNASTIQUE & ACROBATIES ===
-	addCategory("? GYMNASTIQUE", 500)
-	addEmote("? Backflip", function() playAnim(6108278401, false) end, 501)
-	addEmote("? Frontflip", function() playAnim(6108278904, false) end, 502)
-	addEmote("? Cartwheel (roue)", function() playAnim(6108279758, false) end, 503)
-	addEmote("? Appui tete", function() playAnim(6108280253, false) end, 504)
-	addEmote("? Toupie tete", function() playAnim(6108280896, false) end, 505)
-	addEmote("? Saut tournoyant", function() playAnim(6108281614, false) end, 506)
-	addEmote("? Bond", function() playAnim(6108282273, false) end, 507)
-	addEmote("? Rondade", function() playAnim(6108282878, false) end, 508)
-	addEmote("? Saut groupe", function() playAnim(6108283532, false) end, 509)
-	addEmote("? Aerial", function() playAnim(6108284061, false) end, 510)
-	addEmote("? Back tuck", function() playAnim(6108284712, false) end, 511)
-	addEmote("? Front tuck", function() playAnim(6108285406, false) end, 512)
-
-	-- === SAUTS & MOUVEMENTS ===
-	addCategory("? SAUTS", 600)
-	addEmote("? Saut normal", function() playAnim(507772438, false) end, 601)
-	addEmote("? Escalade", function() playAnim(507772525, true) end, 602)
-
-	-- Dragging de la fenetre
-	local dragging = false
-	local dragStart, startPos
-	emoteTitleBar.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = input.Position
-			startPos = emoteWin.Position
-		end
-	end)
-	emoteTitleBar.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
-		end
-	end)
-	UserInputService.InputChanged:Connect(function(input)
-		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			local delta = input.Position - dragStart
-			emoteWin.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-		end
-	end)
-
-	-- Toggle fenetre
-	emoteBtn.MouseButton1Click:Connect(function()
-		emoteWin.Visible = not emoteWin.Visible
-		if playSound then playSound(6042053626, 0.2) end
-	end)
-	emoteClose.MouseButton1Click:Connect(function()
-		emoteWin.Visible = false
-		if playSound then playSound(6042053626, 0.2) end
-	end)
-
-	-- Cleanup au shutdown
-	if _G._shutdownCallbacks then
-		_G._shutdownCallbacks[#_G._shutdownCallbacks + 1] = function()
-			pcall(function()
-				stopAll()
-				if emoteWin then emoteWin:Destroy() end
-			end)
-		end
-	end
-
-	_G._stopEmote = stopAll
-	_G._playEmote = playAnim
-end)()
 
 UserInputService.InputBegan:Connect(function(input, gpe)
 	if gpe then return end
@@ -2701,8 +1909,6 @@ task.spawn(function()
 end)
 
 
-updateLoad(0.70, "Protections...")
-task.wait(0.05)
 -- ============= PROTECTIONS =============
 local protectionsState = {
 	antiFling = false,
@@ -2748,7 +1954,6 @@ local function neutralizeSeat(seat)
 		seat.CanTouch = false
 		seat:SetAttribute("Neutralized", true)
 	end
-_G.neutralizeSeat = neutralizeSeat
 end
 
 local function restoreSeat(seat)
@@ -2758,7 +1963,6 @@ local function restoreSeat(seat)
 		seat.CanTouch = true
 		seat:SetAttribute("Neutralized", nil)
 	end
-_G.restoreSeat = restoreSeat
 end
 
 local function createAntiSeatSitWatcher()
@@ -2767,7 +1971,6 @@ local function createAntiSeatSitWatcher()
 		if not hum then
 			hum = char:WaitForChild("Humanoid")
 		end
-_G.createAntiSeatSitWatcher = createAntiSeatSitWatcher
 		local con
 		con = hum:GetPropertyChangedSignal("Sit"):Connect(function()
 			if not protectionsState.antiSeat then
@@ -2799,7 +2002,6 @@ local function createProtectionSwitch(name, label, y)
 					protectionsState.antiSeatSitWatcher:Disconnect()
 					protectionsState.antiSeatSitWatcher = nil
 				end
-_G.createProtectionSwitch = createProtectionSwitch
 				for _, obj in ipairs(Workspace:GetDescendants()) do
 					neutralizeSeat(obj)
 				end
@@ -2834,31 +2036,51 @@ _G.createProtectionSwitch = createProtectionSwitch
 	end)
 end
 
--- Switch "Tout activer" - bascule toutes les protections d'un coup
-local allProtectionSwitches = {}
-local function addProtectionSwitch(name, label, y)
-	local sw = createProtectionSwitch(name, label, y)
-	table.insert(allProtectionSwitches, sw)
-	return sw
-end
-
-createSwitch(protectionsScroll, "Tout activer / desactiver", 0, function(on)
-	for _, sw in ipairs(allProtectionSwitches) do
-		pcall(function() sw.set(on) end)
+-- Master switch: tout activer/desactiver
+createSwitch(protectionsScroll, "TOUT ACTIVER / DESACTIVER", 10, function(on)
+	protectionsState.antiFling = on
+	protectionsState.antiSeat = on
+	protectionsState.antiTeleport = on
+	protectionsState.antiFall = on
+	protectionsState.antiKill = on
+	protectionsState.antiAFK = on
+	-- Mettre a jour les switches visuels
+	for _, child in ipairs(protectionsScroll:GetChildren()) do
+		if child:IsA("TextButton") and child:FindFirstChild("Track") then
+			local knob = child.Track:FindFirstChild("Knob")
+			if knob then
+				knob.Position = on and UDim2.new(1, -18, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
+				child.Track.BackgroundColor3 = on and Color3.fromRGB(60, 180, 255) or Color3.fromRGB(60, 60, 80)
+			end
+		end
+	end
+	if on then
+		updateCharacter()
+		if rootPart then
+			protectionsState.lastSafeCFrame = rootPart.CFrame
+			protectionsState.lastHrpPosition = rootPart.Position
+		end
+	else
+		if protectionsState.antiSeatWatcher then
+			protectionsState.antiSeatWatcher:Disconnect()
+			protectionsState.antiSeatWatcher = nil
+		end
+		if protectionsState.antiSeatSitWatcher then
+			protectionsState.antiSeatSitWatcher:Disconnect()
+			protectionsState.antiSeatSitWatcher = nil
+		end
+		for _, obj in ipairs(Workspace:GetDescendants()) do
+			restoreSeat(obj)
+		end
 	end
 end)
 
-addProtectionSwitch("antiFling", "Anti Fling", 10)
-addProtectionSwitch("antiSeat", "Anti Seat", 52)
-addProtectionSwitch("antiTeleport", "Anti Teleport", 94)
-addProtectionSwitch("antiFall", "Anti Fall", 136)
-addProtectionSwitch("antiKill", "Anti Kill / Spawn TP", 178)
-addProtectionSwitch("antiAFK", "Anti AFK (5 min)", 220)
-addProtectionSwitch("antiSpeedHack", "Anti Speed Hack", 262)
-addProtectionSwitch("antiGodMode", "Anti God Mode", 304)
-addProtectionSwitch("antiParalyze", "Anti Paralyze / Freeze", 346)
-addProtectionSwitch("antiBlind", "Anti Blind / Dark", 388)
-addProtectionSwitch("antiGrab", "Anti Grab / Fling CFrame", 430)
+createProtectionSwitch("antiFling", "Anti Fling", 52)
+createProtectionSwitch("antiSeat", "Anti Seat", 94)
+createProtectionSwitch("antiTeleport", "Anti Teleport", 136)
+createProtectionSwitch("antiFall", "Anti Fall", 178)
+createProtectionSwitch("antiKill", "Anti Kill / Spawn TP", 220)
+createProtectionSwitch("antiAFK", "Anti AFK (5 min)", 262)
 
 RunService.Heartbeat:Connect(function()
 	updateCharacter()
@@ -2952,83 +2174,6 @@ task.spawn(function()
 	end
 end)
 
--- === NOUVELLES PROTECTIONS v39.29 ===
-task.spawn(function()
-	while true do
-		task.wait(0.1)
-		updateCharacter()
-		if not rootPart or not humanoid then continue end
-		
-		-- Anti Speed Hack: clamp velocite horizontale
-		if protectionsState.antiSpeedHack then
-			local vel = rootPart.AssemblyLinearVelocity
-			local flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
-			local maxSpeed = (humanoid.WalkSpeed or 16) * 2.5 + 20
-			if flatSpeed > maxSpeed and not humanoid.Sit and not flyState.flying and not noclipState.enabled then
-				local ratio = maxSpeed / flatSpeed
-				rootPart.AssemblyLinearVelocity = Vector3.new(vel.X * ratio, vel.Y, vel.Z * ratio)
-			end
-		end
-		
-		-- Anti God Mode
-		if protectionsState.antiGodMode then
-			if humanoid.Health > humanoid.MaxHealth and humanoid.MaxHealth > 0 then
-				pcall(function() humanoid.Health = humanoid.MaxHealth end)
-			end
-		end
-		
-		-- Anti Paralyze
-		if protectionsState.antiParalyze then
-			if humanoid.PlatformStand then
-				pcall(function() humanoid.PlatformStand = false end)
-			end
-			if not protectionsState._legitWalkSpeed then
-				protectionsState._legitWalkSpeed = humanoid.WalkSpeed
-			end
-			if humanoid.WalkSpeed == 0 and protectionsState._legitWalkSpeed and protectionsState._legitWalkSpeed > 0 then
-				pcall(function() humanoid.WalkSpeed = protectionsState._legitWalkSpeed end)
-			end
-		end
-		
-		-- Anti Blind
-		if protectionsState.antiBlind then
-			if not protectionsState.lastLightingAmbient then
-				protectionsState.lastLightingAmbient = Lighting.Ambient
-				protectionsState.lastLightingBrightness = Lighting.Brightness
-			end
-			local amb = Lighting.Ambient
-			if amb.R < 0.1 and amb.G < 0.1 and amb.B < 0.1 then
-				pcall(function()
-					Lighting.Ambient = protectionsState.lastLightingAmbient or Color3.fromRGB(128, 128, 128)
-					Lighting.Brightness = protectionsState.lastLightingBrightness or 2
-				end)
-			end
-			if Lighting.FogEnd < 10 and Lighting.FogStart >= 0 then
-				pcall(function() Lighting.FogEnd = 1e9 end)
-			end
-		end
-		
-		-- Anti Grab
-		if protectionsState.antiGrab and not flyState.flying and not noclipState.enabled then
-			local pos = rootPart.Position
-			local lastPos = protectionsState.lastHrpPosition
-			if lastPos then
-				local delta = (pos - lastPos).Magnitude
-				if delta > 100 then
-					if protectionsState.lastSafeCFrame then
-						pcall(function() rootPart.CFrame = protectionsState.lastSafeCFrame end)
-					end
-					rootPart.AssemblyLinearVelocity = Vector3.zero
-				end
-			end
-			if not protectionsState.antiTeleport then
-				protectionsState.lastSafeCFrame = rootPart.CFrame
-				protectionsState.lastHrpPosition = pos
-			end
-		end
-	end
-end)
-
 Lighting:GetPropertyChangedSignal("Ambient"):Connect(function()
 	if fullbrightState.enabled then
 		Lighting.Ambient = Color3.new(1, 1, 1)
@@ -3071,7 +2216,7 @@ local function _wrapRemotes()
 	warnTitle.Size = UDim2.new(1, -16, 0, 22)
 	warnTitle.Position = UDim2.new(0, 8, 0, 6)
 	warnTitle.BackgroundTransparency = 1
-	warnTitle.Text = "! ATTENTION - REMOTES DU JEU"
+	warnTitle.Text = " ATTENTION  REMOTES DU JEU"
 	warnTitle.TextColor3 = Color3.fromRGB(255, 100, 100)
 	warnTitle.TextSize = 14
 	warnTitle.Font = Enum.Font.GothamBold
@@ -3082,7 +2227,7 @@ local function _wrapRemotes()
 	warnDesc.Size = UDim2.new(1, -16, 0, 30)
 	warnDesc.Position = UDim2.new(0, 8, 0, 28)
 	warnDesc.BackgroundTransparency = 1
-	warnDesc.Text = "Tu peux Fire n'importe quel RemoteEvent/Function du jeu avec tes propres arguments. Ca touche directement au serveur - utilise avec precaution."
+	warnDesc.Text = "Tu peux Fire n'importe quel RemoteEvent/Function du jeu avec tes propres arguments. Ca touche directement au serveur  utilise avec precaution."
 	warnDesc.TextColor3 = Color3.fromRGB(220, 200, 200)
 	warnDesc.TextSize = 11
 	warnDesc.Font = Enum.Font.Gotham
@@ -3094,34 +2239,24 @@ local function _wrapRemotes()
 	-- Helpers: scanne tous les remotes du jeu
 	local function collectRemotes()
 		local remotes = {}
-		local seen = {}
-		local function addRemote(obj)
-			if obj and (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) then
-				local fn = obj:GetFullName()
-				if not seen[fn] then
-					seen[fn] = true
+		pcall(function()
+			for _, obj in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
 					table.insert(remotes, obj)
-
 				end
-_G._wrapRemotes = _wrapRemotes
 			end
-		end
-		pcall(function()
-			for _, obj in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do addRemote(obj) end
 		end)
 		pcall(function()
-			for _, obj in ipairs(workspace:GetDescendants()) do addRemote(obj) end
+			for _, obj in ipairs(workspace:GetDescendants()) do
+				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+					table.insert(remotes, obj)
+				end
+			end
 		end)
 		pcall(function()
-			for _, obj in ipairs(game.Players.LocalPlayer:GetDescendants()) do addRemote(obj) end
-		end)
-		pcall(function()
-			for _, obj in ipairs(game:GetService("StarterGui"):GetDescendants()) do addRemote(obj) end
-		end)
-		pcall(function()
-			for _, obj in ipairs(game:GetService("Players"):GetChildren()) do
-				if obj:IsA("Player") then
-					for _, desc in ipairs(obj:GetDescendants()) do addRemote(desc) end
+			for _, obj in ipairs(game.Players.LocalPlayer:GetDescendants()) do
+				if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+					table.insert(remotes, obj)
 				end
 			end
 		end)
@@ -3150,15 +2285,208 @@ _G._wrapRemotes = _wrapRemotes
 
 	local refreshRemotesBtn = Instance.new("TextButton")
 	refreshRemotesBtn.Size = UDim2.new(0, 28, 0, 22)
-	refreshRemotesBtn.Position = UDim2.new(1, -32, 0, 5)
+	refreshRemotesBtn.Position = UDim2.new(1, -36, 0, 5)
 	refreshRemotesBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
 	refreshRemotesBtn.BorderSizePixel = 0
 	refreshRemotesBtn.Text = "R"
 	refreshRemotesBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
-	refreshRemotesBtn.TextSize = 14
+	refreshRemotesBtn.TextSize = 16
 	refreshRemotesBtn.Font = Enum.Font.GothamBold
 	refreshRemotesBtn.Parent = remoteHeader
 	createCorner(refreshRemotesBtn, 4)
+
+	-- Bouton Outils du jeu (liste tous les Tools)
+	local toolsBtn = Instance.new("TextButton")
+	toolsBtn.Size = UDim2.new(0, 80, 0, 22)
+	toolsBtn.Position = UDim2.new(1, -70, 0, 5)
+	toolsBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 90)
+	toolsBtn.BorderSizePixel = 0
+	toolsBtn.Text = "Outils"
+	toolsBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
+	toolsBtn.TextSize = 11
+	toolsBtn.Font = Enum.Font.GothamBold
+	toolsBtn.Parent = remoteHeader
+	createCorner(toolsBtn, 4)
+
+	-- Popup liste des outils
+	local toolsPopup = Instance.new("Frame")
+	toolsPopup.Size = UDim2.new(1, -8, 0, 200)
+	toolsPopup.Position = UDim2.new(0, 4, 0, 60)
+	toolsPopup.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	toolsPopup.BorderSizePixel = 0
+	toolsPopup.Visible = false
+	toolsPopup.ZIndex = 50
+	toolsPopup.Parent = serverScroll
+	createCorner(toolsPopup, 8)
+	createStroke(toolsPopup, Color3.fromRGB(80, 80, 120), 1)
+
+	local toolsPopupTitle = Instance.new("TextLabel")
+	toolsPopupTitle.Size = UDim2.new(1, -30, 0, 24)
+	toolsPopupTitle.Position = UDim2.new(0, 8, 0, 4)
+	toolsPopupTitle.BackgroundTransparency = 1
+	toolsPopupTitle.Text = "Outils du jeu"
+	toolsPopupTitle.TextColor3 = Color3.fromRGB(200, 200, 220)
+	toolsPopupTitle.TextSize = 13
+	toolsPopupTitle.Font = Enum.Font.GothamBold
+	toolsPopupTitle.TextXAlignment = Enum.TextXAlignment.Left
+	toolsPopupTitle.ZIndex = 51
+	toolsPopupTitle.Parent = toolsPopup
+
+	local toolsPopupClose = Instance.new("TextButton")
+	toolsPopupClose.Size = UDim2.new(0, 22, 0, 22)
+	toolsPopupClose.Position = UDim2.new(1, -26, 0, 4)
+	toolsPopupClose.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
+	toolsPopupClose.BorderSizePixel = 0
+	toolsPopupClose.Text = "X"
+	toolsPopupClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+	toolsPopupClose.TextSize = 12
+	toolsPopupClose.Font = Enum.Font.GothamBold
+	toolsPopupClose.ZIndex = 52
+	toolsPopupClose.Parent = toolsPopup
+	createCorner(toolsPopupClose, 4)
+
+	-- Mini barre de recherche
+	local toolsSearchBox = Instance.new("TextBox")
+	toolsSearchBox.Size = UDim2.new(1, -8, 0, 22)
+	toolsSearchBox.Position = UDim2.new(0, 4, 0, 30)
+	toolsSearchBox.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+	toolsSearchBox.BorderSizePixel = 0
+	toolsSearchBox.Text = ""
+	toolsSearchBox.PlaceholderText = " Filtrer les outils..."
+	toolsSearchBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
+	toolsSearchBox.Font = Enum.Font.Gotham
+	toolsSearchBox.TextSize = 11
+	toolsSearchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
+	toolsSearchBox.ClearTextOnFocus = false
+	toolsSearchBox.ZIndex = 52
+	toolsSearchBox.Parent = toolsPopup
+	createCorner(toolsSearchBox, 4)
+
+	local toolsListFrame = Instance.new("ScrollingFrame")
+	toolsListFrame.Size = UDim2.new(1, -8, 1, -60)
+	toolsListFrame.Position = UDim2.new(0, 4, 0, 56)
+	toolsListFrame.BackgroundTransparency = 1
+	toolsListFrame.BorderSizePixel = 0
+	toolsListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+	toolsListFrame.ScrollBarThickness = 4
+	toolsListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	toolsListFrame.ZIndex = 51
+	toolsListFrame.Parent = toolsPopup
+
+	local toolsListLayout = Instance.new("UIListLayout")
+	toolsListLayout.Padding = UDim.new(0, 3)
+	toolsListLayout.SortOrder = Enum.SortOrder.Name
+	toolsListLayout.Parent = toolsListFrame
+
+	toolsListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		toolsListFrame.CanvasSize = UDim2.new(0, 0, 0, toolsListLayout.AbsoluteContentSize.Y + 6)
+	end)
+
+	local function refreshToolsList()
+		for _, child in ipairs(toolsListFrame:GetChildren()) do
+			if child:IsA("TextButton") or child:IsA("TextLabel") then
+				child:Destroy()
+			end
+		end
+		-- Scan TOUS les descendants du jeu (game:GetDescendants)
+		local found = {}
+		local seen = {}
+		for _, obj in ipairs(game:GetDescendants()) do
+			if obj:IsA("Tool") and not seen[obj] then
+				seen[obj] = true
+				table.insert(found, obj)
+			end
+		end
+		-- Afficher compteur
+		toolsPopupTitle.Text = "Outils du jeu (" .. #found .. " trouves)"
+		if #found == 0 then
+			local noTools = Instance.new("TextLabel")
+			noTools.Size = UDim2.new(1, 0, 0, 20)
+			noTools.BackgroundTransparency = 1
+			noTools.Text = "Aucun outil trouve dans le jeu"
+			noTools.TextColor3 = Color3.fromRGB(150, 150, 170)
+			noTools.TextSize = 11
+			noTools.Font = Enum.Font.Gotham
+			noTools.Parent = toolsListFrame
+		else
+			for _, tool in ipairs(found) do
+				local toolRow = Instance.new("TextButton")
+				toolRow.Size = UDim2.new(1, 0, 0, 24)
+				toolRow.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+				toolRow.BorderSizePixel = 0
+				toolRow.Text = "  " .. tool.Name .. "  [" .. tool:GetFullName() .. "]"
+				toolRow.TextColor3 = Color3.fromRGB(200, 200, 220)
+				toolRow.TextSize = 10
+				toolRow.Font = Enum.Font.Gotham
+				toolRow.TextXAlignment = Enum.TextXAlignment.Left
+				toolRow.TextTruncate = Enum.TextTruncate.AtEnd
+				toolRow.AutoButtonColor = true
+				toolRow.Parent = toolsListFrame
+				createCorner(toolRow, 4)
+				-- Stocker le nom pour le filtre
+				toolRow.Name = "ToolRow_" .. tool.Name
+				toolRow.MouseButton1Click:Connect(function()
+					-- Essayer de prendre l'outil pour de vrai
+					local taken = false
+					-- Methode 1: Cloner dans le Backpack
+					pcall(function()
+						local clone = tool:Clone()
+						clone.Parent = LocalPlayer.Backpack
+						taken = true
+					end)
+					-- Methode 2: Si le perso existe, equiper directement
+					if character and character:FindFirstChild("Humanoid") then
+						pcall(function()
+							local clone = tool:Clone()
+							clone.Parent = character
+							taken = true
+						end)
+					end
+					-- Methode 3: Chercher un RemoteEvent "GiveTool" / "GetTool" et le fire
+					pcall(function()
+						for _, remote in ipairs(game:GetDescendants()) do
+							if remote:IsA("RemoteEvent") and (remote.Name == "GiveTool" or remote.Name == "GetTool" or remote.Name == "GiveItem" or remote.Name == "ToolRequest") then
+								remote:FireServer(tool.Name, tool)
+								taken = true
+								break
+							end
+						end
+					end)
+					if not taken then
+						-- Fallback: essayer de prendre l'original directement
+						pcall(function()
+							tool.Parent = LocalPlayer.Backpack
+						end)
+					end
+				end)
+			end
+		end
+		task.defer(function()
+			toolsListFrame.CanvasSize = UDim2.new(0, 0, 0, toolsListLayout.AbsoluteContentSize.Y + 6)
+		end)
+	end
+
+	-- Filtre en temps reel
+	toolsSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+		local query = toolsSearchBox.Text:lower()
+		for _, child in ipairs(toolsListFrame:GetChildren()) do
+			if child:IsA("TextButton") then
+				local name = child.Text:lower()
+				child.Visible = query == "" or name:find(query, 1, true) ~= nil
+			end
+		end
+	end)
+
+	toolsBtn.MouseButton1Click:Connect(function()
+		toolsPopup.Visible = not toolsPopup.Visible
+		if toolsPopup.Visible then
+			refreshToolsList()
+		end
+	end)
+
+	toolsPopupClose.MouseButton1Click:Connect(function()
+		toolsPopup.Visible = false
+	end)
 
 	-- Barre de recherche pour filtrer les remotes par nom
 	local remotesSearchBox = Instance.new("TextBox")
@@ -3166,7 +2494,7 @@ _G._wrapRemotes = _wrapRemotes
 	remotesSearchBox.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 	remotesSearchBox.BorderSizePixel = 0
 	remotesSearchBox.Text = ""
-	remotesSearchBox.PlaceholderText = "Filtrer les remotes par nom..."
+	remotesSearchBox.PlaceholderText = " Filtrer les remotes par nom..."
 	remotesSearchBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
 	remotesSearchBox.Font = Enum.Font.Gotham
 	remotesSearchBox.TextSize = 12
@@ -3349,19 +2677,19 @@ _G._wrapRemotes = _wrapRemotes
 		fireBtn.MouseButton1Click:Connect(function()
 		local args = parseArgs(argsBox.Text)
 		resultLbl.Visible = true
-		resultLbl.Text = "-> Envoi en cours..."
+		resultLbl.Text = " Envoi en cours..."
 			resultLbl.TextColor3 = Color3.fromRGB(180, 180, 220)
 			local ok, err = pcall(function()
 				if isFunction then
 					local result = remote:InvokeServer(unpack(args))
-					resultLbl.Text = "? Reponse : " .. tostring(result)
+					resultLbl.Text = " Reponse : " .. tostring(result)
 				else
 					remote:FireServer(unpack(args))
-					resultLbl.Text = "? Fire envoye (" .. #args .. " args)"
+					resultLbl.Text = " Fire envoye (" .. #args .. " args)"
 				end
 			end)
 			if not ok then
-				resultLbl.Text = "? Erreur : " .. tostring(err)
+				resultLbl.Text = " Erreur : " .. tostring(err)
 				resultLbl.TextColor3 = Color3.fromRGB(255, 100, 100)
 			else
 				resultLbl.TextColor3 = Color3.fromRGB(120, 220, 160)
@@ -3370,51 +2698,19 @@ _G._wrapRemotes = _wrapRemotes
 	end
 
 	-- Remplit la liste
-	local refreshLock = false
-	local function refreshRemotesList(force)
-		if refreshLock and not force then return end
-		refreshLock = true
-		-- Check if we already have cards (don't destroy if just updating)
-		local existingCards = {}
+	local function refreshRemotesList()
 		for _, child in ipairs(remoteListFrame:GetChildren()) do
-			if child:IsA("Frame") then
-				existingCards[child.Name] = child
-			end
+			if child:IsA("Frame") then child:Destroy() end
 		end
-		
 		local remotes = collectRemotes()
 		remoteCount.Text = "Remotes detectes : " .. #remotes
-		table.sort(remotes, function(a, b)
-			return a.Name < b.Name
-		end)
-		
-		-- Only destroy+recreate if the remote list changed (new/removed remotes)
-		local needRebuild = force or #remotes ~= #existingCards
-		if not needRebuild then
-			-- Just update LayoutOrder for sorting
-			for i, remote in ipairs(remotes) do
-				local cardName = remote:GetFullName():gsub("[^%w]", "_")
-				local card = existingCards[cardName]
-				if card then
-					card.LayoutOrder = i
-		
-				end
-			end
-		else
-			-- Full rebuild (new remotes detected)
-			for _, child in ipairs(remoteListFrame:GetChildren()) do
-				if child:IsA("Frame") then child:Destroy() end
-			end
-			for _, remote in ipairs(remotes) do
-				makeRemoteCard(remote)
-			end
+		for _, remote in ipairs(remotes) do
+			makeRemoteCard(remote)
 		end
-		refreshLock = false
 	end
 
 	refreshRemotesBtn.MouseButton1Click:Connect(refreshRemotesList)
 	task.defer(refreshRemotesList)
-
 
 	-- Filtre de recherche: affiche/masque les cartes selon le texte
 	local function applyRemotesFilter()
@@ -3436,8 +2732,6 @@ _G._wrapRemotes = _wrapRemotes
 end
 _wrapRemotes() -- Execute le wrap (IIFE pattern pour limiter les 200 registers)
 
-updateLoad(0.80, "Registry...")
-task.wait(0.05)
 -- ============= REGISTRE DES COMPTES ROBLOX =============
 -- Recherche un joueur Roblox hors-jeu par username/displayname, affiche tout : profil, blurb, ban, groupes, jeux.
 -- Wrapper function pour isoler les locals du scope global (evite "exceeded 200 local registers" sur les gros panels)
@@ -3451,7 +2745,7 @@ local registryTitle = Instance.new("TextLabel")
 registryTitle.Name = "RegistryTitle"
 registryTitle.Size = UDim2.new(1, -16, 0, 22)
 registryTitle.BackgroundTransparency = 1
-registryTitle.Text = "? Registre des comptes Roblox"
+registryTitle.Text = " Registre des comptes Roblox"
 registryTitle.Font = Enum.Font.GothamBold
 registryTitle.TextSize = 14
 registryTitle.TextColor3 = Color3.fromRGB(230, 230, 255)
@@ -3476,7 +2770,7 @@ statusLbl = Instance.new("TextLabel")
 statusLbl.Name = "RegistryStatus"
 statusLbl.Size = UDim2.new(1, -16, 0, 16)
 statusLbl.BackgroundTransparency = 1
-statusLbl.Text = "? Tape un pseudo ci-dessus et appuie sur Enter"
+statusLbl.Text = " Tape un pseudo ci-dessus et appuie sur Enter"
 statusLbl.Font = Enum.Font.Gotham
 statusLbl.TextSize = 10
 statusLbl.TextColor3 = Color3.fromRGB(180, 180, 200)
@@ -3505,7 +2799,7 @@ resultLayout.SortOrder = Enum.SortOrder.LayoutOrder
 resultLayout.Parent = resultScroll
 
 -- Helper: join a list into a string with separator, or "Indisponible" if empty
-_G.joinOrIndi = function(list, sep, max)
+local function joinOrIndi(list, sep, max)
 	if not list or type(list) ~= "table" or #list == 0 then
 		return "Indisponible"
 	end
@@ -3516,8 +2810,6 @@ _G.joinOrIndi = function(list, sep, max)
 	end
 	return table.concat(parts, sep)
 end
-
-_G.buildRegistrySection = buildRegistrySection
 
 -- ============= TAGS CUSTOMS + BARRE D'ACTIONS + DEVICE DETECTION =============
 -- Tout est wrappe dans une IIFE pour economiser les locals top-level (limite CLI Luau 200)
@@ -3588,7 +2880,7 @@ do
 		local title = Instance.new("TextLabel")
 		title.Size = UDim2.new(1, 0, 0, 26)
 		title.BackgroundTransparency = 1
-		title.Text = "?? Tags - @" .. (username or "?")
+		title.Text = " Tags  @" .. (username or "...")
 		title.TextColor3 = Color3.fromRGB(255, 255, 255)
 		title.Font = Enum.Font.GothamBold
 		title.TextSize = 14
@@ -3637,7 +2929,7 @@ do
 				listLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
 			else
 				local parts = {}
-				for _, t in ipairs(tags) do parts[#parts + 1] = "? " .. t end
+				for _, t in ipairs(tags) do parts[#parts + 1] = " " .. t end
 				listLabel.Text = table.concat(parts, "\n")
 				listLabel.TextColor3 = Color3.fromRGB(220, 220, 255)
 			end
@@ -3647,7 +2939,7 @@ do
 		addBtn.Size = UDim2.new(0.5, -12, 0, 30)
 		addBtn.Position = UDim2.new(0, 8, 0, 140)
 		addBtn.BackgroundColor3 = Color3.fromRGB(80, 200, 120)
-		addBtn.Text = "? Ajouter"
+		addBtn.Text = " Ajouter"
 		addBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 		addBtn.Font = Enum.Font.GothamBold
 		addBtn.TextSize = 12
@@ -3662,7 +2954,7 @@ do
 		removeBtn.Size = UDim2.new(0.5, -12, 0, 30)
 		removeBtn.Position = UDim2.new(0.5, 4, 0, 140)
 		removeBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
-		removeBtn.Text = "? Retirer dernier"
+		removeBtn.Text = " Retirer dernier"
 		removeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 		removeBtn.Font = Enum.Font.GothamBold
 		removeBtn.TextSize = 11
@@ -3703,13 +2995,13 @@ do
 			local mouseOn = UserInputService.MouseEnabled
 			local gamepadOn = UserInputService.GamepadEnabled
 			local vrOn = UserInputService.VREnabled
-			if vrOn then return "? VR (casque)"
-			elseif gamepadOn and not kbOn and not mouseOn then return "? Console (manette)"
-			elseif touchOn and not kbOn and not mouseOn then return "? Mobile (tactile)"
-			elseif touchOn and kbOn then return "? PC + tactile (tablette/laptop)"
-			elseif kbOn and mouseOn then return "? PC (clavier+souris)"
-			elseif kbOn then return "? PC (clavier seul)"
-			else return "? Inconnu" end
+			if vrOn then return " VR (casque)"
+			elseif gamepadOn and not kbOn and not mouseOn then return " Console (manette)"
+			elseif touchOn and not kbOn and not mouseOn then return " Mobile (tactile)"
+			elseif touchOn and kbOn then return " PC + tactile (tablette/laptop)"
+			elseif kbOn and mouseOn then return " PC (clavier+souris)"
+			elseif kbOn then return " PC (clavier seul)"
+			else return " Inconnu" end
 		end)
 		if not ok then return nil end
 		return result
@@ -3717,7 +3009,7 @@ do
 end
 -- ============= FIN TAGS CUSTOMS + BARRE D'ACTIONS + DEVICE DETECTION =============
 
--- Affiche un resultat (un compte) - UNE seule grosse bulle unie, sans RichText/HTML
+-- Affiche un resultat (un compte)  UNE seule grosse bulle unie, sans RichText/HTML
 -- Apparition ligne par ligne (typewriter) pour faciliter la lecture
 local function renderResult(data, parent)
 	-- Grosse carte unie
@@ -3731,7 +3023,7 @@ local function renderResult(data, parent)
 	createStroke(card, Color3.fromRGB(60, 60, 90), 1)
 
 	-- Badges VERIFIED / PREMIUM / BANNED en haut a droite de la carte
-	_=(function()
+	;(function()
 		local hasVerified = data.isVerified == true
 		local hasPremium = data.isPremium == true
 		local isBanned = data.isBanned == true
@@ -3745,14 +3037,13 @@ local function renderResult(data, parent)
 			v.BackgroundTransparency = 0.2
 			v.BorderSizePixel = 0
 			v.Font = Enum.Font.GothamBlack
-			v.Text = "? VERIFIE"
+			v.Text = " VERIFIE"
 			v.TextSize = 9
 			v.TextColor3 = Color3.fromRGB(220, 240, 255)
 			v.ZIndex = 5
 			v.Parent = card
 			createCorner(v, 4)
 		end
-_G.renderResult = renderResult
 		if hasPremium then
 			local p = Instance.new("TextLabel")
 			p.Size = UDim2.new(0, 60, 0, 18)
@@ -3761,7 +3052,7 @@ _G.renderResult = renderResult
 			p.BackgroundTransparency = 0.15
 			p.BorderSizePixel = 0
 			p.Font = Enum.Font.GothamBlack
-			p.Text = "? PREMIUM"
+			p.Text = " PREMIUM"
 			p.TextSize = 9
 			p.TextColor3 = Color3.fromRGB(60, 40, 0)
 			p.ZIndex = 5
@@ -3776,7 +3067,7 @@ _G.renderResult = renderResult
 			b.BackgroundTransparency = 0.15
 			b.BorderSizePixel = 0
 			b.Font = Enum.Font.GothamBlack
-			b.Text = "? BANNI"
+			b.Text = " BANNI"
 			b.TextSize = 9
 			b.TextColor3 = Color3.fromRGB(255, 220, 220)
 			b.ZIndex = 5
@@ -3818,7 +3109,7 @@ _G.renderResult = renderResult
 		wLbl.Size = UDim2.new(1, -16, 1, 0)
 		wLbl.Position = UDim2.new(0, 8, 0, 0)
 		wLbl.BackgroundTransparency = 1
-		wLbl.Text = "! APIs Roblox bloquees par l'executeur - essaie Synapse X, Wave ou Fluxus pour voir les details (jeux favoris, badges, groupes, etc.)"
+		wLbl.Text = "  APIs Roblox bloquees par l'executeur  essaie Synapse X, Wave ou Fluxus pour voir les details (jeux favoris, badges, groupes, etc.)"
 		wLbl.Font = Enum.Font.GothamBold
 		wLbl.TextSize = 10
 		wLbl.TextColor3 = Color3.fromRGB(255, 200, 100)
@@ -3861,7 +3152,7 @@ _G.renderResult = renderResult
 	big.Parent = contentRow
 
 	-- === Colonne droite : ImageLabel avec la photo 2D du joueur (thumbnail) ===
-	-- Fallback: InsertService (avatar 3D manequin) est bloque par certains executeurs -> on affiche la photo thumbnail
+	-- Fallback: InsertService (avatar 3D manequin) est bloque par certains executeurs  on affiche la photo thumbnail
 	local avatarHolder = Instance.new("Frame")
 	avatarHolder.Name = "AvatarHolder"
 	avatarHolder.Size = UDim2.new(0, 160, 0, 200)
@@ -3876,7 +3167,7 @@ _G.renderResult = renderResult
 	local avatarLoading = Instance.new("TextLabel")
 	avatarLoading.Size = UDim2.new(1, 0, 1, 0)
 	avatarLoading.BackgroundTransparency = 1
-	avatarLoading.Text = "??\nChargement\nphoto..."
+	avatarLoading.Text = "\nChargement\nphoto..."
 	avatarLoading.Font = Enum.Font.GothamSemibold
 	avatarLoading.TextSize = 11
 	avatarLoading.TextColor3 = Color3.fromRGB(150, 150, 180)
@@ -3904,21 +3195,21 @@ _G.renderResult = renderResult
 	local gamesText = joinOrIndi(data.games, " | ", 5)
 	local favText = joinOrIndi(data.favGames, " | ", 5)
 	local outfitText = joinOrIndi(data.outfits, " | ", 3)
-	local histText = joinOrIndi(data.usernameHistory, " -> ", 4)
+	local histText = joinOrIndi(data.usernameHistory, "  ", 4)
 	local invText = joinOrIndi(data.inventoryItems, ", ", 8)
 
 	local presenceText = "Indisponible"
-	if data.presenceType == 0 then presenceText = "? Hors ligne"
-	elseif data.presenceType == 1 then presenceText = "? En ligne"
-	elseif data.presenceType == 2 then presenceText = "? En jeu"
-	elseif data.presenceType == 3 then presenceText = "? Dans Studio"
+	if data.presenceType == 0 then presenceText = " Hors ligne"
+	elseif data.presenceType == 1 then presenceText = " En ligne"
+	elseif data.presenceType == 2 then presenceText = " En jeu"
+	elseif data.presenceType == 3 then presenceText = " Dans Studio"
 	end
 	if data.presenceLastOnline and data.presenceLastOnline ~= "" then
 		presenceText = presenceText .. "  (derniere: " .. data.presenceLastOnline .. ")"
 	end
 
-	-- Couleurs semantiques via codes ANSI-like -> texte brut (couleur uniforme)
-	-- (On garde UNE seule couleur - pas de distinction label/valeur, comme demande)
+	-- Couleurs semantiques via codes ANSI-like  texte brut (couleur uniforme)
+	-- (On garde UNE seule couleur  pas de distinction label/valeur, comme demande)
 	local function line(emoji, label, value)
 		if value == nil or value == "" or value == "N/A" then
 			return "  " .. emoji .. "  " .. label .. " : Indisponible"
@@ -3927,9 +3218,9 @@ _G.renderResult = renderResult
 	end
 
 	local lines = {}
-	table.insert(lines, "????????? " .. (data.username or "?") .. " ?????????")
-	table.insert(lines, "  ? Can chat        : [CHATSTATUS]")
-	table.insert(lines, "  ? User ID          : " .. (data.userId or "Indisponible"))
+	table.insert(lines, " " .. (data.username or "...") .. " ")
+	table.insert(lines, "  Can chat        : [CHATSTATUS]")
+	table.insert(lines, "   User ID          : " .. (data.userId or "Indisponible"))
 
 	-- Mise a jour async du statut chat (API native Roblox)
 	if data.userId then
@@ -3937,64 +3228,61 @@ _G.renderResult = renderResult
 			local chatText
 			if src == "CanTalkWithMe" then
 				if result == true then
-					chatText = "  ? Peut me parler    : oui"
+					chatText = "  Chat: OK    : oui"
 				elseif result == false then
-					chatText = "  ? Peut me parler    : non"
+					chatText = "  Peut me parler    : non"
 				else
-					chatText = "  ? Peut me parler    : inconnu"
+					chatText = "  Chat: OK    : inconnu"
 				end
 			else
 				if result == true then
-					chatText = "  ? Chat active       : oui (" .. src .. ")"
+					chatText = "   Chat active       : oui (" .. src .. ")"
 				elseif result == false then
-					chatText = "  ? Chat active       : non (" .. src .. ")"
+					chatText = "   Chat active       : non (" .. src .. ")"
 				else
-					chatText = "  ? Chat                : non verifiable"
+					chatText = "  Chat                : non verifiable"
 				end
 			end
 			if big and big.Parent then
 				pcall(function()
-					big.Text = big.Text:gsub("  ? Can chat        : %[CHATSTATUS%]", chatText, 1)
+					big.Text = big.Text:gsub("  Can chat        : %[CHATSTATUS%]", chatText, 1)
 				end)
 			end
 		end)
 	end
-	table.insert(lines, "  ? Display Name     : " .. (data.displayName or "Indisponible"))
-	table.insert(lines, "  ? Bio / Blurb      : " .. (data.blurb or "Indisponible"))
+	table.insert(lines, "   Display Name     : " .. (data.displayName or "Indisponible"))
+	table.insert(lines, "   Bio / Blurb      : " .. (data.blurb or "Indisponible"))
 	if data.customTags and #data.customTags > 0 then
-		table.insert(lines, "  ??  TAGS CUSTOMS     : " .. table.concat(data.customTags, " ? "))
+		table.insert(lines, "    TAGS CUSTOMS     : " .. table.concat(data.customTags, "  "))
 	else
-		table.insert(lines, "  ??  TAGS CUSTOMS     : aucun (clique ?? Tag en bas de la carte)")
+		table.insert(lines, "    TAGS CUSTOMS     : aucun (clique  Tag en bas de la carte)")
 	end
-	-- Appareil (seulement pour le local player - Roblox n'expose pas le device des autres)
+	-- Appareil (seulement pour le local player  Roblox n'expose pas le device des autres)
 	if data.deviceHint then
-		table.insert(lines, "  ? Appareil        : " .. data.deviceHint)
+		table.insert(lines, "   Appareil        : " .. data.deviceHint)
 	else
-		table.insert(lines, "  ? Appareil        : Indisponible (visible seulement pour ton propre compte)")
+		table.insert(lines, "   Appareil        : Indisponible (visible seulement pour ton propre compte)")
 	end
-	table.insert(lines, "  ? Date d'inscription : " .. (data.created or (data.createdEst and ("~" .. data.createdEst .. " (estime via ID)") or "Indisponible")))
-	table.insert(lines, "  ? Age du compte    : " .. (data.accountAge or "Indisponible"))
-	if data.idHint then table.insert(lines, "  ? Heuristique ID   : " .. data.idHint) end
-	table.insert(lines, "  ? Verifie          : " .. (data.hasVerifiedBadge == true and "OUI" or (data.hasVerifiedBadge == false and "non" or "Indisponible")))
-	table.insert(lines, "  ? Premium          : " .. (data.isPremium == true and "OUI" or (data.isPremium == false and "non" or "Indisponible")))
-	if data.premiumUntil then table.insert(lines, "  ? Premium jusqu'au : " .. tostring(data.premiumUntil):sub(1, 10)) end
-	table.insert(lines, "  ? Email lie        : " .. (data.hasEmail == true and "oui" or (data.hasEmail == false and "non" or "Indisponible")))
-	table.insert(lines, "  ?  Email verifie    : " .. (data.emailVerified == true and "oui" or (data.emailVerified == false and "non" or "Indisponible")))
-	table.insert(lines, "  ? Langue du compte : " .. (data.locale or "Indisponible"))
-	table.insert(lines, "  ? Statut compte    : " .. (data.isBanned == true and "? Banni" or (data.isBanned == false and "? Actif" or "Indisponible")))
-	table.insert(lines, "  ? Banni            : " .. (data.banReason or (data.isBanned and "Oui (raison indisponible)" or "Non")))
-	table.insert(lines, "  ? Presence actuelle : " .. presenceText)
-	table.insert(lines, "  ? En jeu (placeId) : " .. (data.presencePlaceId or "Indisponible"))
-	table.insert(lines, "  ? Derniere connexion : " .. (data.lastOnlineText or "Indisponible"))
-	table.insert(lines, "  ? Trade privacy    : " .. (data.tradePrivacy or "Indisponible"))
-	table.insert(lines, "  ? Trades entrants  : " .. (data.tradesInbound or "Indisponible"))
-	table.insert(lines, "  ? Trades sortants  : " .. (data.tradesOutbound or "Indisponible"))
-	table.insert(lines, "  ? Trades actifs    : " .. (data.tradesActive or "Indisponible"))
-	table.insert(lines, "  ? Robux            : " .. (data.robux or "Indisponible"))
-	local badgesText = joinOrIndi(data.badgesList, ", ", 10)
-	table.insert(lines, "  ? Badges           : " .. badgesText)
+	table.insert(lines, "   Date d'inscription : " .. (data.created or (data.createdEst and ("~" .. data.createdEst .. " (estime via ID)") or "Indisponible")))
+	table.insert(lines, "   Age du compte    : " .. (data.accountAge or "Indisponible"))
+	if data.idHint then table.insert(lines, "   Heuristique ID   : " .. data.idHint) end
+	table.insert(lines, "   Verifie          : " .. (data.hasVerifiedBadge == true and "OUI" or (data.hasVerifiedBadge == false and "non" or "Indisponible")))
+	table.insert(lines, "   Premium          : " .. (data.isPremium == true and "OUI" or (data.isPremium == false and "non" or "Indisponible")))
+	if data.premiumUntil then table.insert(lines, "   Premium jusqu'au : " .. tostring(data.premiumUntil):sub(1, 10)) end
+	table.insert(lines, "   Email lie        : " .. (data.hasEmail == true and "oui" or (data.hasEmail == false and "non" or "Indisponible")))
+	table.insert(lines, "    Email verifie    : " .. (data.emailVerified == true and "oui" or (data.emailVerified == false and "non" or "Indisponible")))
+	table.insert(lines, "   Langue du compte : " .. (data.locale or "Indisponible"))
+	table.insert(lines, "  Statut compte    : " .. (data.isBanned == true and " Banni" or (data.isBanned == false and " Actif" or "Indisponible")))
+	table.insert(lines, "   Banni            : " .. (data.banReason or (data.isBanned and "Oui (raison indisponible)" or "Non")))
+	table.insert(lines, "   Presence actuelle : " .. presenceText)
+	table.insert(lines, "   En jeu (placeId) : " .. (data.presencePlaceId or "Indisponible"))
+	table.insert(lines, "   Derniere connexion : " .. (data.lastOnlineText or "Indisponible"))
+	table.insert(lines, "   Trade privacy    : " .. (data.tradePrivacy or "Indisponible"))
+	table.insert(lines, "   Trades entrants  : " .. (data.tradesInbound or "Indisponible"))
+	table.insert(lines, "   Trades sortants  : " .. (data.tradesOutbound or "Indisponible"))
+	table.insert(lines, "   Trades actifs    : " .. (data.tradesActive or "Indisponible"))
 	-- === LIVE (serveur actuel) : check via natives Roblox ===
-	table.insert(lines, "  ?????????? LIVE (ce serveur) ??????????")
+	table.insert(lines, "   LIVE (ce serveur) ")
 	if data.userId and Players then
 		local liveFound = false
 		pcall(function()
@@ -4006,24 +3294,24 @@ _G.renderResult = renderResult
 				local _ageRem = _ageDays - (_ageYears * 365)
 				local _mt = tostring(target.MembershipType or "None"):gsub("Enum.MembershipType.", "")
 				local _teamName = (target.Team and target.Team.Name) or "Aucune"
-				local _ping = "?"
+				local _ping = "..."
 				pcall(function() _ping = tostring(math.floor((target.GetNetworkPing and target:GetNetworkPing() or 0) * 1000)) .. " ms" end)
 				local _loaded = (target.HasAppearanceLoaded and "Oui") or "Non"
 				local _isFriend = (target.IsFriendsWith and LocalPlayer and target:IsFriendsWith(LocalPlayer.UserId)) and "Oui" or "Non"
 				local _charOk = target.Character ~= nil
 				local _humOk = _charOk and target.Character:FindFirstChildOfClass("Humanoid") ~= nil
-				local _hp = "?"
-				local _maxHp = "?"
+				local _hp = "..."
+				local _maxHp = "..."
 				pcall(function() if _humOk then local h = target.Character:FindFirstChildOfClass("Humanoid"); _hp = tostring(math.floor(h.Health)); _maxHp = tostring(math.floor(h.MaxHealth)) end end)
-				table.insert(lines, "  ? Present ici     : OUI (connecte a ce serveur)")
-				table.insert(lines, "  ?? AccountAge      : " .. _ageYears .. " an(s) " .. _ageRem .. "j (" .. _ageDays .. " jours)")
-				table.insert(lines, "  ?? Membership      : " .. _mt)
-				table.insert(lines, "  ?? Team            : " .. _teamName)
-				table.insert(lines, "  ?? GameId courant  : " .. tostring(game.GameId or "?") .. " / PlaceId " .. tostring(game.PlaceId or "?"))
-				table.insert(lines, "  ?? NetworkPing     : " .. _ping)
-				table.insert(lines, "  ?? Avatar charge   : " .. _loaded)
-				table.insert(lines, "  ?? Ami avec toi    : " .. _isFriend)
-				table.insert(lines, "  ?? HP / MaxHP      : " .. _hp .. " / " .. _maxHp)
+				table.insert(lines, "   Present ici     : OUI (connecte a ce serveur)")
+				table.insert(lines, "   AccountAge      : " .. _ageYears .. " an(s) " .. _ageRem .. "j (" .. _ageDays .. " jours)")
+				table.insert(lines, "   Membership      : " .. _mt)
+				table.insert(lines, "   Team            : " .. _teamName)
+				table.insert(lines, "   GameId courant  : " .. tostring(game.GameId or "...") .. " / PlaceId " .. tostring(game.PlaceId or "..."))
+				table.insert(lines, "   NetworkPing     : " .. _ping)
+				table.insert(lines, "   Avatar charge   : " .. _loaded)
+				table.insert(lines, "   Ami avec toi    : " .. _isFriend)
+				table.insert(lines, "   HP / MaxHP      : " .. _hp .. " / " .. _maxHp)
 				-- Groupes cles (natives Roblox : pas d'HTTP)
 				;(function(_t, _ll, _lp)
 					local _groups = {
@@ -4039,7 +3327,7 @@ _G.renderResult = renderResult
 						end)
 						if ok then
 							local role = isIn and "Membre (rank " .. tostring(rank) .. ")" or "Non-membre"
-							_ll:insert("  ?? " .. g[2] .. " (g" .. g[1] .. ") : " .. role)
+							_ll:insert("   " .. g[2] .. " (g" .. g[1] .. ") : " .. role)
 						end
 					end
 					-- Badges Officier / Admin (natives : pas d'HTTP)
@@ -4047,35 +3335,35 @@ _G.renderResult = renderResult
 						local bs = game:GetService("BadgeService")
 						return bs and bs:UserHasBadgeAsync(_t.UserId, 1)
 					end)
-					if ok2 and has then _ll:insert("  ?? ?? Badge Administrator : OUI") end
+					if ok2 and has then _ll:insert("    Badge Administrator : OUI") end
 					local ok3, hasOfficial = pcall(function()
 						local bs = game:GetService("BadgeService")
 						return bs and bs:UserHasBadgeAsync(_t.UserId, 2)
 					end)
-					if ok3 and hasOfficial then _ll:insert("  ?? ?? Badge Official : OUI") end
+					if ok3 and hasOfficial then _ll:insert("    Badge Official : OUI") end
 				end)(target, lines, LocalPlayer)
 			end
 		end)
 		if not liveFound then
-			table.insert(lines, "  ! Pas dans ce serveur (verification impossible)")
+			table.insert(lines, "   Pas dans ce serveur (verification impossible)")
 		end
 	else
-		table.insert(lines, "  ! userId manquant")
+		table.insert(lines, "   userId manquant")
 	end
-	table.insert(lines, "  ? Amis (nb)        : " .. (data.friendCount or "Indisponible"))
-	table.insert(lines, "  ? Top 5 amis       : " .. friendsText)
-	table.insert(lines, "  ? Followers        : " .. (data.followerCount or "Indisponible"))
-	table.insert(lines, "  ? Following        : " .. (data.followingCount or "Indisponible"))
-	table.insert(lines, "  ? Badges           : " .. (data.badgeCount or "Indisponible"))
-	table.insert(lines, "  ? Hats equipes     : " .. (data.wearingCount or "Indisponible"))
-	table.insert(lines, "  ? Total hats       : " .. (data.avatarHatCount or "Indisponible"))
-	table.insert(lines, "  ? Body colors      : " .. (data.avatarBody or "Indisponible"))
-	table.insert(lines, "  ? Groupes (role)   : " .. groupsText)
-	table.insert(lines, "  ? Jeux crees       : " .. gamesText)
-	table.insert(lines, "  ? Jeux favoris     : " .. favText)
-	table.insert(lines, "  ? Tenues sauvegardees : " .. outfitText)
-	table.insert(lines, "  ? Anciens usernames : " .. histText)
-	table.insert(lines, "  ? Inventaire (total) : " .. invText)
+	table.insert(lines, "   Amis (nb)        : " .. (data.friendCount or "Indisponible"))
+	table.insert(lines, "   Top 5 amis       : " .. friendsText)
+	table.insert(lines, "   Followers        : " .. (data.followerCount or "Indisponible"))
+	table.insert(lines, "   Following        : " .. (data.followingCount or "Indisponible"))
+	table.insert(lines, "   Badges           : " .. (data.badgeCount or "Indisponible"))
+	table.insert(lines, "   Hats equipes     : " .. (data.wearingCount or "Indisponible"))
+	table.insert(lines, "   Total hats       : " .. (data.avatarHatCount or "Indisponible"))
+	table.insert(lines, "   Body colors      : " .. (data.avatarBody or "Indisponible"))
+	table.insert(lines, "   Groupes (role)   : " .. groupsText)
+	table.insert(lines, "   Jeux crees       : " .. gamesText)
+	table.insert(lines, "   Jeux favoris     : " .. favText)
+	table.insert(lines, "   Tenues sauvegardees : " .. outfitText)
+	table.insert(lines, "   Anciens usernames : " .. histText)
+	table.insert(lines, "   Inventaire (total) : " .. invText)
 
 	-- Animation typewriter: apparition ligne par ligne (toutes les 25ms = ~40 lignes/sec)
 	-- Si la recherche est rapide, on peut tout afficher direct, sinon on anime
@@ -4160,18 +3448,18 @@ _G.renderResult = renderResult
 			return btn
 		end
 		if data.userId then
-			makeActionBtn("?? Tag", Color3.fromRGB(180, 100, 220), 1, function()
+			makeActionBtn(" Tag", Color3.fromRGB(180, 100, 220), 1, function()
 				openTagPopup(data.userId, data.username, screenGui)
 			end)
-			makeActionBtn("? ID", Color3.fromRGB(80, 130, 200), 2, function()
+			makeActionBtn(" ID", Color3.fromRGB(80, 130, 200), 2, function()
 				pcall(function() setclipboard(tostring(data.userId)) end)
 			end)
-			makeActionBtn("? Profil", Color3.fromRGB(80, 180, 120), 3, function()
+			makeActionBtn(" Profil", Color3.fromRGB(80, 180, 120), 3, function()
 				pcall(function() setclipboard("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile") end)
 			end)
 			-- Rejoindre ce joueur : tente TeleportToPlaceInstance avec son gameId si dispo
 			if data.gameId or data.placeId then
-				makeActionBtn("? Rejoindre", Color3.fromRGB(70, 130, 200), 4, function()
+				makeActionBtn(" Rejoindre", Color3.fromRGB(70, 130, 200), 4, function()
 					pcall(function()
 						local TS = game:GetService("TeleportService")
 						local pid = data.placeId or data.gameId
@@ -4183,7 +3471,7 @@ _G.renderResult = renderResult
 					end)
 				end)
 			else
-				makeActionBtn("? Profil web", Color3.fromRGB(70, 130, 200), 4, function()
+				makeActionBtn(" Profil web", Color3.fromRGB(70, 130, 200), 4, function()
 					pcall(function() setclipboard("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile") end)
 				end)
 			end
@@ -4218,9 +3506,9 @@ function runRegistrySearch(query)
 			if asNumber and asNumber > 0 then
 				userId = asNumber
 				username = "UserId:" .. asNumber
-				displayName = "?"
+				displayName = "..."
 			else
-				statusLbl.Text = "? Username introuvable : @" .. query
+				statusLbl.Text = " Username introuvable : @" .. query
 				statusLbl.TextColor3 = Color3.fromRGB(220, 100, 100)
 				return
 			end
@@ -4238,7 +3526,7 @@ function runRegistrySearch(query)
 			return
 		end
 
-		statusLbl.Text = "Trouve : @" .. username .. " - chargement details..."
+		statusLbl.Text = "Trouve : @" .. username .. "  chargement details..."
 		statusLbl.TextColor3 = Color3.fromRGB(120, 220, 160)
 
 		-- 2) Recuperer details profil
@@ -4297,38 +3585,6 @@ function runRegistrySearch(query)
 		-- 3) Avatar (via Players:GetUserThumbnailAsync, NATIF Roblox, pas besoin de HttpGet)
 		pcall(function()
 			data.avatarUrl = Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
-		end)
-		
-		-- 3b) Native Roblox data (no HTTP needed - works on ALL executors)
-		pcall(function()
-			-- Get display name via native API
-			local name = Players:GetNameFromUserIdAsync(userId)
-			if name and name ~= "" then data.displayName = name end
-		end)
-		pcall(function()
-			-- Check if user is online on THIS server
-			local player = Players:GetPlayerByUserId(userId)
-			if player then
-				data.presenceType = 2 -- "En jeu"
-				data.presencePlaceId = tostring(game.PlaceId)
-				data.presenceLastLocation = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name or "?"
-				-- Get their friends list (native)
-				local friends = player:GetFriendsOnline()
-				if friends and #friends > 0 then
-					data.friendsList = {}
-					for i, f in ipairs(friends) do
-						if i > 5 then break end
-						table.insert(data.friendsList, f.Username or f.Name or "?")
-					end
-				end
-			end
-		end)
-		pcall(function()
-			-- Get account age in days (native)
-			local player = Players:GetPlayerByUserId(userId)
-			if player then
-				data.accountAgeDays = player.AccountAge
-			end
 		end)
 
 		-- 4) Friends count
@@ -4506,7 +3762,7 @@ function runRegistrySearch(query)
 							data.groupsWithRole = {}
 							for i, g in ipairs(d2.data) do
 								if i > 5 then break end
-								local entry = {name=g.group.name or "?", role=(g.role and g.role.name) or "Membre"}
+								local entry = {name=g.group.name or "...", role=(g.role and g.role.name) or "Membre"}
 								table.insert(data.groupsWithRole, entry)
 							end
 						end
@@ -4623,36 +3879,6 @@ function runRegistrySearch(query)
 						if d2 and d2.count then data.tradesOutbound = d2.count end
 					end
 				end)
-				-- 6s) Robux (economy)
-				pcall(function()
-					local r = httpGet("https://economy.roblox.com/v1/users/" .. userId .. "/currency")
-					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
-						if d2 and d2.robux then data.robux = d2.robux end
-					end
-				end)
-				-- 6t) Badges list (names)
-				pcall(function()
-					local r = httpGet("https://badges.roblox.com/v1/users/" .. userId .. "/badges?limit=20&sortOrder=Desc")
-					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
-						if d2 and d2.data and #d2.data > 0 then
-							data.badgesList = {}
-							for i, b in ipairs(d2.data) do
-								if i > 10 then break end
-								if b.name then table.insert(data.badgesList, b.name) end
-							end
-						end
-					end
-				end)
-				-- 6u) Description complete
-				pcall(function()
-					local r = httpGet("https://accountinformation.roblox.com/v1/description/" .. userId)
-					if r and r ~= "" then
-						local d2 = HttpService:JSONDecode(r)
-						if d2 and d2.description then data.blurb = d2.description end
-					end
-				end)
 				pcall(function()
 					local r = httpGet("https://trades.roblox.com/v1/users/" .. userId .. "/trades/active/count")
 					if r and r ~= "" then
@@ -4676,19 +3902,19 @@ function runRegistrySearch(query)
 				data.profileUrl = "https://www.roblox.com/users/" .. tostring(userId) .. "/profile"
 
 				if data.apiOk then
-					statusLbl.Text = "? " .. apiSuccessCount .. " APIs OK pour @" .. username
+					statusLbl.Text = " " .. apiSuccessCount .. " APIs OK pour @" .. username
 					statusLbl.TextColor3 = Color3.fromRGB(120, 220, 140)
 				else
-					statusLbl.Text = "! @" .. username .. " (ID:" .. userId .. ") - APIs externes bloquees par l'executeur. Lien : " .. data.profileUrl
+					statusLbl.Text = " @" .. username .. " (ID:" .. userId .. ")  APIs externes bloquees par l'executeur. Lien : " .. data.profileUrl
 					statusLbl.TextColor3 = Color3.fromRGB(255, 180, 90)
 				end
 
 				-- === HEURISTIQUES LOCALES (marchent meme si HttpGet bloque) ===
 				-- Estimer la date de creation du compte a partir de l'UserId
-				-- Les IDs Roblox sont sequentiels : ID 1 = 2003, ID 10000000 ? 2006, ID 100000000 ? 2010,
-				-- ID 1000000000 ? 2015, ID 10000000000 ? 2020, ID 100000000000 ? 2024
+				-- Les IDs Roblox sont sequentiels : ID 1 = 2003, ID 10000000  2006, ID 100000000  2010,
+				-- ID 1000000000  2015, ID 10000000000  2020, ID 100000000000  2024
 				if userId and not data.created then
-					-- Formule simple : annee ? 2003 + log10(userId) * 4
+					-- Formule simple : annee  2003 + log10(userId) * 4
 					local estYear = 2003 + math.floor(math.log10(math.max(userId, 1)) * 4)
 					estYear = math.min(estYear, 2026)
 					estYear = math.max(estYear, 2003)
@@ -4701,17 +3927,17 @@ function runRegistrySearch(query)
 				-- Detecter si l'ID est tres petit (compte ancien) ou tres grand (compte recent)
 				if userId then
 					if userId < 1000000 then
-						data.idHint = "? Compte ANCIEN (beta tester probable)"
+						data.idHint = " Compte ANCIEN (beta tester probable)"
 					elseif userId < 10000000 then
-						data.idHint = "? Compte ancien (2010+)"
+						data.idHint = " Compte ancien (2010+)"
 					elseif userId < 100000000 then
-						data.idHint = "? Compte ~2010-2015"
+						data.idHint = " Compte ~2010-2015"
 					elseif userId < 1000000000 then
-						data.idHint = "? Compte ~2015-2020"
+						data.idHint = " Compte ~2015-2020"
 					elseif userId < 10000000000 then
-						data.idHint = "? Compte ~2020-2024"
+						data.idHint = " Compte ~2020-2024"
 					else
-						data.idHint = "? Compte TRES RECENT (2024+)"
+						data.idHint = " Compte TRES RECENT (2024+)"
 					end
 				end
 
@@ -4743,9 +3969,6 @@ buildRegistrySection(registryPage)
 	for _, child in ipairs(rp:GetChildren()) do
 		if child ~= rs then
 			child.Parent = rs
-			if child:IsA("GuiObject") and child.LayoutOrder == 0 then
-				child.LayoutOrder = (#rs:GetChildren() - 1)
-			end
 		end
 	end
 	rs.CanvasSize = UDim2.new(0, 0, 0, rl.AbsoluteContentSize.Y + 10)
@@ -5215,8 +4438,6 @@ function giveSpiderTool()
 	end)
 end
 
-updateLoad(0.90, "Chat commands...")
-task.wait(0.05)
 -- ============= CHAT COMMANDS =============
 -- Wrap dans IIFE avec parametres pour eviter la limite d'upvalues (200)
 ;(function(_fly, _noclip, _esp, _fullbright, _zeroG, _localPlayer)
@@ -5236,8 +4457,6 @@ task.wait(0.05)
 	end)
 end)(flySwitch, noclipSwitch, espState, fullbrightSwitch, zeroGSwitch, LocalPlayer)
 
-updateLoad(0.95, "Finalisation...")
-task.wait(0.05)
 -- ============= CREDITS =============
 ;(function(_mainFrame)
 	local credits = Instance.new("TextLabel")
@@ -5254,7 +4473,7 @@ end)(mainFrame)
 -- BOOT SAFE 3 LAYERS:
 -- Layer 1: reveal immediat a 0.5s (filet de securite absolu)
 -- Layer 2: reveal a 3s si pas encore visible (fallback)
--- Layer 3: switchTab apres reveal (parse-time IIFE) + bootSequence call explicite
+-- Layer 3: switchTab apres reveal
 ;(function(_pages, _switchTab)
 	-- LAYER 1: reveal immediat a 0.5s
 	task.delay(0.5, function()
@@ -5266,38 +4485,15 @@ end)(mainFrame)
 	end)
 	-- LAYER 2: switchTab Joueurs
 	pcall(function() _switchTab("Home") end)
-		-- LAYER 3: fallback a 3s (au cas ou)
-		task.delay(3, function()
-			pcall(function()
-				if mainFrame and not mainFrame.Visible then
-					mainFrame.Visible = true
-				end
-				if _pages and _pages["Home"] and not _pages["Home"].Visible then
-					pcall(function() _switchTab("Home") end)
+	-- LAYER 3: fallback a 3s (au cas ou)
+	task.delay(3, function()
+		pcall(function()
+			if mainFrame and not mainFrame.Visible then
+				mainFrame.Visible = true
+			end
+			if _pages and _pages["Joueurs"] and not _pages["Joueurs"].Visible then
+				pcall(function() _switchTab("Home") end)
 			end
 		end)
 	end)
 end)(pages, switchTab)
-
--- FALLBACK absolu: si l'intro n'a jamais revele le panel, le forcer visible + onglet Joueurs apres 5s
-task.delay(5, function()
-	pcall(function()
-		if mainFrame and not mainFrame.Visible then
-			warn("[AGORA] Fallback reveal: panel force visible")
-			mainFrame.Visible = true
-		end
-		if pages and pages["Home"] and not pages["Home"].Visible then
-				switchTab("Home")
-		end
-	end)
-end)
-
--- Lancer l'intro cinema si on veut (desactivee par defaut car elle bloque le fallback)
--- pcall(function() bootSequence(function()
--- 	pcall(function() mainFrame.Visible = true end)
--- 	switchTab("Joueurs")
--- end) end)
-
-
--- Remove loading screen
-pcall(function() if loadingGui then loadingGui:Destroy() end end)
