@@ -3705,7 +3705,7 @@ end)
 
 if _G._agoraAU then return end
 _G._agoraAU = true
-local CV = "v39.42"
+local CV = "v39.53"
 local VURL = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_version.lua&nocache="
 local uP, lUC, uD = nil, 0, false
 local function cFU()
