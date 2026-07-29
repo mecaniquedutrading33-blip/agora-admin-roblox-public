@@ -124,12 +124,12 @@ _G.buildESP = buildESP
 		data.label.TextStrokeTransparency = 0.3
 		data.label.Parent = data.bill
 
-		-- icône chat isolée à côté du nom (pas de texte)
+		-- icone chat isolee a cote du nom (pas de texte)
 		data.chatIcon = Instance.new("TextLabel")
 		data.chatIcon.Size = UDim2.new(0, 20, 0, 20)
 		data.chatIcon.Position = UDim2.new(0, 226, 0, 0)
 		data.chatIcon.BackgroundTransparency = 1
-		data.chatIcon.Text = "💬"
+		data.chatIcon.Text = "?"
 		data.chatIcon.Font = Enum.Font.GothamBold
 		data.chatIcon.TextSize = 14
 		data.chatIcon.TextColor3 = Color3.new(1, 1, 1)
@@ -204,7 +204,7 @@ RunService.RenderStepped:Connect(function()
 	for plr, data in pairs(espState.individual) do
 		if data.active and data.targetPart and data.targetPart.Parent then
 			local dist = (data.targetPart.Position - rootPart.Position).Magnitude
-			-- icône chat isolée (toggle)
+			-- icone chat isolee (toggle)
 			if data.chatIcon then
 				data.chatIcon.Visible = espState.chatIcons and (data.canChat == true)
 			end
@@ -282,7 +282,7 @@ Players.PlayerAdded:Connect(function(plr)
 	end)
 end)
 
--- Rafraîchit l'ESP toutes les 60s sans flash (rebuild silencieux si le personnage a changé)
+-- Rafraichit l'ESP toutes les 60s sans flash (rebuild silencieux si le personnage a change)
 task.spawn(function()
 	while true do
 		task.wait(60)
@@ -955,7 +955,7 @@ _G.stopFly = stopFly
 		upBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
 		upBtn.BackgroundTransparency = 0.35
 		upBtn.BorderSizePixel = 0
-		upBtn.Text = "▲"
+		upBtn.Text = "?"
 		upBtn.TextColor3 = Color3.fromRGB(140, 100, 230)
 		upBtn.Font = Enum.Font.GothamBold
 		upBtn.TextSize = 22
@@ -977,7 +977,7 @@ _G.stopFly = stopFly
 		dnBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
 		dnBtn.BackgroundTransparency = 0.35
 		dnBtn.BorderSizePixel = 0
-		dnBtn.Text = "▼"
+		dnBtn.Text = "?"
 		dnBtn.TextColor3 = Color3.fromRGB(140, 100, 230)
 		dnBtn.Font = Enum.Font.GothamBold
 		dnBtn.TextSize = 22
@@ -1213,7 +1213,7 @@ local function createSlider(parent, labelText, yPos, min, max, default, callback
 	createCorner(track, 3)
 
 	-- Bouton invisible par-dessus le track pour capter TOUS les clics (sinon certains
-	-- clics sur le container parent sont perdus → le slider "marche mal")
+	-- clics sur le container parent sont perdus -> le slider "marche mal")
 	local hitButton = Instance.new("TextButton")
 	hitButton.Size = UDim2.new(1, 0, 0, 24)
 	hitButton.Position = UDim2.new(0, 0, 0, 21)
@@ -1251,7 +1251,7 @@ local function createSlider(parent, labelText, yPos, min, max, default, callback
 			setFromInput(input.Position.X)
 		end
 	end)
-	-- Hit invisible capte les clics n'importe où sur la zone (Y=21..45), pas seulement le track (6px)
+	-- Hit invisible capte les clics n'importe ou sur la zone (Y=21..45), pas seulement le track (6px)
 	hitButton.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			draggingSlider = true
@@ -1302,7 +1302,7 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 				if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = true end
 			end
 		end
-		-- Active la grâce anti-TP après sortie du noclip
+		-- Active la grace anti-TP apres sortie du noclip
 		if protectionsState then
 			protectionsState.antiTeleportGraceUntil = tick() + 0.4
 		end
@@ -1576,7 +1576,7 @@ local localState = {
 	timeOfDay = 12,
 }
 
-local zeroGSwitch = createSwitch(localPage, "Zero Gravité", 10, function(on)
+local zeroGSwitch = createSwitch(localPage, "Zero Gravite", 10, function(on)
 	localState.zeroGravity = on
 	if on then
 		Workspace.Gravity = 0
@@ -1601,7 +1601,7 @@ local zeroGSwitch = createSwitch(localPage, "Zero Gravité", 10, function(on)
 	end
 end)
 
--- Conteneur gravité personnalisé (slider précis + input + reset)
+-- Conteneur gravite personnalise (slider precis + input + reset)
 _=(function()
 local gravityContainer = Instance.new("Frame")
 gravityContainer.Size = UDim2.new(1, -16, 0, 86)
@@ -1616,7 +1616,7 @@ local gravityLabel = Instance.new("TextLabel")
 gravityLabel.Size = UDim2.new(1, -10, 0, 18)
 gravityLabel.Position = UDim2.new(0, 8, 0, 5)
 gravityLabel.BackgroundTransparency = 1
-gravityLabel.Text = "Gravité custom : 196.2"
+gravityLabel.Text = "Gravite custom : 196.2"
 gravityLabel.Font = Enum.Font.GothamSemibold
 gravityLabel.TextSize = 12
 gravityLabel.TextColor3 = Color3.fromRGB(210, 210, 210)
@@ -1659,7 +1659,7 @@ local function _agoraSetGravityExact(v)
 	v = math.clamp(math.floor(v + 0.5), 0, 300)
 	localState.customGravity = v
 	Workspace.Gravity = v
-	gravityLabel.Text = "Gravité custom : " .. v
+	gravityLabel.Text = "Gravite custom : " .. v
 	gravityInput.Text = tostring(v)
 	gravityFill.Size = UDim2.new(v / 300, 0, 1, 0)
 end
@@ -1693,7 +1693,7 @@ gravityInput.FocusLost:Connect(function(enterPressed)
 	_G._agoraSetGravityExact(gravityInput.Text)
 end)
 
-local resetGravityBtn = createButton(localPage, "Reset gravité normale", 148, Color3.fromRGB(80, 80, 90), function()
+local resetGravityBtn = createButton(localPage, "Reset gravite normale", 148, Color3.fromRGB(80, 80, 90), function()
 	_G._agoraSetGravityExact(196.2)
 end)
 resetGravityBtn.Size = UDim2.new(1, -16, 0, 30)
@@ -1740,8 +1740,8 @@ local globalESPSwitch = createSwitch(localPage, "ESP Global", 404, function(on)
 	end
 end)
 
--- Toggle icônes chat sur l'ESP
-local chatIconsSwitch = createSwitch(localPage, "Icônes chat ESP", 448, function(on)
+-- Toggle icones chat sur l'ESP
+local chatIconsSwitch = createSwitch(localPage, "Icones chat ESP", 448, function(on)
 	espState.chatIcons = on
 end)
 chatIconsSwitch.set(true)
