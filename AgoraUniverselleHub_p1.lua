@@ -1,6 +1,26 @@
 -- Agora Hub [UNIVERSELLE] - Panel Roblox universel
 -- LocalScript dans StarterPlayerScripts ou executeur
 
+-- Destroy any old Agora/Milan panels from previous execution
+pcall(function()
+	local cg = game:GetService("CoreGui")
+	for _, g in ipairs(cg:GetChildren()) do
+		if g:IsA("ScreenGui") and (g.Name:match("Agora") or g.Name:match("Milan") or g.Name:match("AgoraUniverselle")) then
+			g:Destroy()
+		end
+	end
+end)
+pcall(function()
+	local pg = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
+	if pg then
+		for _, g in ipairs(pg:GetChildren()) do
+			if g:IsA("ScreenGui") and (g.Name:match("Agora") or g.Name:match("Milan") or g.Name:match("AgoraUniverselle")) then
+				g:Destroy()
+		end
+		end
+	end
+end)
+
 _G.SETTINGS = {
 	SpiderSpeed = 16,
 	SpiderHoverDistance = 2.6,
@@ -3773,10 +3793,14 @@ local function cFU()
 			local nC=Instance.new("UICorner") nC.CornerRadius=UDim.new(0,6) nC.Parent=nB
 			uP=sg
 			yB.MouseButton1Click:Connect(function()
+				-- Flag: updating = don't run auto-update in new version
+				_G._agoraUpdating = true
+				-- Shutdown old panel
 				if _G._agoraShutdown then _G._agoraShutdown() end
-				if shutdownPanel then shutdownPanel() end
+				if shutdownPanel then pcall(shutdownPanel) end
 				sg:Destroy() uP=nil
 				task.spawn(function()
+					-- Show updating animation
 					local aG=Instance.new("ScreenGui")
 					aG.Name="AgoraUpdAnim"
 					aG.ResetOnSpawn=false
@@ -3800,14 +3824,30 @@ local function cFU()
 					aL.Font=Enum.Font.GothamBold
 					aL.TextSize=16
 					aL.Parent=aF
-					task.wait(1.5)
+					task.wait(0.3)
+					-- Destroy ALL old Agora/Milan GUIs FIRST
 					pcall(function()
 						for _,g in ipairs(par2:GetChildren()) do
+							if g:IsA("ScreenGui") and (g.Name:match("Agora") or g.Name:match("Milan")) and g ~= aG then g:Destroy() end
+						end
+					end)
+					-- Also destroy from PlayerGui
+					pcall(function()
+						for _,g in ipairs(game:GetService("Players").LocalPlayer:GetChildren()) do
 							if g:IsA("ScreenGui") and (g.Name:match("Agora") or g.Name:match("Milan")) then g:Destroy() end
+						end
+						local pg = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
+						if pg then
+							for _,g in ipairs(pg:GetChildren()) do
+								if g:IsA("ScreenGui") and (g.Name:match("Agora") or g.Name:match("Milan")) then g:Destroy() end
+							end
 						end
 					end)
 					aL.Text="Redemarrage..."
-					task.wait(0.5)
+					-- Clear flags so new version can init properly
+					_G._agoraAU = nil
+					_G._agoraUpdating = nil
+					task.wait(0.3)
 					local rU="https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache="..tostring(tick())
 					local okR,code=pcall(function() return game:HttpGet(rU,true) end)
 					if okR and code and #code>100 then
