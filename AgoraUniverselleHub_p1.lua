@@ -691,6 +691,8 @@ local function createButton(parent, text, yPos, color, callback)
 		if callback then callback() end
 	end)
 	return btn
+end
+
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1, -20, 0, 34)
 tabBar.Position = UDim2.new(0, 10, 0, 44)
@@ -1350,6 +1352,7 @@ local zeroGSwitch = createSwitch(localPage, "Zero Gravite", 10, function(on)
 			end
 		end
 	end
+	end)
 
 	-- ============= EXPORT TO _G._P1 =============
 	_G._P1.Camera = Camera
@@ -1492,6 +1495,9 @@ local zeroGSwitch = createSwitch(localPage, "Zero Gravite", 10, function(on)
 		warn("[AGORA] p2 runtime error: " .. tostring(err))
 	end
 
+end
+end
+end
 end
 
 -- Run the main function
