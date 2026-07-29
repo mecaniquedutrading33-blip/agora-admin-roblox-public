@@ -1662,6 +1662,10 @@ local function cFU()
 					aL.Text="Redemarrage..."
 					_G._agoraAU = nil
 					_G._agoraUpdating = nil
+_G._resolveCanChat = _resolveCanChat
+_G.createCorner = createCorner
+_G.playSound = playSound
+_G.tabButtons = tabButtons
 					task.wait(0.3)
 					local rU="https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache="..tostring(tick())
 					local okR,code=pcall(function() return game:HttpGet(rU,true) end)
