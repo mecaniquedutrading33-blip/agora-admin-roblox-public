@@ -890,7 +890,17 @@ local function createTab(name)
 	tabButtons[name] = btn
 	return page
 end
+
 _G.createTab = createTab
+
+-- Create tabs (Home is created by p2)
+local playersPage = createTab("Joueurs")
+local movePage = createTab("Move")
+local extraPage = createTab("Extra")
+local remotesPage = createTab("Remotes")
+local registryPage = createTab("Registry")
+local localPage = createTab("Local")
+local protectionsPage = createTab("Protections")
 
 -- ============= REGISTRY SEARCH + AUTOCOMPLETE =============
 -- WRAP dans local function + appel pour isoler les locals
