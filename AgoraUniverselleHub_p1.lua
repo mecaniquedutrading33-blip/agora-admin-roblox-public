@@ -4446,7 +4446,7 @@ local gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, fun
 	end
 end)
 
-createSwitch(movePage, "Saut infini", 192, function(on)
+local infiniteJumpSwitch = createSwitch(movePage, "Saut infini", 192, function(on)
 	jumpState.infinite = on
 end)
 
@@ -4782,6 +4782,9 @@ _G["registryLayout"] = registryLayout
 _G["localState"] = localState
 _G["panelMemory"] = panelMemory
 _G["fullbrightSwitch"] = fullbrightSwitch
+_G["globalESPSwitch"] = globalESPSwitch
+_G["gotoWalkSwitch"] = gotoWalkSwitch
+_G["infiniteJumpSwitch"] = infiniteJumpSwitch
 
 -- AUTO-LOAD PART 2 (split for Solara 200KB limit)
 task.spawn(function()
@@ -4874,6 +4877,34 @@ task.delay(10, function()
                             local nC = Instance.new("UICorner") nC.CornerRadius = UDim.new(0, 6) nC.Parent = nB
                             yB.MouseButton1Click:Connect(function()
                                 _G._agoraUpdating = true
+                                -- Sauvegarder l'etat des features actives avant shutdown
+                                _G._agoraSavedState = {}
+                                local switchesToSave = {
+                                    {ref = _G.flySwitch, name = "fly"},
+                                    {ref = _G.noclipSwitch, name = "noclip"},
+                                    {ref = _G.globalESPSwitch, name = "globalESP"},
+                                    {ref = _G.fullbrightSwitch, name = "fullbright"},
+                                    {ref = _G.zeroGSwitch, name = "zeroG"},
+                                    {ref = _G.hitboxSwitch, name = "hitbox"},
+                                    {ref = _G.clickTPSwitch, name = "clickTP"},
+                                    {ref = _G.gotoWalkSwitch, name = "gotoWalk"},
+                                    {ref = _G.infiniteJumpSwitch, name = "infiniteJump"},
+                                    {ref = _G.autoClickSwitch, name = "autoClick"},
+                                    {ref = _G.aimbotSwitch, name = "aimbot"},
+                                }
+                                for _, s in ipairs(switchesToSave) do
+                                    if s.ref and s.ref.get and s.ref.get() then
+                                        _G._agoraSavedState[s.name] = true
+                                    end
+                                end
+                                -- Sauvegarder aussi les protections
+                                if _G._P1 and _G._P1.protectionsState then
+                                    for k, v in pairs(_G._P1.protectionsState) do
+                                        if type(v) == "boolean" and v then
+                                            _G._agoraSavedState["prot_" .. k] = true
+                                        end
+                                    end
+                                end
                                 if _G.shutdownPanel then pcall(_G.shutdownPanel) end
                                 sg:Destroy()
                                 task.spawn(function()
@@ -4916,6 +4947,32 @@ task.delay(10, function()
                                         aG:Destroy()
                                         local fn = loadstring(code2)
                                         if fn then pcall(fn) end
+                                        -- Restaurer les features qui etaient actives avant l'update
+                                        task.delay(2, function()
+                                            pcall(function()
+                                                if not _G._agoraSavedState then return end
+                                                local restoreMap = {
+                                                    {name = "fly", ref = function() return _G.flySwitch end},
+                                                    {name = "noclip", ref = function() return _G.noclipSwitch end},
+                                                    {name = "globalESP", ref = function() return _G.globalESPSwitch end},
+                                                    {name = "fullbright", ref = function() return _G.fullbrightSwitch end},
+                                                    {name = "zeroG", ref = function() return _G.zeroGSwitch end},
+                                                    {name = "hitbox", ref = function() return _G.hitboxSwitch end},
+                                                    {name = "clickTP", ref = function() return _G.clickTPSwitch end},
+                                                    {name = "gotoWalk", ref = function() return _G.gotoWalkSwitch end},
+                                                    {name = "infiniteJump", ref = function() return _G.infiniteJumpSwitch end},
+                                                    {name = "autoClick", ref = function() return _G.autoClickSwitch end},
+                                                    {name = "aimbot", ref = function() return _G.aimbotSwitch end},
+                                                }
+                                                for _, r in ipairs(restoreMap) do
+                                                    if _G._agoraSavedState[r.name] then
+                                                        local sw = r.ref()
+                                                        if sw and sw.set then sw.set(true) end
+                                                    end
+                                                end
+                                                _G._agoraSavedState = nil
+                                            end)
+                                        end)
                                     else
                                         aL.Text = "Erreur de chargement"
                                         task.wait(2) aG:Destroy()
