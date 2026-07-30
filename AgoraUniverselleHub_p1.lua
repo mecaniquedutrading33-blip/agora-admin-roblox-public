@@ -685,7 +685,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.60"
+	_G.CURRENT_VERSION = "v39.56"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -1983,8 +1983,8 @@ local function createPlayerEntry(plr)
 	createStroke(card, Color3.fromRGB(45, 45, 55), 1)
 
 	local nameLbl = Instance.new("TextLabel")
-	nameLbl.Size = UDim2.new(1, -80, 0, 18)
-	nameLbl.Position = UDim2.new(0, 6, 0, 4)
+	nameLbl.Size = UDim2.new(1, -110, 0, 18)
+	nameLbl.Position = UDim2.new(0, 32, 0, 4)
 	nameLbl.BackgroundTransparency = 1
 	nameLbl.Text = plr.DisplayName .. " (@" .. plr.Name .. ")"
 	nameLbl.Font = Enum.Font.GothamBold
@@ -2764,14 +2764,22 @@ local function createPlayerEntry(plr)
 					elseif hrp then
 						local vel = hrp.AssemblyLinearVelocity
 						local flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
-						local vSpeed = math.abs(vel.Y)
-						local floorY = hrp.Position.Y - 3
-						local isAirborne = (floorY > 20 and vSpeed > 5) or (vSpeed > 40)
-						if flatSpeed > 2 then
-							stateText = (h.WalkSpeed > 18 or flatSpeed > 18) and "Running" or "Walking"
-						end
-						-- Flag info uniquement : vitesse reelle > 30 OU air anormal OU vitesse verticale extreme
-						moveFlag = (flatSpeed > 30) or (isAirborne and h.WalkSpeed < 30) or (vSpeed > 50)
+							local vSpeed = math.abs(vel.Y)
+							local floorY = hrp.Position.Y - 3
+							local inVehicle = h.SeatPart ~= nil
+							-- Tolere: vehicules, sauts normaux, plateformes mobiles
+							local isAirborne = (floorY > 50 and vSpeed > 10) or (vSpeed > 80)
+							if flatSpeed > 2 then
+								stateText = (h.WalkSpeed > 18 or flatSpeed > 18) and "Running" or "Walking"
+							end
+							-- Flag info uniquement : seuils hauts pour eviter faux positifs
+							-- Vitesse > 100 (pas 30) OU air anormal extreme OU vertical extreme
+							-- Tolere vehicules (inVehicle = jamais flag)
+							if inVehicle then
+								moveFlag = false
+							else
+								moveFlag = (flatSpeed > 100) or (isAirborne and h.WalkSpeed < 50 and vSpeed > 80) or (vSpeed > 120)
+							end
 					end
 					statusLbl.Text = "Statut: " .. stateText
 					pcall(function()
@@ -2825,8 +2833,8 @@ local function createPlayerEntry(plr)
 
 	-- Bouton "i" : ouvre un popup detail avec toutes les infos Roblox du joueur
 	local infoBtn = Instance.new("TextButton")
-	infoBtn.Size = UDim2.new(0, 24, 0, 24)
-	infoBtn.Position = UDim2.new(1, -32, 0, 4)
+	infoBtn.Size = UDim2.new(0, 22, 0, 22)
+	infoBtn.Position = UDim2.new(0, 6, 0, 3)
 	infoBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 100)
 	infoBtn.Text = "i"
 	infoBtn.Font = Enum.Font.GothamBold
@@ -5075,7 +5083,7 @@ task.delay(10, function()
                 local ok, rv = pcall(function() return game:HttpGet(vurl, true) end)
                 if ok and rv then
                     rv = rv:gsub('return "', ''):gsub('"', ''):gsub("%s", "")
-                    local cv = (_G.CURRENT_VERSION or CURRENT_VERSION or "v39.60"):gsub("%s", "")
+                    local cv = (_G.CURRENT_VERSION or CURRENT_VERSION or "v39.54"):gsub("%s", "")
                     if rv ~= cv and rv ~= "" then
                         -- Show update popup
                         pcall(function()
