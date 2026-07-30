@@ -5185,11 +5185,12 @@ task.delay(10, function()
                                             if g:IsA("ScreenGui") and (g.Name:match("Agora") or g.Name:match("Milan")) and g ~= aG then g:Destroy() end
                                         end
                                     end)
-                                    aL.Text = "Redemarrage..."
+                                    aL.Text = "Redemarrage... (vidage cache)"
                                     _G._agoraAU = nil
                                     _G._agoraUpdating = nil
-                                    task.wait(0.3)
-                                    local rU = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache=" .. tostring(tick())
+                                    task.wait(2)
+                                    -- URL avec double cache-buster: tick() + random pour forcer Solara a re-fetch
+                                    local rU = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache=" .. tostring(tick()) .. "&r=" .. tostring(math.random(100000, 999999))
                                     local okR, code2 = pcall(function() return game:HttpGet(rU, true) end)
                                     if okR and code2 and #code2 > 100 then
                                         aG:Destroy()
