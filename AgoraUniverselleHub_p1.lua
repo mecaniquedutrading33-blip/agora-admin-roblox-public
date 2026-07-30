@@ -685,7 +685,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.56"
+	_G.CURRENT_VERSION = "v39.60"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -4098,7 +4098,7 @@ local function bootSequence(onComplete)
 end
 
 -- ============= MOVE =============
-local flyState = { flying = false, decollage = false, smoothVel = nil, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
+local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
 local noclipState = { enabled = false }
 local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
@@ -4107,7 +4107,6 @@ local platformState = { enabled = false, part = nil, y = 0, offset = 0 }
 local function stopFly()
 	-- Arreter le decollage si en cours
 	flyState.decollage = false
-	flyState.smoothVel = nil
 	-- Nettoyer le gyro/vel meme pendant le decollage (avant que flying = true)
 	if flyState.gyro then flyState.gyro:Destroy() flyState.gyro = nil end
 	if flyState.vel then flyState.vel:Destroy() flyState.vel = nil end
@@ -4345,22 +4344,7 @@ local function startFly()
 		if flyState.mobileDownHeld then move -= Vector3.new(0, 1, 0) end
 
 		if flyState.vel then
-			-- Lissage de la velocite pour eviter les coups sec lors des virages
-			local targetVel = move.Magnitude > 0 and move.Unit * flyState.speed or Vector3.zero
-			-- Si pas de lissage precedent, initialiser
-			if not flyState.smoothVel then flyState.smoothVel = Vector3.zero end
-			-- Facteur de lissage: 0.25 = tres doux, 0.5 = medium, 1 = instant
-			-- Plus on va vite, plus on lisse pour eviter les coups sec
-			local smoothFactor = 0.35
-			-- Si le mouvement est nul (arret), lisser plus vite pour pas flotter
-			if targetVel.Magnitude < 1 then smoothFactor = 0.5 end
-			-- Si on change de direction brusquement, lisser plus
-			if flyState.smoothVel.Magnitude > 1 then
-				local dot = targetVel.Unit:Dot(flyState.smoothVel.Unit)
-				if dot < 0.3 then smoothFactor = 0.2 end -- virage brutal
-			end
-			flyState.smoothVel = flyState.smoothVel:Lerp(targetVel, smoothFactor)
-			flyState.vel.Velocity = flyState.smoothVel
+			flyState.vel.Velocity = move.Magnitude > 0 and move.Unit * flyState.speed or Vector3.zero
 		end
 	end)
 end
@@ -4474,7 +4458,7 @@ local flySwitch = createSwitch(movePage, "Fly", 10, function(on)
 	if on then startFly() else stopFly() end
 end)
 
-local flySlider = createSlider(movePage, "Vitesse Fly", 52, 20, 1000, flyState.speed, function(v)
+local flySlider = createSlider(movePage, "Vitesse Fly", 52, 20, 500, flyState.speed, function(v)
 	flyState.speed = math.floor(v)
 end, Color3.fromRGB(100, 180, 255))
 
@@ -5091,7 +5075,7 @@ task.delay(10, function()
                 local ok, rv = pcall(function() return game:HttpGet(vurl, true) end)
                 if ok and rv then
                     rv = rv:gsub('return "', ''):gsub('"', ''):gsub("%s", "")
-                    local cv = (_G.CURRENT_VERSION or CURRENT_VERSION or "v39.54"):gsub("%s", "")
+                    local cv = (_G.CURRENT_VERSION or CURRENT_VERSION or "v39.60"):gsub("%s", "")
                     if rv ~= cv and rv ~= "" then
                         -- Show update popup
                         pcall(function()
@@ -5114,7 +5098,7 @@ task.delay(10, function()
                             t.Size = UDim2.new(1, -20, 0, 30)
                             t.Position = UDim2.new(0, 10, 0, 8)
                             t.BackgroundTransparency = 1
-                            t.Text = "[Agora] Mise a jour disponible"
+                            t.Text = "Mise a jour disponible"
                             t.TextColor3 = Color3.fromRGB(100, 200, 255)
                             t.Font = Enum.Font.GothamBold
                             t.TextSize = 15
@@ -5123,7 +5107,7 @@ task.delay(10, function()
                             d.Size = UDim2.new(1, -20, 0, 35)
                             d.Position = UDim2.new(0, 10, 0, 32)
                             d.BackgroundTransparency = 1
-                            d.Text = "Version " .. rv .. " du panel Agora\nVotre version: " .. cv
+                            d.Text = "Version " .. rv .. " disponible\nVous avez " .. cv
                             d.TextColor3 = Color3.fromRGB(200, 200, 210)
                             d.Font = Enum.Font.Gotham
                             d.TextSize = 13
