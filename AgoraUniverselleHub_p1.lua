@@ -685,7 +685,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.60"
+	_G.CURRENT_VERSION = "v39.56"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -4277,52 +4277,52 @@ local function startFly()
 	if flyState.flying or not rootPart then return end
 	
 	-- Son de demarrage fly (tres doux)
---	pcall(function() playSound(6042053626, 0.12) end)
-	
-	-- Creer BodyGyro + BodyVelocity AVANT le decollage pour garder le follow camera
-	flyState.gyro = Instance.new("BodyGyro")
-	flyState.gyro.P = 9e4
-	flyState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-	flyState.gyro.CFrame = Camera.CFrame
-	flyState.gyro.Parent = rootPart
-	
-	flyState.vel = Instance.new("BodyVelocity")
-	flyState.vel.Velocity = Vector3.zero
-	flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-	flyState.vel.Parent = rootPart
-	
-	if humanoid then humanoid.PlatformStand = true end
-	
-	-- Decollage doux : lever en preservant la rotation
-	local decollageHeight = 2
-	local startY = rootPart.Position.Y
-	local targetY = startY + decollageHeight
-	local startRot = rootPart.CFrame.Rotation
-	
-	flyState.decollage = true
-	local decollageT = 0
-	local decollageDuration = 0.4
-	while decollageT < decollageDuration and flyState.decollage do
-		local dt = task.wait()
-		decollageT = decollageT + dt
-		local alpha = math.min(1, decollageT / decollageDuration)
-		local eased = 1 - (1 - alpha) * (1 - alpha)
-		pcall(function()
-			if rootPart and rootPart.Parent then
-				local cur = rootPart.Position
-				local newY = startY + (targetY - startY) * eased
-				-- Preserver X/Z + rotation, seulement changer Y
-				rootPart.CFrame = CFrame.new(cur.X, newY, cur.Z) * startRot
-				-- Le BodyGyro suit la camera en continu pendant le decollage
-				if flyState.gyro then flyState.gyro.CFrame = Camera.CFrame end
-			end
-		end)
-	end
-	flyState.decollage = false
-	
-	if not rootPart or not rootPart.Parent then return end
-	flyState.flying = true
+		-- pcall(function() playSound(6042053626, 0.12) end)
 
+		-- Creer BodyGyro + BodyVelocity AVANT le decollage pour garder le follow camera
+		flyState.gyro = Instance.new("BodyGyro")
+		flyState.gyro.P = 9e4
+		flyState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+		flyState.gyro.CFrame = Camera.CFrame
+		flyState.gyro.Parent = rootPart
+
+		flyState.vel = Instance.new("BodyVelocity")
+		flyState.vel.Velocity = Vector3.zero
+		flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+		flyState.vel.Parent = rootPart
+
+		if humanoid then humanoid.PlatformStand = true end
+
+		-- Decollage doux : lever en preservant la rotation (hauteur 0 = instantane)
+		local decollageHeight = 0
+		local startY = rootPart.Position.Y
+		local targetY = startY + decollageHeight
+		local startRot = rootPart.CFrame.Rotation
+
+		flyState.decollage = true
+		local decollageT = 0
+		local decollageDuration = 0
+		while decollageT < decollageDuration and flyState.decollage do
+			local dt = task.wait()
+			decollageT = decollageT + dt
+			local alpha = math.min(1, decollageT / decollageDuration)
+			local eased = 1 - (1 - alpha) * (1 - alpha)
+			pcall(function()
+				if rootPart and rootPart.Parent then
+					local cur = rootPart.Position
+					local newY = startY + (targetY - startY) * eased
+					-- Preserver X/Z + rotation, seulement changer Y
+					rootPart.CFrame = CFrame.new(cur.X, newY, cur.Z) * startRot
+					-- Le BodyGyro suit la camera en continu pendant le decollage
+					if flyState.gyro then flyState.gyro.CFrame = Camera.CFrame end
+				end
+			)
+		end
+
+		flyState.decollage = false
+
+		if not rootPart or not rootPart.Parent then return end
+		flyState.flying = true
 	-- Show mobile UI on touch devices
 	if flyState.isMobile and flyState.isMobile() and flyState.showMobileUi then
 		flyState.showMobileUi(true)
@@ -5083,7 +5083,7 @@ task.delay(10, function()
                 local ok, rv = pcall(function() return game:HttpGet(vurl, true) end)
                 if ok and rv then
                     rv = rv:gsub('return "', ''):gsub('"', ''):gsub("%s", "")
-                    local cv = (_G.CURRENT_VERSION or CURRENT_VERSION or "v39.60"):gsub("%s", "")
+                    local cv = (_G.CURRENT_VERSION or CURRENT_VERSION or "v39.54"):gsub("%s", "")
                     if rv ~= cv and rv ~= "" then
                         -- Show update popup
                         pcall(function()
@@ -5106,7 +5106,7 @@ task.delay(10, function()
                             t.Size = UDim2.new(1, -20, 0, 30)
                             t.Position = UDim2.new(0, 10, 0, 8)
                             t.BackgroundTransparency = 1
-                            t.Text = "[Agora] Mise a jour disponible"
+                            t.Text = "Mise a jour disponible"
                             t.TextColor3 = Color3.fromRGB(100, 200, 255)
                             t.Font = Enum.Font.GothamBold
                             t.TextSize = 15
@@ -5115,8 +5115,7 @@ task.delay(10, function()
                             d.Size = UDim2.new(1, -20, 0, 35)
                             d.Position = UDim2.new(0, 10, 0, 32)
                             d.BackgroundTransparency = 1
-                            d.Text = "Version " .. rv .. " du panel Agora\nVotre version: " .. cv
-                            pcall(function() playSound(9114850423, 0.2) end)
+                            d.Text = "Version " .. rv .. " disponible\nVous avez " .. cv
                             d.TextColor3 = Color3.fromRGB(200, 200, 210)
                             d.Font = Enum.Font.Gotham
                             d.TextSize = 13
