@@ -861,14 +861,14 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 					capturedY = cf.Position.Y - size.Y / 2 - 1.5
 				end
 			elseif character then
-				-- A pied : sous nos pieds (marge 0.2 stud)
+				-- A pied : exactement a la hauteur des pieds (marge 0)
 				local ok, cf, size = pcall(function() return character:GetBoundingBox() end)
 				if ok and cf and size then
-					capturedY = cf.Position.Y - size.Y / 2 - 0.2
+					capturedY = cf.Position.Y - size.Y / 2
 				elseif rootPart then
-					capturedY = rootPart.Position.Y - 3
+					capturedY = rootPart.Position.Y - 3.2
 				else
-					capturedY = (character:GetPivot().Position.Y) - 3
+					capturedY = (character:GetPivot().Position.Y) - 3.2
 				end
 			end
 			if capturedY then
@@ -1284,7 +1284,7 @@ end)()
 		emoteClose.Size = UDim2.new(0, 24, 0, 24)
 		emoteClose.Position = UDim2.new(1, -28, 0, 4)
 		emoteClose.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-		emoteClose.Text = ""
+		emoteClose.Text = "X"
 		emoteClose.Font = Enum.Font.GothamBold
 		emoteClose.TextSize = 12
 		emoteClose.TextColor3 = Color3.new(1, 1, 1)
