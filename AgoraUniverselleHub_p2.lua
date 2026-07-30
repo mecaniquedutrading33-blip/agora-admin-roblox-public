@@ -4706,3 +4706,152 @@ end)(pages, switchTab)
 _G["hitboxSwitch"] = hitboxSwitch
 _G["clickTPSwitch"] = clickTPSwitch
 _G["autoClickSwitch"] = autoClickSwitch
+
+-- ============= CHEAT DETECTION ENGINE =============
+;(function()
+	_G._agoraCheatLogs = {}
+	local _Players = Players
+	local _RunService = RunService
+	local _Workspace = Workspace
+	local _tick = tick
+	local _math = math
+	local _ipairs = ipairs
+	local _pcall = pcall
+	local _table = table
+
+	-- Player tracking state
+	local tracked = {}
+
+	local function getTimestamp()
+		local t = os.time()
+		return string.format("%02d:%02d:%02d", math.floor(t/3600)%24, math.floor(t/60)%60, t%60)
+	end
+
+	local function addLog(userId, logType, detail, severity)
+		if not _G._agoraCheatLogs[userId] then
+			_G._agoraCheatLogs[userId] = {}
+		end
+		local logs = _G._agoraCheatLogs[userId]
+		_table.insert(logs, {time = getTimestamp(), type = logType, detail = detail, severity = severity or "info"})
+		if #logs > 20 then
+			_table.remove(logs, 1)
+		end
+	end
+
+	-- Rate limit: max 1 log per player per type per 5s
+	local function canLog(userId, logType)
+		if not tracked[userId] then tracked[userId] = {} end
+		local t = tracked[userId]
+		local key = "last_" .. logType
+		local now = _tick()
+		if not t[key] or (now - t[key]) >= 5 then
+			t[key] = now
+			return true
+		end
+		return false
+	end
+
+	_RunService.Heartbeat:Connect(function()
+		for _, plr in _ipairs(_Players:GetPlayers()) do
+			if plr ~= LocalPlayer then
+				local char = plr.Character
+				if char then
+					local hrp = char:FindFirstChild("HumanoidRootPart")
+					local hum = char:FindFirstChildOfClass("Humanoid")
+					if hrp and hum then
+						local uid = plr.UserId
+						if not tracked[uid] then tracked[uid] = {} end
+						local t = tracked[uid]
+						local pos = hrp.Position
+						local vel = hrp.AssemblyLinearVelocity
+						local flatSpeed = _math.sqrt(vel.X^2 + vel.Z^2)
+						local inVehicle = hum.SeatPart ~= nil
+						local ws = hum.WalkSpeed
+						local hp = hum.Health
+						local maxHp = hum.MaxHealth
+
+						-- Track previous state
+						local prev = t.prevPos or pos
+						local prevHp = t.prevHp or hp
+						local delta = (pos - prev).Magnitude
+
+						-- 1. Velocity Alert (speed hack)
+						if not inVehicle and flatSpeed > 80 and ws < 80 and canLog(uid, "velocity") then
+							addLog(uid, "Velocity Alert", "Speed: " .. _math.floor(flatSpeed) .. " (WS:" .. ws .. ")", "warn")
+						end
+
+						-- 2. Altitude Anomaly (fly hack)
+						if not inVehicle and vel.Y > 60 and canLog(uid, "altitude") then
+							-- Check if standing on something (raycast down)
+							local onGround = false
+							_pcall(function()
+								local r = _Workspace:Raycast(pos, Vector3.new(0, -5, 0))
+								if r then onGround = true end
+							end)
+							if not onGround then
+								addLog(uid, "Altitude Anomaly", "Ascending " .. _math.floor(vel.Y) .. "/s at Y:" .. _math.floor(pos.Y), "warn")
+							end
+						end
+
+						-- 3. Position Delta (teleport)
+						if not inVehicle and delta > 300 and canLog(uid, "teleport") then
+							addLog(uid, "Position Delta", "Moved " .. _math.floor(delta) .. " studs in 1 frame", "alert")
+						end
+
+						-- 4. Health Anomaly (god mode)
+						if hp > maxHp and canLog(uid, "godmode") then
+							addLog(uid, "Health Anomaly", "HP: " .. _math.floor(hp) .. "/" .. _math.floor(maxHp), "alert")
+						end
+						if hp < prevHp then
+							t.prevHp = hp
+						elseif hp > prevHp + 50 and canLog(uid, "hpregen") then
+							addLog(uid, "Health Anomaly", "HP jumped " .. _math.floor(prevHp) .. " -> " .. _math.floor(hp), "warn")
+						end
+
+						-- 5. Hitbox Expansion (reach)
+						if canLog(uid, "hitbox") then
+							for _, part in _ipairs(char:GetDescendants()) do
+								if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+									local maxDim = _math.max(part.Size.X, part.Size.Y, part.Size.Z)
+									if maxDim > 50 then
+										addLog(uid, "Hitbox Expansion", part.Name .. " size: " .. _math.floor(maxDim), "warn")
+										break
+									end
+								end
+							end
+						end
+
+						-- 6. Collision Bypass (noclip) - check if CanCollide=false on body parts
+						if canLog(uid, "noclip") and not inVehicle then
+							local nonCollide = 0
+							local total = 0
+							for _, part in _ipairs(char:GetDescendants()) do
+								if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+									total = total + 1
+									if not part.CanCollide then nonCollide = nonCollide + 1 end
+								end
+							end
+							if total > 0 and nonCollide == total and flatSpeed > 5 then
+								addLog(uid, "Collision Bypass", "All " .. total .. " parts non-collide while moving", "info")
+							end
+						end
+
+						-- 7. Air Jump (infinite jump)
+						if canLog(uid, "airjump") and not inVehicle then
+							local state = hum:GetState()
+							if state == Enum.HumanoidStateType.Jumping and vel.Y > 20 and t.prevVelY and t.prevVelY < -5 then
+								addLog(uid, "Air Jump", "Jumped while descending at " .. _math.floor(t.prevVelY) .. "/s", "info")
+							end
+						end
+
+						-- Update tracked state
+						t.prevPos = pos
+						t.prevVelY = vel.Y
+						t.prevHp = hp
+						t.prevWalkSpeed = ws
+					end
+				end
+			end
+		end
+	end)
+end)()
