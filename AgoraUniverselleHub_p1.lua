@@ -776,8 +776,8 @@ local protectionsPage = createTab("Protections")
 			if data then
 				local ok, json = pcall(function() return HttpService:JSONDecode(data) end)
 				if ok and json then
-					agoraStats.totalLaunches = json.totalLaunches or 0
-					agoraStats.onlineUsers = json.onlineUsers or 0
+					agoraStats.totalLaunches = json.total_launches or json.totalLaunches or 0
+					agoraStats.onlineUsers = json.online_users or json.onlineUsers or 0
 					pcall(function() if totalLabel then totalLabel.Text = (translations[langCode] or translations["FR"]).utilisateurs .. ": " .. agoraStats.totalLaunches end end)
 					pcall(function() if onlineLabel then onlineLabel.Text = (translations[langCode] or translations["FR"]).enLigne .. ": " .. agoraStats.onlineUsers end end)
 				end
@@ -896,37 +896,89 @@ local protectionsPage = createTab("Protections")
 		entryLabel.Parent = changelogCard
 	end
 	
-	-- Stats card (utilisateurs + en ligne)
+	-- Stats card (utilisateurs + en ligne, 2 colonnes)
 	local statsCard = Instance.new("Frame")
-	statsCard.Size = UDim2.new(1, -8, 0, 50)
+	statsCard.Size = UDim2.new(1, -8, 0, 60)
 	statsCard.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
 	statsCard.BorderSizePixel = 0
 	statsCard.LayoutOrder = 3
 	statsCard.Parent = homeScroll
 	createCorner(statsCard, 10)
 	createStroke(statsCard, Color3.fromRGB(50, 50, 70), 1)
-	
+
+	-- Left column: total users
+	local totalIcon = Instance.new("TextLabel")
+	totalIcon.Size = UDim2.new(0, 30, 0, 30)
+	totalIcon.Position = UDim2.new(0, 10, 0, 15)
+	totalIcon.BackgroundTransparency = 1
+	totalIcon.Text = "()"
+	totalIcon.Font = Enum.Font.GothamBold
+	totalIcon.TextSize = 18
+	totalIcon.TextColor3 = Color3.fromRGB(100, 180, 255)
+	totalIcon.Parent = statsCard
+
 	local totalLabel = Instance.new("TextLabel")
-	totalLabel.Size = UDim2.new(1, -16, 0, 20)
-	totalLabel.Position = UDim2.new(0, 8, 0, 6)
+	totalLabel.Size = UDim2.new(0.45, -45, 0, 20)
+	totalLabel.Position = UDim2.new(0, 42, 0, 12)
 	totalLabel.BackgroundTransparency = 1
 	totalLabel.Text = "Utilisateurs: ..."
 	totalLabel.Font = Enum.Font.GothamSemibold
-	totalLabel.TextSize = 14
+	totalLabel.TextSize = 13
 	totalLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
 	totalLabel.TextXAlignment = Enum.TextXAlignment.Left
 	totalLabel.Parent = statsCard
-	
+
+	local totalSubLabel = Instance.new("TextLabel")
+	totalSubLabel.Size = UDim2.new(0.45, -45, 0, 14)
+	totalSubLabel.Position = UDim2.new(0, 42, 0, 32)
+	totalSubLabel.BackgroundTransparency = 1
+	totalSubLabel.Text = "lancements totaux"
+	totalSubLabel.Font = Enum.Font.Gotham
+	totalSubLabel.TextSize = 10
+	totalSubLabel.TextColor3 = Color3.fromRGB(120, 120, 140)
+	totalSubLabel.TextXAlignment = Enum.TextXAlignment.Left
+	totalSubLabel.Parent = statsCard
+
+	-- Divider
+	local statsDiv = Instance.new("Frame")
+	statsDiv.Size = UDim2.new(0, 1, 0, 40)
+	statsDiv.Position = UDim2.new(0.5, 0, 0, 10)
+	statsDiv.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+	statsDiv.BorderSizePixel = 0
+	statsDiv.Parent = statsCard
+
+	-- Right column: online
+	local onlineIcon = Instance.new("TextLabel")
+	onlineIcon.Size = UDim2.new(0, 30, 0, 30)
+	onlineIcon.Position = UDim2.new(0.5, 12, 0, 15)
+	onlineIcon.BackgroundTransparency = 1
+	onlineIcon.Text = "*"
+	onlineIcon.Font = Enum.Font.GothamBold
+	onlineIcon.TextSize = 20
+	onlineIcon.TextColor3 = Color3.fromRGB(120, 220, 140)
+	onlineIcon.Parent = statsCard
+
 	local onlineLabel = Instance.new("TextLabel")
-	onlineLabel.Size = UDim2.new(1, -16, 0, 20)
-	onlineLabel.Position = UDim2.new(0, 8, 0, 28)
+	onlineLabel.Size = UDim2.new(0.45, -45, 0, 20)
+	onlineLabel.Position = UDim2.new(0.5, 42, 0, 12)
 	onlineLabel.BackgroundTransparency = 1
 	onlineLabel.Text = "En ligne: ..."
 	onlineLabel.Font = Enum.Font.GothamSemibold
-	onlineLabel.TextSize = 14
+	onlineLabel.TextSize = 13
 	onlineLabel.TextColor3 = Color3.fromRGB(120, 220, 140)
 	onlineLabel.TextXAlignment = Enum.TextXAlignment.Left
 	onlineLabel.Parent = statsCard
+
+	local onlineSubLabel = Instance.new("TextLabel")
+	onlineSubLabel.Size = UDim2.new(0.45, -45, 0, 14)
+	onlineSubLabel.Position = UDim2.new(0.5, 42, 0, 32)
+	onlineSubLabel.BackgroundTransparency = 1
+	onlineSubLabel.Text = "maintenant"
+	onlineSubLabel.Font = Enum.Font.Gotham
+	onlineSubLabel.TextSize = 10
+	onlineSubLabel.TextColor3 = Color3.fromRGB(120, 120, 140)
+	onlineSubLabel.TextXAlignment = Enum.TextXAlignment.Left
+	onlineSubLabel.Parent = statsCard
 	
 	-- Discord button
 	local discordBtn = Instance.new("TextButton")
