@@ -559,7 +559,7 @@ minimizeBtn.Name = "MinimizeBtn"
 minimizeBtn.Size = UDim2.new(0, 28, 0, 28)
 minimizeBtn.Position = UDim2.new(1, -68, 0, 5)
 minimizeBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
-minimizeBtn.Text = ""
+minimizeBtn.Text = "-"
 minimizeBtn.Font = Enum.Font.GothamBold
 minimizeBtn.TextSize = 18
 minimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
@@ -579,7 +579,7 @@ local function makeIcon(btn, txt)
 	l.Parent = btn
 end
 
-makeIcon(closeBtn, "")
+-- (makeIcon removed - closeBtn already has Text="X")
 
 local function createButton(parent, text, yPos, color, callback)
 	local btn = Instance.new("TextButton")
@@ -2295,7 +2295,7 @@ local function createPlayerEntry(plr)
 		closeX.Size = UDim2.new(0, 26, 0, 26)
 		closeX.Position = UDim2.new(1, -32, 0, 4)
 		closeX.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-		closeX.Text = ""
+		closeX.Text = "X"
 		closeX.Font = Enum.Font.GothamBold
 		closeX.TextSize = 16
 		closeX.TextColor3 = Color3.new(1, 1, 1)
@@ -2338,13 +2338,22 @@ local function createPlayerEntry(plr)
 		local function collectItems()
 			local target = plr.Character
 			local items = {}
+			local seen = {} -- anti-doublons: ne donne jamais 2 fois le meme tool
 			if not target then return items end
-			for _, item in ipairs(plr.Backpack:GetChildren()) do
-				if item:IsA("Tool") then table.insert(items, {Name = item.Name, Tool = item}) end
-			end
+			-- 1) Tools equippes (dans le Character) = les VRAIS tools serveur en main
 			if target:FindFirstChildOfClass("Humanoid") then
 				for _, item in ipairs(target:GetChildren()) do
-					if item:IsA("Tool") then table.insert(items, {Name = "(EQ) " .. item.Name, Tool = item}) end
+					if item:IsA("Tool") and not seen[item] then
+						seen[item] = true
+						table.insert(items, {Name = "(EQ) " .. item.Name, Tool = item, IsServer = true})
+					end
+				end
+			end
+			-- 2) Tools dans le Backpack (local) = fallback si le serveur n'est pas dispo
+			for _, item in ipairs(plr.Backpack:GetChildren()) do
+				if item:IsA("Tool") and not seen[item] then
+					seen[item] = true
+					table.insert(items, {Name = item.Name, Tool = item, IsServer = false})
 				end
 			end
 			return items
@@ -2398,9 +2407,16 @@ local function createPlayerEntry(plr)
 					take.MouseButton1Click:Connect(function()
 						local tool = item.Tool
 						if not tool or not tool.Parent then return end
-						local clone = tool:Clone()
 						local myBackpack = LocalPlayer:FindFirstChild("Backpack")
 						if not myBackpack then return end
+						-- Anti-doublon: check si on a deja un tool avec ce nom
+						for _, existing in ipairs(myBackpack:GetChildren()) do
+							if existing:IsA("Tool") and existing.Name == tool.Name then
+								if notify then notify("Deja dans ton sac: " .. tool.Name, 2) end
+								return
+							end
+						end
+						local clone = tool:Clone()
 						clone.Parent = myBackpack
 						if notify then notify("Item vole: " .. clone.Name, 2) end
 						task.wait(0.1)
@@ -2416,9 +2432,14 @@ local function createPlayerEntry(plr)
 			local stolen = 0
 			local myBackpack = LocalPlayer:FindFirstChild("Backpack")
 			if not myBackpack then return end
+			local alreadyHave = {}
+			for _, existing in ipairs(myBackpack:GetChildren()) do
+				if existing:IsA("Tool") then alreadyHave[existing.Name] = true end
+			end
 			for _, item in ipairs(items) do
-				if item.Tool and item.Tool.Parent then
+				if item.Tool and item.Tool.Parent and not alreadyHave[item.Tool.Name] then
 					item.Tool:Clone().Parent = myBackpack
+					alreadyHave[item.Tool.Name] = true
 					stolen += 1
 				end
 			end
@@ -3927,7 +3948,7 @@ end
 		upBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
 		upBtn.BackgroundTransparency = 0.35
 		upBtn.BorderSizePixel = 0
-		upBtn.Text = ""
+		upBtn.Text = "+"
 		upBtn.TextColor3 = Color3.fromRGB(140, 100, 230)
 		upBtn.Font = Enum.Font.GothamBold
 		upBtn.TextSize = 22
@@ -3949,7 +3970,7 @@ end
 		dnBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
 		dnBtn.BackgroundTransparency = 0.35
 		dnBtn.BorderSizePixel = 0
-		dnBtn.Text = ""
+		dnBtn.Text = "-"
 		dnBtn.TextColor3 = Color3.fromRGB(140, 100, 230)
 		dnBtn.Font = Enum.Font.GothamBold
 		dnBtn.TextSize = 22
