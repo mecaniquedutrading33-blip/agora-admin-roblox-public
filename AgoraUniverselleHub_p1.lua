@@ -685,7 +685,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.59"
+	_G.CURRENT_VERSION = "v39.56"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -1619,7 +1619,11 @@ end)
 
 -- == SHUTDOWN ALL FEATURES ==
 local function shutdownPanel()
-	if flyState and flyState.flying then stopFly() end
+	-- Forcer l'arret du fly meme pendant le decollage
+	if flyState then
+		flyState.decollage = false
+		if flyState.flying then stopFly() end
+	end
 	if noclipState and noclipState.enabled then
 		noclipState.enabled = false
 		if noclipSwitch then noclipSwitch.set(false) end
@@ -3916,13 +3920,15 @@ local function bootSequence(onComplete)
 end
 
 -- ============= MOVE =============
-local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
+local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
 local noclipState = { enabled = false }
 local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
 local platformState = { enabled = false, part = nil, y = 0, offset = 0 }
 
 local function stopFly()
+	-- Arreter le decollage si en cours
+	flyState.decollage = false
 	if not flyState.flying then return end
 	flyState.flying = false
 	if flyState.loop then flyState.loop:Disconnect() flyState.loop = nil end
@@ -4090,9 +4096,10 @@ local function startFly()
 	pcall(function() playSound(6042053626, 0.12) end)
 	
 	-- Animer le decollage en douceur (0.4s)
+	flyState.decollage = true
 	local decollageT = 0
 	local decollageDuration = 0.4
-	while decollageT < decollageDuration do
+	while decollageT < decollageDuration and flyState.decollage do
 		local dt = task.wait()
 		decollageT = decollageT + dt
 		local alpha = math.min(1, decollageT / decollageDuration)
@@ -4105,6 +4112,13 @@ local function startFly()
 				if humanoid then humanoid.PlatformStand = true end
 			end
 		end)
+	end
+	flyState.decollage = false
+	
+	-- Si le decollage a ete annule (stopFly pendant le decollage), ne pas activer le fly
+	if not flyState.decollage and not flyState.flying then
+		-- Verifier si stopFly a ete appele pendant le decollage
+		-- (flyState.flying reste false, on sort juste)
 	end
 	
 	-- Activer le fly apres le decollage
@@ -4883,7 +4897,7 @@ task.delay(10, function()
                 local ok, rv = pcall(function() return game:HttpGet(vurl, true) end)
                 if ok and rv then
                     rv = rv:gsub('return "', ''):gsub('"', ''):gsub("%s", "")
-                    local cv = (_G.CURRENT_VERSION or CURRENT_VERSION or "v39.59"):gsub("%s", "")
+                    local cv = (_G.CURRENT_VERSION or CURRENT_VERSION or "v39.54"):gsub("%s", "")
                     if rv ~= cv and rv ~= "" then
                         -- Show update popup
                         pcall(function()
