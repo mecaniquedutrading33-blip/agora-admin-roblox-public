@@ -689,6 +689,9 @@ local protectionsPage = createTab("Protections")
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v39.56: Auto-update preserve features actives (fly/ESP/noclip)",
+		"v39.55: Fix boucle popup MAJ + symboles X/-/+ + anti-doublons tools",
+		"v39.54: Plate F10 hauteur pieds exacte + tools server-side priorite",
 		"v39.51: Emojis ASCII + master switch Protections",
 		"v39.43: Enrichissement joueurs (connexion, badges)",
 		"v39.42: Fix fly + noclip + ESP + aimbot",
@@ -791,123 +794,181 @@ local protectionsPage = createTab("Protections")
 	homeScroll.BorderSizePixel = 0
 	homeScroll.ScrollBarThickness = 4
 	homeScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 180, 255)
-	homeScroll.CanvasSize = UDim2.new(0, 0, 0, 500)
+	homeScroll.CanvasSize = UDim2.new(0, 0, 0, 800)
 	homeScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	homeScroll.Parent = homePage
 	
 	local homeLayout = Instance.new("UIListLayout")
-	homeLayout.Padding = UDim.new(0, 8)
+	homeLayout.Padding = UDim.new(0, 6)
 	homeLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	homeLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	homeLayout.Parent = homeScroll
 	
-	-- Title
+	local homePad = Instance.new("UIPadding")
+	homePad.PaddingTop = UDim.new(0, 4)
+	homePad.PaddingBottom = UDim.new(0, 8)
+	homePad.PaddingLeft = UDim.new(0, 6)
+	homePad.PaddingRight = UDim.new(0, 6)
+	homePad.Parent = homeLayout
+	
+	-- Title card (version + titre ensemble)
+	local titleCard = Instance.new("Frame")
+	titleCard.Size = UDim2.new(1, -8, 0, 70)
+	titleCard.BackgroundColor3 = Color3.fromRGB(20, 22, 35)
+	titleCard.BorderSizePixel = 0
+	titleCard.LayoutOrder = 1
+	titleCard.Parent = homeScroll
+	createCorner(titleCard, 10)
+	createStroke(titleCard, Color3.fromRGB(60, 180, 255), 1)
+	
 	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Size = UDim2.new(1, -20, 0, 28)
+	titleLabel.Size = UDim2.new(1, -16, 0, 32)
+	titleLabel.Position = UDim2.new(0, 8, 0, 6)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Text = "Agora Hub"
-	titleLabel.Font = Enum.Font.GothamBold
-	titleLabel.TextSize = 22
+	titleLabel.Font = Enum.Font.GothamBlack
+	titleLabel.TextSize = 24
 	titleLabel.TextColor3 = Color3.fromRGB(60, 180, 255)
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-	titleLabel.LayoutOrder = 1
-	titleLabel.Parent = homeScroll
+	titleLabel.Parent = titleCard
 	
-	-- Version
 	local versionLabel = Instance.new("TextLabel")
-	versionLabel.Size = UDim2.new(1, -20, 0, 20)
+	versionLabel.Size = UDim2.new(1, -16, 0, 22)
+	versionLabel.Position = UDim2.new(0, 8, 0, 40)
 	versionLabel.BackgroundTransparency = 1
 	versionLabel.Text = CURRENT_VERSION
-	versionLabel.Font = Enum.Font.Gotham
-	versionLabel.TextSize = 14
-	versionLabel.TextColor3 = Color3.fromRGB(120, 180, 255)
+	versionLabel.Font = Enum.Font.GothamBold
+	versionLabel.TextSize = 15
+	versionLabel.TextColor3 = Color3.fromRGB(120, 200, 100)
 	versionLabel.TextXAlignment = Enum.TextXAlignment.Left
-	versionLabel.LayoutOrder = 2
-	versionLabel.Parent = homeScroll
+	versionLabel.Parent = titleCard
 	
-	-- Separator
-	local sep1 = Instance.new("Frame")
-	sep1.Size = UDim2.new(1, -20, 0, 1)
-	sep1.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-	sep1.BorderSizePixel = 0
-	sep1.LayoutOrder = 3
-	sep1.Parent = homeScroll
+	-- Changelog card
+	local changelogCard = Instance.new("Frame")
+	changelogCard.Size = UDim2.new(1, -8, 0, 0)
+	changelogCard.AutomaticSize = Enum.AutomaticSize.Y
+	changelogCard.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+	changelogCard.BorderSizePixel = 0
+	changelogCard.LayoutOrder = 2
+	changelogCard.Parent = homeScroll
+	createCorner(changelogCard, 10)
+	createStroke(changelogCard, Color3.fromRGB(50, 50, 70), 1)
 	
-	-- Changelog title
+	local chgLayout = Instance.new("UIListLayout")
+	chgLayout.Padding = UDim.new(0, 3)
+	chgLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	chgLayout.Parent = changelogCard
+	
+	local chgPad = Instance.new("UIPadding")
+	chgPad.PaddingTop = UDim.new(0, 8)
+	chgPad.PaddingBottom = UDim.new(0, 8)
+	chgPad.PaddingLeft = UDim.new(0, 10)
+	chgPad.PaddingRight = UDim.new(0, 10)
+	chgPad.Parent = chgLayout
+	
 	local nouveautesLabel = Instance.new("TextLabel")
-	nouveautesLabel.Size = UDim2.new(1, -20, 0, 22)
+	nouveautesLabel.Size = UDim2.new(1, 0, 0, 24)
 	nouveautesLabel.BackgroundTransparency = 1
 	nouveautesLabel.Text = "Nouveautes"
 	nouveautesLabel.Font = Enum.Font.GothamBold
 	nouveautesLabel.TextSize = 16
 	nouveautesLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
 	nouveautesLabel.TextXAlignment = Enum.TextXAlignment.Left
-	nouveautesLabel.LayoutOrder = 4
-	nouveautesLabel.Parent = homeScroll
+	nouveautesLabel.LayoutOrder = 0
+	nouveautesLabel.Parent = changelogCard
 	
-	-- Changelog entries
+	-- Highlight les 3 dernieres versions en vert
 	for idx, entry in ipairs(changelogEntries) do
 		local entryLabel = Instance.new("TextLabel")
-		entryLabel.Size = UDim2.new(1, -20, 0, 18)
+		entryLabel.Size = UDim2.new(1, 0, 0, 20)
 		entryLabel.BackgroundTransparency = 1
-		entryLabel.Text = " " .. entry
+		entryLabel.Text = entry
 		entryLabel.Font = Enum.Font.Gotham
-		entryLabel.TextSize = 12
-		entryLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
+		entryLabel.TextSize = 13
+		if idx <= 3 then
+			entryLabel.TextColor3 = Color3.fromRGB(120, 220, 140)
+			entryLabel.Font = Enum.Font.GothamSemibold
+		else
+			entryLabel.TextColor3 = Color3.fromRGB(140, 140, 160)
+		end
 		entryLabel.TextXAlignment = Enum.TextXAlignment.Left
-		entryLabel.LayoutOrder = 4 + idx
-		entryLabel.Parent = homeScroll
+		entryLabel.LayoutOrder = idx
+		entryLabel.Parent = changelogCard
 	end
 	
-	-- Separator 2
-	local sep2 = Instance.new("Frame")
-	sep2.Size = UDim2.new(1, -20, 0, 1)
-	sep2.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-	sep2.BorderSizePixel = 0
-	sep2.LayoutOrder = 14
-	sep2.Parent = homeScroll
+	-- Stats card (utilisateurs + en ligne)
+	local statsCard = Instance.new("Frame")
+	statsCard.Size = UDim2.new(1, -8, 0, 50)
+	statsCard.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+	statsCard.BorderSizePixel = 0
+	statsCard.LayoutOrder = 3
+	statsCard.Parent = homeScroll
+	createCorner(statsCard, 10)
+	createStroke(statsCard, Color3.fromRGB(50, 50, 70), 1)
+	
+	local totalLabel = Instance.new("TextLabel")
+	totalLabel.Size = UDim2.new(1, -16, 0, 20)
+	totalLabel.Position = UDim2.new(0, 8, 0, 6)
+	totalLabel.BackgroundTransparency = 1
+	totalLabel.Text = "Utilisateurs: ..."
+	totalLabel.Font = Enum.Font.GothamSemibold
+	totalLabel.TextSize = 14
+	totalLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+	totalLabel.TextXAlignment = Enum.TextXAlignment.Left
+	totalLabel.Parent = statsCard
+	
+	local onlineLabel = Instance.new("TextLabel")
+	onlineLabel.Size = UDim2.new(1, -16, 0, 20)
+	onlineLabel.Position = UDim2.new(0, 8, 0, 28)
+	onlineLabel.BackgroundTransparency = 1
+	onlineLabel.Text = "En ligne: ..."
+	onlineLabel.Font = Enum.Font.GothamSemibold
+	onlineLabel.TextSize = 14
+	onlineLabel.TextColor3 = Color3.fromRGB(120, 220, 140)
+	onlineLabel.TextXAlignment = Enum.TextXAlignment.Left
+	onlineLabel.Parent = statsCard
 	
 	-- Discord button
 	local discordBtn = Instance.new("TextButton")
-	discordBtn.Size = UDim2.new(1, -20, 0, 36)
+	discordBtn.Size = UDim2.new(1, -8, 0, 40)
 	discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
 	discordBtn.BorderSizePixel = 0
-	discordBtn.Text = "[Discord] Rejoindre"
+	discordBtn.Text = "[Discord] Rejoindre le serveur"
 	discordBtn.Font = Enum.Font.GothamBold
-	discordBtn.TextSize = 14
+	discordBtn.TextSize = 15
 	discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	discordBtn.LayoutOrder = 15
+	discordBtn.LayoutOrder = 4
 	discordBtn.Parent = homeScroll
 	createCorner(discordBtn, 8)
 	discordBtn.MouseButton1Click:Connect(function()
 		pcall(function() setclipboard("https://discord.gg/fVw2rzAMb") end)
 		discordBtn.Text = "[OK] Lien copie !"
-		task.delay(2, function() discordBtn.Text = "[Discord] Rejoindre" end)
+		task.delay(2, function() discordBtn.Text = "[Discord] Rejoindre le serveur" end)
 	end)
 	
 	local discordLabel = discordBtn
 	
 	-- Language selector
 	local langueLabel = Instance.new("TextLabel")
-	langueLabel.Size = UDim2.new(1, -20, 0, 20)
+	langueLabel.Size = UDim2.new(1, -8, 0, 20)
 	langueLabel.BackgroundTransparency = 1
 	langueLabel.Text = "Langue"
 	langueLabel.Font = Enum.Font.GothamBold
 	langueLabel.TextSize = 14
 	langueLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
 	langueLabel.TextXAlignment = Enum.TextXAlignment.Left
-	langueLabel.LayoutOrder = 16
+	langueLabel.LayoutOrder = 5
 	langueLabel.Parent = homeScroll
 	
 	local langBtn = Instance.new("TextButton")
-	langBtn.Size = UDim2.new(1, -20, 0, 34)
+	langBtn.Size = UDim2.new(1, -8, 0, 36)
 	langBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 	langBtn.BorderSizePixel = 0
 	langBtn.Text = "FR Francais"
 	langBtn.Font = Enum.Font.Gotham
-	langBtn.TextSize = 13
+	langBtn.TextSize = 14
 	langBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
-	langBtn.LayoutOrder = 17
+	langBtn.LayoutOrder = 6
 	langBtn.Parent = homeScroll
 	createCorner(langBtn, 8)
 	
@@ -935,7 +996,7 @@ local protectionsPage = createTab("Protections")
 		langPopup.Size = UDim2.new(1, -20, 0, 280)
 		langPopup.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
 		langPopup.BorderSizePixel = 0
-		langPopup.LayoutOrder = 18
+		langPopup.LayoutOrder = 7
 		langPopup.Parent = homeScroll
 		createCorner(langPopup, 8)
 		createStroke(langPopup, Color3.fromRGB(60, 180, 255), 1)
@@ -965,39 +1026,16 @@ local protectionsPage = createTab("Protections")
 		end
 	end)
 	
-	-- Stats
-	local totalLabel = Instance.new("TextLabel")
-	totalLabel.Size = UDim2.new(1, -20, 0, 18)
-	totalLabel.BackgroundTransparency = 1
-	totalLabel.Text = "Utilisateurs: ..."
-	totalLabel.Font = Enum.Font.Gotham
-	totalLabel.TextSize = 12
-	totalLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
-	totalLabel.TextXAlignment = Enum.TextXAlignment.Left
-	totalLabel.LayoutOrder = 19
-	totalLabel.Parent = homeScroll
-	
-	local onlineLabel = Instance.new("TextLabel")
-	onlineLabel.Size = UDim2.new(1, -20, 0, 18)
-	onlineLabel.BackgroundTransparency = 1
-	onlineLabel.Text = "En ligne: ..."
-	onlineLabel.Font = Enum.Font.Gotham
-	onlineLabel.TextSize = 12
-	onlineLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
-	onlineLabel.TextXAlignment = Enum.TextXAlignment.Left
-	onlineLabel.LayoutOrder = 20
-	onlineLabel.Parent = homeScroll
-	
 	-- Credits
 	local creditsLabel = Instance.new("TextLabel")
-	creditsLabel.Size = UDim2.new(1, -20, 0, 18)
+	creditsLabel.Size = UDim2.new(1, -8, 0, 18)
 	creditsLabel.BackgroundTransparency = 1
 	creditsLabel.Text = "Agora Hub [UNIVERSELLE] - by Emerick"
 	creditsLabel.Font = Enum.Font.Gotham
 	creditsLabel.TextSize = 11
 	creditsLabel.TextColor3 = Color3.fromRGB(100, 100, 120)
 	creditsLabel.TextXAlignment = Enum.TextXAlignment.Center
-	creditsLabel.LayoutOrder = 21
+	creditsLabel.LayoutOrder = 8
 	creditsLabel.Parent = homeScroll
 	
 	-- Fetch stats
