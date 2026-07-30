@@ -861,15 +861,28 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 					capturedY = cf.Position.Y - size.Y / 2 - 1.5
 				end
 			elseif character then
-				-- A pied : exactement a la hauteur des pieds (marge 0)
-				local ok, cf, size = pcall(function() return character:GetBoundingBox() end)
-				if ok and cf and size then
-					capturedY = cf.Position.Y - size.Y / 2
-				elseif rootPart then
-					capturedY = rootPart.Position.Y - 3.2
-				else
-					capturedY = (character:GetPivot().Position.Y) - 3.2
+				-- A pied : utiliser la position reelle des pieds (RightFoot/LeftFoot ou RootPart)
+				local footY
+				for _, partName in ipairs({"RightFoot", "LeftFoot", "Right Leg", "Left Leg"}) do
+					local part = character:FindFirstChild(partName)
+					if part and part:IsA("BasePart") then
+						footY = part.Position.Y
+						break
+					end
 				end
+				if not footY and rootPart then
+					-- Fallback: RootPart est ~3 studs au-dessus des pieds
+					footY = rootPart.Position.Y - 3
+				end
+				if not footY then
+					local ok, cf, size = pcall(function() return character:GetBoundingBox() end)
+					if ok and cf and size then
+						footY = cf.Position.Y - size.Y / 2
+					else
+						footY = (character:GetPivot().Position.Y) - 3
+					end
+				end
+				capturedY = footY
 			end
 			if capturedY then
 				platformState.y = capturedY
@@ -878,6 +891,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 				-- Centre la plate sur le joueur/voiture au moment du toggle, puis elle reste FIXE
 				local anchorPos = rootPart and rootPart.Position or (humanoid and humanoid.SeatPart and humanoid.SeatPart.Position)
 				if anchorPos then
+					-- Placer la plate DIRECTEMENT a la bonne hauteur (pas de lissage au demarrage)
 					platformState.part.CFrame = CFrame.new(anchorPos.X, capturedY, anchorPos.Z)
 				else
 					platformState.part.CFrame = CFrame.new(0, capturedY, 0)
@@ -1833,6 +1847,131 @@ createButton(extraScroll, "Rejoindre ce serveur", 0, Color3.fromRGB(70, 130, 200
 	end)
 end)
 
+-- Server Authority detection (Roblox July 2026 feature)
+local function isServerAuthority()
+	local ok, result = pcall(function()
+		return Workspace:GetAttribute("AuthorityMode") == "Server"
+	end)
+	if ok and result then return true end
+	-- Fallback: check if BodyVelocity fly gets rolled back
+	return false
+end
+
+-- Anti-cheat section in Extra (visible seulement si ServerAuthority actif)
+local saCard = Instance.new("Frame")
+saCard.Name = "ServerAuthorityCard"
+saCard.Size = UDim2.new(1, -10, 0, 0)
+saCard.AutomaticSize = Enum.AutomaticSize.Y
+saCard.BackgroundColor3 = Color3.fromRGB(30, 15, 15)
+saCard.BorderSizePixel = 0
+saCard.LayoutOrder = 10
+saCard.Visible = false
+saCard.Parent = extraScroll
+createCorner(saCard, 8)
+createStroke(saCard, Color3.fromRGB(255, 100, 100), 1)
+
+local saLayout = Instance.new("UIListLayout")
+saLayout.SortOrder = Enum.SortOrder.LayoutOrder
+saLayout.Padding = UDim.new(0, 4)
+saLayout.Parent = saCard
+
+local saPad = Instance.new("UIPadding")
+saPad.PaddingTop = UDim.new(0, 8)
+saPad.PaddingBottom = UDim.new(0, 8)
+saPad.PaddingLeft = UDim.new(0, 12)
+saPad.PaddingRight = UDim.new(0, 12)
+saPad.Parent = saLayout
+
+local saTitle = Instance.new("TextLabel")
+saTitle.Size = UDim2.new(1, 0, 0, 20)
+saTitle.BackgroundTransparency = 1
+saTitle.Text = "[!] Server Authority detecte"
+saTitle.Font = Enum.Font.GothamBold
+saTitle.TextSize = 14
+saTitle.TextColor3 = Color3.fromRGB(255, 100, 100)
+saTitle.TextXAlignment = Enum.TextXAlignment.Left
+saTitle.LayoutOrder = 0
+saTitle.Parent = saCard
+
+local saWarn = Instance.new("TextLabel")
+saWarn.Size = UDim2.new(1, 0, 0, 30)
+saWarn.BackgroundTransparency = 1
+saWarn.Text = "Le serveur controle la physique. Fly/noclip peuvent etre annules. Active ces contournements :"
+saWarn.Font = Enum.Font.Gotham
+saWarn.TextSize = 12
+saWarn.TextColor3 = Color3.fromRGB(200, 150, 150)
+saWarn.TextWrapped = true
+saWarn.TextXAlignment = Enum.TextXAlignment.Left
+saWarn.LayoutOrder = 1
+saWarn.Parent = saCard
+
+local saBypassState = { anchoredFly = false, slowFly = false, remoteFly = false }
+
+createSwitch(saCard, "Fly Anchored (CFrame lock)", 2, function(on)
+	saBypassState.anchoredFly = on
+	if on and character and rootPart then
+		rootPart.Anchored = false
+		task.spawn(function()
+			while saBypassState.anchoredFly and character and rootPart do
+				pcall(function()
+					if flyState.flying then
+						-- Fly via CFrame au lieu de BodyVelocity (bypass SA)
+						local cam = Workspace.CurrentCamera
+						if cam then
+							local move = Vector3.zero
+							if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + cam.CFrame.LookVector end
+							if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - cam.CFrame.LookVector end
+							if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - cam.CFrame.RightVector end
+							if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + cam.CFrame.RightVector end
+							if move.Magnitude > 0 then
+								rootPart.CFrame = rootPart.CFrame + move.Unit * (flyState.speed or 50) * 0.016
+							end
+						end
+					end
+				end)
+				task.wait(0.016)
+			end
+		end)
+	end
+end)
+
+createSwitch(saCard, "Slow Fly (dans les limites WalkSpeed)", 3, function(on)
+	saBypassState.slowFly = on
+	if on and humanoid then
+		humanoid.WalkSpeed = 50 -- Dans les limites tolerables
+	end
+end)
+
+createSwitch(saCard, "Remote Fly (via RemoteEvent)", 4, function(on)
+	saBypassState.remoteFly = on
+	-- Tente de trouver un RemoteEvent de mouvement dans le jeu
+	if on then
+		task.spawn(function()
+			while saBypassState.remoteFly do
+				pcall(function()
+					for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
+						if obj:IsA("RemoteEvent") and (obj.Name:lower():match("move") or obj.Name:lower():match("teleport") or obj.Name:lower():match("position")) then
+							obj:FireServer({position = rootPart.Position + Vector3.new(0, 10, 0)})
+							break
+						end
+					end
+				end)
+				task.wait(0.5)
+			end
+		end)
+	end
+end)
+
+-- Check ServerAuthority au demarrage + periodicite
+task.spawn(function()
+	while true do
+		if isServerAuthority() then
+			saCard.Visible = true
+		end
+		task.wait(10)
+	end
+end)
+
 -- Bouton panique : ferme tout d'un coup (Shift+P)
 local panicEnabled = false
 createSwitch(extraScroll, "Bouton panique (Shift+P)", 0, function(on)
@@ -2036,14 +2175,30 @@ local function createProtectionSwitch(name, label, y)
 	end)
 end
 
--- Master switch: tout activer/desactiver
+-- Master switch: toggle TOUS les switches visuels (protections seulement)
 createSwitch(protectionsScroll, "TOUT ACTIVER / DESACTIVER", 10, function(on)
-	protectionsState.antiFling = on
-	protectionsState.antiSeat = on
-	protectionsState.antiTeleport = on
-	protectionsState.antiFall = on
-	protectionsState.antiKill = on
-	protectionsState.antiAFK = on
+	-- Toggle chaque switch individuel (appelle sa vraie callback)
+	for _, child in ipairs(protectionsScroll:GetChildren()) do
+		if child:IsA("TextButton") and child:FindFirstChild("Track") and child.Name ~= "MasterSwitch" then
+			-- Simuler un clic sur chaque switch
+			local knob = child.Track:FindFirstChild("Knob")
+			if knob then
+				local isCurrentlyOn = knob.Position.X.Scale > 0.5
+				-- Toggle seulement si l'etat actuel != l'etat desire
+				if on ~= isCurrentlyOn then
+					local connections = getconnections and getconnections(child.MouseButton1Click)
+					if connections then
+						for _, conn in ipairs(connections) do
+							conn:Fire()
+						end
+					else
+						-- Fallback: fire direct le MouseButton1Click
+						task.spawn(function() child.MouseButton1Click:Fire() end)
+					end
+				end
+			end
+		end
+	end
 	-- Mettre a jour les switches visuels
 	for _, child in ipairs(protectionsScroll:GetChildren()) do
 		if child:IsA("TextButton") and child:FindFirstChild("Track") then
@@ -2060,18 +2215,6 @@ createSwitch(protectionsScroll, "TOUT ACTIVER / DESACTIVER", 10, function(on)
 			protectionsState.lastSafeCFrame = rootPart.CFrame
 			protectionsState.lastHrpPosition = rootPart.Position
 		end
-	else
-		if protectionsState.antiSeatWatcher then
-			protectionsState.antiSeatWatcher:Disconnect()
-			protectionsState.antiSeatWatcher = nil
-		end
-		if protectionsState.antiSeatSitWatcher then
-			protectionsState.antiSeatSitWatcher:Disconnect()
-			protectionsState.antiSeatSitWatcher = nil
-		end
-		for _, obj in ipairs(Workspace:GetDescendants()) do
-			restoreSeat(obj)
-		end
 	end
 end)
 
@@ -2081,6 +2224,19 @@ createProtectionSwitch("antiTeleport", "Anti Teleport", 136)
 createProtectionSwitch("antiFall", "Anti Fall", 178)
 createProtectionSwitch("antiKill", "Anti Kill / Spawn TP", 220)
 createProtectionSwitch("antiAFK", "Anti AFK (5 min)", 262)
+
+-- Nouvelles protections anti-cheat
+protectionsState.antiSpeedHack = false
+protectionsState.antiReach = false
+protectionsState.antiGodMode = false
+protectionsState.antiInfiniteJump = false
+protectionsState.lastWalkSpeed = 16
+protectionsState.lastHealth = 100
+
+createProtectionSwitch("antiSpeedHack", "Anti Speed Hack", 304)
+createProtectionSwitch("antiReach", "Anti Reach (hitbox anormale)", 346)
+createProtectionSwitch("antiGodMode", "Anti God Mode (HP anormal)", 388)
+createProtectionSwitch("antiInfiniteJump", "Anti Infinite Jump", 430)
 
 RunService.Heartbeat:Connect(function()
 	updateCharacter()
@@ -2150,9 +2306,57 @@ RunService.Heartbeat:Connect(function()
 		end
 	end
 
+	-- Anti Speed Hack: bloquer WalkSpeed anormal (sauf si on l'a set nous-meme)
+	if protectionsState.antiSpeedHack then
+		local ws = humanoid.WalkSpeed
+		if ws > protectionsState.lastWalkSpeed + 50 then
+			humanoid.WalkSpeed = protectionsState.lastWalkSpeed
+		else
+			protectionsState.lastWalkSpeed = ws
+		end
+	end
+
+	-- Anti God Mode: bloquer HP qui remonte anormalement
+	if protectionsState.antiGodMode then
+		local hp = humanoid.Health
+		if hp > protectionsState.lastHealth + 200 then
+			humanoid.Health = protectionsState.lastHealth
+		else
+			protectionsState.lastHealth = hp
+		end
+	end
+
+	-- Anti Reach: detecter hitbox anormale des autres joueurs
+	if protectionsState.antiReach then
+		for _, plr in ipairs(Players:GetPlayers()) do
+			if plr ~= LocalPlayer and plr.Character then
+				for _, part in ipairs(plr.Character:GetDescendants()) do
+					if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+						local maxDim = math.max(part.Size.X, part.Size.Y, part.Size.Z)
+						if maxDim > 50 then
+							-- Hitbox anormale, ignorer ce joueur (ne pas casser le serveur)
+							pcall(function() part.LocalTransparencyModifier = 1 end)
+						end
+					end
+				end
+			end
+		end
+	end
+
 	if antiVoidState.enabled and pos.Y < -2000 and protectionsState.lastSafeCFrame then
 		rootPart.CFrame = protectionsState.lastSafeCFrame
 		rootPart.AssemblyLinearVelocity = Vector3.zero
+	end
+end)
+
+-- Anti Infinite Jump: empecher les autres de sauter indefiniment
+UserInputService.JumpRequest:Connect(function()
+	if protectionsState.antiInfiniteJump and character and humanoid then
+		-- Detecter si quelqu'un saute en l'air (pas au sol)
+		local state = humanoid:GetState()
+		if state ~= Enum.HumanoidStateType.Landed and state ~= Enum.HumanoidStateType.Running then
+			humanoid:ChangeState(Enum.HumanoidStateType.Landed)
+		end
 	end
 end)
 
