@@ -1619,11 +1619,7 @@ end)
 
 -- == SHUTDOWN ALL FEATURES ==
 local function shutdownPanel()
-	-- Forcer l'arret du fly meme pendant le decollage
-	if flyState then
-		flyState.decollage = false
-		if flyState.flying then stopFly() end
-	end
+	if flyState and flyState.flying then stopFly() end
 	if noclipState and noclipState.enabled then
 		noclipState.enabled = false
 		if noclipSwitch then noclipSwitch.set(false) end
@@ -2014,6 +2010,188 @@ local function createPlayerEntry(plr)
 	moveBadge.Parent = card
 	createCorner(moveBadge, 6)
 	createStroke(moveBadge, Color3.fromRGB(200, 80, 80), 1)
+
+	-- Cheat detection indicator (discreet red triangle)
+	local cheatAlert = Instance.new("TextButton")
+	cheatAlert.Name = "CheatAlert"
+	cheatAlert.Size = UDim2.new(0, 20, 0, 20)
+	cheatAlert.Position = UDim2.new(1, -60, 0, 4)
+	cheatAlert.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+	cheatAlert.Text = "!"
+	cheatAlert.Font = Enum.Font.GothamBold
+	cheatAlert.TextSize = 14
+	cheatAlert.TextColor3 = Color3.fromRGB(255, 255, 255)
+	cheatAlert.BorderSizePixel = 0
+	cheatAlert.AutoButtonColor = false
+	cheatAlert.Visible = false
+	cheatAlert.Parent = card
+	createCorner(cheatAlert, 10)
+	createStroke(cheatAlert, Color3.fromRGB(255, 100, 100), 1)
+
+	-- Check for logs periodically
+	task.spawn(function()
+		while card and card.Parent and plr and plr.Parent do
+			local logs = _G._agoraCheatLogs and _G._agoraCheatLogs[plr.UserId]
+			if logs and #logs > 0 then
+				cheatAlert.Visible = true
+			else
+				cheatAlert.Visible = false
+			end
+			task.wait(3)
+		end
+	end)
+
+	-- Click to open logs popup
+	cheatAlert.MouseButton1Click:Connect(function()
+		pcall(function()
+			local existing = screenGui:FindFirstChild("_CheatLogs_" .. plr.Name)
+			if existing then existing:Destroy() return end
+
+			local logs = _G._agoraCheatLogs and _G._agoraCheatLogs[plr.UserId] or {}
+			local win = Instance.new("Frame")
+			win.Name = "_CheatLogs_" .. plr.Name
+			win.Size = UDim2.new(0, 340, 0, 380)
+			win.Position = UDim2.new(0.5, -170, 0.5, -190)
+			win.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+			win.BorderSizePixel = 0
+			win.Active = true
+			win.ZIndex = 100
+			local okp, par = pcall(function() return game:GetService("CoreGui") end)
+			if not okp or not par then par = LocalPlayer:WaitForChild("PlayerGui") end
+			win.Parent = screenGui
+			createCorner(win, 10)
+			createStroke(win, Color3.fromRGB(200, 80, 80), 1)
+
+			-- Drag
+			local dragOff = nil
+			win.InputBegan:Connect(function(inp)
+				if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+					dragOff = inp.Position - win.Position
+				end
+			end)
+			win.InputChanged:Connect(function(inp)
+				if dragOff and (inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch) then
+					win.Position = UDim2.new(0, inp.Position.X - dragOff.X, 0, inp.Position.Y - dragOff.Y)
+				end
+			end)
+			win.InputEnded:Connect(function(inp)
+				if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+					dragOff = nil
+				end
+			end)
+
+			-- Title
+			local title = Instance.new("TextLabel")
+			title.Size = UDim2.new(1, -40, 0, 30)
+			title.Position = UDim2.new(0, 10, 0, 8)
+			title.BackgroundTransparency = 1
+			title.Text = "Activity Log - " .. plr.Name
+			title.Font = Enum.Font.GothamBold
+			title.TextSize = 15
+			title.TextColor3 = Color3.fromRGB(220, 220, 240)
+			title.TextXAlignment = Enum.TextXAlignment.Left
+			title.Parent = win
+
+			-- Close button
+			local closeX = Instance.new("TextButton")
+			closeX.Size = UDim2.new(0, 26, 0, 26)
+			closeX.Position = UDim2.new(1, -32, 0, 6)
+			closeX.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+			closeX.Text = "X"
+			closeX.Font = Enum.Font.GothamBold
+			closeX.TextSize = 13
+			closeX.TextColor3 = Color3.fromRGB(255, 255, 255)
+			closeX.BorderSizePixel = 0
+			closeX.Parent = win
+			createCorner(closeX, 6)
+			closeX.MouseButton1Click:Connect(function() win:Destroy() end)
+
+			-- Scroll for logs
+			local scroll = Instance.new("ScrollingFrame")
+			scroll.Size = UDim2.new(1, -16, 1, -50)
+			scroll.Position = UDim2.new(0, 8, 0, 42)
+			scroll.BackgroundTransparency = 1
+			scroll.BorderSizePixel = 0
+			scroll.ScrollBarThickness = 4
+			scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+			scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+			scroll.Parent = win
+
+			local layout = Instance.new("UIListLayout")
+			layout.Padding = UDim.new(0, 4)
+			layout.SortOrder = Enum.SortOrder.LayoutOrder
+			layout.Parent = scroll
+
+			if #logs == 0 then
+				local empty = Instance.new("TextLabel")
+				empty.Size = UDim2.new(1, -10, 0, 28)
+				empty.BackgroundTransparency = 1
+				empty.Text = "No activity logged"
+				empty.Font = Enum.Font.Gotham
+				empty.TextSize = 13
+				empty.TextColor3 = Color3.fromRGB(140, 140, 160)
+				empty.Parent = scroll
+			else
+				for idx, log in ipairs(logs) do
+					local row = Instance.new("Frame")
+					row.Size = UDim2.new(1, -6, 0, 0)
+					row.AutomaticSize = Enum.AutomaticSize.Y
+					row.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+					row.BorderSizePixel = 0
+					row.LayoutOrder = idx
+					row.Parent = scroll
+					createCorner(row, 6)
+
+					local sevColor = Color3.fromRGB(100, 180, 255)
+					if log.severity == "warn" then sevColor = Color3.fromRGB(255, 200, 80)
+					elseif log.severity == "alert" then sevColor = Color3.fromRGB(255, 100, 100) end
+
+					local sevBar = Instance.new("Frame")
+					sevBar.Size = UDim2.new(0, 3, 1, -4)
+					sevBar.Position = UDim2.new(0, 2, 0, 2)
+					sevBar.BackgroundColor3 = sevColor
+					sevBar.BorderSizePixel = 0
+					sevBar.Parent = row
+					createCorner(sevBar, 2)
+
+					local timeLbl = Instance.new("TextLabel")
+					timeLbl.Size = UDim2.new(0, 70, 0, 18)
+					timeLbl.Position = UDim2.new(0, 10, 0, 4)
+					timeLbl.BackgroundTransparency = 1
+					timeLbl.Text = log.time
+					timeLbl.Font = Enum.Font.GothamMonospace
+					timeLbl.TextSize = 11
+					timeLbl.TextColor3 = sevColor
+					timeLbl.TextXAlignment = Enum.TextXAlignment.Left
+					timeLbl.Parent = row
+
+					local typeLbl = Instance.new("TextLabel")
+					typeLbl.Size = UDim2.new(1, -90, 0, 18)
+					typeLbl.Position = UDim2.new(0, 84, 0, 4)
+					typeLbl.BackgroundTransparency = 1
+					typeLbl.Text = log.type
+					typeLbl.Font = Enum.Font.GothamBold
+					typeLbl.TextSize = 12
+					typeLbl.TextColor3 = Color3.fromRGB(230, 230, 240)
+					typeLbl.TextXAlignment = Enum.TextXAlignment.Left
+					typeLbl.Parent = row
+
+					local detLbl = Instance.new("TextLabel")
+					detLbl.Size = UDim2.new(1, -90, 0, 16)
+					detLbl.Position = UDim2.new(0, 84, 0, 22)
+					detLbl.BackgroundTransparency = 1
+					detLbl.Text = log.detail
+					detLbl.Font = Enum.Font.Gotham
+					detLbl.TextSize = 11
+					detLbl.TextColor3 = Color3.fromRGB(160, 160, 180)
+					detLbl.TextXAlignment = Enum.TextXAlignment.Left
+					detLbl.Parent = row
+				end
+			end
+
+			scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 8)
+		end)
+	end)
 
 	local infoLeft = Instance.new("TextLabel")
 	infoLeft.Size = UDim2.new(0.55, -6, 0, 14)
@@ -3920,15 +4098,13 @@ local function bootSequence(onComplete)
 end
 
 -- ============= MOVE =============
-local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
+local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
 local noclipState = { enabled = false }
 local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
 local platformState = { enabled = false, part = nil, y = 0, offset = 0 }
 
 local function stopFly()
-	-- Arreter le decollage si en cours
-	flyState.decollage = false
 	if not flyState.flying then return end
 	flyState.flying = false
 	if flyState.loop then flyState.loop:Disconnect() flyState.loop = nil end
@@ -4096,10 +4272,9 @@ local function startFly()
 	pcall(function() playSound(6042053626, 0.12) end)
 	
 	-- Animer le decollage en douceur (0.4s)
-	flyState.decollage = true
 	local decollageT = 0
 	local decollageDuration = 0.4
-	while decollageT < decollageDuration and flyState.decollage do
+	while decollageT < decollageDuration do
 		local dt = task.wait()
 		decollageT = decollageT + dt
 		local alpha = math.min(1, decollageT / decollageDuration)
@@ -4112,13 +4287,6 @@ local function startFly()
 				if humanoid then humanoid.PlatformStand = true end
 			end
 		end)
-	end
-	flyState.decollage = false
-	
-	-- Si le decollage a ete annule (stopFly pendant le decollage), ne pas activer le fly
-	if not flyState.decollage and not flyState.flying then
-		-- Verifier si stopFly a ete appele pendant le decollage
-		-- (flyState.flying reste false, on sort juste)
 	end
 	
 	-- Activer le fly apres le decollage
