@@ -4497,3 +4497,8 @@ end)(mainFrame)
 		end)
 	end)
 end)(pages, switchTab)
+
+-- Export p2 switches to _G for auto-update restore
+_G["hitboxSwitch"] = hitboxSwitch
+_G["clickTPSwitch"] = clickTPSwitch
+_G["autoClickSwitch"] = autoClickSwitch
