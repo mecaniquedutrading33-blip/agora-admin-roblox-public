@@ -685,7 +685,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.57"
+	_G.CURRENT_VERSION = "v39.56"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -4080,19 +4080,47 @@ end)(flyState, screenGui)
 local function startFly()
 	updateCharacter()
 	if flyState.flying or not rootPart then return end
+	
+	-- Decollage doux : lever legerement du sol avant d'activer le fly
+	local decollageHeight = 2
+	local startY = rootPart.Position.Y
+	local targetY = startY + decollageHeight
+	
+	-- Son de demarrage fly (tres doux)
+	pcall(function() playSound(6042053626, 0.12) end)
+	
+	-- Animer le decollage en douceur (0.4s)
+	local decollageT = 0
+	local decollageDuration = 0.4
+	while decollageT < decollageDuration do
+		local dt = task.wait()
+		decollageT = decollageT + dt
+		local alpha = math.min(1, decollageT / decollageDuration)
+		-- Easing doux (ease-out)
+		local eased = 1 - (1 - alpha) * (1 - alpha)
+		pcall(function()
+			if rootPart and rootPart.Parent then
+				local cur = rootPart.Position
+				rootPart.CFrame = CFrame.new(cur.X, startY + (targetY - startY) * eased, cur.Z)
+				if humanoid then humanoid.PlatformStand = true end
+			end
+		end)
+	end
+	
+	-- Activer le fly apres le decollage
 	flyState.flying = true
-
+	
 	flyState.gyro = Instance.new("BodyGyro")
 	flyState.gyro.P = 9e4
 	flyState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
 	flyState.gyro.CFrame = rootPart.CFrame
 	flyState.gyro.Parent = rootPart
-
+	
 	flyState.vel = Instance.new("BodyVelocity")
 	flyState.vel.Velocity = Vector3.zero
 	flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 	flyState.vel.Parent = rootPart
-
+	
 	if humanoid then humanoid.PlatformStand = true end
 
 	-- Show mobile UI on touch devices
