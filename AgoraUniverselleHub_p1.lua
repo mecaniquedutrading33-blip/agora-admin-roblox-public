@@ -685,7 +685,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.56"
+	_G.CURRENT_VERSION = "v39.60"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -4303,21 +4303,21 @@ local function startFly()
 		local decollageT = 0
 		local decollageDuration = 0
 		while decollageT < decollageDuration and flyState.decollage do
-			local dt = task.wait()
-			decollageT = decollageT + dt
-			local alpha = math.min(1, decollageT / decollageDuration)
-			local eased = 1 - (1 - alpha) * (1 - alpha)
-			pcall(function()
-				if rootPart and rootPart.Parent then
-					local cur = rootPart.Position
-					local newY = startY + (targetY - startY) * eased
-					-- Preserver X/Z + rotation, seulement changer Y
-					rootPart.CFrame = CFrame.new(cur.X, newY, cur.Z) * startRot
-					-- Le BodyGyro suit la camera en continu pendant le decollage
-					if flyState.gyro then flyState.gyro.CFrame = Camera.CFrame end
-				end
-			)
-		end
+		                local dt = task.wait()
+		                decollageT = decollageT + dt
+		                local alpha = math.min(1, decollageT / decollageDuration)
+		                local eased = 1 - (1 - alpha) * (1 - alpha)
+		                pcall(function()
+		                    if rootPart and rootPart.Parent then
+		                        local cur = rootPart.Position
+		                        local newY = startY + (targetY - startY) * eased
+		                        -- Preserver X/Z + rotation, seulement changer Y
+		                        rootPart.CFrame = CFrame.new(cur.X, newY, cur.Z) * startRot
+		                        -- Le BodyGyro suit la camera en continu pendant le decollage
+		                        if flyState.gyro then flyState.gyro.CFrame = Camera.CFrame end
+		                    end
+		                end)
+		            end
 
 		flyState.decollage = false
 
