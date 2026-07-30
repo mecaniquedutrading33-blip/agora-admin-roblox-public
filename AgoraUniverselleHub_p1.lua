@@ -776,8 +776,8 @@ local protectionsPage = createTab("Protections")
 			if data then
 				local ok, json = pcall(function() return HttpService:JSONDecode(data) end)
 				if ok and json then
-					agoraStats.totalLaunches = json.total_launches or json.totalLaunches or 0
-					agoraStats.onlineUsers = json.online_users or json.onlineUsers or 0
+					agoraStats.totalLaunches = json.totalLaunches or 0
+					agoraStats.onlineUsers = json.onlineUsers or 0
 					pcall(function() if totalLabel then totalLabel.Text = (translations[langCode] or translations["FR"]).utilisateurs .. ": " .. agoraStats.totalLaunches end end)
 					pcall(function() if onlineLabel then onlineLabel.Text = (translations[langCode] or translations["FR"]).enLigne .. ": " .. agoraStats.onlineUsers end end)
 				end
@@ -896,89 +896,37 @@ local protectionsPage = createTab("Protections")
 		entryLabel.Parent = changelogCard
 	end
 	
-	-- Stats card (utilisateurs + en ligne, 2 colonnes)
+	-- Stats card (utilisateurs + en ligne)
 	local statsCard = Instance.new("Frame")
-	statsCard.Size = UDim2.new(1, -8, 0, 60)
+	statsCard.Size = UDim2.new(1, -8, 0, 50)
 	statsCard.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
 	statsCard.BorderSizePixel = 0
 	statsCard.LayoutOrder = 3
 	statsCard.Parent = homeScroll
 	createCorner(statsCard, 10)
 	createStroke(statsCard, Color3.fromRGB(50, 50, 70), 1)
-
-	-- Left column: total users
-	local totalIcon = Instance.new("TextLabel")
-	totalIcon.Size = UDim2.new(0, 30, 0, 30)
-	totalIcon.Position = UDim2.new(0, 10, 0, 15)
-	totalIcon.BackgroundTransparency = 1
-	totalIcon.Text = "()"
-	totalIcon.Font = Enum.Font.GothamBold
-	totalIcon.TextSize = 18
-	totalIcon.TextColor3 = Color3.fromRGB(100, 180, 255)
-	totalIcon.Parent = statsCard
-
+	
 	local totalLabel = Instance.new("TextLabel")
-	totalLabel.Size = UDim2.new(0.45, -45, 0, 20)
-	totalLabel.Position = UDim2.new(0, 42, 0, 12)
+	totalLabel.Size = UDim2.new(1, -16, 0, 20)
+	totalLabel.Position = UDim2.new(0, 8, 0, 6)
 	totalLabel.BackgroundTransparency = 1
 	totalLabel.Text = "Utilisateurs: ..."
 	totalLabel.Font = Enum.Font.GothamSemibold
-	totalLabel.TextSize = 13
+	totalLabel.TextSize = 14
 	totalLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
 	totalLabel.TextXAlignment = Enum.TextXAlignment.Left
 	totalLabel.Parent = statsCard
-
-	local totalSubLabel = Instance.new("TextLabel")
-	totalSubLabel.Size = UDim2.new(0.45, -45, 0, 14)
-	totalSubLabel.Position = UDim2.new(0, 42, 0, 32)
-	totalSubLabel.BackgroundTransparency = 1
-	totalSubLabel.Text = "lancements totaux"
-	totalSubLabel.Font = Enum.Font.Gotham
-	totalSubLabel.TextSize = 10
-	totalSubLabel.TextColor3 = Color3.fromRGB(120, 120, 140)
-	totalSubLabel.TextXAlignment = Enum.TextXAlignment.Left
-	totalSubLabel.Parent = statsCard
-
-	-- Divider
-	local statsDiv = Instance.new("Frame")
-	statsDiv.Size = UDim2.new(0, 1, 0, 40)
-	statsDiv.Position = UDim2.new(0.5, 0, 0, 10)
-	statsDiv.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-	statsDiv.BorderSizePixel = 0
-	statsDiv.Parent = statsCard
-
-	-- Right column: online
-	local onlineIcon = Instance.new("TextLabel")
-	onlineIcon.Size = UDim2.new(0, 30, 0, 30)
-	onlineIcon.Position = UDim2.new(0.5, 12, 0, 15)
-	onlineIcon.BackgroundTransparency = 1
-	onlineIcon.Text = "*"
-	onlineIcon.Font = Enum.Font.GothamBold
-	onlineIcon.TextSize = 20
-	onlineIcon.TextColor3 = Color3.fromRGB(120, 220, 140)
-	onlineIcon.Parent = statsCard
-
+	
 	local onlineLabel = Instance.new("TextLabel")
-	onlineLabel.Size = UDim2.new(0.45, -45, 0, 20)
-	onlineLabel.Position = UDim2.new(0.5, 42, 0, 12)
+	onlineLabel.Size = UDim2.new(1, -16, 0, 20)
+	onlineLabel.Position = UDim2.new(0, 8, 0, 28)
 	onlineLabel.BackgroundTransparency = 1
 	onlineLabel.Text = "En ligne: ..."
 	onlineLabel.Font = Enum.Font.GothamSemibold
-	onlineLabel.TextSize = 13
+	onlineLabel.TextSize = 14
 	onlineLabel.TextColor3 = Color3.fromRGB(120, 220, 140)
 	onlineLabel.TextXAlignment = Enum.TextXAlignment.Left
 	onlineLabel.Parent = statsCard
-
-	local onlineSubLabel = Instance.new("TextLabel")
-	onlineSubLabel.Size = UDim2.new(0.45, -45, 0, 14)
-	onlineSubLabel.Position = UDim2.new(0.5, 42, 0, 32)
-	onlineSubLabel.BackgroundTransparency = 1
-	onlineSubLabel.Text = "maintenant"
-	onlineSubLabel.Font = Enum.Font.Gotham
-	onlineSubLabel.TextSize = 10
-	onlineSubLabel.TextColor3 = Color3.fromRGB(120, 120, 140)
-	onlineSubLabel.TextXAlignment = Enum.TextXAlignment.Left
-	onlineSubLabel.Parent = statsCard
 	
 	-- Discord button
 	local discordBtn = Instance.new("TextButton")
@@ -4150,13 +4098,18 @@ local function bootSequence(onComplete)
 end
 
 -- ============= MOVE =============
-local flyState = { flying = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
+local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
 local noclipState = { enabled = false }
 local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
 local platformState = { enabled = false, part = nil, y = 0, offset = 0 }
 
 local function stopFly()
+	-- Arreter le decollage si en cours
+	flyState.decollage = false
+	-- Nettoyer le gyro/vel meme pendant le decollage (avant que flying = true)
+	if flyState.gyro then flyState.gyro:Destroy() flyState.gyro = nil end
+	if flyState.vel then flyState.vel:Destroy() flyState.vel = nil end
 	if not flyState.flying then return end
 	flyState.flying = false
 	if flyState.loop then flyState.loop:Disconnect() flyState.loop = nil end
@@ -4315,39 +4268,14 @@ local function startFly()
 	updateCharacter()
 	if flyState.flying or not rootPart then return end
 	
-	-- Decollage doux : lever legerement du sol avant d'activer le fly
-	local decollageHeight = 2
-	local startY = rootPart.Position.Y
-	local targetY = startY + decollageHeight
-	
 	-- Son de demarrage fly (tres doux)
 	pcall(function() playSound(6042053626, 0.12) end)
 	
-	-- Animer le decollage en douceur (0.4s)
-	local decollageT = 0
-	local decollageDuration = 0.4
-	while decollageT < decollageDuration do
-		local dt = task.wait()
-		decollageT = decollageT + dt
-		local alpha = math.min(1, decollageT / decollageDuration)
-		-- Easing doux (ease-out)
-		local eased = 1 - (1 - alpha) * (1 - alpha)
-		pcall(function()
-			if rootPart and rootPart.Parent then
-				local cur = rootPart.Position
-				rootPart.CFrame = CFrame.new(cur.X, startY + (targetY - startY) * eased, cur.Z)
-				if humanoid then humanoid.PlatformStand = true end
-			end
-		end)
-	end
-	
-	-- Activer le fly apres le decollage
-	flyState.flying = true
-	
+	-- Creer BodyGyro + BodyVelocity AVANT le decollage pour garder le follow camera
 	flyState.gyro = Instance.new("BodyGyro")
 	flyState.gyro.P = 9e4
 	flyState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-	flyState.gyro.CFrame = rootPart.CFrame
+	flyState.gyro.CFrame = Camera.CFrame
 	flyState.gyro.Parent = rootPart
 	
 	flyState.vel = Instance.new("BodyVelocity")
@@ -4356,6 +4284,36 @@ local function startFly()
 	flyState.vel.Parent = rootPart
 	
 	if humanoid then humanoid.PlatformStand = true end
+	
+	-- Decollage doux : lever en preservant la rotation
+	local decollageHeight = 2
+	local startY = rootPart.Position.Y
+	local targetY = startY + decollageHeight
+	local startRot = rootPart.CFrame.Rotation
+	
+	flyState.decollage = true
+	local decollageT = 0
+	local decollageDuration = 0.4
+	while decollageT < decollageDuration and flyState.decollage do
+		local dt = task.wait()
+		decollageT = decollageT + dt
+		local alpha = math.min(1, decollageT / decollageDuration)
+		local eased = 1 - (1 - alpha) * (1 - alpha)
+		pcall(function()
+			if rootPart and rootPart.Parent then
+				local cur = rootPart.Position
+				local newY = startY + (targetY - startY) * eased
+				-- Preserver X/Z + rotation, seulement changer Y
+				rootPart.CFrame = CFrame.new(cur.X, newY, cur.Z) * startRot
+				-- Le BodyGyro suit la camera en continu pendant le decollage
+				if flyState.gyro then flyState.gyro.CFrame = Camera.CFrame end
+			end
+		end)
+	end
+	flyState.decollage = false
+	
+	if not rootPart or not rootPart.Parent then return end
+	flyState.flying = true
 
 	-- Show mobile UI on touch devices
 	if flyState.isMobile and flyState.isMobile() and flyState.showMobileUi then
@@ -5237,12 +5195,11 @@ task.delay(10, function()
                                             if g:IsA("ScreenGui") and (g.Name:match("Agora") or g.Name:match("Milan")) and g ~= aG then g:Destroy() end
                                         end
                                     end)
-                                    aL.Text = "Redemarrage... (vidage cache)"
+                                    aL.Text = "Redemarrage..."
                                     _G._agoraAU = nil
                                     _G._agoraUpdating = nil
-                                    task.wait(2)
-                                    -- URL avec double cache-buster: tick() + random pour forcer Solara a re-fetch
-                                    local rU = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache=" .. tostring(tick()) .. "&r=" .. tostring(math.random(100000, 999999))
+                                    task.wait(0.3)
+                                    local rU = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache=" .. tostring(tick())
                                     local okR, code2 = pcall(function() return game:HttpGet(rU, true) end)
                                     if okR and code2 and #code2 > 100 then
                                         aG:Destroy()
