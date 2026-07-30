@@ -4277,7 +4277,7 @@ local function startFly()
 	if flyState.flying or not rootPart then return end
 	
 	-- Son de demarrage fly (tres doux)
-	pcall(function() playSound(6042053626, 0.12) end)
+--	pcall(function() playSound(6042053626, 0.12) end)
 	
 	-- Creer BodyGyro + BodyVelocity AVANT le decollage pour garder le follow camera
 	flyState.gyro = Instance.new("BodyGyro")
@@ -5106,7 +5106,7 @@ task.delay(10, function()
                             t.Size = UDim2.new(1, -20, 0, 30)
                             t.Position = UDim2.new(0, 10, 0, 8)
                             t.BackgroundTransparency = 1
-                            t.Text = "Mise a jour disponible"
+                            t.Text = "[Agora] Mise a jour disponible"
                             t.TextColor3 = Color3.fromRGB(100, 200, 255)
                             t.Font = Enum.Font.GothamBold
                             t.TextSize = 15
@@ -5115,7 +5115,8 @@ task.delay(10, function()
                             d.Size = UDim2.new(1, -20, 0, 35)
                             d.Position = UDim2.new(0, 10, 0, 32)
                             d.BackgroundTransparency = 1
-                            d.Text = "Version " .. rv .. " disponible\nVous avez " .. cv
+                            d.Text = "Version " .. rv .. " du panel Agora\nVotre version: " .. cv
+                            pcall(function() playSound(9114850423, 0.2) end)
                             d.TextColor3 = Color3.fromRGB(200, 200, 210)
                             d.Font = Enum.Font.Gotham
                             d.TextSize = 13
