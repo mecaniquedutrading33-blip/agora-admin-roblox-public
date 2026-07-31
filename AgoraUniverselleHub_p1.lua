@@ -716,7 +716,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.72"
+	_G.CURRENT_VERSION = "v39.73"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -2479,7 +2479,7 @@ local function createPlayerEntry(plr)
 	-- Bouton Pin (epingler en haut de la liste)
 	local pinBtn = Instance.new("TextButton")
 	pinBtn.Size = UDim2.new(0, 28, 0, 18)
-	pinBtn.Position = UDim2.new(0, 5, 0, 4)
+	pinBtn.Position = UDim2.new(1, -34, 0, 4)
 	pinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 	pinBtn.Text = "Pin"
 	pinBtn.Font = Enum.Font.GothamSemibold
