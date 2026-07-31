@@ -194,19 +194,21 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	char:WaitForChild("Humanoid")
 	task.wait(0.2)
 	updateCharacter()
-	if flyState.flying then
-		stopFly()
+	-- Utiliser _G car flyState/noclipState/stopFly sont definis plus loin
+	local fs = _G["flyState"]
+	if fs and fs.flying then
+		pcall(function() _G["stopFly"]() end)
 	end
-	if noclipState.enabled then
-		-- Le perso est mort, re-appliquer le noclip sur le nouveau character
-		noclipState.enabled = false
+	-- NoClip: re-appliquer apres respawn
+	local ns = _G._agora_noclipState
+	local sw = _G._agora_noclipSwitch
+	if ns and ns.enabled then
 		-- Deconnecter l'ancienne boucle
-		if noclipState.loop then
-			noclipState.loop:Disconnect()
-			noclipState.loop = nil
+		if ns.loop then
+			ns.loop:Disconnect()
+			ns.loop = nil
 		end
 		-- Re-activer le noclip sur le nouveau perso
-		task.wait(0.1)
 		if character then
 			for _, p in ipairs(character:GetDescendants()) do
 				if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
@@ -214,10 +216,9 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 				end
 			end
 		end
-		noclipState.enabled = true
-		noclipState.loop = RunService.RenderStepped:Connect(function()
+		ns.loop = RunService.RenderStepped:Connect(function()
 			updateCharacter()
-			if not noclipState.enabled then return end
+			if not ns.enabled then return end
 			if character then
 				for _, p in ipairs(character:GetDescendants()) do
 					if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
@@ -227,10 +228,12 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 			end
 		end)
 		-- Garder le switch ON
-		if noclipSwitch then noclipSwitch.set(true) end
+		if sw then sw.set(true) end
 	end
-	if espState.enabled or globalESPEnabled then
-		refreshESP()
+	-- ESP
+	local es = _G["espState"]
+	if es and (es.enabled or _G["globalESPEnabled"]) then
+		pcall(function() _G["refreshESP"]() end)
 	end
 end)
 
@@ -713,11 +716,12 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.68"
+	_G.CURRENT_VERSION = "v39.69"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v39.68: NoClip survive respawn (re-applique apres mort)",
+		"v39.69: Fix NoClip/fly apres mort (scope _G au lieu de locals non-definis)",
+		"v39.68: NoClip survive respawn",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
 		"v39.66: Fly assis garde position assise + Animate actif",
 		"v39.65: Fly garde le siege (vehicule) + fix position chute",
@@ -4155,6 +4159,7 @@ end
 -- ============= MOVE =============
 local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false, currentVel = Vector3.zero, targetVel = Vector3.zero, seatPart = nil }
 local noclipState = { enabled = false, loop = nil }
+_G._agora_noclipState = noclipState
 local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
 local platformState = { enabled = false, part = nil, y = 0, offset = 0 }
@@ -4775,6 +4780,7 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 		end
 	end
 end)
+_G._agora_noclipSwitch = noclipSwitch
 
 local PathfindingService = game:GetService("PathfindingService")
 
