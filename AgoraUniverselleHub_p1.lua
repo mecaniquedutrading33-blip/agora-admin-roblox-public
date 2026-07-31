@@ -258,7 +258,6 @@ local function createStroke(parent, color, thickness)
 	local s = Instance.new("UIStroke")
 	s.Color = color or Color3.fromRGB(60, 60, 60)
 	s.Thickness = thickness or 1
-	s.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 	s.Parent = parent
 	return s
 end
@@ -691,7 +690,6 @@ local function createTab(name)
 	btn.TextColor3 = Color3.fromRGB(160, 160, 160)
 	btn.BorderSizePixel = 0
 	btn.AutoButtonColor = false
-	btn.TextTruncate = Enum.TextTruncate.AtEnd
 	btn.Parent = tabHolder
 	createCorner(btn, 6)
 	btn.MouseButton1Click:Connect(function() switchTab(name) end)
@@ -722,8 +720,8 @@ local protectionsPage = createTab("Protections")
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v39.74: Fix compteurs Home + contours remotes + textes debordent + scrolls auto",
-		"v39.72: Pin joueur (epingler en haut) + notification depart + systeme notif visuel",
+		"v39.74: Langues scroll fix + SA multi-detection + Force Local + tools server + cheat thresholds",
+		"v39.73: Pin joueur (epingler en haut) + notification depart + systeme notif visuel",
 		"v39.71: Fly garde pose debout naturel",
 		"v39.70: Fix position chute en fly",
 		"v39.69: Fix NoClip/fly apres mort (scope _G)",
@@ -763,20 +761,20 @@ local protectionsPage = createTab("Protections")
 	
 	-- Translations (14 langues)
 	local translations = {
-		FR = {Home="Accueil", Joueurs="Joueurs", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registre", Local="Local", Protections="Protections", nouveautes="Nouveautes", discord="Rejoindre le Discord", langue="Langue", credits="Agora Hub [UNIVERSELLE]", utilisateurs="Utilisateurs", enLigne="En ligne"},
-		EN = {Home="Home", Joueurs="Players", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registry", Local="Local", Protections="Protections", nouveautes="Changelog", discord="Join Discord", langue="Language", credits="Agora Hub [UNIVERSELLE]", utilisateurs="Users", enLigne="Online"},
-		ES = {Home="Inicio", Joueurs="Jugadores", Move="Mover", Extra="Extra", Remotes="Remotos", Registry="Registro", Local="Local", Protections="Protecciones", nouveautes="Novedades", discord="Unirse a Discord", langue="Idioma", credits="Agora Hub [UNIVERSELLE]", utilisateurs="Usuarios", enLigne="En linea"},
-		DE = {Home="Start", Joueurs="Spieler", Move="Bewegen", Extra="Extra", Remotes="Remotes", Registry="Register", Local="Lokal", Protections="Schutz", nouveautes="Neuigkeiten", discord="Discord beitreten", langue="Sprache", credits="Agora Hub [UNIVERSELLE]", utilisateurs="Benutzer", enLigne="Online"},
-		PT = {Home="Inicio", Joueurs="Jogadores", Move="Mover", Extra="Extra", Remotes="Remotos", Registry="Registro", Local="Local", Protections="Protecoes", nouveautes="Novidades", discord="Entrar no Discord", langue="Idioma", credits="Agora Hub [UNIVERSELLE]", utilisateurs="Usuarios", enLigne="Online"},
-		IT = {Home="Home", Joueurs="Giocatori", Move="Muovi", Extra="Extra", Remotes="Remoti", Registry="Registro", Local="Locale", Protections="Protezioni", nouveautes="Novita", discord="Unisciti a Discord", langue="Lingua", credits="Agora Hub [UNIVERSELLE]", utilisateurs="Utenti", enLigne="Online"},
-		RU = {Home="", Joueurs="", Move="", Extra="", Remotes="", Registry="", Local="", Protections="", nouveautes="", discord="Discord", langue="", credits="Agora Hub [UNIVERSELLE]", utilisateurs="", enLigne=""},
-		ZH = {Home="", Joueurs="", Move="", Extra="", Remotes="", Registry="", Local="", Protections="", nouveautes="", discord="Discord", langue="", credits="Agora Hub [UNIVERSELLE]", utilisateurs="", enLigne=""},
-		JA = {Home="", Joueurs="", Move="", Extra="", Remotes="", Registry="", Local="", Protections="", nouveautes="", discord="Discord", langue="", credits="Agora Hub [UNIVERSELLE]", utilisateurs="", enLigne=""},
-		KO = {Home="", Joueurs="", Move="", Extra="", Remotes="", Registry="", Local="", Protections="", nouveautes="", discord="Discord ", langue="", credits="Agora Hub [UNIVERSELLE]", utilisateurs="", enLigne=""},
-		AR = {Home="", Joueurs="", Move="", Extra="", Remotes=" ", Registry="", Local="", Protections="", nouveautes="", discord="  Discord", langue="", credits="Agora Hub [UNIVERSELLE]", utilisateurs="", enLigne=""},
-		NL = {Home="Home", Joueurs="Spelers", Move="Bewegen", Extra="Extra", Remotes="Extern", Registry="Register", Local="Lokaal", Protections="Bescherming", nouveautes="Nieuws", discord="Word lid van Discord", langue="Taal", credits="Agora Hub [UNIVERSELLE]", utilisateurs="Gebruikers", enLigne="Online"},
-		PL = {Home="Strona gowna", Joueurs="Gracze", Move="Ruch", Extra="Dodatki", Remotes="Zdalne", Registry="Rejestr", Local="Lokalne", Protections="Ochrona", nouveautes="Aktualnosci", discord="Doacz do Discord", langue="Jezyk", credits="Agora Hub [UNIVERSELLE]", utilisateurs="Uzytkownicy", enLigne="Online"},
-		TR = {Home="Ana Sayfa", Joueurs="Oyuncular", Move="Hareket", Extra="Ekstra", Remotes="Uzaktan", Registry="Kayt", Local="Yerel", Protections="Koruma", nouveautes="Guncellemeler", discord="Discord'a Katl", langue="Dil", credits="Agora Hub [UNIVERSELLE]", utilisateurs="Kullanclar", enLigne="Cevrimici"}
+		FR = {Home="Accueil", Joueurs="Joueurs", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registre", Local="Local", Protections="Protections", nouveautes="Nouveautes", discord="Rejoindre le Discord", langue="Langue", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Utilisateurs", enLigne="En ligne"},
+		EN = {Home="Home", Joueurs="Players", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registry", Local="Local", Protections="Protections", nouveautes="Changelog", discord="Join Discord", langue="Language", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Users", enLigne="Online"},
+		ES = {Home="Inicio", Joueurs="Jugadores", Move="Mover", Extra="Extra", Remotes="Remotos", Registry="Registro", Local="Local", Protections="Protecciones", nouveautes="Novedades", discord="Unirse a Discord", langue="Idioma", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Usuarios", enLigne="En linea"},
+		DE = {Home="Start", Joueurs="Spieler", Move="Bewegen", Extra="Extra", Remotes="Remotes", Registry="Register", Local="Lokal", Protections="Schutz", nouveautes="Neuigkeiten", discord="Discord beitreten", langue="Sprache", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Benutzer", enLigne="Online"},
+		PT = {Home="Inicio", Joueurs="Jogadores", Move="Mover", Extra="Extra", Remotes="Remotos", Registry="Registro", Local="Local", Protections="Protecoes", nouveautes="Novidades", discord="Entrar no Discord", langue="Idioma", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Usuarios", enLigne="Online"},
+		IT = {Home="Home", Joueurs="Giocatori", Move="Muovi", Extra="Extra", Remotes="Remoti", Registry="Registro", Local="Locale", Protections="Protezioni", nouveautes="Novita", discord="Unisciti a Discord", langue="Lingua", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Utenti", enLigne="Online"},
+		RU = {Home="", Joueurs="", Move="", Extra="", Remotes="", Registry="", Local="", Protections="", nouveautes="", discord="Discord", langue="", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="", enLigne=""},
+		ZH = {Home="", Joueurs="", Move="", Extra="", Remotes="", Registry="", Local="", Protections="", nouveautes="", discord="Discord", langue="", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="", enLigne=""},
+		JA = {Home="", Joueurs="", Move="", Extra="", Remotes="", Registry="", Local="", Protections="", nouveautes="", discord="Discord", langue="", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="", enLigne=""},
+		KO = {Home="", Joueurs="", Move="", Extra="", Remotes="", Registry="", Local="", Protections="", nouveautes="", discord="Discord ", langue="", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="", enLigne=""},
+		AR = {Home="", Joueurs="", Move="", Extra="", Remotes=" ", Registry="", Local="", Protections="", nouveautes="", discord="  Discord", langue="", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="", enLigne=""},
+		NL = {Home="Home", Joueurs="Spelers", Move="Bewegen", Extra="Extra", Remotes="Extern", Registry="Register", Local="Lokaal", Protections="Bescherming", nouveautes="Nieuws", discord="Word lid van Discord", langue="Taal", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Gebruikers", enLigne="Online"},
+		PL = {Home="Strona gowna", Joueurs="Gracze", Move="Ruch", Extra="Dodatki", Remotes="Zdalne", Registry="Rejestr", Local="Lokalne", Protections="Ochrona", nouveautes="Aktualnosci", discord="Doacz do Discord", langue="Jezyk", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Uzytkownicy", enLigne="Online"},
+		TR = {Home="Ana Sayfa", Joueurs="Oyuncular", Move="Hareket", Extra="Ekstra", Remotes="Uzaktan", Registry="Kayt", Local="Yerel", Protections="Koruma", nouveautes="Guncellemeler", discord="Discord'a Katl", langue="Dil", credits="Agora Hub [UNIVERSELLE] - by Emerick", utilisateurs="Kullanclar", enLigne="Cevrimici"}
 	}
 	
 	-- Langue
@@ -822,8 +820,8 @@ local protectionsPage = createTab("Protections")
 			if data then
 				local ok, json = pcall(function() return HttpService:JSONDecode(data) end)
 				if ok and json then
-					agoraStats.totalLaunches = json.total_launches or json.totalLaunches or 0
-					agoraStats.onlineUsers = json.online_users or json.onlineUsers or 0
+					agoraStats.totalLaunches = json.totalLaunches or 0
+					agoraStats.onlineUsers = json.onlineUsers or 0
 					pcall(function() if totalLabel then totalLabel.Text = (translations[langCode] or translations["FR"]).utilisateurs .. ": " .. agoraStats.totalLaunches end end)
 					pcall(function() if onlineLabel then onlineLabel.Text = (translations[langCode] or translations["FR"]).enLigne .. ": " .. agoraStats.onlineUsers end end)
 				end
@@ -1026,11 +1024,11 @@ local protectionsPage = createTab("Protections")
 		{code="DE", flag="", name="Deutsch"},
 		{code="PT", flag="", name="Portugues"},
 		{code="IT", flag="", name="Italiano"},
-		{code="RU", flag="", name=""},
-		{code="ZH", flag="", name=""},
-		{code="JA", flag="", name=""},
-		{code="KO", flag="", name=""},
-		{code="AR", flag="", name=""},
+		{code="RU", flag="", name="Russky"},
+		{code="ZH", flag="", name="Zhongwen"},
+		{code="JA", flag="", name="Nihongo"},
+		{code="KO", flag="", name="Hangugeo"},
+		{code="AR", flag="", name="Arabiyya"},
 		{code="NL", flag="", name="Nederlands"},
 		{code="PL", flag="", name="Polski"},
 		{code="TR", flag="", name="Turkce"}
@@ -1076,12 +1074,11 @@ local protectionsPage = createTab("Protections")
 	local creditsLabel = Instance.new("TextLabel")
 	creditsLabel.Size = UDim2.new(1, -8, 0, 18)
 	creditsLabel.BackgroundTransparency = 1
-	creditsLabel.Text = "Agora Hub [UNIVERSELLE]"
+	creditsLabel.Text = "Agora Hub [UNIVERSELLE] - by Emerick"
 	creditsLabel.Font = Enum.Font.Gotham
 	creditsLabel.TextSize = 11
 	creditsLabel.TextColor3 = Color3.fromRGB(100, 100, 120)
 	creditsLabel.TextXAlignment = Enum.TextXAlignment.Center
-	creditsLabel.TextWrapped = true
 	creditsLabel.LayoutOrder = 8
 	creditsLabel.Parent = homeScroll
 	
@@ -1369,7 +1366,6 @@ localScroll.BackgroundTransparency = 1
 localScroll.ScrollBarThickness = 4
 localScroll.BorderSizePixel = 0
 localScroll.CanvasSize = UDim2.new(0, 0, 0, 900)
-localScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 localScroll.Parent = localPage
 
 local localLayout = Instance.new("UIListLayout")
@@ -1385,7 +1381,6 @@ protectionsScroll.BackgroundTransparency = 1
 protectionsScroll.ScrollBarThickness = 4
 protectionsScroll.BorderSizePixel = 0
 protectionsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-protectionsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 protectionsScroll.Parent = protectionsPage
 
 local protectionsLayout = Instance.new("UIListLayout")
@@ -1895,7 +1890,6 @@ playersScroll.Position = UDim2.new(0, 5, 0, 40)
 playersScroll.BackgroundTransparency = 1
 playersScroll.ScrollBarThickness = 4
 playersScroll.BorderSizePixel = 0
-playersScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 playersScroll.Parent = playersPage
 
 -- Stats serveur deplacees vers l'onglet Extra (card "Stats serveur")
@@ -2144,7 +2138,7 @@ local function createPlayerEntry(plr)
 			else
 				cheatAlert.Visible = false
 			end
-			task.wait(3)
+			task.wait(1.5)
 		end
 	end)
 
@@ -2699,7 +2693,6 @@ local function createPlayerEntry(plr)
 		list.ScrollBarThickness = 4
 		list.BorderSizePixel = 0
 		list.CanvasSize = UDim2.new(0, 0, 0, 0)
-		list.AutomaticCanvasSize = Enum.AutomaticSize.Y
 		list.Parent = win
 		createCorner(list, 6)
 		createStroke(list, Color3.fromRGB(60, 60, 75), 1)
@@ -2730,6 +2723,19 @@ local function createPlayerEntry(plr)
 					table.insert(items, {Name = item.Name, Tool = item, IsServer = false})
 				end
 			end
+			-- 3) Tools dans StarterGear (parfois present)
+			pcall(function()
+				for _, item in ipairs(plr:GetChildren()) do
+					if item.Name == "StarterGear" then
+						for _, tool in ipairs(item:GetChildren()) do
+							if tool:IsA("Tool") and not seen[tool] then
+								seen[tool] = true
+								table.insert(items, {Name = "(Gear) " .. tool.Name, Tool = tool, IsServer = false})
+							end
+						end
+					end
+				end
+			end)
 			return items
 		end
 
@@ -2790,9 +2796,18 @@ local function createPlayerEntry(plr)
 								return
 							end
 						end
-						local clone = tool:Clone()
-						clone.Parent = myBackpack
-						if notify then notify("Item vole: " .. clone.Name, 2) end
+						-- Tentative serveur: equiper directement si possible
+						pcall(function()
+							if item.IsServer and tool.Parent == target then
+								tool.Parent = myBackpack
+							end
+						end)
+						-- Fallback: clone local
+						if not myBackpack:FindFirstChild(tool.Name) then
+							local clone = tool:Clone()
+							clone.Parent = myBackpack
+						end
+						if notify then notify("Item vole: " .. tool.Name, 2) end
 						task.wait(0.1)
 						refreshList()
 					end)
@@ -5133,7 +5148,6 @@ platformLabel.BackgroundTransparency = 1
 platformLabel.Text = "Plateforme: F10 (+=monter -=descendre)"
 platformLabel.Font = Enum.Font.Gotham
 platformLabel.TextSize = 11
-platformLabel.TextWrapped = true
 platformLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 platformLabel.TextXAlignment = Enum.TextXAlignment.Left
 platformLabel.Parent = movePage
@@ -5627,7 +5641,9 @@ task.delay(10, function()
                                                 for _, r in ipairs(restoreMap) do
                                                     if _G._agoraSavedState[r.name] then
                                                         local sw = r.ref()
-                                                        if sw and sw.set then sw.set(true) end
+                                                        if sw and sw.set and (not sw.get or not sw.get()) then
+                                                            sw.set(true)
+                                                        end
                                                     end
                                                 end
                                                 _G._agoraSavedState = nil
