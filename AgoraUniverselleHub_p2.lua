@@ -1023,6 +1023,7 @@ extraScroll.BackgroundTransparency = 1
 extraScroll.ScrollBarThickness = 4
 extraScroll.BorderSizePixel = 0
 extraScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+extraScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 extraScroll.Parent = extraPage
 
 local extraLayout = Instance.new("UIListLayout")
@@ -1566,6 +1567,7 @@ end)()
 	aimbotTitle.TextSize = 12
 	aimbotTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
 	aimbotTitle.TextXAlignment = Enum.TextXAlignment.Left
+	aimbotTitle.TextWrapped = true
 	aimbotTitle.LayoutOrder = 1
 	aimbotTitle.Parent = aimbotCard
 
@@ -1583,6 +1585,7 @@ end)()
 	aimStatusLabel.Font = Enum.Font.Gotham
 	aimStatusLabel.TextSize = 10
 	aimStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+	aimStatusLabel.TextWrapped = true
 	aimStatusLabel.LayoutOrder = 2
 	aimStatusLabel.Parent = aimbotCard
 
@@ -2966,6 +2969,7 @@ registrySubtitle.Font = Enum.Font.Gotham
 registrySubtitle.TextSize = 10
 registrySubtitle.TextColor3 = Color3.fromRGB(160, 160, 180)
 registrySubtitle.TextXAlignment = Enum.TextXAlignment.Left
+registrySubtitle.TextWrapped = true
 registrySubtitle.LayoutOrder = 2
 registrySubtitle.Parent = registryScroll
 
@@ -3099,6 +3103,7 @@ do
 		subtitle.Font = Enum.Font.Gotham
 		subtitle.TextSize = 10
 		subtitle.TextXAlignment = Enum.TextXAlignment.Left
+		subtitle.TextWrapped = true
 		subtitle.ZIndex = 52
 		subtitle.Parent = card
 		local tagInput = Instance.new("TextBox")
@@ -3318,8 +3323,8 @@ local function renderResult(data, parent)
 		wLbl.TextSize = 10
 		wLbl.TextColor3 = Color3.fromRGB(255, 200, 100)
 		wLbl.TextXAlignment = Enum.TextXAlignment.Left
-		wLbl.TextYAlignment = Enum.TextYAlignment.Center
 		wLbl.TextWrapped = true
+		wLbl.TextYAlignment = Enum.TextYAlignment.Center
 		wLbl.Parent = warnBar
 	end
 
