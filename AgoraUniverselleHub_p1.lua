@@ -716,11 +716,12 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.70"
+	_G.CURRENT_VERSION = "v39.71"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v39.70: Fix position chute en fly (ChangeState Physics + Stop all anims chaque frame)",
+		"v39.71: Fly garde pose debout naturel (pas PlatformStand, etat Running)",
+		"v39.70: Fix position chute en fly",
 		"v39.69: Fix NoClip/fly apres mort (scope _G)",
 		"v39.68: NoClip survive respawn",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
@@ -4386,8 +4387,8 @@ local function startFly()
 						flyState.vel.Velocity = Vector3.zero
 						flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 						flyState.vel.Parent = rootPart
-						humanoid.PlatformStand = true
-						pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
+						-- Pas de PlatformStand : garder pose debout
+						pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Running) end)
 						-- Desactiver les etats de chute/saut
 						pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 						pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
@@ -4404,21 +4405,22 @@ local function startFly()
 								local currentCF = flyState.gyro.CFrame
 								flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt2))
 							end
-							-- Empecher PlatformStand de se desactiver
-							if humanoid and not humanoid.PlatformStand then
-								humanoid.PlatformStand = true
-							end
-							-- Forcer etat Physics + desactiver Freefall/Jumping
+							-- Garder etat Running (pas PlatformStand)
 							if humanoid then
-								pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
 								pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 								pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
-							end
-							-- Stopper TOUTES les animations en cours
-							if humanoid then
+								pcall(function()
+									local state = humanoid:GetState()
+									if state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Landed then
+										humanoid:ChangeState(Enum.HumanoidStateType.Running)
+									end
+								end)
 								pcall(function()
 									for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
-										track:Stop(0)
+										local name = track.Animation and track.Animation.Name or ""
+										if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" then
+											track:Stop(0)
+										end
 									end
 								end)
 							end
@@ -4476,22 +4478,20 @@ local function startFly()
 		flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 		flyState.vel.Parent = rootPart
 
-		-- Empecher Roblox de jouer les animations de chute/freefall/saut
+		-- Empecher chute/saut SANS PlatformStand (garder pose debout naturel)
 		if humanoid then
-			-- Desactiver les etats de chute/saut AVANT PlatformStand (ordre important)
+			-- PAS de PlatformStand : le perso garde sa pose debout (idle)
+			-- Desactiver les etats de chute/saut au niveau moteur
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
-			humanoid.PlatformStand = true
-			-- Forcer l'etat Physics (empeche Jump, Freefall, Landing animations)
-			pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
+			-- Forcer l'etat Running (pose debout) au lieu de Physics (T-pose)
+			pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Running) end)
 			-- Desactiver le saut pendant le fly
 			humanoid.JumpPower = 0
 			humanoid.JumpHeight = 0
-			-- Stopper les animations en cours (saut, chute) MAIS garder Animate active
-			-- pour que le perso ait une pose naturelle au lieu de T-pose
+			-- Stopper seulement les anims de saut/chute
 			pcall(function()
 				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
-					-- Stopper seulement les animations de saut/chute, pas toutes
 					local name = track.Animation and track.Animation.Name or ""
 					if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" then
 						track:Stop(0)
@@ -4551,25 +4551,23 @@ local function startFly()
 			flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt))
 		end
 
-		-- Empecher PlatformStand de se desactiver (Roblox peut le reset)
-		if humanoid and not humanoid.PlatformStand then
-			humanoid.PlatformStand = true
-		end
-		-- Forcer l'etat Physics en continu (empeche saut/freefall/landing)
+		-- Garder l'etat Running (pas PlatformStand = pas de T-pose)
 		if humanoid then
-			pcall(function()
-				humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-			end)
-			-- Re-desactiver Freefall/Jumping si Roblox les re-active
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
-		end
-		-- Stopper TOUTES les animations en cours (pas seulement Jump/Fall)
-		-- pour empecher la pose de chute
-		if humanoid then
+			pcall(function()
+				local state = humanoid:GetState()
+				if state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Landed then
+					humanoid:ChangeState(Enum.HumanoidStateType.Running)
+				end
+			end)
+			-- Stopper anims saut/chute si Roblox en relance
 			pcall(function()
 				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
-					track:Stop(0)
+					local name = track.Animation and track.Animation.Name or ""
+					if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" then
+						track:Stop(0)
+					end
 				end
 			end)
 		end
