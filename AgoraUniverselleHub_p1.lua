@@ -685,10 +685,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.62"
+	_G.CURRENT_VERSION = "v39.63"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v39.63: Fly gyro smooth (rotation fluide camera) + fix bras leves pres du sol",
 		"v39.62: TP joueur = devant lui a 2m, oriente vers lui",
 		"v39.61: Fly ultra-fluide (velocity lerp + frame-rate independent)",
 		"v39.56: Auto-update preserve features actives (fly/ESP/noclip)",
@@ -4145,6 +4146,11 @@ local function stopFly()
 	if flyState.showMobileUi then flyState.showMobileUi(false) end
 	updateCharacter()
 	if humanoid then humanoid.PlatformStand = false end
+	-- Reactiver les animations (Animate)
+	local animate = character and character:FindFirstChild("Animate")
+	if animate then
+		animate.Disabled = false
+	end
 	flySwitch.set(false)
 	-- Active la grace anti-TP pour reinitialiser la baseline sans bounce
 	if protectionsState then
@@ -4306,7 +4312,21 @@ local function startFly()
 		flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 		flyState.vel.Parent = rootPart
 
-		if humanoid then humanoid.PlatformStand = true end
+		-- Empecher Roblox de jouer les animations de chute/freefall
+		if humanoid then
+			humanoid.PlatformStand = true
+			-- Desactiver l'animation Animate pour eviter les bras leves
+			local animate = character:FindFirstChild("Animate")
+			if animate then
+				animate.Disabled = true
+			end
+			-- Stopper toutes les animations en cours
+			pcall(function()
+				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+					track:Stop(0)
+				end
+			end)
+		end
 
 		-- Decollage doux : lever en preservant la rotation (hauteur 0 = instantane)
 		local decollageHeight = 0
@@ -4349,7 +4369,25 @@ local function startFly()
 		-- Re-attach body movers if rootPart changed (respawn)
 		if flyState.gyro and flyState.gyro.Parent ~= rootPart then flyState.gyro.Parent = rootPart end
 		if flyState.vel and flyState.vel.Parent ~= rootPart then flyState.vel.Parent = rootPart end
-		if flyState.gyro then flyState.gyro.CFrame = Camera.CFrame end
+
+		-- === GYRO SMOOTH : rotation fluide vers la camera ===
+		if flyState.gyro then
+			-- Interpoler la rotation du gyro vers la camera (pas snap direct)
+			local targetCF = Camera.CFrame
+			local currentCF = flyState.gyro.CFrame
+			-- Lerp rotation (slerp equivalent via Lerp sur CFrame)
+			flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt))
+		end
+
+		-- Empecher PlatformStand de se desactiver (Roblox peut le reset)
+		if humanoid and not humanoid.PlatformStand then
+			humanoid.PlatformStand = true
+		end
+		-- Re-stopper les animations si Roblox en relance (freefall pres du sol)
+		local animate = character and character:FindFirstChild("Animate")
+		if animate and not animate.Disabled then
+			animate.Disabled = true
+		end
 
 		local move = Vector3.zero
 		-- PC controls (clavier)
@@ -4377,8 +4415,6 @@ local function startFly()
 		-- Smooth factor adapte selon le contexte
 		local smoothFactor = 0.15
 		if flyState.targetVel.Magnitude > 0 then
-			-- En mouvement : lerp plus rapide pour repondre vite
-			-- Si virage brutal (dot product < 0.3) : lerp plus lent pour eviter jerk
 			local dot = flyState.currentVel.Unit:Dot(flyState.targetVel.Unit)
 			if dot < 0.3 then
 				smoothFactor = 0.08
@@ -4386,7 +4422,6 @@ local function startFly()
 				smoothFactor = 0.20
 			end
 		else
-			-- Deceleration : lerp legerement plus rapide pour pas flotter
 			smoothFactor = 0.12
 		end
 
