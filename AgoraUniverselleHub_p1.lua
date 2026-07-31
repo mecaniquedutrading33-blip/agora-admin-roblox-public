@@ -716,11 +716,12 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.69"
+	_G.CURRENT_VERSION = "v39.70"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v39.69: Fix NoClip/fly apres mort (scope _G au lieu de locals non-definis)",
+		"v39.70: Fix position chute en fly (ChangeState Physics + Stop all anims chaque frame)",
+		"v39.69: Fix NoClip/fly apres mort (scope _G)",
 		"v39.68: NoClip survive respawn",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
 		"v39.66: Fly assis garde position assise + Animate actif",
@@ -1779,6 +1780,8 @@ end
 -- ============= JOUEURS =============
 local playerCards = {}
 local playerSearchQuery = "" -- query actuelle (vide = pas de filtre)
+local pinnedPlayers = {} -- joueurs epingles (pin) en haut de la liste
+_G._agora_pinnedPlayers = pinnedPlayers
 
 -- searchBox de Joueurs = FILTRE LOCAL de la liste des joueurs connectes
 -- (la recherche officielle par username Roblox reste dans Registry)
@@ -4405,23 +4408,17 @@ local function startFly()
 							if humanoid and not humanoid.PlatformStand then
 								humanoid.PlatformStand = true
 							end
-							-- Forcer etat Physics
+							-- Forcer etat Physics + desactiver Freefall/Jumping
 							if humanoid then
-								pcall(function()
-									local state = humanoid:GetState()
-									if state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.Landed then
-										humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-									end
-								end)
+								pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
+								pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
+								pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
 							end
-							-- Stopper anims saut/chute (pas Animate disabled)
+							-- Stopper TOUTES les animations en cours
 							if humanoid then
 								pcall(function()
 									for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
-										local name = track.Animation and track.Animation.Name or ""
-										if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" then
-											track:Stop(0)
-										end
+										track:Stop(0)
 									end
 								end)
 							end
@@ -4558,23 +4555,21 @@ local function startFly()
 		if humanoid and not humanoid.PlatformStand then
 			humanoid.PlatformStand = true
 		end
-		-- Forcer l'etat Physics en continu (empeche saut/freefall)
+		-- Forcer l'etat Physics en continu (empeche saut/freefall/landing)
 		if humanoid then
 			pcall(function()
-				local state = humanoid:GetState()
-				if state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.Landed then
-					humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-				end
+				humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 			end)
+			-- Re-desactiver Freefall/Jumping si Roblox les re-active
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
 		end
-		-- Re-stopper les animations de saut/chute si Roblox en relance
+		-- Stopper TOUTES les animations en cours (pas seulement Jump/Fall)
+		-- pour empecher la pose de chute
 		if humanoid then
 			pcall(function()
 				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
-					local name = track.Animation and track.Animation.Name or ""
-					if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" then
-						track:Stop(0)
-					end
+					track:Stop(0)
 				end
 			end)
 		end
