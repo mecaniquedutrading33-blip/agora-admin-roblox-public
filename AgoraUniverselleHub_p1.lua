@@ -685,11 +685,12 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.65"
+	_G.CURRENT_VERSION = "v39.66"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v39.65: Fly garde le siege (vehicule) + fix position chute (Freefall desactive)",
+		"v39.66: Fly assis garde position assise + Animate actif (plus de T-pose/chute)",
+		"v39.65: Fly garde le siege (vehicule) + fix position chute",
 		"v39.64: Fix saut en fly (JumpPower=0, etat Physics force, plus de pose saut)",
 		"v39.63: Fly gyro smooth + fix bras leves pres du sol",
 		"v39.62: TP joueur = devant lui a 2m, oriente vers lui",
@@ -4316,29 +4317,24 @@ local function startFly()
 	-- Son de demarrage fly (tres doux)
 		-- pcall(function() playSound(6042053626, 0.12) end)
 
-		-- Si on est assis, on reste dans le siege : on desactive juste les animations
-		-- et on garde le seat, pas de PlatformStand ni BodyVelocity
+		-- Si on est assis, on reste dans le siege : on garde la position assise
+		-- PAS de Animate.Disabled, PAS de PlatformStand, juste empecher le saut
 		if wasSeated and humanoid then
-			-- Desactiver animations sans sortir du siege
-			local animate = character:FindFirstChild("Animate")
-			if animate then animate.Disabled = true end
-			pcall(function()
-				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
-					track:Stop(0)
-				end
-			end)
-			-- Desactiver saut
+			-- Garder la position assise : ne PAS desactiver Animate
+			-- Desactiver saut seulement
 			humanoid.JumpPower = 0
 			humanoid.JumpHeight = 0
-			-- Pas de PlatformStand, pas de BodyGyro/BodyVelocity : on reste dans le siege
+			-- Desactiver etats de chute/saut au niveau moteur
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
 			flyState.flying = true
-			-- Loop leger : juste pour garder JumpPower=0 et Animate disabled
+			-- Loop leger : garder JumpPower=0 + si on sort du siege, activer fly normal
 			flyState.loop = RunService.RenderStepped:Connect(function(dt)
 				if not flyState.flying then return end
 				if humanoid then
 					if humanoid.JumpPower ~= 0 then humanoid.JumpPower = 0 end
 					if humanoid.JumpHeight ~= 0 then humanoid.JumpHeight = 0 end
-					-- Si Roblox nous sort du siege, on remet PlatformStand false
+					-- Si Roblox nous sort du siege, on active le fly normal
 					if not humanoid.Sit and not humanoid.SeatPart then
 						-- On est sortis du siege, on active le fly normal
 						flyState.seatPart = nil
@@ -4383,10 +4379,16 @@ local function startFly()
 									end
 								end)
 							end
-							-- Animate disabled
-							local animate2 = character and character:FindFirstChild("Animate")
-							if animate2 and not animate2.Disabled then
-								animate2.Disabled = true
+							-- Stopper anims saut/chute (pas Animate disabled)
+							if humanoid then
+								pcall(function()
+									for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+										local name = track.Animation and track.Animation.Name or ""
+										if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" then
+											track:Stop(0)
+										end
+									end
+								end)
 							end
 							-- Movement
 							local move = Vector3.zero
@@ -4444,24 +4446,24 @@ local function startFly()
 
 		-- Empecher Roblox de jouer les animations de chute/freefall/saut
 		if humanoid then
+			-- Desactiver les etats de chute/saut AVANT PlatformStand (ordre important)
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
 			humanoid.PlatformStand = true
 			-- Forcer l'etat Physics (empeche Jump, Freefall, Landing animations)
 			pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
-			-- Desactiver les etats de chute/saut au niveau moteur
-			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
-			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
 			-- Desactiver le saut pendant le fly
 			humanoid.JumpPower = 0
 			humanoid.JumpHeight = 0
-			-- Desactiver l'animation Animate pour eviter les bras leves
-			local animate = character:FindFirstChild("Animate")
-			if animate then
-				animate.Disabled = true
-			end
-			-- Stopper toutes les animations en cours
+			-- Stopper les animations en cours (saut, chute) MAIS garder Animate active
+			-- pour que le perso ait une pose naturelle au lieu de T-pose
 			pcall(function()
 				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
-					track:Stop(0)
+					-- Stopper seulement les animations de saut/chute, pas toutes
+					local name = track.Animation and track.Animation.Name or ""
+					if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" then
+						track:Stop(0)
+					end
 				end
 			end)
 		end
@@ -4530,10 +4532,16 @@ local function startFly()
 				end
 			end)
 		end
-		-- Re-stopper les animations si Roblox en relance (freefall pres du sol)
-		local animate = character and character:FindFirstChild("Animate")
-		if animate and not animate.Disabled then
-			animate.Disabled = true
+		-- Re-stopper les animations de saut/chute si Roblox en relance
+		if humanoid then
+			pcall(function()
+				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+					local name = track.Animation and track.Animation.Name or ""
+					if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" then
+						track:Stop(0)
+					end
+				end
+			end)
 		end
 
 		local move = Vector3.zero
