@@ -685,10 +685,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.60"
+	_G.CURRENT_VERSION = "v39.61"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v39.61: Fly ultra-fluide (velocity lerp + frame-rate independent)",
 		"v39.56: Auto-update preserve features actives (fly/ESP/noclip)",
 		"v39.55: Fix boucle popup MAJ + symboles X/-/+ + anti-doublons tools",
 		"v39.54: Plate F10 hauteur pieds exacte + tools server-side priorite",
@@ -4106,7 +4107,7 @@ local function bootSequence(onComplete)
 end
 
 -- ============= MOVE =============
-local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false }
+local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false, currentVel = Vector3.zero, targetVel = Vector3.zero }
 local noclipState = { enabled = false }
 local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
@@ -4127,6 +4128,8 @@ local function stopFly()
 	flyState.mobileUpHeld = false
 	flyState.mobileDownHeld = false
 	flyState.mobileStickId = nil
+	flyState.currentVel = Vector3.zero
+	flyState.targetVel = Vector3.zero
 	if flyState.showMobileUi then flyState.showMobileUi(false) end
 	updateCharacter()
 	if humanoid then humanoid.PlatformStand = false end
@@ -4328,7 +4331,7 @@ local function startFly()
 		flyState.showMobileUi(true)
 	end
 
-	flyState.loop = RunService.RenderStepped:Connect(function()
+	flyState.loop = RunService.RenderStepped:Connect(function(dt)
 		updateCharacter()
 		if not flyState.flying or not rootPart or not rootPart.Parent then return end
 		-- Re-attach body movers if rootPart changed (respawn)
@@ -4351,8 +4354,36 @@ local function startFly()
 		if flyState.mobileUpHeld then move += Vector3.new(0, 1, 0) end
 		if flyState.mobileDownHeld then move -= Vector3.new(0, 1, 0) end
 
+		-- === SMOOTH VELOCITY LERP ===
+		-- Target velocity = direction * speed (or zero if no input)
+		if move.Magnitude > 0 then
+			flyState.targetVel = move.Unit * flyState.speed
+		else
+			flyState.targetVel = Vector3.zero
+		end
+
+		-- Smooth factor adapte selon le contexte
+		local smoothFactor = 0.15
+		if flyState.targetVel.Magnitude > 0 then
+			-- En mouvement : lerp plus rapide pour repondre vite
+			-- Si virage brutal (dot product < 0.3) : lerp plus lent pour eviter jerk
+			local dot = flyState.currentVel.Unit:Dot(flyState.targetVel.Unit)
+			if dot < 0.3 then
+				smoothFactor = 0.08
+			else
+				smoothFactor = 0.20
+			end
+		else
+			-- Deceleration : lerp legerement plus rapide pour pas flotter
+			smoothFactor = 0.12
+		end
+
+		-- Frame-rate independent lerp
+		local alpha = 1 - math.exp(-smoothFactor * 60 * dt)
+		flyState.currentVel = flyState.currentVel:Lerp(flyState.targetVel, alpha)
+
 		if flyState.vel then
-			flyState.vel.Velocity = move.Magnitude > 0 and move.Unit * flyState.speed or Vector3.zero
+			flyState.vel.Velocity = flyState.currentVel
 		end
 	end)
 end
