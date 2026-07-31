@@ -198,8 +198,36 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 		stopFly()
 	end
 	if noclipState.enabled then
+		-- Le perso est mort, re-appliquer le noclip sur le nouveau character
 		noclipState.enabled = false
-		refreshNoClipSwitch()
+		-- Deconnecter l'ancienne boucle
+		if noclipState.loop then
+			noclipState.loop:Disconnect()
+			noclipState.loop = nil
+		end
+		-- Re-activer le noclip sur le nouveau perso
+		task.wait(0.1)
+		if character then
+			for _, p in ipairs(character:GetDescendants()) do
+				if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
+					p.CanCollide = false
+				end
+			end
+		end
+		noclipState.enabled = true
+		noclipState.loop = RunService.RenderStepped:Connect(function()
+			updateCharacter()
+			if not noclipState.enabled then return end
+			if character then
+				for _, p in ipairs(character:GetDescendants()) do
+					if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
+						p.CanCollide = false
+					end
+				end
+			end
+		end)
+		-- Garder le switch ON
+		if noclipSwitch then noclipSwitch.set(true) end
 	end
 	if espState.enabled or globalESPEnabled then
 		refreshESP()
@@ -685,10 +713,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.67"
+	_G.CURRENT_VERSION = "v39.68"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v39.68: NoClip survive respawn (re-applique apres mort)",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
 		"v39.66: Fly assis garde position assise + Animate actif",
 		"v39.65: Fly garde le siege (vehicule) + fix position chute",
