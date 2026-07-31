@@ -1023,7 +1023,6 @@ extraScroll.BackgroundTransparency = 1
 extraScroll.ScrollBarThickness = 4
 extraScroll.BorderSizePixel = 0
 extraScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-extraScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 extraScroll.Parent = extraPage
 
 local extraLayout = Instance.new("UIListLayout")
@@ -1567,7 +1566,6 @@ end)()
 	aimbotTitle.TextSize = 12
 	aimbotTitle.TextColor3 = Color3.fromRGB(220, 220, 240)
 	aimbotTitle.TextXAlignment = Enum.TextXAlignment.Left
-	aimbotTitle.TextWrapped = true
 	aimbotTitle.LayoutOrder = 1
 	aimbotTitle.Parent = aimbotCard
 
@@ -1585,7 +1583,6 @@ end)()
 	aimStatusLabel.Font = Enum.Font.Gotham
 	aimStatusLabel.TextSize = 10
 	aimStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-	aimStatusLabel.TextWrapped = true
 	aimStatusLabel.LayoutOrder = 2
 	aimStatusLabel.Parent = aimbotCard
 
@@ -1852,13 +1849,45 @@ end)
 
 -- Server Authority detection (Roblox July 2026 feature)
 local function isServerAuthority()
+	-- Critere 1: attribut officiel
 	local ok, result = pcall(function()
 		return Workspace:GetAttribute("AuthorityMode") == "Server"
 	end)
 	if ok and result then return true end
-	-- Fallback: check if BodyVelocity fly gets rolled back
+	-- Critere 2: tester si un deplacement CFrame est annule par le serveur
+	local ok2, rollback = pcall(function()
+		local char = LocalPlayer.Character
+		if not char then return false end
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		if not hrp then return false end
+		local origCF = hrp.CFrame
+		hrp.CFrame = hrp.CFrame + Vector3.new(0, 0.5, 0)
+		task.wait(0.1)
+		local newCF = hrp.CFrame
+		local diff = math.abs(newCF.Y - origCF.Y)
+		return diff < 0.1
+	end)
+	if ok2 and rollback then return true end
+	-- Critere 3: verifier si BodyVelocity est bloque
+	local ok3, velBlocked = pcall(function()
+		local char = LocalPlayer.Character
+		if not char then return false end
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		if not hrp then return false end
+		local testVel = Instance.new("BodyVelocity")
+		testVel.MaxForce = Vector3.new(0, 9e8, 0)
+		testVel.Velocity = Vector3.new(0, 10, 0)
+		testVel.Parent = hrp
+		task.wait(0.15)
+		local actualVel = hrp.AssemblyLinearVelocity
+		testVel:Destroy()
+		return math.abs(actualVel.Y) < 3
+	end)
+	if ok3 and velBlocked then return true end
 	return false
 end
+
+local saForceLocal = false
 
 -- Anti-cheat section in Extra (visible seulement si ServerAuthority actif)
 local saCard = Instance.new("Frame")
@@ -1909,6 +1938,30 @@ saWarn.LayoutOrder = 1
 saWarn.Parent = saCard
 
 local saBypassState = { anchoredFly = false, slowFly = false, remoteFly = false }
+
+-- Bouton pour forcer le mode local (desactiver detection SA)
+local saForceBtn = Instance.new("TextButton")
+saForceBtn.Size = UDim2.new(1, 0, 0, 30)
+saForceBtn.BackgroundColor3 = Color3.fromRGB(50, 80, 120)
+saForceBtn.BorderSizePixel = 0
+saForceBtn.Text = "Forcer mode Local (desactiver SA)"
+saForceBtn.Font = Enum.Font.GothamBold
+saForceBtn.TextSize = 12
+saForceBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
+saForceBtn.LayoutOrder = 1
+saForceBtn.Parent = saCard
+createCorner(saForceBtn, 6)
+saForceBtn.MouseButton1Click:Connect(function()
+	saForceLocal = not saForceLocal
+	if saForceLocal then
+		saForceBtn.Text = "Mode Local actif (SA ignore)"
+		saForceBtn.BackgroundColor3 = Color3.fromRGB(60, 140, 80)
+		saCard.Visible = false
+	else
+		saForceBtn.Text = "Forcer mode Local (desactiver SA)"
+		saForceBtn.BackgroundColor3 = Color3.fromRGB(50, 80, 120)
+	end
+end)
 
 createSwitch(saCard, "Fly Anchored (CFrame lock)", 2, function(on)
 	saBypassState.anchoredFly = on
@@ -1968,7 +2021,7 @@ end)
 -- Check ServerAuthority au demarrage + periodicite
 task.spawn(function()
 	while true do
-		if isServerAuthority() then
+		if not saForceLocal and isServerAuthority() then
 			saCard.Visible = true
 		end
 		task.wait(10)
@@ -2336,7 +2389,7 @@ RunService.Heartbeat:Connect(function()
 				for _, part in ipairs(plr.Character:GetDescendants()) do
 					if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
 						local maxDim = math.max(part.Size.X, part.Size.Y, part.Size.Z)
-						if maxDim > 50 then
+						if maxDim > 30 then
 							-- Hitbox anormale, ignorer ce joueur (ne pas casser le serveur)
 							pcall(function() part.LocalTransparencyModifier = 1 end)
 						end
@@ -2969,7 +3022,6 @@ registrySubtitle.Font = Enum.Font.Gotham
 registrySubtitle.TextSize = 10
 registrySubtitle.TextColor3 = Color3.fromRGB(160, 160, 180)
 registrySubtitle.TextXAlignment = Enum.TextXAlignment.Left
-registrySubtitle.TextWrapped = true
 registrySubtitle.LayoutOrder = 2
 registrySubtitle.Parent = registryScroll
 
@@ -3103,7 +3155,6 @@ do
 		subtitle.Font = Enum.Font.Gotham
 		subtitle.TextSize = 10
 		subtitle.TextXAlignment = Enum.TextXAlignment.Left
-		subtitle.TextWrapped = true
 		subtitle.ZIndex = 52
 		subtitle.Parent = card
 		local tagInput = Instance.new("TextBox")
@@ -3323,8 +3374,8 @@ local function renderResult(data, parent)
 		wLbl.TextSize = 10
 		wLbl.TextColor3 = Color3.fromRGB(255, 200, 100)
 		wLbl.TextXAlignment = Enum.TextXAlignment.Left
-		wLbl.TextWrapped = true
 		wLbl.TextYAlignment = Enum.TextYAlignment.Center
+		wLbl.TextWrapped = true
 		wLbl.Parent = warnBar
 	end
 
@@ -4781,12 +4832,12 @@ _G["autoClickSwitch"] = autoClickSwitch
 						local delta = (pos - prev).Magnitude
 
 						-- 1. Velocity Alert (speed hack)
-						if not inVehicle and flatSpeed > 80 and ws < 80 and canLog(uid, "velocity") then
+						if not inVehicle and flatSpeed > 50 and ws < 50 and canLog(uid, "velocity") then
 							addLog(uid, "Velocity Alert", "Speed: " .. _math.floor(flatSpeed) .. " (WS:" .. ws .. ")", "warn")
 						end
 
 						-- 2. Altitude Anomaly (fly hack)
-						if not inVehicle and vel.Y > 60 and canLog(uid, "altitude") then
+						if not inVehicle and vel.Y > 40 and canLog(uid, "altitude") then
 							-- Check if standing on something (raycast down)
 							local onGround = false
 							_pcall(function()
@@ -4799,7 +4850,7 @@ _G["autoClickSwitch"] = autoClickSwitch
 						end
 
 						-- 3. Position Delta (teleport)
-						if not inVehicle and delta > 300 and canLog(uid, "teleport") then
+						if not inVehicle and delta > 150 and canLog(uid, "teleport") then
 							addLog(uid, "Position Delta", "Moved " .. _math.floor(delta) .. " studs in 1 frame", "alert")
 						end
 
@@ -4818,7 +4869,7 @@ _G["autoClickSwitch"] = autoClickSwitch
 							for _, part in _ipairs(char:GetDescendants()) do
 								if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
 									local maxDim = _math.max(part.Size.X, part.Size.Y, part.Size.Z)
-									if maxDim > 50 then
+									if maxDim > 30 then
 										addLog(uid, "Hitbox Expansion", part.Name .. " size: " .. _math.floor(maxDim), "warn")
 										break
 									end
