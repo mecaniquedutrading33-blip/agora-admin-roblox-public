@@ -685,10 +685,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.64"
+	_G.CURRENT_VERSION = "v39.65"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v39.65: Fly garde le siege (vehicule) + fix position chute (Freefall desactive)",
 		"v39.64: Fix saut en fly (JumpPower=0, etat Physics force, plus de pose saut)",
 		"v39.63: Fly gyro smooth + fix bras leves pres du sol",
 		"v39.62: TP joueur = devant lui a 2m, oriente vers lui",
@@ -4121,7 +4122,7 @@ local function bootSequence(onComplete)
 end
 
 -- ============= MOVE =============
-local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false, currentVel = Vector3.zero, targetVel = Vector3.zero }
+local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false, currentVel = Vector3.zero, targetVel = Vector3.zero, seatPart = nil }
 local noclipState = { enabled = false }
 local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
@@ -4151,6 +4152,9 @@ local function stopFly()
 		-- Restaurer le saut
 		humanoid.JumpPower = 50
 		humanoid.JumpHeight = 7.2
+		-- Reactiver les etats de chute/saut
+		pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, true) end)
+		pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true) end)
 		-- Remettre l'etat normal
 		pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end)
 	end
@@ -4304,9 +4308,127 @@ end)(flyState, screenGui)
 local function startFly()
 	updateCharacter()
 	if flyState.flying or not rootPart then return end
-	
+
+	-- Detecter si on est assis (vehicule/seat)
+	local wasSeated = humanoid and humanoid.Sit and humanoid.SeatPart
+	flyState.seatPart = wasSeated or nil
+
 	-- Son de demarrage fly (tres doux)
 		-- pcall(function() playSound(6042053626, 0.12) end)
+
+		-- Si on est assis, on reste dans le siege : on desactive juste les animations
+		-- et on garde le seat, pas de PlatformStand ni BodyVelocity
+		if wasSeated and humanoid then
+			-- Desactiver animations sans sortir du siege
+			local animate = character:FindFirstChild("Animate")
+			if animate then animate.Disabled = true end
+			pcall(function()
+				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+					track:Stop(0)
+				end
+			end)
+			-- Desactiver saut
+			humanoid.JumpPower = 0
+			humanoid.JumpHeight = 0
+			-- Pas de PlatformStand, pas de BodyGyro/BodyVelocity : on reste dans le siege
+			flyState.flying = true
+			-- Loop leger : juste pour garder JumpPower=0 et Animate disabled
+			flyState.loop = RunService.RenderStepped:Connect(function(dt)
+				if not flyState.flying then return end
+				if humanoid then
+					if humanoid.JumpPower ~= 0 then humanoid.JumpPower = 0 end
+					if humanoid.JumpHeight ~= 0 then humanoid.JumpHeight = 0 end
+					-- Si Roblox nous sort du siege, on remet PlatformStand false
+					if not humanoid.Sit and not humanoid.SeatPart then
+						-- On est sortis du siege, on active le fly normal
+						flyState.seatPart = nil
+						-- Creer BodyGyro + BodyVelocity maintenant
+						flyState.gyro = Instance.new("BodyGyro")
+						flyState.gyro.P = 9e4
+						flyState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+						flyState.gyro.CFrame = Camera.CFrame
+						flyState.gyro.Parent = rootPart
+						flyState.vel = Instance.new("BodyVelocity")
+						flyState.vel.Velocity = Vector3.zero
+						flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+						flyState.vel.Parent = rootPart
+						humanoid.PlatformStand = true
+						pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
+						-- Desactiver les etats de chute/saut
+						pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
+						pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
+						-- Remplacer le loop par le fly normal
+						if flyState.loop then flyState.loop:Disconnect() flyState.loop = nil end
+						flyState.loop = RunService.RenderStepped:Connect(function(dt2)
+							updateCharacter()
+							if not flyState.flying or not rootPart or not rootPart.Parent then return end
+							if flyState.gyro and flyState.gyro.Parent ~= rootPart then flyState.gyro.Parent = rootPart end
+							if flyState.vel and flyState.vel.Parent ~= rootPart then flyState.vel.Parent = rootPart end
+							-- GYRO SMOOTH
+							if flyState.gyro then
+								local targetCF = Camera.CFrame
+								local currentCF = flyState.gyro.CFrame
+								flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt2))
+							end
+							-- Empecher PlatformStand de se desactiver
+							if humanoid and not humanoid.PlatformStand then
+								humanoid.PlatformStand = true
+							end
+							-- Forcer etat Physics
+							if humanoid then
+								pcall(function()
+									local state = humanoid:GetState()
+									if state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.Landed then
+										humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+									end
+								end)
+							end
+							-- Animate disabled
+							local animate2 = character and character:FindFirstChild("Animate")
+							if animate2 and not animate2.Disabled then
+								animate2.Disabled = true
+							end
+							-- Movement
+							local move = Vector3.zero
+							if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move += Camera.CFrame.LookVector end
+							if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= Camera.CFrame.LookVector end
+							if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then move -= Camera.CFrame.RightVector end
+							if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += Camera.CFrame.RightVector end
+							if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
+							if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0, 1, 0) end
+							if flyState.mobileInput and flyState.mobileInput.Magnitude > 0 then
+								move += Camera.CFrame.LookVector * flyState.mobileInput.Z + Camera.CFrame.RightVector * flyState.mobileInput.X
+							end
+							if flyState.mobileUpHeld then move += Vector3.new(0, 1, 0) end
+							if flyState.mobileDownHeld then move -= Vector3.new(0, 1, 0) end
+							-- SMOOTH VELOCITY LERP
+							if move.Magnitude > 0 then
+								flyState.targetVel = move.Unit * flyState.speed
+							else
+								flyState.targetVel = Vector3.zero
+							end
+							local smoothFactor = 0.15
+							if flyState.targetVel.Magnitude > 0 then
+								local dot = flyState.currentVel.Unit:Dot(flyState.targetVel.Unit)
+								if dot < 0.3 then smoothFactor = 0.08 else smoothFactor = 0.20 end
+							else
+								smoothFactor = 0.12
+							end
+							local alpha = 1 - math.exp(-smoothFactor * 60 * dt2)
+							flyState.currentVel = flyState.currentVel:Lerp(flyState.targetVel, alpha)
+							if flyState.vel then
+								flyState.vel.Velocity = flyState.currentVel
+							end
+						end)
+					end
+				end
+			end)
+			-- Show mobile UI
+			if flyState.isMobile and flyState.isMobile() and flyState.showMobileUi then
+				flyState.showMobileUi(true)
+			end
+			return
+		end
 
 		-- Creer BodyGyro + BodyVelocity AVANT le decollage pour garder le follow camera
 		flyState.gyro = Instance.new("BodyGyro")
@@ -4325,6 +4447,9 @@ local function startFly()
 			humanoid.PlatformStand = true
 			-- Forcer l'etat Physics (empeche Jump, Freefall, Landing animations)
 			pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
+			-- Desactiver les etats de chute/saut au niveau moteur
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
 			-- Desactiver le saut pendant le fly
 			humanoid.JumpPower = 0
 			humanoid.JumpHeight = 0
