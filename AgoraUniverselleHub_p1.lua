@@ -716,11 +716,12 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.71"
+	_G.CURRENT_VERSION = "v39.72"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v39.71: Fly garde pose debout naturel (pas PlatformStand, etat Running)",
+		"v39.72: Pin joueur (epingler en haut) + notification depart + systeme notif visuel",
+		"v39.71: Fly garde pose debout naturel",
 		"v39.70: Fix position chute en fly",
 		"v39.69: Fix NoClip/fly apres mort (scope _G)",
 		"v39.68: NoClip survive respawn",
@@ -1784,6 +1785,61 @@ local playerSearchQuery = "" -- query actuelle (vide = pas de filtre)
 local pinnedPlayers = {} -- joueurs epingles (pin) en haut de la liste
 _G._agora_pinnedPlayers = pinnedPlayers
 
+-- Systeme de notification visuelle (bas-droite, auto-disparait 4s)
+local notifFrames = {}
+local function showNotif(text, color)
+	color = color or Color3.fromRGB(80, 160, 255)
+	local n = #notifFrames
+	-- Decaler les anciennes vers le haut
+	for i = 1, n do
+		if notifFrames[i] and notifFrames[i].Parent then
+			notifFrames[i].Position = UDim2.new(1, -260, 1, -60 - (n - i + 1) * 40)
+		end
+	end
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(0, 240, 0, 32)
+	frame.Position = UDim2.new(1, -260, 1, -60)
+	frame.BackgroundColor3 = color
+	frame.BackgroundTransparency = 0.15
+	frame.BorderSizePixel = 0
+	frame.ZIndex = 200
+	frame.Parent = screenGui
+	createCorner(frame, 8)
+	createStroke(frame, Color3.fromRGB(255, 255, 255), 1)
+	local lbl = Instance.new("TextLabel")
+	lbl.Size = UDim2.new(1, -10, 1, 0)
+	lbl.Position = UDim2.new(0, 5, 0, 0)
+	lbl.BackgroundTransparency = 1
+	lbl.Text = text
+	lbl.Font = Enum.Font.GothamSemibold
+	lbl.TextSize = 12
+	lbl.TextColor3 = Color3.new(1, 1, 1)
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.TextTruncate = Enum.TextTruncate.AtEnd
+	lbl.Parent = frame
+	notifFrames[#notifFrames + 1] = frame
+	-- Animation slide-in
+	frame.Position = UDim2.new(1, 0, 1, -60)
+	tween(frame, {Position = UDim2.new(1, -260, 1, -60)}, 0.3)
+	-- Auto-remove apres 4s
+	task.delay(4, function()
+		tween(frame, {Position = UDim2.new(1, 0, 1, -60), BackgroundTransparency = 1}, 0.3)
+		task.wait(0.3)
+		if frame and frame.Parent then frame:Destroy() end
+		-- Retirer de la liste
+		for i, f in ipairs(notifFrames) do
+			if f == frame then table.remove(notifFrames, i) break end
+		end
+		-- Recaler les restantes
+		for i, f in ipairs(notifFrames) do
+			if f and f.Parent then
+				f.Position = UDim2.new(1, -260, 1, -60 - (#notifFrames - i) * 40)
+			end
+		end
+	end)
+end
+_G._agora_showNotif = showNotif
+
 -- searchBox de Joueurs = FILTRE LOCAL de la liste des joueurs connectes
 -- (la recherche officielle par username Roblox reste dans Registry)
 local playerSearchBox = Instance.new("TextBox")
@@ -2419,6 +2475,41 @@ local function createPlayerEntry(plr)
 	skinBtn.BorderSizePixel = 0
 	skinBtn.Parent = card
 	createCorner(skinBtn, 6)
+
+	-- Bouton Pin (epingler en haut de la liste)
+	local pinBtn = Instance.new("TextButton")
+	pinBtn.Size = UDim2.new(0, 28, 0, 18)
+	pinBtn.Position = UDim2.new(0, 5, 0, 4)
+	pinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+	pinBtn.Text = "Pin"
+	pinBtn.Font = Enum.Font.GothamSemibold
+	pinBtn.TextSize = 9
+	pinBtn.TextColor3 = Color3.fromRGB(160, 160, 170)
+	pinBtn.BorderSizePixel = 0
+	pinBtn.Parent = card
+	createCorner(pinBtn, 4)
+
+	local function updatePinBtn()
+		if pinnedPlayers[plr] then
+			pinBtn.BackgroundColor3 = Color3.fromRGB(220, 170, 40)
+			pinBtn.TextColor3 = Color3.new(0, 0, 0)
+			card.LayoutOrder = -999 + (plr.Name:byte(1) % 100)
+		else
+			pinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+			pinBtn.TextColor3 = Color3.fromRGB(160, 160, 170)
+			card.LayoutOrder = plr.Name:byte(1) + 1000
+		end
+	end
+	updatePinBtn()
+
+	pinBtn.MouseButton1Click:Connect(function()
+		if pinnedPlayers[plr] then
+			pinnedPlayers[plr] = nil
+		else
+			pinnedPlayers[plr] = true
+		end
+		updatePinBtn()
+	end)
 
 	local spectating = false
 
@@ -3335,6 +3426,11 @@ Players.PlayerAdded:Connect(function(plr)
 	addPlayerCard(plr)
 end)
 Players.PlayerRemoving:Connect(function(plr)
+	-- Notification si le joueur etait epingle
+	if pinnedPlayers[plr] then
+		showNotif("[Pin] " .. plr.DisplayName .. " a quitte le jeu", Color3.fromRGB(220, 100, 80))
+		pinnedPlayers[plr] = nil
+	end
 	task.wait(0.1)
 	removePlayerCard(plr)
 end)
