@@ -685,11 +685,12 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.63"
+	_G.CURRENT_VERSION = "v39.64"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v39.63: Fly gyro smooth (rotation fluide camera) + fix bras leves pres du sol",
+		"v39.64: Fix saut en fly (JumpPower=0, etat Physics force, plus de pose saut)",
+		"v39.63: Fly gyro smooth + fix bras leves pres du sol",
 		"v39.62: TP joueur = devant lui a 2m, oriente vers lui",
 		"v39.61: Fly ultra-fluide (velocity lerp + frame-rate independent)",
 		"v39.56: Auto-update preserve features actives (fly/ESP/noclip)",
@@ -4145,7 +4146,14 @@ local function stopFly()
 	flyState.targetVel = Vector3.zero
 	if flyState.showMobileUi then flyState.showMobileUi(false) end
 	updateCharacter()
-	if humanoid then humanoid.PlatformStand = false end
+	if humanoid then
+		humanoid.PlatformStand = false
+		-- Restaurer le saut
+		humanoid.JumpPower = 50
+		humanoid.JumpHeight = 7.2
+		-- Remettre l'etat normal
+		pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end)
+	end
 	-- Reactiver les animations (Animate)
 	local animate = character and character:FindFirstChild("Animate")
 	if animate then
@@ -4312,9 +4320,14 @@ local function startFly()
 		flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 		flyState.vel.Parent = rootPart
 
-		-- Empecher Roblox de jouer les animations de chute/freefall
+		-- Empecher Roblox de jouer les animations de chute/freefall/saut
 		if humanoid then
 			humanoid.PlatformStand = true
+			-- Forcer l'etat Physics (empeche Jump, Freefall, Landing animations)
+			pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
+			-- Desactiver le saut pendant le fly
+			humanoid.JumpPower = 0
+			humanoid.JumpHeight = 0
 			-- Desactiver l'animation Animate pour eviter les bras leves
 			local animate = character:FindFirstChild("Animate")
 			if animate then
@@ -4382,6 +4395,15 @@ local function startFly()
 		-- Empecher PlatformStand de se desactiver (Roblox peut le reset)
 		if humanoid and not humanoid.PlatformStand then
 			humanoid.PlatformStand = true
+		end
+		-- Forcer l'etat Physics en continu (empeche saut/freefall)
+		if humanoid then
+			pcall(function()
+				local state = humanoid:GetState()
+				if state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.Landed then
+					humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+				end
+			end)
 		end
 		-- Re-stopper les animations si Roblox en relance (freefall pres du sol)
 		local animate = character and character:FindFirstChild("Animate")
