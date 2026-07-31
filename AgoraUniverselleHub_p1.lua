@@ -685,11 +685,12 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.66"
+	_G.CURRENT_VERSION = "v39.67"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v39.66: Fly assis garde position assise + Animate actif (plus de T-pose/chute)",
+		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
+		"v39.66: Fly assis garde position assise + Animate actif",
 		"v39.65: Fly garde le siege (vehicule) + fix position chute",
 		"v39.64: Fix saut en fly (JumpPower=0, etat Physics force, plus de pose saut)",
 		"v39.63: Fly gyro smooth + fix bras leves pres du sol",
@@ -4124,7 +4125,7 @@ end
 
 -- ============= MOVE =============
 local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false, currentVel = Vector3.zero, targetVel = Vector3.zero, seatPart = nil }
-local noclipState = { enabled = false }
+local noclipState = { enabled = false, loop = nil }
 local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
 local platformState = { enabled = false, part = nil, y = 0, offset = 0 }
@@ -4705,7 +4706,34 @@ end, Color3.fromRGB(100, 180, 255))
 
 local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 	noclipState.enabled = on
-	if not on then
+	if on then
+		-- Activer noclip : CanCollide = false sur toutes les parts du perso
+		updateCharacter()
+		if character then
+			for _, p in ipairs(character:GetDescendants()) do
+				if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
+					p.CanCollide = false
+				end
+			end
+		end
+		-- Boucle pour maintenir CanCollide = false (Roblox peut le reset)
+		noclipState.loop = RunService.RenderStepped:Connect(function()
+			updateCharacter()
+			if not noclipState.enabled then return end
+			if character then
+				for _, p in ipairs(character:GetDescendants()) do
+					if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
+						p.CanCollide = false
+					end
+				end
+			end
+		end)
+	else
+		-- Desactiver noclip : restaurer CanCollide = true
+		if noclipState.loop then
+			noclipState.loop:Disconnect()
+			noclipState.loop = nil
+		end
 		updateCharacter()
 		if character then
 			for _, p in ipairs(character:GetDescendants()) do
