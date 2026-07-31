@@ -685,10 +685,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.61"
+	_G.CURRENT_VERSION = "v39.62"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v39.62: TP joueur = devant lui a 2m, oriente vers lui",
 		"v39.61: Fly ultra-fluide (velocity lerp + frame-rate independent)",
 		"v39.56: Auto-update preserve features actives (fly/ESP/noclip)",
 		"v39.55: Fix boucle popup MAJ + symboles X/-/+ + anti-doublons tools",
@@ -2382,7 +2383,18 @@ local function createPlayerEntry(plr)
 	tpBtn.MouseButton1Click:Connect(function()
 		updateCharacter()
 		if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and rootPart then
-			rootPart.CFrame = plr.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+			-- Teleporter devant le joueur, oriente vers lui, a 2 metres
+			local targetHrp = plr.Character:FindFirstChild("HumanoidRootPart")
+			local targetPos = targetHrp.Position
+			local targetLook = targetHrp.CFrame.LookVector
+			-- Position = 2 metres devant le joueur (dans la direction ou il regarde)
+			local tpPos = targetPos + targetLook * 2
+			-- Orienter vers le joueur (regarder le joueur en face)
+			rootPart.CFrame = CFrame.lookAt(tpPos, targetPos)
+			-- Grace anti-TP protection
+			if protectionsState then
+				protectionsState.antiTeleportGraceUntil = tick() + 0.4
+			end
 		end
 	end)
 
