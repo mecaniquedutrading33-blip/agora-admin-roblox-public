@@ -2234,37 +2234,16 @@ local function createProtectionSwitch(name, label, y)
 	end)
 end
 
--- Master switch: toggle TOUS les switches visuels (protections seulement)
+-- Table pour collecter les refs des switches de protection
+local _protSwitches = {}
+
+-- Master switch: toggle TOUS les switches de protection via .set()
 createSwitch(protectionsScroll, "TOUT ACTIVER / DESACTIVER", 10, function(on)
-	-- Toggle chaque switch individuel (appelle sa vraie callback)
-	for _, child in ipairs(protectionsScroll:GetChildren()) do
-		if child:IsA("TextButton") and child:FindFirstChild("Track") and child.Name ~= "MasterSwitch" then
-			-- Simuler un clic sur chaque switch
-			local knob = child.Track:FindFirstChild("Knob")
-			if knob then
-				local isCurrentlyOn = knob.Position.X.Scale > 0.5
-				-- Toggle seulement si l'etat actuel != l'etat desire
-				if on ~= isCurrentlyOn then
-					local connections = getconnections and getconnections(child.MouseButton1Click)
-					if connections then
-						for _, conn in ipairs(connections) do
-							conn:Fire()
-						end
-					else
-						-- Fallback: fire direct le MouseButton1Click
-						task.spawn(function() child.MouseButton1Click:Fire() end)
-					end
-				end
-			end
-		end
-	end
-	-- Mettre a jour les switches visuels
-	for _, child in ipairs(protectionsScroll:GetChildren()) do
-		if child:IsA("TextButton") and child:FindFirstChild("Track") then
-			local knob = child.Track:FindFirstChild("Knob")
-			if knob then
-				knob.Position = on and UDim2.new(1, -18, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
-				child.Track.BackgroundColor3 = on and Color3.fromRGB(60, 180, 255) or Color3.fromRGB(60, 60, 80)
+	for _, sw in ipairs(_protSwitches) do
+		if sw and sw.get and sw.set then
+			-- Toggle seulement si l'etat actuel != l'etat desire
+			if on ~= sw.get() then
+				sw.set(on)
 			end
 		end
 	end
@@ -2276,6 +2255,16 @@ createSwitch(protectionsScroll, "TOUT ACTIVER / DESACTIVER", 10, function(on)
 		end
 	end
 end)
+
+-- Wrapper pour createProtectionSwitch qui collecte les refs
+local _origCreateProtSwitch = createProtectionSwitch
+createProtectionSwitch = function(name, label, y)
+	local sw = _origCreateProtSwitch(name, label, y)
+	if sw then
+		table.insert(_protSwitches, sw)
+	end
+	return sw
+end
 
 createProtectionSwitch("antiFling", "Anti Fling", 52)
 createProtectionSwitch("antiSeat", "Anti Seat", 94)
