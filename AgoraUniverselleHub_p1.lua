@@ -718,7 +718,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.76"
+	_G.CURRENT_VERSION = "v39.77"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -730,6 +730,7 @@ local protectionsPage = createTab("Protections")
 		"v39.69: Fix NoClip/fly apres mort (scope _G)",
 		"v39.68: NoClip survive respawn",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
+		"v39.77: Fix sursaut atterrissage fly (velocite zero + Landed + delai saut)",
 		"v39.76: Fly avec PlatformStand (fix animation course + sursauts hauteur)",
 		"v39.66: Fly assis garde position assise + Animate actif",
 		"v39.65: Fly garde le siege (vehicule) + fix position chute",
@@ -4316,15 +4317,27 @@ local function stopFly()
 	if flyState.showMobileUi then flyState.showMobileUi(false) end
 	updateCharacter()
 	if humanoid then
+		-- Stopper toute velocite residuelle AVANT de liberer PlatformStand
+		if rootPart then
+			local bv = rootPart:FindFirstChildOfClass("BodyVelocity")
+			if not bv and flyState.vel then
+				-- Vel deja detruit, mais la velocite du HumanoidRootPart peut rester
+				pcall(function() rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0) end)
+			end
+		end
 		humanoid.PlatformStand = false
-		-- Restaurer le saut
-		humanoid.JumpPower = 50
-		humanoid.JumpHeight = 7.2
+		-- Restaurer le saut avec un delai (eviter saut accidentel au landing)
+		task.delay(0.3, function()
+			if humanoid and humanoid.Parent then
+				humanoid.JumpPower = 50
+				humanoid.JumpHeight = 7.2
+			end
+		end)
 		-- Reactiver les etats de chute/saut
 		pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, true) end)
 		pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true) end)
-		-- Remettre l'etat normal
-		pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end)
+		-- Landed = atterrissage propre (pas de saut comme GettingUp)
+		pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Landed) end)
 	end
 	-- Reactiver les animations (Animate)
 	local animate = character and character:FindFirstChild("Animate")
