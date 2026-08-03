@@ -718,7 +718,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.80"
+	_G.CURRENT_VERSION = "v39.81"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -730,6 +730,7 @@ local protectionsPage = createTab("Protections")
 		"v39.69: Fix NoClip/fly apres mort (scope _G)",
 		"v39.68: NoClip survive respawn",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
+		"v39.81: Fix conflit fly/noclip (exclut HRP + respecte noclip actif)",
 		"v39.80: CanCollide=false en fly (fix definitif micro-sauts sol)",
 		"v39.79: Fix surelever (PlatformStand once + gyro P reduit) + fix master switch protections",
 		"v39.78: Fix drift fly (snap vel zero) + anti-push murs (MaxForce reduit)",
@@ -4319,10 +4320,10 @@ local function stopFly()
 	flyState.targetVel = Vector3.zero
 	if flyState.showMobileUi then flyState.showMobileUi(false) end
 	updateCharacter()
-	-- Restaurer collision sur les parts du perso
-	if character then
+	-- Restaurer collision sur les parts du perso (sauf si noclip actif)
+	if character and not (noclipState and noclipState.enabled) then
 		for _, part in ipairs(character:GetDescendants()) do
-			if part:IsA("BasePart") and not part:IsA("HumanoidRootPart") then
+			if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
 				part.CanCollide = true
 			end
 		end
@@ -4557,10 +4558,10 @@ local function startFly()
 								local currentCF = flyState.gyro.CFrame
 								flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt2))
 							end
-							-- CanCollide=false + stopper anims
+							-- CanCollide=false (sauf HRP) + stopper anims
 							if character then
 								for _, part in ipairs(character:GetDescendants()) do
-									if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end
+									if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then part.CanCollide = false end
 								end
 							end
 							if humanoid then
@@ -4651,10 +4652,10 @@ local function startFly()
 				end
 			end)
 		end
-		-- Desactiver collision sur les parts du perso (empeche micro-sauts sol)
+		-- Desactiver collision sur les parts du perso (sauf HRP, comme noclip)
 		if character then
 			for _, part in ipairs(character:GetDescendants()) do
-				if part:IsA("BasePart") and part.CanCollide then
+				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then
 					part.CanCollide = false
 				end
 			end
@@ -4711,10 +4712,10 @@ local function startFly()
 			flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt))
 		end
 
-		-- Maintenir CanCollide=false (Roblox reset chaque frame)
+		-- Maintenir CanCollide=false (sauf HRP, comme noclip)
 		if character then
 			for _, part in ipairs(character:GetDescendants()) do
-				if part:IsA("BasePart") and part.CanCollide then
+				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then
 					part.CanCollide = false
 				end
 			end
