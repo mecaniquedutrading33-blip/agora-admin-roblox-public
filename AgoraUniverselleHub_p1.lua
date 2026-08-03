@@ -718,7 +718,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.79"
+	_G.CURRENT_VERSION = "v39.80"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -730,6 +730,7 @@ local protectionsPage = createTab("Protections")
 		"v39.69: Fix NoClip/fly apres mort (scope _G)",
 		"v39.68: NoClip survive respawn",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
+		"v39.80: CanCollide=false en fly (fix definitif micro-sauts sol)",
 		"v39.79: Fix surelever (PlatformStand once + gyro P reduit) + fix master switch protections",
 		"v39.78: Fix drift fly (snap vel zero) + anti-push murs (MaxForce reduit)",
 		"v39.77: Fix sursaut atterrissage fly (velocite zero + Landed + delai saut)",
@@ -4318,6 +4319,14 @@ local function stopFly()
 	flyState.targetVel = Vector3.zero
 	if flyState.showMobileUi then flyState.showMobileUi(false) end
 	updateCharacter()
+	-- Restaurer collision sur les parts du perso
+	if character then
+		for _, part in ipairs(character:GetDescendants()) do
+			if part:IsA("BasePart") and not part:IsA("HumanoidRootPart") then
+				part.CanCollide = true
+			end
+		end
+	end
 	if humanoid then
 		-- Stopper toute velocite residuelle AVANT de liberer PlatformStand
 		if rootPart then
@@ -4548,7 +4557,12 @@ local function startFly()
 								local currentCF = flyState.gyro.CFrame
 								flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt2))
 							end
-							-- PlatformStand deja set au startFly, juste stopper anims
+							-- CanCollide=false + stopper anims
+							if character then
+								for _, part in ipairs(character:GetDescendants()) do
+									if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end
+								end
+							end
 							if humanoid then
 								pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 								pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
@@ -4637,6 +4651,14 @@ local function startFly()
 				end
 			end)
 		end
+		-- Desactiver collision sur les parts du perso (empeche micro-sauts sol)
+		if character then
+			for _, part in ipairs(character:GetDescendants()) do
+				if part:IsA("BasePart") and part.CanCollide then
+					part.CanCollide = false
+				end
+			end
+		end
 
 		-- Decollage doux : lever en preservant la rotation (hauteur 0 = instantane)
 		local decollageHeight = 0
@@ -4689,7 +4711,15 @@ local function startFly()
 			flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt))
 		end
 
-		-- Stopper anims saut/chute (PlatformStand gere une fois au startFly)
+		-- Maintenir CanCollide=false (Roblox reset chaque frame)
+		if character then
+			for _, part in ipairs(character:GetDescendants()) do
+				if part:IsA("BasePart") and part.CanCollide then
+					part.CanCollide = false
+				end
+			end
+		end
+		-- Stopper anims saut/chute
 		if humanoid then
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
