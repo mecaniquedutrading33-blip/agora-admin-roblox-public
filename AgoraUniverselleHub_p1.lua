@@ -718,7 +718,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.77"
+	_G.CURRENT_VERSION = "v39.78"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -730,6 +730,7 @@ local protectionsPage = createTab("Protections")
 		"v39.69: Fix NoClip/fly apres mort (scope _G)",
 		"v39.68: NoClip survive respawn",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
+		"v39.78: Fix drift fly (snap vel zero) + anti-push murs (MaxForce reduit)",
 		"v39.77: Fix sursaut atterrissage fly (velocite zero + Landed + delai saut)",
 		"v39.76: Fly avec PlatformStand (fix animation course + sursauts hauteur)",
 		"v39.66: Fly assis garde position assise + Animate actif",
@@ -4521,12 +4522,12 @@ local function startFly()
 						-- Creer BodyGyro + BodyVelocity maintenant
 						flyState.gyro = Instance.new("BodyGyro")
 						flyState.gyro.P = 9e4
-						flyState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+						flyState.gyro.MaxTorque = Vector3.new(9e4, 9e4, 9e4)
 						flyState.gyro.CFrame = Camera.CFrame
 						flyState.gyro.Parent = rootPart
 						flyState.vel = Instance.new("BodyVelocity")
 						flyState.vel.Velocity = Vector3.zero
-						flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+						flyState.vel.MaxForce = Vector3.new(9e4, 9e4, 9e4)
 						flyState.vel.Parent = rootPart
 						-- Pas de PlatformStand : garder pose debout
 						pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Running) end)
@@ -4579,15 +4580,19 @@ local function startFly()
 							else
 								flyState.targetVel = Vector3.zero
 							end
-							local smoothFactor = 0.15
 							if flyState.targetVel.Magnitude > 0 then
+								local smoothFactor = 0.20
 								local dot = flyState.currentVel.Unit:Dot(flyState.targetVel.Unit)
-								if dot < 0.3 then smoothFactor = 0.08 else smoothFactor = 0.20 end
+								if dot < 0.3 then smoothFactor = 0.08 end
+								local alpha = 1 - math.exp(-smoothFactor * 60 * dt2)
+								flyState.currentVel = flyState.currentVel:Lerp(flyState.targetVel, alpha)
 							else
-								smoothFactor = 0.12
+								local alpha = 1 - math.exp(-0.30 * 60 * dt2)
+								flyState.currentVel = flyState.currentVel:Lerp(Vector3.zero, alpha)
+								if flyState.currentVel.Magnitude < 0.5 then
+									flyState.currentVel = Vector3.zero
+								end
 							end
-							local alpha = 1 - math.exp(-smoothFactor * 60 * dt2)
-							flyState.currentVel = flyState.currentVel:Lerp(flyState.targetVel, alpha)
 							if flyState.vel then
 								flyState.vel.Velocity = flyState.currentVel
 							end
@@ -4605,13 +4610,13 @@ local function startFly()
 		-- Creer BodyGyro + BodyVelocity AVANT le decollage pour garder le follow camera
 		flyState.gyro = Instance.new("BodyGyro")
 		flyState.gyro.P = 9e4
-		flyState.gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+		flyState.gyro.MaxTorque = Vector3.new(9e4, 9e4, 9e4)
 		flyState.gyro.CFrame = Camera.CFrame
 		flyState.gyro.Parent = rootPart
 
 		flyState.vel = Instance.new("BodyVelocity")
 		flyState.vel.Velocity = Vector3.zero
-		flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+		flyState.vel.MaxForce = Vector3.new(9e4, 9e4, 9e4)
 		flyState.vel.Parent = rootPart
 
 		-- PlatformStand = true : objet physique flottant (plus d'anim course ni snap sol)
@@ -4723,22 +4728,22 @@ local function startFly()
 			flyState.targetVel = Vector3.zero
 		end
 
-		-- Smooth factor adapte selon le contexte
-		local smoothFactor = 0.15
 		if flyState.targetVel.Magnitude > 0 then
+			-- Smooth acceleration
+			local smoothFactor = 0.20
 			local dot = flyState.currentVel.Unit:Dot(flyState.targetVel.Unit)
-			if dot < 0.3 then
-				smoothFactor = 0.08
-			else
-				smoothFactor = 0.20
-			end
+			if dot < 0.3 then smoothFactor = 0.08 end
+			local alpha = 1 - math.exp(-smoothFactor * 60 * dt)
+			flyState.currentVel = flyState.currentVel:Lerp(flyState.targetVel, alpha)
 		else
-			smoothFactor = 0.12
+			-- SNAP to zero : pas de drift residuel
+			local alpha = 1 - math.exp(-0.30 * 60 * dt)
+			flyState.currentVel = flyState.currentVel:Lerp(Vector3.zero, alpha)
+			-- Si presque zero, snap exact
+			if flyState.currentVel.Magnitude < 0.5 then
+				flyState.currentVel = Vector3.zero
+			end
 		end
-
-		-- Frame-rate independent lerp
-		local alpha = 1 - math.exp(-smoothFactor * 60 * dt)
-		flyState.currentVel = flyState.currentVel:Lerp(flyState.targetVel, alpha)
 
 		if flyState.vel then
 			flyState.vel.Velocity = flyState.currentVel
