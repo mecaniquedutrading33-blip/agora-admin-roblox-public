@@ -718,7 +718,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.78"
+	_G.CURRENT_VERSION = "v39.79"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -730,6 +730,7 @@ local protectionsPage = createTab("Protections")
 		"v39.69: Fix NoClip/fly apres mort (scope _G)",
 		"v39.68: NoClip survive respawn",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
+		"v39.79: Fix surelever (PlatformStand once + gyro P reduit) + fix master switch protections",
 		"v39.78: Fix drift fly (snap vel zero) + anti-push murs (MaxForce reduit)",
 		"v39.77: Fix sursaut atterrissage fly (velocite zero + Landed + delai saut)",
 		"v39.76: Fly avec PlatformStand (fix animation course + sursauts hauteur)",
@@ -4521,13 +4522,13 @@ local function startFly()
 						flyState.seatPart = nil
 						-- Creer BodyGyro + BodyVelocity maintenant
 						flyState.gyro = Instance.new("BodyGyro")
-						flyState.gyro.P = 9e4
-						flyState.gyro.MaxTorque = Vector3.new(9e4, 9e4, 9e4)
+						flyState.gyro.P = 5e3
+						flyState.gyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
 						flyState.gyro.CFrame = Camera.CFrame
 						flyState.gyro.Parent = rootPart
 						flyState.vel = Instance.new("BodyVelocity")
 						flyState.vel.Velocity = Vector3.zero
-						flyState.vel.MaxForce = Vector3.new(9e4, 9e4, 9e4)
+						flyState.vel.MaxForce = Vector3.new(1e6, 1e6, 1e6)
 						flyState.vel.Parent = rootPart
 						-- Pas de PlatformStand : garder pose debout
 						pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Running) end)
@@ -4547,11 +4548,10 @@ local function startFly()
 								local currentCF = flyState.gyro.CFrame
 								flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt2))
 							end
-							-- PlatformStand = true pour fly normal (pas de anim course)
+							-- PlatformStand deja set au startFly, juste stopper anims
 							if humanoid then
 								pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 								pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
-								humanoid.PlatformStand = true
 								pcall(function()
 									for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
 										local name = track.Animation and track.Animation.Name or ""
@@ -4609,14 +4609,14 @@ local function startFly()
 
 		-- Creer BodyGyro + BodyVelocity AVANT le decollage pour garder le follow camera
 		flyState.gyro = Instance.new("BodyGyro")
-		flyState.gyro.P = 9e4
-		flyState.gyro.MaxTorque = Vector3.new(9e4, 9e4, 9e4)
+		flyState.gyro.P = 5e3
+		flyState.gyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
 		flyState.gyro.CFrame = Camera.CFrame
 		flyState.gyro.Parent = rootPart
 
 		flyState.vel = Instance.new("BodyVelocity")
 		flyState.vel.Velocity = Vector3.zero
-		flyState.vel.MaxForce = Vector3.new(9e4, 9e4, 9e4)
+		flyState.vel.MaxForce = Vector3.new(1e6, 1e6, 1e6)
 		flyState.vel.Parent = rootPart
 
 		-- PlatformStand = true : objet physique flottant (plus d'anim course ni snap sol)
@@ -4689,12 +4689,10 @@ local function startFly()
 			flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt))
 		end
 
-		-- Maintenir PlatformStand (plus d'anim course, plus de snap sol)
+		-- Stopper anims saut/chute (PlatformStand gere une fois au startFly)
 		if humanoid then
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
-			if not humanoid.PlatformStand then humanoid.PlatformStand = true end
-			-- Stopper anims saut/chute si Roblox en relance
 			pcall(function()
 				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
 					local name = track.Animation and track.Animation.Name or ""
