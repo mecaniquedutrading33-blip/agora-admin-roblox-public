@@ -2293,7 +2293,7 @@ RunService.Heartbeat:Connect(function()
 	local pos = rootPart.Position
 	local vel = rootPart.AssemblyLinearVelocity
 
-	if protectionsState.antiFling then
+	if protectionsState.antiFling and not flyState.flying and not noclipState.enabled then
 		if math.abs(vel.Y) > 500 then
 			rootPart.AssemblyLinearVelocity = Vector3.new(vel.X * 0.1, 0, vel.Z * 0.1)
 		end
@@ -2345,7 +2345,7 @@ RunService.Heartbeat:Connect(function()
 		end
 	end
 
-	if protectionsState.antiFall then
+	if protectionsState.antiFall and not flyState.flying then
 		if vel.Y < -100 and pos.Y < -500 then
 			rootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
 			if protectionsState.lastSafeCFrame then
@@ -2391,7 +2391,7 @@ RunService.Heartbeat:Connect(function()
 		end
 	end
 
-	if antiVoidState.enabled and pos.Y < -2000 and protectionsState.lastSafeCFrame then
+	if antiVoidState.enabled and pos.Y < -2000 and protectionsState.lastSafeCFrame and not flyState.flying then
 		rootPart.CFrame = protectionsState.lastSafeCFrame
 		rootPart.AssemblyLinearVelocity = Vector3.zero
 	end
