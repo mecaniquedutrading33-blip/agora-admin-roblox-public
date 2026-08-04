@@ -4644,7 +4644,7 @@ local function startFly()
 						flyState.gyro.Parent = rootPart
 						flyState.vel = Instance.new("BodyVelocity")
 						flyState.vel.Velocity = Vector3.zero
-						flyState.vel.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+						flyState.vel.MaxForce = Vector3.new(1e6, 9e9, 1e6)
 						flyState.vel.Parent = rootPart
 						-- Pas de PlatformStand : garder pose debout
 						pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Running) end)
@@ -4737,7 +4737,7 @@ local function startFly()
 
 		flyState.vel = Instance.new("BodyVelocity")
 		flyState.vel.Velocity = Vector3.zero
-		flyState.vel.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+		flyState.vel.MaxForce = Vector3.new(1e6, 9e9, 1e6)
 		flyState.vel.Parent = rootPart
 
 		-- PlatformStand = true : objet physique flottant (plus d'anim course ni snap sol)
