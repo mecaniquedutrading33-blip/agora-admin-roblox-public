@@ -202,7 +202,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	-- NoClip: re-appliquer apres respawn
 	local ns = _G._agora_noclipState
 	local sw = _G._agora_noclipSwitch
-	if ns and ns.enabled then
+	if ns and ns.enabled and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 		-- Deconnecter l'ancienne boucle
 		if ns.loop then
 			ns.loop:Disconnect()
@@ -790,11 +790,12 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.89"
+	_G.CURRENT_VERSION = "v39.90"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v39.75: Re-fix compteurs Home + contours remotes + textes + scrolls auto (ecrase par autre commit)",
+		"v39.90: Fix sursauts voiture (noclip/fly seated guards) + HRP exclusion + gradual stopFly + F10 boutons mobile",
+					"v39.75: Re-fix compteurs Home + contours remotes + textes + scrolls auto (ecrase par autre commit)",
 		"v39.74: Langues scroll fix + SA multi-detection + Force Local + tools server + cheat thresholds",
 		"v39.73: Pin joueur (epingler en haut) + notification depart + systeme notif visuel",
 		"v39.71: Fly garde pose debout naturel",
@@ -802,8 +803,7 @@ local protectionsPage = createTab("Protections")
 		"v39.69: Fix NoClip/fly apres mort (scope _G)",
 		"v39.68: NoClip survive respawn",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
-		"v39.89: 7 fixes sursauts — noclip HRP, antiSpeedHack, dance, testVel, infiniteJump, gotoWalk fly guards",
-					"v39.88: Popup reload seulement sur \"Rejoindre ce serveur\" (pas TP joueur)",
+		"v39.88: Popup reload seulement sur \"Rejoindre ce serveur\" (pas TP joueur)",
 					"v39.87: Popup reload dit \"Remettre le script?\" au lieu de \"panel\"",
 					"v39.86: Fix sursauts stopFly (physics gradual) + popup reload apres Rejoindre",
 					"v39.85: TP vers joueur a 4m au lieu de 2m (un peu plus loin)",
@@ -4400,38 +4400,40 @@ local function stopFly()
 	flyState.targetVel = Vector3.zero
 	if flyState.showMobileUi then flyState.showMobileUi(false) end
 	updateCharacter()
-	-- Restaurer collision sur les parts du perso (sauf si noclip actif)
-	if character and not (noclipState and noclipState.enabled) then
-		for _, part in ipairs(character:GetDescendants()) do
-			if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-				part.CanCollide = true
-			end
-		end
-	end
-	-- Zero velocity IMMEDIAT (avant PlatformStand = false)
+	-- Zero velocity IMMEDIAT
 	if rootPart then
 		pcall(function() rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0) end)
+		pcall(function() rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0) end)
 	end
+	-- Garder PlatformStand 0.15s de plus pour eviter le snap physique (sursauts)
 	if humanoid then
-		humanoid.PlatformStand = false
-		-- Restaurer le saut avec un delai (eviter saut accidentel au landing)
-		task.delay(0.3, function()
-			if humanoid and humanoid.Parent then
-				humanoid.JumpPower = 50
-				humanoid.JumpHeight = 7.2
-			end
-		end)
-		-- Reactiver les etats de chute/saut
 		pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, true) end)
 		pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true) end)
-		-- GettingUp = relev propre sans hop
-		pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end)
 	end
-	-- Reactiver les animations (Animate)
-	local animate = character and character:FindFirstChild("Animate")
-	if animate then
-		animate.Disabled = false
-	end
+	task.delay(0.15, function()
+		if humanoid and humanoid.Parent then
+			humanoid.PlatformStand = false
+			pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end)
+			task.delay(0.2, function()
+				if humanoid and humanoid.Parent then
+					humanoid.JumpPower = 50
+					humanoid.JumpHeight = 7.2
+				end
+			end)
+		end
+		-- Restaurer collision progressivement (sauf si noclip actif)
+		if character and not (noclipState and noclipState.enabled) then
+			for _, part in ipairs(character:GetDescendants()) do
+				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+					part.CanCollide = true
+				end
+			end
+		end
+		local animate = character and character:FindFirstChild("Animate")
+		if animate then
+			animate.Disabled = false
+		end
+	end)
 	flySwitch.set(false)
 	-- Active la grace anti-TP + antiFling/Fall pour reinitialiser sans sursauts
 	if protectionsState then
@@ -4730,7 +4732,7 @@ local function startFly()
 			end)
 		end
 		-- Desactiver collision sur les parts du perso (sauf HRP, comme noclip)
-		if character then
+		if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 			for _, part in ipairs(character:GetDescendants()) do
 				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then
 					part.CanCollide = false
@@ -4790,7 +4792,7 @@ local function startFly()
 		end
 
 		-- Maintenir CanCollide=false (sauf HRP, comme noclip)
-		if character then
+		if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 			for _, part in ipairs(character:GetDescendants()) do
 				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then
 					part.CanCollide = false
@@ -4986,6 +4988,7 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 		noclipState.loop = RunService.RenderStepped:Connect(function()
 			updateCharacter()
 			if not noclipState.enabled then return end
+		if humanoid and humanoid.Sit and humanoid.SeatPart then return end
 			if character then
 				for _, p in ipairs(character:GetDescendants()) do
 					if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
@@ -5003,7 +5006,7 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 		updateCharacter()
 		if character then
 			for _, p in ipairs(character:GetDescendants()) do
-				if p:IsA("BasePart") then p.CanCollide = true end
+				if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = true end
 			end
 		end
 		-- Active la grace anti-TP apres sortie du noclip
@@ -5272,6 +5275,76 @@ platformLabel.TextWrapped = true
 platformLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 platformLabel.TextXAlignment = Enum.TextXAlignment.Left
 platformLabel.Parent = movePage
+
+-- Boutons F10 pour mobile (toggle + monter/descendre)
+local platBtnRow = Instance.new("Frame")
+platBtnRow.Size = UDim2.new(1, -16, 0, 36)
+platBtnRow.Position = UDim2.new(0, 8, 0, 360)
+platBtnRow.BackgroundTransparency = 1
+platBtnRow.Parent = movePage
+
+local platToggleBtn = Instance.new("TextButton")
+platToggleBtn.Size = UDim2.new(0.34, 0, 1, 0)
+platToggleBtn.Position = UDim2.new(0, 0, 0, 0)
+platToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+platToggleBtn.Text = "F10: ON"
+platToggleBtn.Font = Enum.Font.GothamSemibold
+platToggleBtn.TextSize = 12
+platToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+platToggleBtn.BorderSizePixel = 0
+platToggleBtn.Parent = platBtnRow
+local pTCorner = Instance.new("UICorner")
+pTCorner.CornerRadius = UDim.new(0, 6)
+pTCorner.Parent = platToggleBtn
+
+local platUpBtn = Instance.new("TextButton")
+platUpBtn.Size = UDim2.new(0.31, 0, 1, 0)
+platUpBtn.Position = UDim2.new(0.36, 0, 0, 0)
+platUpBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+platUpBtn.Text = "+ Monter"
+platUpBtn.Font = Enum.Font.GothamSemibold
+platUpBtn.TextSize = 12
+platUpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+platUpBtn.BorderSizePixel = 0
+platUpBtn.Parent = platBtnRow
+local pUCorner = Instance.new("UICorner")
+pUCorner.CornerRadius = UDim.new(0, 6)
+pUCorner.Parent = platUpBtn
+
+local platDownBtn = Instance.new("TextButton")
+platDownBtn.Size = UDim2.new(0.31, 0, 1, 0)
+platDownBtn.Position = UDim2.new(0.69, 0, 0, 0)
+platDownBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+platDownBtn.Text = "- Descendre"
+platDownBtn.Font = Enum.Font.GothamSemibold
+platDownBtn.TextSize = 12
+platDownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+platDownBtn.BorderSizePixel = 0
+platDownBtn.Parent = platBtnRow
+local pDCorner = Instance.new("UICorner")
+pDCorner.CornerRadius = UDim.new(0, 6)
+pDCorner.Parent = platDownBtn
+
+platToggleBtn.MouseButton1Click:Connect(function()
+	_G._platformToggle = not _G._platformToggle
+	if _G._platformToggle then
+		platToggleBtn.Text = "F10: ON"
+		platToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 140, 80)
+	else
+		platToggleBtn.Text = "F10: OFF"
+		platToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+	end
+end)
+
+platUpBtn.MouseButton1Click:Connect(function()
+	_G._platformUp = true
+	task.delay(0.1, function() _G._platformUp = false end)
+end)
+
+platDownBtn.MouseButton1Click:Connect(function()
+	_G._platformDown = true
+	task.delay(0.1, function() _G._platformDown = false end)
+end)
 
 
 -- ============= LOCAL (ZERO-G + TIME + GRAVITY) =============
