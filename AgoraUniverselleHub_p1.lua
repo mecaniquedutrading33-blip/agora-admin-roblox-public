@@ -235,6 +235,78 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	if es and (es.enabled or _G["globalESPEnabled"]) then
 		pcall(function() _G["refreshESP"]() end)
 	end
+	-- Reload popup apres TP (Rejoindre)
+	if _G._agoraAwaitingReload then
+		_G._agoraAwaitingReload = false
+		task.delay(1.5, function()
+			pcall(function()
+				local sg = Instance.new("ScreenGui")
+				sg.Name = "AgoraReloadPrompt"
+				sg.ResetOnSpawn = false
+				sg.ZIndex = 99999
+				sg.Parent = game:GetService("CoreGui")
+				local frame = Instance.new("Frame")
+				frame.Size = UDim2.new(0, 320, 0, 140)
+				frame.Position = UDim2.new(0.5, -160, 0.5, -70)
+				frame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+				frame.BorderSizePixel = 0
+				frame.Parent = sg
+				local corner = Instance.new("UICorner")
+				corner.CornerRadius = UDim.new(0, 10)
+				corner.Parent = frame
+				local stroke = Instance.new("UIStroke")
+				stroke.Color = Color3.fromRGB(100, 80, 180)
+				stroke.Thickness = 2
+				stroke.Parent = frame
+				local title = Instance.new("TextLabel")
+				title.Size = UDim2.new(1, 0, 0, 40)
+				title.BackgroundTransparency = 1
+				title.Text = "[Agora] Remettre le panel?"
+				title.Font = Enum.Font.GothamBold
+				title.TextSize = 16
+				title.TextColor3 = Color3.fromRGB(255, 255, 255)
+				title.Parent = frame
+				local yesBtn = Instance.new("TextButton")
+				yesBtn.Size = UDim2.new(0, 130, 0, 40)
+				yesBtn.Position = UDim2.new(0, 15, 0, 85)
+				yesBtn.BackgroundColor3 = Color3.fromRGB(60, 140, 80)
+				yesBtn.Text = "Oui"
+				yesBtn.Font = Enum.Font.GothamSemibold
+				yesBtn.TextSize = 15
+				yesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+				yesBtn.BorderSizePixel = 0
+				yesBtn.Parent = frame
+				local yCorner = Instance.new("UICorner")
+				yCorner.CornerRadius = UDim.new(0, 8)
+				yCorner.Parent = yesBtn
+				local noBtn = Instance.new("TextButton")
+				noBtn.Size = UDim2.new(0, 130, 0, 40)
+				noBtn.Position = UDim2.new(1, -145, 0, 85)
+				noBtn.BackgroundColor3 = Color3.fromRGB(140, 60, 60)
+				noBtn.Text = "Non"
+				noBtn.Font = Enum.Font.GothamSemibold
+				noBtn.TextSize = 15
+				noBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+				noBtn.BorderSizePixel = 0
+				noBtn.Parent = frame
+				local nCorner = Instance.new("UICorner")
+				nCorner.CornerRadius = UDim.new(0, 8)
+				nCorner.Parent = noBtn
+				yesBtn.MouseButton1Click:Connect(function()
+					sg:Destroy()
+					pcall(function() _G.shutdownPanel() end)
+					task.wait(0.3)
+					pcall(function()
+						loadstring(game:HttpGet("https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache=" .. tick()))()
+					end)
+				end)
+				noBtn.MouseButton1Click:Connect(function()
+					sg:Destroy()
+				end)
+				task.delay(30, function() if sg and sg.Parent then sg:Destroy() end end)
+			end)
+		end)
+	end
 end)
 
 local function getDeviceType()
@@ -718,7 +790,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.85"
+	_G.CURRENT_VERSION = "v39.86"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -730,7 +802,8 @@ local protectionsPage = createTab("Protections")
 		"v39.69: Fix NoClip/fly apres mort (scope _G)",
 		"v39.68: NoClip survive respawn",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
-		"v39.85: TP vers joueur a 4m au lieu de 2m (un peu plus loin)",
+		"v39.86: Fix sursauts stopFly (physics gradual) + popup reload apres Rejoindre",
+					"v39.85: TP vers joueur a 4m au lieu de 2m (un peu plus loin)",
 					"v39.84: Fix sursauts apres fly + Eleven Tool RenderStepped leak + zeroGravity fly guard",
 					"v39.83: Protections Heartbeat ignore fly (antiFling/antiFall/antiVoid) + grace 1s",
 		"v39.82: Fix sursaut post-fly (zero vel AVANT PlatformStand=false)",
