@@ -47,11 +47,9 @@ local platformState = _G["platformState"]
 local espState = _G["espState"]
 local gotoWalkState = _G._P1["gotoWalkState"]
 local zeroGSwitch = _G._P1["zeroGSwitch"]
--- character/humanoid/rootPart are live values — read from _G each time
-local humanoid = nil  -- updated by updateCharacter via _G._agoraHum
-local rootPart = nil  -- updated by updateCharacter via _G._agoraRoot
-local character = nil  -- updated by updateCharacter via _G._agoraChar
--- Initial sync
+local humanoid = nil
+local rootPart = nil
+local character = nil
 character, humanoid, rootPart = _G._agoraChar, _G._agoraHum, _G._agoraRoot
 local mainFrame = _G["mainFrame"]
 local screenGui = _G["screenGui"]
