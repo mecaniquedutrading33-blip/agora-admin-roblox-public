@@ -1846,7 +1846,8 @@ end)
 createButton(extraScroll, "Rejoindre ce serveur", 0, Color3.fromRGB(70, 130, 200), function()
 	pcall(function()
 		local TeleportService = game:GetService("TeleportService")
-		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+		_G._agoraAwaitingReload = true
+TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
 	end)
 end)
 
@@ -3719,7 +3720,9 @@ local function renderResult(data, parent)
 						local TS = game:GetService("TeleportService")
 						local pid = data.placeId or data.gameId
 						if data.gameInstanceId and data.gameInstanceId ~= "" then
-							TS:TeleportToPlaceInstance(pid, data.gameInstanceId, LocalPlayer)
+							-- Marquer qu'on attend un reload apres TP
+			_G._agoraAwaitingReload = true
+			TS:TeleportToPlaceInstance(pid, data.gameInstanceId, LocalPlayer)
 						else
 							TS:Teleport(pid, LocalPlayer)
 						end
