@@ -2449,7 +2449,7 @@ end)
 
 -- Anti Infinite Jump: empecher les autres de sauter indefiniment
 UserInputService.JumpRequest:Connect(function()
-	if protectionsState.antiInfiniteJump and character and humanoid then
+	if protectionsState.antiInfiniteJump and character and humanoid and not flyState.flying then
 		-- Detecter si quelqu'un saute en l'air (pas au sol)
 		local state = humanoid:GetState()
 		if state ~= Enum.HumanoidStateType.Landed and state ~= Enum.HumanoidStateType.Running then
