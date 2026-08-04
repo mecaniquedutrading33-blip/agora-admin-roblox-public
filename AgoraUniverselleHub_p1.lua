@@ -186,6 +186,10 @@ local function updateCharacter()
 	else
 		humanoid, rootPart = nil, nil
 	end
+	-- Sync to _G so p2 can read live values
+	_G._agoraChar = character
+	_G._agoraHum = humanoid
+	_G._agoraRoot = rootPart
 end
 
 updateCharacter()
@@ -219,6 +223,9 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 		ns.loop = RunService.RenderStepped:Connect(function()
 			updateCharacter()
 			if not ns.enabled then return end
+			local fs = _G["flyState"]
+			if fs and fs.flying then return end
+			if humanoid and humanoid.Sit and humanoid.SeatPart then return end
 			if character then
 				for _, p in ipairs(character:GetDescendants()) do
 					if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
@@ -790,10 +797,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.97"
+	_G.CURRENT_VERSION = "v39.98"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v39.98: FIX noclip (p2 stale character/humanoid/rootPart via _G sync) + fly guard CharacterAdded",
 		"v39.97: Force PlatformStand + WalkSpeed=0 chaque frame fly + re-fix noclip/infiniteJump/antiSpeedHack",
 		"v39.96: MEGA FIX 9 sursauts — noclip fly guard + infiniteJump + Spider + dance + testVel + seated CanCollide",
 		"v39.95: Stop walk/run anim en fly + WalkSpeed=0 pendant fly",
