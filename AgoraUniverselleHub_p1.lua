@@ -790,12 +790,12 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.91"
+	_G.CURRENT_VERSION = "v39.92"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v39.91: F10 switch propre + noclip desactive en fly + fix F10 monte tout seul",
-					"v39.90: Fix sursauts voiture (noclip/fly seated guards) + HRP exclusion + gradual stopFly + F10 boutons mobile",
+		"v39.92: Home scroll changelog + stats fallback indisponible",
+		"v39.90: Fix sursauts voiture (noclip/fly seated guards) + HRP exclusion + gradual stopFly + F10 boutons mobile",
 					"v39.75: Re-fix compteurs Home + contours remotes + textes + scrolls auto (ecrase par autre commit)",
 		"v39.74: Langues scroll fix + SA multi-detection + Force Local + tools server + cheat thresholds",
 		"v39.73: Pin joueur (epingler en haut) + notification depart + systeme notif visuel",
@@ -915,6 +915,9 @@ local protectionsPage = createTab("Protections")
 					pcall(function() if totalLabel then totalLabel.Text = (translations[langCode] or translations["FR"]).utilisateurs .. ": " .. agoraStats.totalLaunches end end)
 					pcall(function() if onlineLabel then onlineLabel.Text = (translations[langCode] or translations["FR"]).enLigne .. ": " .. agoraStats.onlineUsers end end)
 				end
+			else
+				pcall(function() if totalLabel then totalLabel.Text = "Utilisateurs: indisponible" end end)
+				pcall(function() if onlineLabel then onlineLabel.Text = "En ligne: indisponible" end end)
 			end
 		end)
 	end
@@ -980,7 +983,7 @@ local protectionsPage = createTab("Protections")
 	-- Changelog card
 	local changelogCard = Instance.new("Frame")
 	changelogCard.Size = UDim2.new(1, -8, 0, 0)
-	changelogCard.AutomaticSize = Enum.AutomaticSize.Y
+	changelogCard.Size = UDim2.new(1, -8, 0, 170)
 	changelogCard.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
 	changelogCard.BorderSizePixel = 0
 	changelogCard.LayoutOrder = 2
@@ -988,20 +991,9 @@ local protectionsPage = createTab("Protections")
 	createCorner(changelogCard, 10)
 	createStroke(changelogCard, Color3.fromRGB(50, 50, 70), 1)
 	
-	local chgLayout = Instance.new("UIListLayout")
-	chgLayout.Padding = UDim.new(0, 3)
-	chgLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	chgLayout.Parent = changelogCard
-	
-	local chgPad = Instance.new("UIPadding")
-	chgPad.PaddingTop = UDim.new(0, 8)
-	chgPad.PaddingBottom = UDim.new(0, 8)
-	chgPad.PaddingLeft = UDim.new(0, 10)
-	chgPad.PaddingRight = UDim.new(0, 10)
-	chgPad.Parent = chgLayout
-	
+	-- Titre "Nouveautes" (fixe, hors du scroll)
 	local nouveautesLabel = Instance.new("TextLabel")
-	nouveautesLabel.Size = UDim2.new(1, 0, 0, 24)
+	nouveautesLabel.Size = UDim2.new(1, -16, 0, 24)
 	nouveautesLabel.BackgroundTransparency = 1
 	nouveautesLabel.Text = "Nouveautes"
 	nouveautesLabel.Font = Enum.Font.GothamBold
@@ -1010,15 +1002,33 @@ local protectionsPage = createTab("Protections")
 	nouveautesLabel.TextXAlignment = Enum.TextXAlignment.Left
 	nouveautesLabel.LayoutOrder = 0
 	nouveautesLabel.Parent = changelogCard
-	
+
+	-- Scroll INTERNE pour le changelog (pas toute la page Home)
+	local chgScroll = Instance.new("ScrollingFrame")
+	chgScroll.Size = UDim2.new(1, -10, 0, 130)
+	chgScroll.Position = UDim2.new(0, 5, 0, 30)
+	chgScroll.BackgroundTransparency = 1
+	chgScroll.BorderSizePixel = 0
+	chgScroll.ScrollBarThickness = 3
+	chgScroll.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 120)
+	chgScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	chgScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	chgScroll.LayoutOrder = 1
+	chgScroll.Parent = changelogCard
+
+	local chgLayout = Instance.new("UIListLayout")
+	chgLayout.Padding = UDim.new(0, 2)
+	chgLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	chgLayout.Parent = chgScroll
+
 	-- Highlight les 3 dernieres versions en vert
 	for idx, entry in ipairs(changelogEntries) do
 		local entryLabel = Instance.new("TextLabel")
-		entryLabel.Size = UDim2.new(1, 0, 0, 20)
+		entryLabel.Size = UDim2.new(1, 0, 0, 18)
 		entryLabel.BackgroundTransparency = 1
 		entryLabel.Text = entry
 		entryLabel.Font = Enum.Font.Gotham
-		entryLabel.TextSize = 13
+		entryLabel.TextSize = 12
 		if idx <= 3 then
 			entryLabel.TextColor3 = Color3.fromRGB(120, 220, 140)
 			entryLabel.Font = Enum.Font.GothamSemibold
@@ -1026,11 +1036,12 @@ local protectionsPage = createTab("Protections")
 			entryLabel.TextColor3 = Color3.fromRGB(140, 140, 160)
 		end
 		entryLabel.TextXAlignment = Enum.TextXAlignment.Left
+		entryLabel.TextWrapped = true
 		entryLabel.LayoutOrder = idx
-		entryLabel.Parent = changelogCard
+		entryLabel.Parent = chgScroll
 	end
-	
-	-- Stats card (utilisateurs + en ligne)
+
+		-- Stats card (utilisateurs + en ligne)
 	local statsCard = Instance.new("Frame")
 	statsCard.Size = UDim2.new(1, -8, 0, 50)
 	statsCard.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
@@ -1929,8 +1940,8 @@ local function showNotif(text, color)
 			if f and f.Parent then
 				f.Position = UDim2.new(1, -260, 1, -60 - (#notifFrames - i) * 40)
 			end
-		end
-	end)
+	end
+end)
 end
 _G._agora_showNotif = showNotif
 
@@ -4990,7 +5001,6 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 			updateCharacter()
 			if not noclipState.enabled then return end
 		if humanoid and humanoid.Sit and humanoid.SeatPart then return end
-		if flyState.flying then return end
 			if character then
 				for _, p in ipairs(character:GetDescendants()) do
 					if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
@@ -5278,20 +5288,74 @@ platformLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 platformLabel.TextXAlignment = Enum.TextXAlignment.Left
 platformLabel.Parent = movePage
 
--- F10 plateforme: switch + boutons +/-
-local platformSwitch = createSwitch(movePage, "Plateforme F10", 360, function(on)
-    _G._platformEnabled = on
-end)
-_G._platformSwitch = platformSwitch
+-- Boutons F10 pour mobile (toggle + monter/descendre)
+local platBtnRow = Instance.new("Frame")
+platBtnRow.Size = UDim2.new(1, -16, 0, 36)
+platBtnRow.Position = UDim2.new(0, 8, 0, 360)
+platBtnRow.BackgroundTransparency = 1
+platBtnRow.Parent = movePage
 
-createButton(movePage, "+ Monter", 400, Color3.fromRGB(60, 100, 160), function()
-    _G._platformBumpUp = true
-    task.delay(0.15, function() _G._platformBumpUp = false end)
+local platToggleBtn = Instance.new("TextButton")
+platToggleBtn.Size = UDim2.new(0.34, 0, 1, 0)
+platToggleBtn.Position = UDim2.new(0, 0, 0, 0)
+platToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+platToggleBtn.Text = "F10: ON"
+platToggleBtn.Font = Enum.Font.GothamSemibold
+platToggleBtn.TextSize = 12
+platToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+platToggleBtn.BorderSizePixel = 0
+platToggleBtn.Parent = platBtnRow
+local pTCorner = Instance.new("UICorner")
+pTCorner.CornerRadius = UDim.new(0, 6)
+pTCorner.Parent = platToggleBtn
+
+local platUpBtn = Instance.new("TextButton")
+platUpBtn.Size = UDim2.new(0.31, 0, 1, 0)
+platUpBtn.Position = UDim2.new(0.36, 0, 0, 0)
+platUpBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+platUpBtn.Text = "+ Monter"
+platUpBtn.Font = Enum.Font.GothamSemibold
+platUpBtn.TextSize = 12
+platUpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+platUpBtn.BorderSizePixel = 0
+platUpBtn.Parent = platBtnRow
+local pUCorner = Instance.new("UICorner")
+pUCorner.CornerRadius = UDim.new(0, 6)
+pUCorner.Parent = platUpBtn
+
+local platDownBtn = Instance.new("TextButton")
+platDownBtn.Size = UDim2.new(0.31, 0, 1, 0)
+platDownBtn.Position = UDim2.new(0.69, 0, 0, 0)
+platDownBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+platDownBtn.Text = "- Descendre"
+platDownBtn.Font = Enum.Font.GothamSemibold
+platDownBtn.TextSize = 12
+platDownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+platDownBtn.BorderSizePixel = 0
+platDownBtn.Parent = platBtnRow
+local pDCorner = Instance.new("UICorner")
+pDCorner.CornerRadius = UDim.new(0, 6)
+pDCorner.Parent = platDownBtn
+
+platToggleBtn.MouseButton1Click:Connect(function()
+	_G._platformToggle = not _G._platformToggle
+	if _G._platformToggle then
+		platToggleBtn.Text = "F10: ON"
+		platToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 140, 80)
+	else
+		platToggleBtn.Text = "F10: OFF"
+		platToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+	end
 end)
 
-createButton(movePage, "- Descendre", 436, Color3.fromRGB(60, 100, 160), function()
-    _G._platformBumpDown = true
-    task.delay(0.15, function() _G._platformBumpDown = false end)
+platUpBtn.MouseButton1Click:Connect(function()
+	_G._platformUp = true
+	task.delay(0.1, function() _G._platformUp = false end)
+end)
+
+platDownBtn.MouseButton1Click:Connect(function()
+	_G._platformDown = true
+	task.delay(0.1, function() _G._platformDown = false end)
 end)
 
 
