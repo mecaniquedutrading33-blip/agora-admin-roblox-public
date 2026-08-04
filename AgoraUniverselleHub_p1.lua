@@ -790,7 +790,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.87"
+	_G.CURRENT_VERSION = "v39.88"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -802,7 +802,8 @@ local protectionsPage = createTab("Protections")
 		"v39.69: Fix NoClip/fly apres mort (scope _G)",
 		"v39.68: NoClip survive respawn",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
-		"v39.87: Popup reload dit \"Remettre le script?\" au lieu de \"panel\"",
+		"v39.88: Popup reload seulement sur \"Rejoindre ce serveur\" (pas TP joueur)",
+					"v39.87: Popup reload dit \"Remettre le script?\" au lieu de \"panel\"",
 					"v39.86: Fix sursauts stopFly (physics gradual) + popup reload apres Rejoindre",
 					"v39.85: TP vers joueur a 4m au lieu de 2m (un peu plus loin)",
 					"v39.84: Fix sursauts apres fly + Eleven Tool RenderStepped leak + zeroGravity fly guard",
