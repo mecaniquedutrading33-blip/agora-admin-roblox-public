@@ -1,1 +1,1 @@
-return "v39.95"
+return "v39.96"
