@@ -796,11 +796,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.00"
+	_G.CURRENT_VERSION = "v40.01"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v40.00: Fly Physics state permanent (zero sursaut) + stop ALL anims + Landed/Climbing disabled + antiInfiniteJump fly guard",
+		"v40.01: Fly Physics state permanent (zero sursaut) + stop ALL anims + Landed/Climbing disabled + antiInfiniteJump fly guard",
 		"v39.99: FIX noclip (p2 stale values + double loop Stepped+RenderStepped + ALL parts) + fly guard CharacterAdded",
 		"v39.98: FIX noclip p2 stale char/hum/rootPart",
 		"v39.97: Force PlatformStand + WalkSpeed=0 chaque frame fly + re-fix noclip/infiniteJump/antiSpeedHack",
@@ -4437,7 +4437,7 @@ local function stopFly()
 		pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true) end)
 		pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, true) end)
 		pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, true) end)
-	end
+		end
 	task.delay(0.15, function()
 		if humanoid and humanoid.Parent then
 			humanoid.PlatformStand = false
@@ -4743,23 +4743,23 @@ local function startFly()
 		flyState.vel.MaxForce = Vector3.new(1e6, 9e9, 1e6)
 		flyState.vel.Parent = rootPart
 
--- PlatformStand + Physics state = ZERO sursaut permanent
-if humanoid then
-	pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
-	pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
-	pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, false) end)
-	pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false) end)
-	humanoid.PlatformStand = true
-	humanoid.JumpPower = 0
-	humanoid.JumpHeight = 0
-	humanoid.WalkSpeed = 0
-	pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
-	pcall(function()
-		for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
-			track:Stop(0)
+		-- PlatformStand + Physics state = ZERO sursaut permanent
+		if humanoid then
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, false) end)
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false) end)
+			humanoid.PlatformStand = true
+			humanoid.JumpPower = 0
+			humanoid.JumpHeight = 0
+			humanoid.WalkSpeed = 0
+			pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
+			pcall(function()
+				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+					track:Stop(0)
+				end
+			end)
 		end
-	end)
-end
 		-- Desactiver collision sur les parts du perso (sauf HRP, comme noclip)
 		if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 			for _, part in ipairs(character:GetDescendants()) do
@@ -4828,23 +4828,23 @@ end
 				end
 			end
 		end
-	-- FORCER Physics + PlatformStand + WalkSpeed=0 chaque frame (anti-sursaut permanent)
-	if humanoid then
-		pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
-		pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
-		pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, false) end)
-		pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false) end)
-		if not humanoid.PlatformStand then humanoid.PlatformStand = true end
-		if humanoid.WalkSpeed ~= 0 then humanoid.WalkSpeed = 0 end
-		if humanoid:GetState() ~= Enum.HumanoidStateType.Physics then
-			pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
-		end
-		pcall(function()
-			for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
-				track:Stop(0)
+		-- FORCER Physics + PlatformStand + WalkSpeed=0 chaque frame (anti-sursaut permanent)
+		if humanoid then
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, false) end)
+			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false) end)
+			if not humanoid.PlatformStand then humanoid.PlatformStand = true end
+			if humanoid.WalkSpeed ~= 0 then humanoid.WalkSpeed = 0 end
+			if humanoid:GetState() ~= Enum.HumanoidStateType.Physics then
+				pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
 			end
-		end)
-	end
+			pcall(function()
+				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+					track:Stop(0)
+				end
+			end)
+		end
 
 		local move = Vector3.zero
 		-- PC controls (clavier)
@@ -4890,6 +4890,7 @@ end
 			flyState.vel.Velocity = flyState.currentVel
 		end
 	end)
+end
 
 local function createSlider(parent, labelText, yPos, min, max, default, callback, color, decimals, step)
 	decimals = decimals or 0
