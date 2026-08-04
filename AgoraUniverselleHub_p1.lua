@@ -790,10 +790,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.96"
+	_G.CURRENT_VERSION = "v39.97"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v39.97: Force PlatformStand + WalkSpeed=0 chaque frame fly + re-fix noclip/infiniteJump/antiSpeedHack",
 		"v39.96: MEGA FIX 9 sursauts — noclip fly guard + infiniteJump + Spider + dance + testVel + seated CanCollide",
 		"v39.95: Stop walk/run anim en fly + WalkSpeed=0 pendant fly",
 		"v39.92: Home scroll changelog + stats fallback indisponible",
@@ -4820,6 +4821,10 @@ local function startFly()
 		if humanoid then
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
+			-- FORCER PlatformStand=true chaque frame (Roblox reset pres du sol = sursauts)
+			if not humanoid.PlatformStand then humanoid.PlatformStand = true end
+			-- FORCER WalkSpeed=0 (empeche anim marche pres du sol)
+			if humanoid.WalkSpeed ~= 0 then humanoid.WalkSpeed = 0 end
 			pcall(function()
 				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
 					local name = track.Animation and track.Animation.Name or ""
@@ -5005,6 +5010,7 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 		noclipState.loop = RunService.RenderStepped:Connect(function()
 			updateCharacter()
 			if not noclipState.enabled then return end
+		if flyState.flying then return end
 		if humanoid and humanoid.Sit and humanoid.SeatPart then return end
 			if character then
 				for _, p in ipairs(character:GetDescendants()) do
