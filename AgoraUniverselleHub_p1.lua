@@ -718,7 +718,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.84"
+	_G.CURRENT_VERSION = "v39.85"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -730,7 +730,8 @@ local protectionsPage = createTab("Protections")
 		"v39.69: Fix NoClip/fly apres mort (scope _G)",
 		"v39.68: NoClip survive respawn",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
-		"v39.84: Fix sursauts apres fly + Eleven Tool RenderStepped leak + zeroGravity fly guard",
+		"v39.85: TP vers joueur a 4m au lieu de 2m (un peu plus loin)",
+					"v39.84: Fix sursauts apres fly + Eleven Tool RenderStepped leak + zeroGravity fly guard",
 					"v39.83: Protections Heartbeat ignore fly (antiFling/antiFall/antiVoid) + grace 1s",
 		"v39.82: Fix sursaut post-fly (zero vel AVANT PlatformStand=false)",
 		"v39.81: Fix conflit fly/noclip (exclut HRP + respecte noclip actif)",
@@ -2537,8 +2538,8 @@ local function createPlayerEntry(plr)
 			local targetHrp = plr.Character:FindFirstChild("HumanoidRootPart")
 			local targetPos = targetHrp.Position
 			local targetLook = targetHrp.CFrame.LookVector
-			-- Position = 2 metres devant le joueur (dans la direction ou il regarde)
-			local tpPos = targetPos + targetLook * 2
+			-- Position = 4 metres devant le joueur (un peu plus loin pour eviter de se coller)
+			local tpPos = targetPos + targetLook * 4
 			-- Orienter vers le joueur (regarder le joueur en face)
 			rootPart.CFrame = CFrame.lookAt(tpPos, targetPos)
 			-- Grace anti-TP protection
