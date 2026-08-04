@@ -815,7 +815,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 UserInputService.JumpRequest:Connect(function()
-	if jumpState.infinite and humanoid then
+	if jumpState.infinite and humanoid and not flyState.flying then
 		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 	end
 end)
@@ -910,7 +910,7 @@ RunService.Stepped:Connect(function(_, dt)
 	updateCharacter()
 	if noclipState.enabled and character then
 		for _, p in ipairs(character:GetDescendants()) do
-			if p:IsA("BasePart") then p.CanCollide = false end
+			if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = false end
 		end
 	end
 	if platformState.enabled and platformState.part then
@@ -931,7 +931,7 @@ RunService.Stepped:Connect(function(_, dt)
 	end
 	-- Go to Walk : deplace le humanoid vers chaque waypoint avec MoveTo
 	-- Go to Walk : deplace le humanoid vers chaque waypoint avec MoveTo + saut auto si bloque
-	if humanoid and rootPart and gotoWalkState.active and #gotoWalkState.path > 0 then
+	if humanoid and rootPart and gotoWalkState.active and #gotoWalkState.path > 0 and not flyState.flying then
 		local wp = gotoWalkState.path[1]
 		local flatDist = Vector3.new(rootPart.Position.X - wp.X, 0, rootPart.Position.Z - wp.Z).Magnitude
 		-- Detection de blocage : vitesse reelle trop faible par rapport a la distance
@@ -1364,6 +1364,7 @@ end)()
 				if _G._currentEmoteTrack then
 					pcall(function() _G._currentEmoteTrack:Stop(0.3) end)
 				end
+				if flyState.flying then return end
 				hum.PlatformStand = true
 				local bv = Instance.new("BodyVelocity")
 				bv.MaxForce = Vector3.new(50000, 0, 50000)
@@ -1878,6 +1879,7 @@ local function isServerAuthority()
 		if not char then return false end
 		local hrp = char:FindFirstChild("HumanoidRootPart")
 		if not hrp then return false end
+		if flyState.flying then return false end
 		local testVel = Instance.new("BodyVelocity")
 		testVel.MaxForce = Vector3.new(0, 9e8, 0)
 		testVel.Velocity = Vector3.new(0, 10, 0)
@@ -2358,7 +2360,7 @@ RunService.Heartbeat:Connect(function()
 	end
 
 	-- Anti Speed Hack: bloquer WalkSpeed anormal (sauf si on l'a set nous-meme)
-	if protectionsState.antiSpeedHack then
+	if protectionsState.antiSpeedHack and not flyState.flying then
 		local ws = humanoid.WalkSpeed
 		if ws > protectionsState.lastWalkSpeed + 50 then
 			humanoid.WalkSpeed = protectionsState.lastWalkSpeed
