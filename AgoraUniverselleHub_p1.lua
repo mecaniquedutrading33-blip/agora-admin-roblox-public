@@ -790,10 +790,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.95"
+	_G.CURRENT_VERSION = "v39.96"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v39.96: MEGA FIX 9 sursauts — noclip fly guard + infiniteJump + Spider + dance + testVel + seated CanCollide",
 		"v39.95: Stop walk/run anim en fly + WalkSpeed=0 pendant fly",
 		"v39.92: Home scroll changelog + stats fallback indisponible",
 		"v39.90: Fix sursauts voiture (noclip/fly seated guards) + HRP exclusion + gradual stopFly + F10 boutons mobile",
@@ -4653,7 +4654,7 @@ local function startFly()
 								flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt2))
 							end
 							-- CanCollide=false (sauf HRP) + stopper anims
-							if character then
+							if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 								for _, part in ipairs(character:GetDescendants()) do
 									if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then part.CanCollide = false end
 								end
