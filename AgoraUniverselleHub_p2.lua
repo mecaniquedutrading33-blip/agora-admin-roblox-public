@@ -47,9 +47,12 @@ local platformState = _G["platformState"]
 local espState = _G["espState"]
 local gotoWalkState = _G._P1["gotoWalkState"]
 local zeroGSwitch = _G._P1["zeroGSwitch"]
-local humanoid = _G["humanoid"]
-local rootPart = _G["rootPart"]
-local character = _G["character"]
+-- character/humanoid/rootPart are live values — read from _G each time
+local humanoid = nil  -- updated by updateCharacter via _G._agoraHum
+local rootPart = nil  -- updated by updateCharacter via _G._agoraRoot
+local character = nil  -- updated by updateCharacter via _G._agoraChar
+-- Initial sync
+character, humanoid, rootPart = _G._agoraChar, _G._agoraHum, _G._agoraRoot
 local mainFrame = _G["mainFrame"]
 local screenGui = _G["screenGui"]
 local closeBtn = _G["closeBtn"]
@@ -908,6 +911,7 @@ end)
 
 RunService.Stepped:Connect(function(_, dt)
 	updateCharacter()
+	character, humanoid, rootPart = _G._agoraChar, _G._agoraHum, _G._agoraRoot
 	if noclipState.enabled and character and not (humanoid and humanoid.Sit and humanoid.SeatPart) and not flyState.flying then
 		for _, p in ipairs(character:GetDescendants()) do
 			if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = false end
@@ -2091,6 +2095,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 and clickTPState.enabled then
 		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.RightControl) then
 			updateCharacter()
+			character, humanoid, rootPart = _G._agoraChar, _G._agoraHum, _G._agoraRoot
 			if Mouse.Hit and rootPart then
 				rootPart.CFrame = Mouse.Hit + Vector3.new(0, 3, 0)
 			end
@@ -2108,6 +2113,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 		task.spawn(function()
 			local ok, err = pcall(function()
 				updateCharacter()
+				character, humanoid, rootPart = _G._agoraChar, _G._agoraHum, _G._agoraRoot
 				if not Mouse or not Mouse.Hit then return end
 				local targetPos = Mouse.Hit.Position + Vector3.new(0, 3, 0)
 				gotoWalkState.target = targetPos
@@ -2168,6 +2174,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	hum.Died:Connect(function()
 		if not protectionsState.antiKill then return end
 		updateCharacter()
+		character, humanoid, rootPart = _G._agoraChar, _G._agoraHum, _G._agoraRoot
 		if rootPart then
 			protectionsState.antiKillSavedCFrame = rootPart.CFrame
 		end
@@ -2266,6 +2273,7 @@ local function createProtectionSwitch(name, label, y)
 		end
 		if name == "antiTeleport" and on then
 			updateCharacter()
+			character, humanoid, rootPart = _G._agoraChar, _G._agoraHum, _G._agoraRoot
 			if rootPart then
 				protectionsState.lastSafeCFrame = rootPart.CFrame
 				protectionsState.lastHrpPosition = rootPart.Position
@@ -2289,6 +2297,7 @@ createSwitch(protectionsScroll, "TOUT ACTIVER / DESACTIVER", 10, function(on)
 	end
 	if on then
 		updateCharacter()
+		character, humanoid, rootPart = _G._agoraChar, _G._agoraHum, _G._agoraRoot
 		if rootPart then
 			protectionsState.lastSafeCFrame = rootPart.CFrame
 			protectionsState.lastHrpPosition = rootPart.Position
@@ -2328,6 +2337,7 @@ createProtectionSwitch("antiInfiniteJump", "Anti Infinite Jump", 430)
 
 RunService.Heartbeat:Connect(function()
 	updateCharacter()
+	character, humanoid, rootPart = _G._agoraChar, _G._agoraHum, _G._agoraRoot
 	if not rootPart or not humanoid then return end
 
 	local pos = rootPart.Position
@@ -2457,6 +2467,7 @@ task.spawn(function()
 			local now = tick()
 			if now - protectionsState.antiAFKLastAction >= 300 then
 				updateCharacter()
+				character, humanoid, rootPart = _G._agoraChar, _G._agoraHum, _G._agoraRoot
 				if humanoid then
 					humanoid:Move(Vector3.new(0.1, 0, 0), false)
 					task.wait(0.15)
