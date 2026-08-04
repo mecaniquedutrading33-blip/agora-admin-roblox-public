@@ -910,7 +910,7 @@ RunService.Stepped:Connect(function(_, dt)
 	updateCharacter()
 	if noclipState.enabled and character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 		for _, p in ipairs(character:GetDescendants()) do
-			if p:IsA("BasePart") then p.CanCollide = false end
+			if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = false end
 		end
 	end
 	if platformState.enabled and platformState.part then
@@ -4323,7 +4323,7 @@ function giveGhostTool()
 				RunService.Heartbeat:Wait()
 			end
 			if char.PrimaryPart then char.PrimaryPart.Anchored = true end
-			for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
+			for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = false end end
 			Camera.CameraSubject = gh
 			ghostConn = RunService.RenderStepped:Connect(function()
 				if isInvisible and ghostChar and LocalPlayer.Character then
