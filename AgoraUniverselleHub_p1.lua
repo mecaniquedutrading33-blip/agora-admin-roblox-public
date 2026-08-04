@@ -186,7 +186,6 @@ local function updateCharacter()
 	else
 		humanoid, rootPart = nil, nil
 	end
-	-- Sync to _G so p2 can read live values
 	_G._agoraChar = character
 	_G._agoraHum = humanoid
 	_G._agoraRoot = rootPart
@@ -797,11 +796,12 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.98"
+	_G.CURRENT_VERSION = "v39.99"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v39.98: FIX noclip (p2 stale character/humanoid/rootPart via _G sync) + fly guard CharacterAdded",
+		"v39.99: FIX noclip (p2 stale values + double loop Stepped+RenderStepped + ALL parts) + fly guard CharacterAdded",
+		"v39.98: FIX noclip p2 stale char/hum/rootPart",
 		"v39.97: Force PlatformStand + WalkSpeed=0 chaque frame fly + re-fix noclip/infiniteJump/antiSpeedHack",
 		"v39.96: MEGA FIX 9 sursauts — noclip fly guard + infiniteJump + Spider + dance + testVel + seated CanCollide",
 		"v39.95: Stop walk/run anim en fly + WalkSpeed=0 pendant fly",
@@ -1781,6 +1781,8 @@ local function shutdownPanel()
 	if flyState and flyState.flying then stopFly() end
 	if noclipState and noclipState.enabled then
 		noclipState.enabled = false
+		if noclipState.loop then noclipState.loop:Disconnect() noclipState.loop = nil end
+		if noclipState.loop2 then noclipState.loop2:Disconnect() noclipState.loop2 = nil end
 		if noclipSwitch then noclipSwitch.set(false) end
 		if character then
 			for _, p in ipairs(character:GetDescendants()) do
@@ -5005,42 +5007,44 @@ end, Color3.fromRGB(100, 180, 255))
 local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 	noclipState.enabled = on
 	if on then
-		-- Activer noclip : CanCollide = false sur toutes les parts du perso
 		updateCharacter()
 		if character then
 			for _, p in ipairs(character:GetDescendants()) do
-				if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
+				if p:IsA("BasePart") then
 					p.CanCollide = false
 				end
 			end
 		end
-		-- Boucle pour maintenir CanCollide = false (Roblox peut le reset)
-		noclipState.loop = RunService.RenderStepped:Connect(function()
-			updateCharacter()
+		-- Double boucle : Stepped + RenderStepped pour max couverture
+		local function setNoClip()
 			if not noclipState.enabled then return end
-		if flyState.flying then return end
-		if humanoid and humanoid.Sit and humanoid.SeatPart then return end
+			if flyState and flyState.flying then return end
+			if humanoid and humanoid.Sit and humanoid.SeatPart then return end
 			if character then
 				for _, p in ipairs(character:GetDescendants()) do
-					if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
+					if p:IsA("BasePart") then
 						p.CanCollide = false
 					end
 				end
 			end
+		end
+		noclipState.loop = RunService.RenderStepped:Connect(function()
+			updateCharacter()
+			setNoClip()
+		end)
+		noclipState.loop2 = RunService.Stepped:Connect(function()
+			updateCharacter()
+			setNoClip()
 		end)
 	else
-		-- Desactiver noclip : restaurer CanCollide = true
-		if noclipState.loop then
-			noclipState.loop:Disconnect()
-			noclipState.loop = nil
-		end
+		if noclipState.loop then noclipState.loop:Disconnect() noclipState.loop = nil end
+		if noclipState.loop2 then noclipState.loop2:Disconnect() noclipState.loop2 = nil end
 		updateCharacter()
 		if character then
 			for _, p in ipairs(character:GetDescendants()) do
 				if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = true end
 			end
 		end
-		-- Active la grace anti-TP apres sortie du noclip
 		if protectionsState then
 			protectionsState.antiTeleportGraceUntil = tick() + 1.0
 		end
