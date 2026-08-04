@@ -804,7 +804,7 @@ task.delay(0, function()
 end)
 
 RunService.RenderStepped:Connect(function()
-	if localState.zeroGravity then
+	if localState.zeroGravity and not flyState.flying then
 		local char = LocalPlayer.Character
 		local hrp = char and char:FindFirstChild("HumanoidRootPart")
 		local cam = Workspace.CurrentCamera
@@ -2293,7 +2293,9 @@ RunService.Heartbeat:Connect(function()
 	local pos = rootPart.Position
 	local vel = rootPart.AssemblyLinearVelocity
 
-	if protectionsState.antiFling and not flyState.flying and not noclipState.enabled then
+	-- Grace apres fly : antiFling desactive pendant 1s pour eviter les sursauts
+	local flyGraceUntil = protectionsState.flyStopGraceUntil or 0
+	if protectionsState.antiFling and not flyState.flying and not noclipState.enabled and tick() >= flyGraceUntil then
 		if math.abs(vel.Y) > 500 then
 			rootPart.AssemblyLinearVelocity = Vector3.new(vel.X * 0.1, 0, vel.Z * 0.1)
 		end
@@ -2345,7 +2347,7 @@ RunService.Heartbeat:Connect(function()
 		end
 	end
 
-	if protectionsState.antiFall and not flyState.flying then
+	if protectionsState.antiFall and not flyState.flying and tick() >= flyGraceUntil then
 		if vel.Y < -100 and pos.Y < -500 then
 			rootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
 			if protectionsState.lastSafeCFrame then
@@ -2391,7 +2393,7 @@ RunService.Heartbeat:Connect(function()
 		end
 	end
 
-	if antiVoidState.enabled and pos.Y < -2000 and protectionsState.lastSafeCFrame and not flyState.flying then
+	if antiVoidState.enabled and pos.Y < -2000 and protectionsState.lastSafeCFrame and not flyState.flying and tick() >= flyGraceUntil then
 		rootPart.CFrame = protectionsState.lastSafeCFrame
 		rootPart.AssemblyLinearVelocity = Vector3.zero
 	end
@@ -4386,7 +4388,7 @@ function giveElevenTool()
 		LocalPlayer.CameraMinZoomDistance = 0.5
 	end
 
-	RunService.RenderStepped:Connect(function()
+	local elevenRS = RunService.RenderStepped:Connect(function()
 		if active and targetPart and bp then
 			if not targetPart.Parent then cleanupHolding() return end
 			LocalPlayer.CameraMaxZoomDistance = lockedZoom
@@ -4510,6 +4512,7 @@ function giveElevenTool()
 	tool.Unequipped:Connect(function()
 		active = false
 		cleanupHolding()
+		if elevenRS then elevenRS:Disconnect() elevenRS = nil end
 	end)
 end
 function giveSpiderTool()
