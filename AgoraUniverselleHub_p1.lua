@@ -790,11 +790,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.94"
+	_G.CURRENT_VERSION = "v39.95"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v39.94: Re-fix noclip HRP + fly guard (ecrase par session concurrente)",
+		"v39.95: Stop walk/run anim en fly + WalkSpeed=0 pendant fly",
 		"v39.92: Home scroll changelog + stats fallback indisponible",
 		"v39.90: Fix sursauts voiture (noclip/fly seated guards) + HRP exclusion + gradual stopFly + F10 boutons mobile",
 					"v39.75: Re-fix compteurs Home + contours remotes + textes + scrolls auto (ecrase par autre commit)",
@@ -4431,6 +4431,7 @@ local function stopFly()
 				if humanoid and humanoid.Parent then
 					humanoid.JumpPower = 50
 					humanoid.JumpHeight = 7.2
+				humanoid.WalkSpeed = walkSpeedState.value or 16
 				end
 			end)
 		end
@@ -4608,6 +4609,7 @@ local function startFly()
 			-- Desactiver saut seulement
 			humanoid.JumpPower = 0
 			humanoid.JumpHeight = 0
+			humanoid.WalkSpeed = 0
 			-- Desactiver etats de chute/saut au niveau moteur
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
@@ -4662,7 +4664,7 @@ local function startFly()
 								pcall(function()
 									for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
 										local name = track.Animation and track.Animation.Name or ""
-										if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" then
+										if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" or name == "Walk" or name == "Run" or name == "walk" or name == "run" then
 											track:Stop(0)
 										end
 									end
@@ -4734,11 +4736,12 @@ local function startFly()
 			-- Desactiver le saut pendant le fly
 			humanoid.JumpPower = 0
 			humanoid.JumpHeight = 0
-			-- Stopper seulement les anims de saut/chute
+			humanoid.WalkSpeed = 0
+			-- Stopper les anims de saut/chute/marche
 			pcall(function()
 				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
 					local name = track.Animation and track.Animation.Name or ""
-					if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" then
+					if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" or name == "Walk" or name == "Run" or name == "walk" or name == "run" then
 						track:Stop(0)
 					end
 				end
@@ -4819,7 +4822,7 @@ local function startFly()
 			pcall(function()
 				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
 					local name = track.Animation and track.Animation.Name or ""
-					if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" then
+					if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" or name == "Walk" or name == "Run" or name == "walk" or name == "run" then
 						track:Stop(0)
 					end
 				end
@@ -5001,7 +5004,6 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 		noclipState.loop = RunService.RenderStepped:Connect(function()
 			updateCharacter()
 			if not noclipState.enabled then return end
-		if flyState.flying then return end
 		if humanoid and humanoid.Sit and humanoid.SeatPart then return end
 			if character then
 				for _, p in ipairs(character:GetDescendants()) do
