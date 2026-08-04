@@ -908,7 +908,7 @@ end)
 
 RunService.Stepped:Connect(function(_, dt)
 	updateCharacter()
-	if noclipState.enabled and character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
+	if noclipState.enabled and character and not (humanoid and humanoid.Sit and humanoid.SeatPart) and not flyState.flying then
 		for _, p in ipairs(character:GetDescendants()) do
 			if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = false end
 		end
@@ -1397,6 +1397,7 @@ end)()
 				local hum = char:FindFirstChildOfClass("Humanoid")
 				local root = char:FindFirstChild("HumanoidRootPart")
 				if not hum or not root then return end
+				if flyState.flying then return end
 				if _G._currentEmoteTrack then
 					pcall(function() _G._currentEmoteTrack:Stop(0.3) end)
 				end
@@ -1428,6 +1429,7 @@ end)()
 				local hum = char:FindFirstChildOfClass("Humanoid")
 				local root = char:FindFirstChild("HumanoidRootPart")
 				if not hum or not root then return end
+				if flyState.flying then return end
 				if _G._currentEmoteTrack then
 					pcall(function() _G._currentEmoteTrack:Stop(0.3) end)
 				end
@@ -1914,6 +1916,7 @@ local function isServerAuthority()
 		if not char then return false end
 		local hrp = char:FindFirstChild("HumanoidRootPart")
 		if not hrp then return false end
+		if flyState.flying then return false end
 		local testVel = Instance.new("BodyVelocity")
 		testVel.MaxForce = Vector3.new(0, 9e8, 0)
 		testVel.Velocity = Vector3.new(0, 10, 0)
@@ -4610,7 +4613,7 @@ function giveSpiderTool()
 		end)
 
 		connection = RunService.RenderStepped:Connect(function(deltaTime)
-			if jumpCooldown then
+			if jumpCooldown or flyState.flying then
 				hum.AutoRotate = true
 				return
 			end
