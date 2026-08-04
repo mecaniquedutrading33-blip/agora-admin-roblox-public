@@ -3720,9 +3720,7 @@ local function renderResult(data, parent)
 						local TS = game:GetService("TeleportService")
 						local pid = data.placeId or data.gameId
 						if data.gameInstanceId and data.gameInstanceId ~= "" then
-							-- Marquer qu'on attend un reload apres TP
-			_G._agoraAwaitingReload = true
-			TS:TeleportToPlaceInstance(pid, data.gameInstanceId, LocalPlayer)
+							TS:TeleportToPlaceInstance(pid, data.gameInstanceId, LocalPlayer)
 						else
 							TS:Teleport(pid, LocalPlayer)
 						end
