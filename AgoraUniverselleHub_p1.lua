@@ -718,7 +718,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.83"
+	_G.CURRENT_VERSION = "v39.84"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -730,7 +730,8 @@ local protectionsPage = createTab("Protections")
 		"v39.69: Fix NoClip/fly apres mort (scope _G)",
 		"v39.68: NoClip survive respawn",
 		"v39.67: Fix NoClip (boucle RenderStepped CanCollide=false)",
-		"v39.83: Protections Heartbeat ignore fly (antiFling/antiFall/antiVoid) + grace 1s",
+		"v39.84: Fix sursauts apres fly + Eleven Tool RenderStepped leak + zeroGravity fly guard",
+					"v39.83: Protections Heartbeat ignore fly (antiFling/antiFall/antiVoid) + grace 1s",
 		"v39.82: Fix sursaut post-fly (zero vel AVANT PlatformStand=false)",
 		"v39.81: Fix conflit fly/noclip (exclut HRP + respecte noclip actif)",
 		"v39.80: CanCollide=false en fly (fix definitif micro-sauts sol)",
@@ -4355,9 +4356,10 @@ local function stopFly()
 		animate.Disabled = false
 	end
 	flySwitch.set(false)
-	-- Active la grace anti-TP pour reinitialiser la baseline sans bounce
+	-- Active la grace anti-TP + antiFling/Fall pour reinitialiser sans sursauts
 	if protectionsState then
 		protectionsState.antiTeleportGraceUntil = tick() + 1.0
+		protectionsState.flyStopGraceUntil = tick() + 1.5
 	end
 end
 
