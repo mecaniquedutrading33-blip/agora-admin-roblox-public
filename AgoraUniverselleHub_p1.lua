@@ -790,10 +790,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v39.92"
+	_G.CURRENT_VERSION = "v39.93"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v39.93: F10 createSwitch (fix boutons sortent) + vars sync p1/p2",
 		"v39.92: Home scroll changelog + stats fallback indisponible",
 		"v39.90: Fix sursauts voiture (noclip/fly seated guards) + HRP exclusion + gradual stopFly + F10 boutons mobile",
 					"v39.75: Re-fix compteurs Home + contours remotes + textes + scrolls auto (ecrase par autre commit)",
@@ -5288,76 +5289,21 @@ platformLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 platformLabel.TextXAlignment = Enum.TextXAlignment.Left
 platformLabel.Parent = movePage
 
--- Boutons F10 pour mobile (toggle + monter/descendre)
-local platBtnRow = Instance.new("Frame")
-platBtnRow.Size = UDim2.new(1, -16, 0, 36)
-platBtnRow.Position = UDim2.new(0, 8, 0, 360)
-platBtnRow.BackgroundTransparency = 1
-platBtnRow.Parent = movePage
+-- F10 plateforme: switch + boutons +/-
+local platformSwitch = createSwitch(movePage, "Plateforme F10", 360, function(on)
+    _G._platformEnabled = on
+end)
+_G._platformSwitch = platformSwitch
 
-local platToggleBtn = Instance.new("TextButton")
-platToggleBtn.Size = UDim2.new(0.34, 0, 1, 0)
-platToggleBtn.Position = UDim2.new(0, 0, 0, 0)
-platToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-platToggleBtn.Text = "F10: ON"
-platToggleBtn.Font = Enum.Font.GothamSemibold
-platToggleBtn.TextSize = 12
-platToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-platToggleBtn.BorderSizePixel = 0
-platToggleBtn.Parent = platBtnRow
-local pTCorner = Instance.new("UICorner")
-pTCorner.CornerRadius = UDim.new(0, 6)
-pTCorner.Parent = platToggleBtn
-
-local platUpBtn = Instance.new("TextButton")
-platUpBtn.Size = UDim2.new(0.31, 0, 1, 0)
-platUpBtn.Position = UDim2.new(0.36, 0, 0, 0)
-platUpBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
-platUpBtn.Text = "+ Monter"
-platUpBtn.Font = Enum.Font.GothamSemibold
-platUpBtn.TextSize = 12
-platUpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-platUpBtn.BorderSizePixel = 0
-platUpBtn.Parent = platBtnRow
-local pUCorner = Instance.new("UICorner")
-pUCorner.CornerRadius = UDim.new(0, 6)
-pUCorner.Parent = platUpBtn
-
-local platDownBtn = Instance.new("TextButton")
-platDownBtn.Size = UDim2.new(0.31, 0, 1, 0)
-platDownBtn.Position = UDim2.new(0.69, 0, 0, 0)
-platDownBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
-platDownBtn.Text = "- Descendre"
-platDownBtn.Font = Enum.Font.GothamSemibold
-platDownBtn.TextSize = 12
-platDownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-platDownBtn.BorderSizePixel = 0
-platDownBtn.Parent = platBtnRow
-local pDCorner = Instance.new("UICorner")
-pDCorner.CornerRadius = UDim.new(0, 6)
-pDCorner.Parent = platDownBtn
-
-platToggleBtn.MouseButton1Click:Connect(function()
-	_G._platformToggle = not _G._platformToggle
-	if _G._platformToggle then
-		platToggleBtn.Text = "F10: ON"
-		platToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 140, 80)
-	else
-		platToggleBtn.Text = "F10: OFF"
-		platToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-	end
+createButton(movePage, "+ Monter", 400, Color3.fromRGB(60, 100, 160), function()
+    _G._platformBumpUp = true
+    task.delay(0.15, function() _G._platformBumpUp = false end)
 end)
 
-platUpBtn.MouseButton1Click:Connect(function()
-	_G._platformUp = true
-	task.delay(0.1, function() _G._platformUp = false end)
+createButton(movePage, "- Descendre", 436, Color3.fromRGB(60, 100, 160), function()
+    _G._platformBumpDown = true
+    task.delay(0.15, function() _G._platformBumpDown = false end)
 end)
-
-platDownBtn.MouseButton1Click:Connect(function()
-	_G._platformDown = true
-	task.delay(0.1, function() _G._platformDown = false end)
-end)
-
 
 -- ============= LOCAL (ZERO-G + TIME + GRAVITY) =============
 local localState = {
