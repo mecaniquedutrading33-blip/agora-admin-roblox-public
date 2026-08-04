@@ -831,6 +831,8 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 	end
 	if input.KeyCode == Enum.KeyCode.F10 then
 		platformState.enabled = not platformState.enabled
+		_G._platformEnabled = platformState.enabled
+		if _G._platformSwitch then _G._platformSwitch.set(platformState.enabled) end
 		if platformState.enabled then
 			if not platformState.part then
 				platformState.part = Instance.new("Part")
@@ -908,7 +910,7 @@ end)
 
 RunService.Stepped:Connect(function(_, dt)
 	updateCharacter()
-	if noclipState.enabled and character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
+	if noclipState.enabled and character and not (humanoid and humanoid.Sit and humanoid.SeatPart) and not flyState.flying then
 		for _, p in ipairs(character:GetDescendants()) do
 			if p:IsA("BasePart") then p.CanCollide = false end
 		end
@@ -929,11 +931,10 @@ RunService.Stepped:Connect(function(_, dt)
 		local cur = platformState.part.CFrame
 		platformState.part.CFrame = CFrame.new(cur.X, platformState.y + platformState.smoothedOffset, cur.Z)
 	end
-	-- Mobile F10 toggle support
-	if _G._platformToggle ~= nil and _G._platformToggle ~= platformState.enabled then
-		_G._platformToggle = platformState.enabled -- sync
-		if not platformState.enabled then
-			-- Activate platform
+	-- Mobile F10: _G._platformEnabled drives the toggle
+	if _G._platformEnabled ~= nil and _G._platformEnabled ~= platformState.enabled then
+		if _G._platformEnabled then
+			-- Activer
 			if not platformState.part then
 				platformState.part = Instance.new("Part")
 				platformState.part.Anchored = true
@@ -947,7 +948,7 @@ RunService.Stepped:Connect(function(_, dt)
 			local capturedY
 			if seatPart and seatPart:IsA("BasePart") then
 				local bb = seatPart:GetBoundingBox()
-				capturedY = bb.Position.Y - (select(2, bb:GetExtents()).Y / 2) - 1.5
+				capturedY = bb.Position.Y - 1.5
 			else
 				local rFoot = character and (character:FindFirstChild("RightFoot") or character:FindFirstChild("LeftFoot"))
 				if rFoot then capturedY = rFoot.Position.Y else capturedY = rootPart.Position.Y - 3 end
@@ -960,7 +961,7 @@ RunService.Stepped:Connect(function(_, dt)
 			end
 			platformState.enabled = true
 		else
-			-- Deactivate platform
+			-- Desactiver
 			if platformState.part then platformState.part:Destroy() platformState.part = nil end
 			platformState.enabled = false
 		end
