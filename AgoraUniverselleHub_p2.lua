@@ -815,7 +815,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 UserInputService.JumpRequest:Connect(function()
-	if jumpState.infinite and humanoid then
+	if jumpState.infinite and humanoid and not flyState.flying then
 		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 	end
 end)
@@ -2397,7 +2397,7 @@ RunService.Heartbeat:Connect(function()
 	end
 
 	-- Anti Speed Hack: bloquer WalkSpeed anormal (sauf si on l'a set nous-meme)
-	if protectionsState.antiSpeedHack then
+	if protectionsState.antiSpeedHack and not flyState.flying then
 		local ws = humanoid.WalkSpeed
 		if ws > protectionsState.lastWalkSpeed + 50 then
 			humanoid.WalkSpeed = protectionsState.lastWalkSpeed
