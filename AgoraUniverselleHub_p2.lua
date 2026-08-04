@@ -815,7 +815,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 UserInputService.JumpRequest:Connect(function()
-	if jumpState.infinite and humanoid and not flyState.flying then
+	if jumpState.infinite and humanoid then
 		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 	end
 end)
@@ -908,9 +908,9 @@ end)
 
 RunService.Stepped:Connect(function(_, dt)
 	updateCharacter()
-	if noclipState.enabled and character then
+	if noclipState.enabled and character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 		for _, p in ipairs(character:GetDescendants()) do
-			if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = false end
+			if p:IsA("BasePart") then p.CanCollide = false end
 		end
 	end
 	if platformState.enabled and platformState.part then
@@ -929,9 +929,45 @@ RunService.Stepped:Connect(function(_, dt)
 		local cur = platformState.part.CFrame
 		platformState.part.CFrame = CFrame.new(cur.X, platformState.y + platformState.smoothedOffset, cur.Z)
 	end
+	-- Mobile F10 toggle support
+	if _G._platformToggle ~= nil and _G._platformToggle ~= platformState.enabled then
+		_G._platformToggle = platformState.enabled -- sync
+		if not platformState.enabled then
+			-- Activate platform
+			if not platformState.part then
+				platformState.part = Instance.new("Part")
+				platformState.part.Anchored = true
+				platformState.part.CanCollide = true
+				platformState.part.Transparency = 1
+				platformState.part.Name = "InvisiblePlatform"
+				platformState.part.Size = Vector3.new(2000, 1, 2000)
+				platformState.part.Parent = Workspace
+			end
+			local seatPart = humanoid and humanoid.SeatPart
+			local capturedY
+			if seatPart and seatPart:IsA("BasePart") then
+				local bb = seatPart:GetBoundingBox()
+				capturedY = bb.Position.Y - (select(2, bb:GetExtents()).Y / 2) - 1.5
+			else
+				local rFoot = character and (character:FindFirstChild("RightFoot") or character:FindFirstChild("LeftFoot"))
+				if rFoot then capturedY = rFoot.Position.Y else capturedY = rootPart.Position.Y - 3 end
+			end
+			platformState.y = capturedY
+			platformState.offset = 0
+			platformState.smoothedOffset = 0
+			if platformState.part then
+				platformState.part.CFrame = CFrame.new(rootPart.Position.X, capturedY, rootPart.Position.Z)
+			end
+			platformState.enabled = true
+		else
+			-- Deactivate platform
+			if platformState.part then platformState.part:Destroy() platformState.part = nil end
+			platformState.enabled = false
+		end
+	end
 	-- Go to Walk : deplace le humanoid vers chaque waypoint avec MoveTo
 	-- Go to Walk : deplace le humanoid vers chaque waypoint avec MoveTo + saut auto si bloque
-	if humanoid and rootPart and gotoWalkState.active and #gotoWalkState.path > 0 and not flyState.flying then
+	if humanoid and rootPart and gotoWalkState.active and #gotoWalkState.path > 0 then
 		local wp = gotoWalkState.path[1]
 		local flatDist = Vector3.new(rootPart.Position.X - wp.X, 0, rootPart.Position.Z - wp.Z).Magnitude
 		-- Detection de blocage : vitesse reelle trop faible par rapport a la distance
@@ -1364,7 +1400,6 @@ end)()
 				if _G._currentEmoteTrack then
 					pcall(function() _G._currentEmoteTrack:Stop(0.3) end)
 				end
-				if flyState.flying then return end
 				hum.PlatformStand = true
 				local bv = Instance.new("BodyVelocity")
 				bv.MaxForce = Vector3.new(50000, 0, 50000)
@@ -1879,7 +1914,6 @@ local function isServerAuthority()
 		if not char then return false end
 		local hrp = char:FindFirstChild("HumanoidRootPart")
 		if not hrp then return false end
-		if flyState.flying then return false end
 		local testVel = Instance.new("BodyVelocity")
 		testVel.MaxForce = Vector3.new(0, 9e8, 0)
 		testVel.Velocity = Vector3.new(0, 10, 0)
@@ -2360,7 +2394,7 @@ RunService.Heartbeat:Connect(function()
 	end
 
 	-- Anti Speed Hack: bloquer WalkSpeed anormal (sauf si on l'a set nous-meme)
-	if protectionsState.antiSpeedHack and not flyState.flying then
+	if protectionsState.antiSpeedHack then
 		local ws = humanoid.WalkSpeed
 		if ws > protectionsState.lastWalkSpeed + 50 then
 			humanoid.WalkSpeed = protectionsState.lastWalkSpeed
