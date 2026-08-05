@@ -1039,7 +1039,8 @@ RunService.Stepped:Connect(function(_, dt)
 			local char = LocalPlayer.Character
 			local hum = char and char:FindFirstChildOfClass("Humanoid")
 			if hum and not flyState.flying then
-				local target = walkSpeedState.value
+				local wsState = _G["walkSpeedState"] or walkSpeedState
+				local target = wsState and wsState.value or 16
 				if math.abs(hum.WalkSpeed - target) > 0.5 then
 					hum.WalkSpeed = target
 				end
