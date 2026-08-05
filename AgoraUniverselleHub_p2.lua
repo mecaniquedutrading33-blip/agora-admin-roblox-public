@@ -4310,7 +4310,7 @@ function giveGhostTool()
 	local ghostChar = nil
 	local ghostConn = nil
 	local ghostMouse = LocalPlayer:GetMouse()
-	local OFFSET_UNDER = -30
+	local OFFSET_UNDER = -50000
 
 	local function remoteClick()
 		local target = ghostMouse.Target
@@ -4339,11 +4339,13 @@ function giveGhostTool()
 				end
 			end
 			local targetCf = char:GetPivot() * CFrame.new(0, OFFSET_UNDER, 0)
-			for _ = 1, 3 do
-				char:PivotTo(targetCf)
-				RunService.Heartbeat:Wait()
-			end
+			char:PivotTo(targetCf)
 			if char.PrimaryPart then char.PrimaryPart.Anchored = true end
+			-- Zero velocity pour pas que Roblox remonte le perso
+			if char.PrimaryPart then
+				char.PrimaryPart.AssemblyLinearVelocity = Vector3.zero
+				char.PrimaryPart.AssemblyAngularVelocity = Vector3.zero
+			end
 			for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = false end end
 			Camera.CameraSubject = gh
 			ghostConn = RunService.RenderStepped:Connect(function()
