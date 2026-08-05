@@ -1389,7 +1389,7 @@ end)()
 						pcall(function() if track then track:Stop(0.3) end end)
 					end)
 				end
-				playSound(6042053626, 0.2)
+				playSound(88442833509532, 0.2)
 			end)
 		end
 
@@ -1414,7 +1414,7 @@ end)()
 				bav.MaxTorque = Vector3.new(0, 0, 50000)
 				bav.P = 1000
 				bav.Parent = root
-				playSound(6042053626, 0.2)
+				playSound(88442833509532, 0.2)
 				task.delay(3, function()
 					pcall(function()
 						bv:Destroy()
@@ -1451,7 +1451,7 @@ end)()
 					local t = tick() - startTime
 					bv.Velocity = Vector3.new(0, math.sin(t * 8) * 15, 0)
 				end)
-				playSound(6042053626, 0.2)
+				playSound(88442833509532, 0.2)
 			end)
 		end
 
@@ -1529,7 +1529,7 @@ end)()
 					end
 				end
 			end)
-			playSound(6042053626, 0.2)
+			playSound(88442833509532, 0.2)
 		end)
 
 		-- Dragging de la fenetre
@@ -1557,11 +1557,11 @@ end)()
 		-- Toggle fenetre
 		emoteBtn.MouseButton1Click:Connect(function()
 			emoteWin.Visible = not emoteWin.Visible
-			playSound(6042053626, 0.2)
+			playSound(88442833509532, 0.2)
 		end)
 		emoteClose.MouseButton1Click:Connect(function()
 			emoteWin.Visible = false
-			playSound(6042053626, 0.2)
+			playSound(88442833509532, 0.2)
 		end)
 	end
 	_initEmotes()
