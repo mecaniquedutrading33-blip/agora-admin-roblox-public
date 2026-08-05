@@ -506,14 +506,14 @@ createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 	task.spawn(function()
 		local ok, err = pcall(function()
 			-- Etape 1 : fade in du backdrop depuis noir + whoosh grave
-			playSound(9114850423, 0.5)
+			playSound(9042847609, 0.6)
 			backdrop.BackgroundTransparency = 0
 
 			-- Etape 2 : titre "Agora Hub" fade in (0.5s) + ding doux
 			task.wait(0.3)
 			_tween(title, {TextTransparency = 0}, 0.5)
 			_tween(subtitle, {TextTransparency = 0}, 0.5)
-			playSound(6042053626, 0.25)
+			playSound(103516326607012, 0.3)
 
 			-- Etape 3 : pause 1s pour lire le titre
 			task.wait(1.0)
@@ -529,7 +529,7 @@ createStroke(mainFrame, Color3.fromRGB(120, 120, 150), 1.2)
 			uniTag.Position = UDim2.new(0.5, 0, 0.5, 0)
 			uniTag.AnchorPoint = Vector2.new(0.5, 0.5)
 			uniTag.Rotation = 4  -- rotation d'entree (corrigee a -8 a la fin)
-			playSound(4590662766, 0.85)  -- boom impact
+			playSound(836142578, 0.9)  -- Cinematic Bass Boom
 			_tween(uniTag, {Size = UDim2.new(1.2, 0, 0, 140), Rotation = -10}, 0.12, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			_tween(flash, {BackgroundTransparency = 1}, 0.25)
 			task.wait(0.12)
@@ -708,7 +708,7 @@ local function createButton(parent, text, yPos, color, callback)
 	btn.MouseEnter:Connect(function() tween(btn, {BackgroundColor3 = color and color * 1.15 or Color3.fromRGB(60, 95, 200)}, 0.1) end)
 	btn.MouseLeave:Connect(function() tween(btn, {BackgroundColor3 = color or Color3.fromRGB(45, 75, 160)}, 0.1) end)
 	btn.MouseButton1Click:Connect(function()
-		playSound(6042053626, 0.22)
+		playSound(88442833509532, 0.22)
 		if callback then callback() end
 	end)
 	return btn
@@ -797,15 +797,16 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.14"
+	_G.CURRENT_VERSION = "v40.15"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.15: Meilleurs sons (intro cinema + UI click) -- whoosh=Urgent Action stinger, ding=mixkit achievement bell, boom=Cinematic Bass Boom, click=ui-simple-button-click",
 		"v40.01: Fly Physics state permanent (zero sursaut) + stop ALL anims + Landed/Climbing disabled + antiInfiniteJump fly guard",
 		"v39.99: FIX noclip (p2 stale values + double loop Stepped+RenderStepped + ALL parts) + fly guard CharacterAdded",
 		"v39.98: FIX noclip p2 stale char/hum/rootPart",
 		"v39.97: Force PlatformStand + WalkSpeed=0 chaque frame fly + re-fix noclip/infiniteJump/antiSpeedHack",
-		"v39.96: MEGA FIX 9 sursauts — noclip fly guard + infiniteJump + Spider + dance + testVel + seated CanCollide",
+		"v39.96: MEGA FIX 9 sursauts ? noclip fly guard + infiniteJump + Spider + dance + testVel + seated CanCollide",
 		"v39.95: Stop walk/run anim en fly + WalkSpeed=0 pendant fly",
 		"v39.92: Home scroll changelog + stats fallback indisponible",
 		"v39.90: Fix sursauts voiture (noclip/fly seated guards) + HRP exclusion + gradual stopFly + F10 boutons mobile",
@@ -2644,7 +2645,7 @@ local function createPlayerEntry(plr)
 		end
 	end)
 	
-	-- Mini boutons de notification (visibles quand epinglé)
+	-- Mini boutons de notification (visibles quand epingle)
 	local miniBar = Instance.new("Frame")
 	miniBar.Size = UDim2.new(1, -10, 0, 20)
 	miniBar.Position = UDim2.new(0, 5, 1, -22)
@@ -2670,7 +2671,7 @@ local function createPlayerEntry(plr)
 		createCorner(btn, 4)
 		btn.MouseButton1Click:Connect(function()
 			pinnedNotifSettings[settingKey] = not pinnedNotifSettings[settingKey]
-			-- Appliquer a TOUS les boutons de toutes les cartes epinglées
+			-- Appliquer a TOUS les boutons de toutes les cartes epinglees
 			btn.BackgroundColor3 = pinnedNotifSettings[settingKey] and Color3.fromRGB(60, 160, 80) or Color3.fromRGB(40, 40, 50)
 			for _, c in pairs(playerCards) do
 				if c and c.Parent then
@@ -4729,7 +4730,7 @@ local function startFly()
 	flyState.seatPart = wasSeated or nil
 
 	-- Son de demarrage fly (tres doux)
-		-- pcall(function() playSound(6042053626, 0.12) end)
+		-- pcall(function() playSound(88442833509532, 0.12) end)
 
 		-- Si on est assis, on reste dans le siege : on garde la position assise
 		-- PAS de Animate.Disabled, PAS de PlatformStand, juste empecher le saut
@@ -5269,7 +5270,7 @@ local function computePathTo(targetPos)
 	if ok and pathOrErr and #pathOrErr > 0 then
 		for i, wp in ipairs(pathOrErr) do
 			if wp and wp.Position then
-				-- Filtrer les waypoints trop haut (barrières) — preferer meme hauteur
+				-- Filtrer les waypoints trop haut (barrieres) ? preferer meme hauteur
 				local wpHeight = wp.Position.Y
 				if math.abs(wpHeight - startHeight) < 15 or i == #pathOrErr then
 					table.insert(waypoints, wp.Position)
