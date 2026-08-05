@@ -1840,13 +1840,14 @@ local hitboxSwitch = createSwitch(extraScroll, "Hitbox expander", 0, function(on
 end)
 
 createButton(extraScroll, "Obtenir Ghost V4", 0, Color3.fromRGB(110, 60, 160), function()
-	giveGhostTool()
+	pcall(function() giveGhostTool() end)
 end)
 createButton(extraScroll, "Obtenir Eleven Master", 0, Color3.fromRGB(60, 120, 160), function()
-	giveElevenTool()
+	pcall(function() giveElevenTool() end)
 end)
 createButton(extraScroll, "Obtenir Spider Tool", 0, Color3.fromRGB(60, 160, 90), function()
-	giveSpiderTool()
+	local ok, err = pcall(function() giveSpiderTool() end)
+	if not ok then warn("[AGORA] Spider Tool error: " .. tostring(err)) end
 end)
 
 -- Fallback notify global si le panel n'en fournit pas
@@ -4566,7 +4567,10 @@ function giveElevenTool()
 	end)
 end
 function giveSpiderTool()
-	if LocalPlayer.Backpack:FindFirstChild("SpiderTool") or (character and character:FindFirstChild("SpiderTool")) then return end
+	if not LocalPlayer then warn("[AGORA] Spider: LocalPlayer nil") return end
+	local backpack = LocalPlayer:FindFirstChild("Backpack")
+	if not backpack then warn("[AGORA] Spider: Backpack nil") return end
+	if backpack:FindFirstChild("SpiderTool") or (character and character:FindFirstChild("SpiderTool")) then return end
 
 	local tool = Instance.new("Tool")
 	tool.Name = "SpiderTool"
