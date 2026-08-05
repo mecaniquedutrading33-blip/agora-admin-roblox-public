@@ -796,7 +796,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.01"
+	_G.CURRENT_VERSION = "v40.02"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -2646,7 +2646,7 @@ local function createPlayerEntry(plr)
 			rootPart.CFrame = CFrame.lookAt(tpPos, targetPos)
 			-- Grace anti-TP protection
 			if protectionsState then
-				protectionsState.antiTeleportGraceUntil = tick() + 1.0
+				protectionsState.antiTeleportGraceUntil = tick() + 2.0
 			end
 		end
 	end)
@@ -4466,7 +4466,7 @@ local function stopFly()
 	flySwitch.set(false)
 	-- Active la grace anti-TP + antiFling/Fall pour reinitialiser sans sursauts
 	if protectionsState then
-		protectionsState.antiTeleportGraceUntil = tick() + 1.0
+		protectionsState.antiTeleportGraceUntil = tick() + 2.0
 		protectionsState.flyStopGraceUntil = tick() + 1.5
 	end
 end
@@ -4647,13 +4647,15 @@ local function startFly()
 						flyState.gyro.Parent = rootPart
 						flyState.vel = Instance.new("BodyVelocity")
 						flyState.vel.Velocity = Vector3.zero
-						flyState.vel.MaxForce = Vector3.new(1e6, 9e9, 1e6)
+						flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 						flyState.vel.Parent = rootPart
-						-- Pas de PlatformStand : garder pose debout
-						pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Running) end)
-						-- Desactiver les etats de chute/saut
+						-- Physics state + PlatformStand (anti-sursaut)
+						humanoid.PlatformStand = true
+						pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
 						pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 						pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
+						pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, false) end)
+						pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false) end)
 						-- Remplacer le loop par le fly normal
 						if flyState.loop then flyState.loop:Disconnect() flyState.loop = nil end
 						flyState.loop = RunService.RenderStepped:Connect(function(dt2)
@@ -4667,24 +4669,28 @@ local function startFly()
 								local currentCF = flyState.gyro.CFrame
 								flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt2))
 							end
-							-- CanCollide=false (sauf HRP) + stopper anims
-							if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
-								for _, part in ipairs(character:GetDescendants()) do
-									if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then part.CanCollide = false end
-								end
-							end
-							if humanoid then
-								pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
-								pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
-								pcall(function()
-									for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
-										local name = track.Animation and track.Animation.Name or ""
-										if name == "Jump" or name == "Fall" or name == "Climb" or name == "jump" or name == "fall" or name == "Walk" or name == "Run" or name == "walk" or name == "run" then
-											track:Stop(0)
+							-- CanCollide=false sur TOUTES les parts (incluant HRP) + FORCER Physics + stop ALL anims
+									if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
+										for _, part in ipairs(character:GetDescendants()) do
+											if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end
 										end
 									end
-								end)
-							end
+									if humanoid then
+										pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
+										pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
+										pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, false) end)
+										pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false) end)
+										if not humanoid.PlatformStand then humanoid.PlatformStand = true end
+										if humanoid.WalkSpeed ~= 0 then humanoid.WalkSpeed = 0 end
+										if humanoid:GetState() ~= Enum.HumanoidStateType.Physics then
+											pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
+										end
+										pcall(function()
+											for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+												track:Stop(0)
+											end
+										end)
+									end
 							-- Movement
 							local move = Vector3.zero
 							if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move += Camera.CFrame.LookVector end
@@ -4740,7 +4746,7 @@ local function startFly()
 
 		flyState.vel = Instance.new("BodyVelocity")
 		flyState.vel.Velocity = Vector3.zero
-		flyState.vel.MaxForce = Vector3.new(1e6, 9e9, 1e6)
+		flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 		flyState.vel.Parent = rootPart
 
 		-- PlatformStand + Physics state = ZERO sursaut permanent
@@ -4760,10 +4766,10 @@ local function startFly()
 				end
 			end)
 		end
-		-- Desactiver collision sur les parts du perso (sauf HRP, comme noclip)
+		-- Desactiver collision sur TOUTES les parts (incluant HRP = zero collision sol)
 		if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 			for _, part in ipairs(character:GetDescendants()) do
-				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then
+				if part:IsA("BasePart") and part.CanCollide then
 					part.CanCollide = false
 				end
 			end
@@ -4820,10 +4826,10 @@ local function startFly()
 			flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt))
 		end
 
-		-- Maintenir CanCollide=false (sauf HRP, comme noclip)
+		-- Maintenir CanCollide=false sur TOUTES les parts (incluant HRP = zero collision sol)
 		if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 			for _, part in ipairs(character:GetDescendants()) do
-				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then
+				if part:IsA("BasePart") and part.CanCollide then
 					part.CanCollide = false
 				end
 			end
@@ -5047,7 +5053,7 @@ local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
 			end
 		end
 		if protectionsState then
-			protectionsState.antiTeleportGraceUntil = tick() + 1.0
+			protectionsState.antiTeleportGraceUntil = tick() + 2.0
 		end
 	end
 end)
