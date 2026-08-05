@@ -47,6 +47,7 @@ local platformState = _G["platformState"]
 local espState = _G["espState"]
 local gotoWalkState = _G._P1["gotoWalkState"]
 local zeroGSwitch = _G._P1["zeroGSwitch"]
+local SETTINGS = _G.SETTINGS or _G._P1 and _G._P1["SETTINGS"] or {}
 local humanoid = nil
 local rootPart = nil
 local character = nil
