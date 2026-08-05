@@ -797,10 +797,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.20"
+	_G.CURRENT_VERSION = "v40.21"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.21: Fix Activity Log texte invisible (ZIndex 102 + row 48px + border + couleurs plus vives + textes plus grands)",
 		"v40.20: Popup MAJ au demarrage + indicateur Home anime si Plus tard + pas de spam popup",
 		"v40.19: Auto-update sans popup (indicateur Home seulement) + shutdown complet (BodyMovers+ScreenGui) + fix WalkSpeed slider",
 		"v40.16: Notif join seulement amis (pinned) + fix Activity Log texte invisible (row height 42px + TextWrapped + couleurs plus vives)",
@@ -2405,11 +2406,12 @@ local function createPlayerEntry(plr)
 			else
 				for idx, log in ipairs(logs) do
 					local row = Instance.new("Frame")
-					row.Size = UDim2.new(1, -6, 0, 42)
-					row.AutomaticSize = Enum.AutomaticSize.Y
-					row.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-					row.BorderSizePixel = 0
+					row.Size = UDim2.new(1, -6, 0, 48)
+					row.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+					row.BorderSizePixel = 1
+					row.BorderColor3 = Color3.fromRGB(60, 60, 80)
 					row.LayoutOrder = idx
+					row.ZIndex = 101
 					row.Parent = scroll
 					createCorner(row, 6)
 
@@ -2418,16 +2420,18 @@ local function createPlayerEntry(plr)
 					elseif log.severity == "alert" then sevColor = Color3.fromRGB(255, 100, 100) end
 
 					local sevBar = Instance.new("Frame")
-					sevBar.Size = UDim2.new(0, 3, 1, -4)
-					sevBar.Position = UDim2.new(0, 2, 0, 2)
+					sevBar.Size = UDim2.new(0, 4, 1, -6)
+					sevBar.Position = UDim2.new(0, 2, 0, 3)
+					sevBar.ZIndex = 102
 					sevBar.BackgroundColor3 = sevColor
 					sevBar.BorderSizePixel = 0
 					sevBar.Parent = row
 					createCorner(sevBar, 2)
 
 					local timeLbl = Instance.new("TextLabel")
-					timeLbl.Size = UDim2.new(0, 70, 0, 18)
-					timeLbl.Position = UDim2.new(0, 10, 0, 4)
+					timeLbl.Size = UDim2.new(0, 70, 0, 20)
+					timeLbl.Position = UDim2.new(0, 10, 0, 6)
+					timeLbl.ZIndex = 102
 					timeLbl.BackgroundTransparency = 1
 					timeLbl.Text = log.time
 					timeLbl.Font = Enum.Font.GothamMonospace
@@ -2437,8 +2441,9 @@ local function createPlayerEntry(plr)
 					timeLbl.Parent = row
 
 					local typeLbl = Instance.new("TextLabel")
-					typeLbl.Size = UDim2.new(1, -90, 0, 18)
-					typeLbl.Position = UDim2.new(0, 84, 0, 4)
+					typeLbl.Size = UDim2.new(1, -90, 0, 20)
+					typeLbl.Position = UDim2.new(0, 84, 0, 6)
+					typeLbl.ZIndex = 102
 					typeLbl.BackgroundTransparency = 1
 					typeLbl.Text = log.type
 					typeLbl.Font = Enum.Font.GothamBold
@@ -2449,13 +2454,14 @@ local function createPlayerEntry(plr)
 					typeLbl.Parent = row
 
 					local detLbl = Instance.new("TextLabel")
-					detLbl.Size = UDim2.new(1, -90, 0, 16)
-					detLbl.Position = UDim2.new(0, 84, 0, 22)
+					detLbl.Size = UDim2.new(1, -90, 0, 18)
+					detLbl.Position = UDim2.new(0, 84, 0, 26)
+					detLbl.ZIndex = 102
 					detLbl.BackgroundTransparency = 1
 					detLbl.Text = log.detail
 					detLbl.Font = Enum.Font.Gotham
 					detLbl.TextSize = 11
-					detLbl.TextColor3 = Color3.fromRGB(180, 180, 200)
+					detLbl.TextColor3 = Color3.fromRGB(200, 200, 220)
 					detLbl.TextXAlignment = Enum.TextXAlignment.Left
 					detLbl.TextWrapped = true
 					detLbl.TextTruncate = Enum.TextTruncate.AtEnd
