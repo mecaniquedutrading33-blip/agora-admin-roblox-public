@@ -797,11 +797,10 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.17"
+	_G.CURRENT_VERSION = "v40.16"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v40.17: Fix crash drag Activity Log (UDim2 vs Vector3) -- dragOff = inp.Position - Vector3.new(win.Position.X.Offset, win.Position.Y.Offset, 0)",
 		"v40.16: Notif join seulement amis (pinned) + fix Activity Log texte invisible (row height 42px + TextWrapped + couleurs plus vives)",
 		"v40.15: Meilleurs sons (intro cinema + UI click) -- whoosh=Urgent Action stinger, ding=mixkit achievement bell, boom=Cinematic Bass Boom, click=ui-simple-button-click",
 		"v40.01: Fly Physics state permanent (zero sursaut) + stop ALL anims + Landed/Climbing disabled + antiInfiniteJump fly guard",
@@ -2303,7 +2302,7 @@ local function createPlayerEntry(plr)
 			local dragOff = nil
 			win.InputBegan:Connect(function(inp)
 				if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-					dragOff = inp.Position - Vector3.new(win.Position.X.Offset, win.Position.Y.Offset, 0)
+					dragOff = inp.Position - win.Position
 				end
 			end)
 			win.InputChanged:Connect(function(inp)
