@@ -586,7 +586,7 @@ createStroke(topBar, Color3.fromRGB(80, 80, 100), 0.8)
 	titleLogo.Position = UDim2.new(0, 8, 0.5, 0)
 	titleLogo.AnchorPoint = Vector2.new(0, 0.5)
 	titleLogo.BackgroundTransparency = 1
-	titleLogo.Image = "rbxassetid://73314612607499"
+	titleLogo.Image = "rbxassetid://102429262384981"
 	titleLogo.Parent = _topBar
 
 	-- Badge "UNIVERSELLE" petit et penche, a droite du titre
@@ -1611,7 +1611,7 @@ local minimized = false
 	btn.Size = UDim2.new(0, 56, 0, 56)
 	btn.Position = UDim2.new(0, 12, 0.5, -28)
 	btn.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
-	btn.Image = "rbxassetid://73314612607499"
+	btn.Image = "rbxassetid://102429262384981"
 	btn.ScaleType = Enum.ScaleType.Fit
 	btn.AutoButtonColor = false
 	btn.BorderSizePixel = 0
