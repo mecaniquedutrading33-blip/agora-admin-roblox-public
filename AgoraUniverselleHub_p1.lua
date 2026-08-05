@@ -797,7 +797,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.12"
+	_G.CURRENT_VERSION = "v40.13"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -1904,6 +1904,17 @@ local playerCards = {}
 local playerSearchQuery = "" -- query actuelle (vide = pas de filtre)
 local pinnedPlayers = {} -- joueurs epingles (pin) en haut de la liste
 _G._agora_pinnedPlayers = pinnedPlayers
+-- Settings de notifications pour les joueurs epingles (global, pas par joueur)
+local pinnedNotifSettings = {
+	death = true,      -- notif quand un joueur epingle meurt
+	leave = true,      -- notif quand un joueur epingle quitte
+	join = true,       -- notif quand un joueur epingle rejoint
+	team = false,      -- notif quand un joueur epingle change de team
+	chat = false,      -- notif quand un joueur epingle parle
+	userId = false,    -- copier UserId
+	profile = false,   -- ouvrir profil web
+}
+_G._agora_pinnedNotifSettings = pinnedNotifSettings
 
 -- Systeme de notification visuelle (bas-droite, auto-disparait 4s)
 local notifFrames = {}
@@ -2630,6 +2641,67 @@ local function createPlayerEntry(plr)
 			updatePinBtn()
 		end
 	end)
+	
+	-- Mini boutons de notification (visibles quand epinglé)
+	local miniBar = Instance.new("Frame")
+	miniBar.Size = UDim2.new(1, -10, 0, 20)
+	miniBar.Position = UDim2.new(0, 5, 1, -22)
+	miniBar.BackgroundTransparency = 1
+	miniBar.Visible = false
+	miniBar.Parent = card
+	local miniLayout = Instance.new("UIListLayout")
+	miniLayout.FillDirection = Enum.FillDirection.Horizontal
+	miniLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	miniLayout.Padding = UDim.new(0, 3)
+	miniLayout.Parent = miniBar
+	
+	local function createMiniBtn(text, settingKey, callback)
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(0, 44, 0, 18)
+		btn.BackgroundColor3 = pinnedNotifSettings[settingKey] and Color3.fromRGB(60, 160, 80) or Color3.fromRGB(40, 40, 50)
+		btn.Text = text
+		btn.Font = Enum.Font.GothamSemibold
+		btn.TextSize = 9
+		btn.TextColor3 = Color3.new(1, 1, 1)
+		btn.BorderSizePixel = 0
+		btn.Parent = miniBar
+		createCorner(btn, 4)
+		btn.MouseButton1Click:Connect(function()
+			pinnedNotifSettings[settingKey] = not pinnedNotifSettings[settingKey]
+			-- Appliquer a TOUS les boutons de toutes les cartes epinglées
+			btn.BackgroundColor3 = pinnedNotifSettings[settingKey] and Color3.fromRGB(60, 160, 80) or Color3.fromRGB(40, 40, 50)
+			for _, c in pairs(playerCards) do
+				if c and c.Parent then
+					for _, child in ipairs(c:GetDescendants()) do
+						if child:IsA("TextButton") and child.Text == text then
+							child.BackgroundColor3 = pinnedNotifSettings[settingKey] and Color3.fromRGB(60, 160, 80) or Color3.fromRGB(40, 40, 50)
+						end
+					end
+				end
+			end
+			if callback then callback() end
+		end)
+		return btn
+	end
+	
+	createMiniBtn("Death", "death")
+	createMiniBtn("Leave", "leave")
+	createMiniBtn("Join", "join")
+	createMiniBtn("Team", "team")
+	createMiniBtn("Chat", "chat")
+	createMiniBtn("UserId", "userId", function()
+		if setclipboard then setclipboard(tostring(plr.UserId)) end
+	end)
+	createMiniBtn("Profil", "profile", function()
+		pcall(function() LocalPlayer:SetCore("ShellOpenUrl", "https://www.roblox.com/users/" .. plr.UserId .. "/profile") end)
+	end)
+	
+	-- Mettre a jour la visibilite des mini boutons selon le pin
+	local oldUpdatePinBtn = updatePinBtn
+	updatePinBtn = function()
+		oldUpdatePinBtn()
+		miniBar.Visible = pinnedPlayers[plr] ~= nil
+	end
 	
 	pinBtn.MouseButton1Click:Connect(function()
 		if pinnedPlayers[plr] then
@@ -3576,11 +3648,42 @@ end
 Players.PlayerAdded:Connect(function(plr)
 	task.wait(0.3)
 	addPlayerCard(plr)
+	-- Notif si joueur epingle rejoint
+	if pinnedNotifSettings.join and plr ~= LocalPlayer then
+		showNotif("[Pin] " .. plr.DisplayName .. " a rejoint", Color3.fromRGB(80, 200, 120))
+	end
+	-- Notif chat pour joueurs epingles
+	if pinnedNotifSettings.chat then
+		pcall(function() plr.Chatted:Connect(function(msg)
+			if pinnedPlayers[plr] and #msg > 0 then
+				showNotif("[Chat] " .. plr.DisplayName .. ": " .. msg:sub(1, 40), Color3.fromRGB(100, 180, 255))
+			end
+		end) end)
+	end
+	-- Notif team change pour joueurs epingles
+	pcall(function() plr.TeamChanged:Connect(function()
+		if pinnedPlayers[plr] and pinnedNotifSettings.team then
+			showNotif("[Team] " .. plr.DisplayName .. " -> " .. tostring(plr.Team and plr.Team.Name or "Aucune"), Color3.fromRGB(200, 160, 60))
+		end
+	end) end)
+	-- Notif mort pour joueurs epingles
+	pcall(function() plr.CharacterAdded:Connect(function(char)
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum.Died:Connect(function()
+				if pinnedPlayers[plr] and pinnedNotifSettings.death then
+					showNotif("[Death] " .. plr.DisplayName .. " est mort", Color3.fromRGB(220, 80, 80))
+				end
+			end)
+		end
+	end) end)
 end)
 Players.PlayerRemoving:Connect(function(plr)
 	-- Notification si le joueur etait epingle
 	if pinnedPlayers[plr] then
-		showNotif("[Pin] " .. plr.DisplayName .. " a quitte le jeu", Color3.fromRGB(220, 100, 80))
+		if pinnedNotifSettings.leave then
+			showNotif("[Pin] " .. plr.DisplayName .. " a quitte le jeu", Color3.fromRGB(220, 100, 80))
+		end
 		pinnedPlayers[plr] = nil
 	end
 	task.wait(0.1)
