@@ -797,7 +797,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.11"
+	_G.CURRENT_VERSION = "v40.12"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -2622,7 +2622,15 @@ local function createPlayerEntry(plr)
 		end
 	end
 	updatePinBtn()
-
+	-- Auto-pin des amis Roblox
+	task.spawn(function()
+		local ok, isFriend = pcall(function() return LocalPlayer:IsFriendsWith(plr.UserId) end)
+		if ok and isFriend and not pinnedPlayers[plr] then
+			pinnedPlayers[plr] = true
+			updatePinBtn()
+		end
+	end)
+	
 	pinBtn.MouseButton1Click:Connect(function()
 		if pinnedPlayers[plr] then
 			pinnedPlayers[plr] = nil
