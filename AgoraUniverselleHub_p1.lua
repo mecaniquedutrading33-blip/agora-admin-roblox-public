@@ -797,10 +797,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.16"
+	_G.CURRENT_VERSION = "v40.19"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.19: Auto-update sans popup (indicateur Home seulement) + shutdown complet (BodyMovers+ScreenGui) + fix WalkSpeed slider",
 		"v40.16: Notif join seulement amis (pinned) + fix Activity Log texte invisible (row height 42px + TextWrapped + couleurs plus vives)",
 		"v40.15: Meilleurs sons (intro cinema + UI click) -- whoosh=Urgent Action stinger, ding=mixkit achievement bell, boom=Cinematic Bass Boom, click=ui-simple-button-click",
 		"v40.01: Fly Physics state permanent (zero sursaut) + stop ALL anims + Landed/Climbing disabled + antiInfiniteJump fly guard",
@@ -866,6 +867,7 @@ local protectionsPage = createTab("Protections")
 	
 	-- Translations (14 langues)
 	local translations = {
+
 		FR = {Home="Accueil", Joueurs="Joueurs", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registre", Local="Local", Protections="Protections", nouveautes="Nouveautes", discord="Rejoindre le Discord", langue="Langue", credits="Agora Hub [UNIVERSELLE]", utilisateurs="Utilisateurs", enLigne="En ligne"},
 		EN = {Home="Home", Joueurs="Players", Move="Move", Extra="Extra", Remotes="Remotes", Registry="Registry", Local="Local", Protections="Protections", nouveautes="Changelog", discord="Join Discord", langue="Language", credits="Agora Hub [UNIVERSELLE]", utilisateurs="Users", enLigne="Online"},
 		ES = {Home="Inicio", Joueurs="Jugadores", Move="Mover", Extra="Extra", Remotes="Remotos", Registry="Registro", Local="Local", Protections="Protecciones", nouveautes="Novedades", discord="Unirse a Discord", langue="Idioma", credits="Agora Hub [UNIVERSELLE]", utilisateurs="Usuarios", enLigne="En linea"},
@@ -1152,6 +1154,38 @@ local protectionsPage = createTab("Protections")
 	
 	langBtn.MouseButton1Click:Connect(function()
 		if langPopup then langPopup:Destroy() langPopup = nil return end
+	
+	-- Indicateur de mise a jour (visible seulement si MAJ disponible)
+	local updInd = Instance.new("TextLabel")
+	updInd.Size = UDim2.new(1, -8, 0, 24)
+	updInd.BackgroundColor3 = Color3.fromRGB(30, 60, 100)
+	updInd.BackgroundTransparency = 0.8
+	updInd.Text = ""
+	updInd.Font = Enum.Font.GothamBold
+	updInd.TextSize = 11
+	updInd.TextColor3 = Color3.fromRGB(100, 200, 255)
+	updInd.TextXAlignment = Enum.TextXAlignment.Left
+	updInd.Visible = false
+	updInd.LayoutOrder = 8
+	updInd.Parent = homeScroll
+	createCorner(updInd, 6)
+	_G._agoraUpdateIndicator = updInd
+	
+	local updBtn = Instance.new("TextButton")
+	updBtn.Size = UDim2.new(1, -8, 0, 32)
+	updBtn.BackgroundColor3 = Color3.fromRGB(80, 180, 100)
+	updBtn.Text = "Mettre a jour maintenant"
+	updBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	updBtn.Font = Enum.Font.GothamBold
+	updBtn.TextSize = 12
+	updBtn.Visible = false
+	updBtn.LayoutOrder = 9
+	updBtn.Parent = homeScroll
+	createCorner(updBtn, 6)
+	updBtn.MouseButton1Click:Connect(function()
+		pcall(function() if _G._agoraPerformUpdate then _G._agoraPerformUpdate() end end)
+	end)
+	_G._agoraUpdateBtn = updBtn
 		langPopup = Instance.new("Frame")
 		langPopup.Size = UDim2.new(1, -20, 0, 280)
 		langPopup.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
@@ -6002,190 +6036,162 @@ task.spawn(function()
     end
 end)
 
--- AUTO-UPDATE CHECK
-task.delay(10, function()
+-- AUTO-UPDATE CHECK (silencieux, indicateur dans Home seulement)
+_G._agoraUpdateAvailable = false
+_G._agoraUpdateVersion = nil
+_G._agoraDoUpdate = false
+
+-- Check version en arriere-plan (pas de popup)
+task.delay(8, function()
     while true do
         pcall(function()
-            if not _G._agoraAU and not _G._agoraUpdating then
-                _G._agoraAU = true
+            if not _G._agoraUpdating then
                 local vurl = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_version.lua&nocache=" .. tostring(tick()) .. "&r=" .. tostring(math.random(100000, 999999))
                 local ok, rv = pcall(function() return game:HttpGet(vurl, true) end)
                 if ok and rv then
                     rv = rv:gsub('return "', ''):gsub('"', ''):gsub("%s", "")
-                    local cv = (_G.CURRENT_VERSION or CURRENT_VERSION or "v39.54"):gsub("%s", "")
+                    local cv = (_G.CURRENT_VERSION or CURRENT_VERSION or "v0"):gsub("%s", "")
                     if rv ~= cv and rv ~= "" then
-                        -- Show update popup
-                        pcall(function()
-                            local sg = Instance.new("ScreenGui")
-                            sg.Name = "AgoraUpdatePrompt"
-                            sg.ResetOnSpawn = false
-                            sg.DisplayOrder = 99998
-                            local ok2, par = pcall(function() return game:GetService("CoreGui") end)
-                            if not ok2 or not par then par = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") end
-                            sg.Parent = par
-                            local f = Instance.new("Frame")
-                            f.Size = UDim2.new(0, 260, 0, 120)
-                            f.Position = UDim2.new(1, -280, 1, -140)
-                            f.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-                            f.BorderSizePixel = 0
-                            f.Parent = sg
-                            local fc = Instance.new("UICorner") fc.CornerRadius = UDim.new(0, 8) fc.Parent = f
-                            local fs = Instance.new("UIStroke") fs.Color = Color3.fromRGB(100, 200, 255) fs.Thickness = 2 fs.Parent = f
-                            local t = Instance.new("TextLabel")
-                            t.Size = UDim2.new(1, -20, 0, 30)
-                            t.Position = UDim2.new(0, 10, 0, 8)
-                            t.BackgroundTransparency = 1
-                            t.Text = "[Agora] Mise a jour disponible"
-                            t.TextColor3 = Color3.fromRGB(100, 200, 255)
-                            t.Font = Enum.Font.GothamBold
-                            t.TextSize = 15
-                            t.Parent = f
-                            local d = Instance.new("TextLabel")
-                            d.Size = UDim2.new(1, -20, 0, 35)
-                            d.Position = UDim2.new(0, 10, 0, 32)
-                            d.BackgroundTransparency = 1
-                            d.Text = "Version " .. rv .. " disponible\nVous avez " .. cv
-                            d.TextColor3 = Color3.fromRGB(200, 200, 210)
-                            d.Font = Enum.Font.Gotham
-                            d.TextSize = 13
-                            d.TextWrapped = true
-                            d.Parent = f
-                            local yB = Instance.new("TextButton")
-                            yB.Size = UDim2.new(0, 100, 0, 32)
-                            yB.Position = UDim2.new(0, 15, 0, 75)
-                            yB.BackgroundColor3 = Color3.fromRGB(80, 180, 100)
-                            yB.Text = "Oui"
-                            yB.TextColor3 = Color3.fromRGB(255, 255, 255)
-                            yB.Font = Enum.Font.GothamBold
-                            yB.TextSize = 14
-                            yB.Parent = f
-                            local yC = Instance.new("UICorner") yC.CornerRadius = UDim.new(0, 6) yC.Parent = yB
-                            local nB = Instance.new("TextButton")
-                            nB.Size = UDim2.new(0, 100, 0, 32)
-                            nB.Position = UDim2.new(0, 130, 0, 75)
-                            nB.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-                            nB.Text = "Plus tard"
-                            nB.TextColor3 = Color3.fromRGB(200, 200, 210)
-                            nB.Font = Enum.Font.Gotham
-                            nB.TextSize = 14
-                            nB.Parent = f
-                            local nC = Instance.new("UICorner") nC.CornerRadius = UDim.new(0, 6) nC.Parent = nB
-                            yB.MouseButton1Click:Connect(function()
-                                _G._agoraUpdating = true
-                                -- Sauvegarder l'etat des features actives avant shutdown
-                                _G._agoraSavedState = {}
-                                local switchesToSave = {
-                                    {ref = _G.flySwitch, name = "fly"},
-                                    {ref = _G.noclipSwitch, name = "noclip"},
-                                    {ref = _G.globalESPSwitch, name = "globalESP"},
-                                    {ref = _G.fullbrightSwitch, name = "fullbright"},
-                                    {ref = _G.zeroGSwitch, name = "zeroG"},
-                                    {ref = _G.hitboxSwitch, name = "hitbox"},
-                                    {ref = _G.clickTPSwitch, name = "clickTP"},
-                                    {ref = _G.gotoWalkSwitch, name = "gotoWalk"},
-                                    {ref = _G.infiniteJumpSwitch, name = "infiniteJump"},
-                                    {ref = _G.autoClickSwitch, name = "autoClick"},
-                                    {ref = _G.aimbotSwitch, name = "aimbot"},
-                                }
-                                for _, s in ipairs(switchesToSave) do
-                                    if s.ref and s.ref.get and s.ref.get() then
-                                        _G._agoraSavedState[s.name] = true
-                                    end
-                                end
-                                -- Sauvegarder aussi les protections
-                                if _G._P1 and _G._P1.protectionsState then
-                                    for k, v in pairs(_G._P1.protectionsState) do
-                                        if type(v) == "boolean" and v then
-                                            _G._agoraSavedState["prot_" .. k] = true
-                                        end
-                                    end
-                                end
-                                if _G.shutdownPanel then pcall(_G.shutdownPanel) end
-                                sg:Destroy()
-                                task.spawn(function()
-                                    local aG = Instance.new("ScreenGui")
-                                    aG.Name = "AgoraUpdAnim"
-                                    aG.ResetOnSpawn = false
-                                    aG.DisplayOrder = 99999
-                                    local ok3, par2 = pcall(function() return game:GetService("CoreGui") end)
-                                    if not ok3 or not par2 then par2 = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") end
-                                    aG.Parent = par2
-                                    local aF = Instance.new("Frame")
-                                    aF.Size = UDim2.new(0, 320, 0, 80)
-                                    aF.Position = UDim2.new(0.5, -160, 0.5, -40)
-                                    aF.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-                                    aF.BorderSizePixel = 0
-                                    aF.Parent = aG
-                                    local aC2 = Instance.new("UICorner") aC2.CornerRadius = UDim.new(0, 12) aC2.Parent = aF
-                                    local aS2 = Instance.new("UIStroke") aS2.Color = Color3.fromRGB(100, 200, 255) aS2.Thickness = 2 aS2.Parent = aF
-                                    local aL = Instance.new("TextLabel")
-                                    aL.Size = UDim2.new(1, 0, 1, 0)
-                                    aL.BackgroundTransparency = 1
-                                    aL.Text = "Mise a jour en cours..."
-                                    aL.TextColor3 = Color3.fromRGB(100, 200, 255)
-                                    aL.Font = Enum.Font.GothamBold
-                                    aL.TextSize = 16
-                                    aL.Parent = aF
-                                    task.wait(0.3)
-                                    pcall(function()
-                                        for _, g in ipairs(par2:GetChildren()) do
-                                            if g:IsA("ScreenGui") and (g.Name:match("Agora") or g.Name:match("Milan")) and g ~= aG then g:Destroy() end
-                                        end
-                                    end)
-                                    aL.Text = "Redemarrage..."
-                                    _G._agoraAU = nil
-                                    _G._agoraUpdating = nil
-                                    task.wait(2)
-                                    local rU = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache=" .. tostring(tick()) .. "&r=" .. tostring(math.random(100000, 999999))
-                                    local okR, code2 = pcall(function() return game:HttpGet(rU, true) end)
-                                    if okR and code2 and #code2 > 100 then
-                                        aG:Destroy()
-                                        local fn = loadstring(code2)
-                                        if fn then pcall(fn) end
-                                        -- Restaurer les features qui etaient actives avant l'update
-                                        task.delay(2, function()
-                                            pcall(function()
-                                                if not _G._agoraSavedState then return end
-                                                local restoreMap = {
-                                                    {name = "fly", ref = function() return _G.flySwitch end},
-                                                    {name = "noclip", ref = function() return _G.noclipSwitch end},
-                                                    {name = "globalESP", ref = function() return _G.globalESPSwitch end},
-                                                    {name = "fullbright", ref = function() return _G.fullbrightSwitch end},
-                                                    {name = "zeroG", ref = function() return _G.zeroGSwitch end},
-                                                    {name = "hitbox", ref = function() return _G.hitboxSwitch end},
-                                                    {name = "clickTP", ref = function() return _G.clickTPSwitch end},
-                                                    {name = "gotoWalk", ref = function() return _G.gotoWalkSwitch end},
-                                                    {name = "infiniteJump", ref = function() return _G.infiniteJumpSwitch end},
-                                                    {name = "autoClick", ref = function() return _G.autoClickSwitch end},
-                                                    {name = "aimbot", ref = function() return _G.aimbotSwitch end},
-                                                }
-                                                for _, r in ipairs(restoreMap) do
-                                                    if _G._agoraSavedState[r.name] then
-                                                        local sw = r.ref()
-                                                        if sw and sw.set and (not sw.get or not sw.get()) then
-                                                            sw.set(true)
-                                                        end
-                                                    end
-                                                end
-                                                _G._agoraSavedState = nil
-                                            end)
-                                        end)
-                                    else
-                                        aL.Text = "Erreur de chargement"
-                                        task.wait(2) aG:Destroy()
-                                    end
-                                end)
+                        _G._agoraUpdateAvailable = true
+                        _G._agoraUpdateVersion = rv
+                        -- Mettre a jour l'indicateur Home si il existe
+                        if _G._agoraUpdateIndicator then
+                            pcall(function()
+                                _G._agoraUpdateIndicator.Text = "MAJ disponible: " .. rv
+                                _G._agoraUpdateIndicator.Visible = true
+                                _G._agoraUpdateBtn.Visible = true
                             end)
-                            nB.MouseButton1Click:Connect(function()
-                                sg:Destroy()
-                                task.delay(300, function() _G._agoraAU = nil end)
+                        end
+                    else
+                        _G._agoraUpdateAvailable = false
+                        _G._agoraUpdateVersion = nil
+                        if _G._agoraUpdateIndicator then
+                            pcall(function()
+                                _G._agoraUpdateIndicator.Visible = false
+                                _G._agoraUpdateBtn.Visible = false
                             end)
-                        end)
+                        end
                     end
                 end
-                _G._agoraAU = nil
             end
         end)
         task.wait(60)
     end
 end)
+
+-- Fonction de mise a jour manuelle (declenchee par le bouton dans Home)
+_G._agoraPerformUpdate = function()
+    if not _G._agoraUpdateAvailable then return end
+    _G._agoraUpdating = true
+    -- Sauvegarder l'etat des features actives
+    _G._agoraSavedState = {}
+    local switchesToSave = {
+        {ref = _G.flySwitch, name = "fly"},
+        {ref = _G.noclipSwitch, name = "noclip"},
+        {ref = _G.globalESPSwitch, name = "globalESP"},
+        {ref = _G.fullbrightSwitch, name = "fullbright"},
+        {ref = _G.zeroGSwitch, name = "zeroG"},
+        {ref = _G.hitboxSwitch, name = "hitbox"},
+        {ref = _G.clickTPSwitch, name = "clickTP"},
+        {ref = _G.gotoWalkSwitch, name = "gotoWalk"},
+        {ref = _G.infiniteJumpSwitch, name = "infiniteJump"},
+        {ref = _G.autoClickSwitch, name = "autoClick"},
+        {ref = _G.aimbotSwitch, name = "aimbot"},
+    }
+    for _, s in ipairs(switchesToSave) do
+        if s.ref and s.ref.get and s.ref.get() then
+            _G._agoraSavedState[s.name] = true
+        end
+    end
+    -- Shutdown complet du panel
+    if _G.shutdownPanel then pcall(_G.shutdownPanel) end
+    -- Detruire TOUTES les anciennes ScreenGui Agora
+    pcall(function()
+        local okp, par = pcall(function() return game:GetService("CoreGui") end)
+        if not okp or not par then par = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") end
+        for _, g in ipairs(par:GetChildren()) do
+            if g:IsA("ScreenGui") and (g.Name:match("Agora") or g.Name:match("Milan")) then
+                g:Destroy()
+            end
+        end
+    end)
+    -- Nettoyer les anciens BodyVelocity/BodyGyro sur le character
+    pcall(function()
+        local char = game:GetService("Players").LocalPlayer.Character
+        if char then
+            for _, d in ipairs(char:GetDescendants()) do
+                if d:IsA("BodyVelocity") or d:IsA("BodyGyro") or d:IsA("BodyAngularVelocity") or d:IsA("BodyForce") then
+                    d:Destroy()
+                end
+            end
+        end
+    end)
+    -- Animation de mise a jour
+    task.spawn(function()
+        local aG = Instance.new("ScreenGui")
+        aG.Name = "AgoraUpdAnim"
+        aG.ResetOnSpawn = false
+        aG.DisplayOrder = 99999
+        local okp2, par2 = pcall(function() return game:GetService("CoreGui") end)
+        if not okp2 or not par2 then par2 = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") end
+        aG.Parent = par2
+        local aF = Instance.new("Frame")
+        aF.Size = UDim2.new(0, 320, 0, 80)
+        aF.Position = UDim2.new(0.5, -160, 0.5, -40)
+        aF.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+        aF.BorderSizePixel = 0
+        aF.Parent = aG
+        local aC = Instance.new("UICorner") aC.CornerRadius = UDim.new(0, 12) aC.Parent = aF
+        local aS = Instance.new("UIStroke") aS.Color = Color3.fromRGB(100, 200, 255) aS.Thickness = 2 aS.Parent = aF
+        local aL = Instance.new("TextLabel")
+        aL.Size = UDim2.new(1, 0, 1, 0)
+        aL.BackgroundTransparency = 1
+        aL.Text = "Mise a jour en cours..."
+        aL.TextColor3 = Color3.fromRGB(100, 200, 255)
+        aL.Font = Enum.Font.GothamBold
+        aL.TextSize = 16
+        aL.Parent = aF
+        task.wait(1)
+        aL.Text = "Redemarrage..."
+        _G._agoraUpdating = nil
+        task.wait(2)
+        local rU = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache=" .. tostring(tick()) .. "&r=" .. tostring(math.random(100000, 999999))
+        local okR, code2 = pcall(function() return game:HttpGet(rU, true) end)
+        if okR and code2 and #code2 > 100 then
+            aG:Destroy()
+            local fn = loadstring(code2)
+            if fn then pcall(fn) end
+            -- Restaurer les features
+            task.delay(2, function()
+                pcall(function()
+                    if not _G._agoraSavedState then return end
+                    local restoreMap = {
+                        {name = "fly", ref = function() return _G.flySwitch end},
+                        {name = "noclip", ref = function() return _G.noclipSwitch end},
+                        {name = "globalESP", ref = function() return _G.globalESPSwitch end},
+                        {name = "fullbright", ref = function() return _G.fullbrightSwitch end},
+                        {name = "zeroG", ref = function() return _G.zeroGSwitch end},
+                        {name = "hitbox", ref = function() return _G.hitboxSwitch end},
+                        {name = "clickTP", ref = function() return _G.clickTPSwitch end},
+                        {name = "gotoWalk", ref = function() return _G.gotoWalkSwitch end},
+                        {name = "infiniteJump", ref = function() return _G.infiniteJumpSwitch end},
+                        {name = "autoClick", ref = function() return _G.autoClickSwitch end},
+                        {name = "aimbot", ref = function() return _G.aimbotSwitch end},
+                    }
+                    for _, r in ipairs(restoreMap) do
+                        if _G._agoraSavedState[r.name] then
+                            local sw = r.ref()
+                            if sw and sw.set and (not sw.get or not sw.get()) then
+                                sw.set(true)
+                            end
+                        end
+                    end
+                    _G._agoraSavedState = nil
+                end)
+            end)
+        else
+            aL.Text = "Erreur de chargement"
+            task.wait(2) aG:Destroy()
+        end
+    end)
+end
