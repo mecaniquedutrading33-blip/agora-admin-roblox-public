@@ -1846,7 +1846,8 @@ createButton(extraScroll, "Obtenir Eleven Master", 0, Color3.fromRGB(60, 120, 16
 	giveElevenTool()
 end)
 createButton(extraScroll, "Obtenir Spider Tool", 0, Color3.fromRGB(60, 160, 90), function()
-	giveSpiderTool()
+	local ok, err = pcall(giveSpiderTool)
+	if not ok then warn("[AGORA] Spider Tool error: " .. tostring(err)) end
 end)
 
 -- Fallback notify global si le panel n'en fournit pas
@@ -4296,7 +4297,7 @@ function giveGhostTool()
 	local tool = Instance.new("Tool")
 	tool.Name = "Invisible_V4"
 	tool.RequiresHandle = false
-	tool.Parent = LocalPlayer:WaitForChild("Backpack")
+	tool.Parent = bp
 
 	local isInvisible = false
 	local ghostChar = nil
@@ -4385,7 +4386,7 @@ function giveElevenTool()
 	h.Transparency = 1
 	h.CanCollide = false
 	h.Parent = tool
-	tool.Parent = LocalPlayer:WaitForChild("Backpack")
+	tool.Parent = bp
 
 	local targetPart = nil
 	local bp, bg = nil, nil
@@ -4566,12 +4567,20 @@ function giveElevenTool()
 	end)
 end
 function giveSpiderTool()
-	if LocalPlayer.Backpack:FindFirstChild("SpiderTool") or (character and character:FindFirstChild("SpiderTool")) then return end
+	if not LocalPlayer then warn("[AGORA] Spider: LocalPlayer nil") return end
+	local bp = LocalPlayer:FindFirstChild("Backpack")
+	if not bp then
+		bp = Instance.new("Backpack")
+		bp.Parent = LocalPlayer
+	end
+	if bp:FindFirstChild("SpiderTool") then return end
+	local char = LocalPlayer.Character
+	if char and char:FindFirstChild("SpiderTool") then return end
 
 	local tool = Instance.new("Tool")
 	tool.Name = "SpiderTool"
 	tool.RequiresHandle = false
-	tool.Parent = LocalPlayer:WaitForChild("Backpack")
+	tool.Parent = bp
 
 	local connection = nil
 	local jumpConnection = nil
@@ -4633,23 +4642,13 @@ function giveSpiderTool()
 			local up = root.CFrame.UpVector
 			local right = root.CFrame.RightVector
 
-			-- Raycast distances adaptees a la taille du perso
-			local charScale = 1.0
-			pcall(function()
-				local bbox = char:GetBoundingBox()
-				charScale = math.max(bbox.Y / 4, 0.5)
-			end)
-			local rd = 4.5 * charScale  -- raycast distance horizontale
-			local rdd = 8 * charScale    -- raycast distance verticale
-			local rd2 = 3.5 * charScale  -- decalage outer
-			local rdd2 = 12 * charScale  -- distance outer
-			local rayForward = Workspace:Raycast(pos, look * rd, params)
-			local rayBackward = Workspace:Raycast(pos, -look * rd, params)
-			local rayDown = Workspace:Raycast(pos, -up * rdd, params)
-			local rayOuterFwd = Workspace:Raycast(pos + look * rd2, (-up * 3 * charScale - look * 2 * charScale).Unit * rdd2, params)
-			local rayOuterBack = Workspace:Raycast(pos - look * rd2, (-up * 3 * charScale + look * 2 * charScale).Unit * rdd2, params)
-			local rayOuterRight = Workspace:Raycast(pos + right * rd2, (-up * 3 * charScale - right * 2 * charScale).Unit * rdd2, params)
-			local rayOuterLeft = Workspace:Raycast(pos - right * rd2, (-up * 3 * charScale + right * 2 * charScale).Unit * rdd2, params)
+			local rayForward = Workspace:Raycast(pos, look * 4.5, params)
+			local rayBackward = Workspace:Raycast(pos, -look * 4.5, params)
+			local rayDown = Workspace:Raycast(pos, -up * 8, params)
+			local rayOuterFwd = Workspace:Raycast(pos + look * 3.5, (-up * 3 - look * 2).Unit * 12, params)
+			local rayOuterBack = Workspace:Raycast(pos - look * 3.5, (-up * 3 + look * 2).Unit * 12, params)
+			local rayOuterRight = Workspace:Raycast(pos + right * 3.5, (-up * 3 - right * 2).Unit * 12, params)
+			local rayOuterLeft = Workspace:Raycast(pos - right * 3.5, (-up * 3 + right * 2).Unit * 12, params)
 
 			local hitNormal, hitPosition, isAttached = Vector3.new(0, 1, 0), pos, false
 
@@ -4699,13 +4698,7 @@ function giveSpiderTool()
 				end
 
 				local distFromWall = math.abs((pos - hitPosition):Dot(smoothedNormal))
-				-- Hover distance dynamique selon la taille du perso
-				local charSize = 3.0
-				pcall(function()
-					local bbox = char:GetBoundingBox()
-					charSize = math.max(bbox.Y * 0.5, 1.5)
-				end)
-				local hover = math.max(SETTINGS.SpiderHoverDistance, charSize * 0.8)
+				local hover = SETTINGS.SpiderHoverDistance
 				if wallMoveDir.Magnitude > 0.1 then hover = hover + SETTINGS.SpiderNetworkCompensation end
 				local pushForce = math.clamp((hover - distFromWall) * 20, -200, 200)
 
