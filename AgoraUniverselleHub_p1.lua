@@ -797,7 +797,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.13"
+	_G.CURRENT_VERSION = "v40.14"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -1817,6 +1817,8 @@ local function shutdownPanel()
 	if antiKillSwitch and antiKillSwitch.get and antiKillSwitch.get() then antiKillSwitch.set(false) end
 	if antiAFKSwitch and antiAFKSwitch.get and antiAFKSwitch.get() then antiAFKSwitch.set(false) end
 	if gotoWalkSwitch and gotoWalkSwitch.get and gotoWalkSwitch.get() then gotoWalkSwitch.set(false) end
+	-- Stop AFK mode
+	if gotoWalkState.afkMode then stopAfkMode() end
 	if infiniteJumpSwitch and infiniteJumpSwitch.get and infiniteJumpSwitch.get() then infiniteJumpSwitch.set(false) end
 	if platformState and platformState.enabled then
 		platformState.enabled = false
@@ -5189,6 +5191,10 @@ local gotoWalkState = {
 	stuckJumps = 0,
 	currentWaypointIdx = 1,
 	lastJumpTime = 0,
+	afkMode = false,
+	afkConnection = nil,
+	afkLastChat = 0,
+	afkIndicator = nil,
 }
 
 local function clearWalkVisuals()
@@ -5236,32 +5242,44 @@ end
 local function computePathTo(targetPos)
 	updateCharacter()
 	if not rootPart or not humanoid then return {} end
+	local startPos = rootPart.Position
+	local startHeight = math.floor(startPos.Y)
 
-	-- 1) Tentative avec PathfindingService Roblox (le plus fiable)
+	-- 1) Tentative avec PathfindingService Roblox (params optimises)
 	local waypoints = {}
 	local ok, pathOrErr = pcall(function()
 		local p = PathfindingService:CreatePath({
-			AgentRadius = 2,
+			AgentRadius = 2.5,
 			AgentHeight = 5,
 			AgentCanJump = true,
-			AgentCanClimb = false,
-			WaypointSpacing = 3,
+			AgentCanClimb = true,
+			WaypointSpacing = 4,
+			Costs = {
+				Water = 20,
+				Neutral = 1,
+			},
 		})
-		p:ComputeAsync(rootPart.Position, targetPos)
-		return p:GetWaypoints()
+		p:ComputeAsync(startPos, targetPos)
+		if p.Status == Enum.PathStatus.Success then
+			return p:GetWaypoints()
+		end
+		return nil
 	end)
 
 	if ok and pathOrErr and #pathOrErr > 0 then
 		for i, wp in ipairs(pathOrErr) do
 			if wp and wp.Position then
-				table.insert(waypoints, wp.Position)
+				-- Filtrer les waypoints trop haut (barrières) — preferer meme hauteur
+				local wpHeight = wp.Position.Y
+				if math.abs(wpHeight - startHeight) < 15 or i == #pathOrErr then
+					table.insert(waypoints, wp.Position)
+				end
 			end
 		end
-		-- On retire le waypoint 1 (position actuelle) pour eviter un MoveTo immediat dans le vide
 		if #waypoints > 1 then
 			table.remove(waypoints, 1)
 		end
-		return waypoints
+		if #waypoints > 0 then return waypoints end
 	end
 
 	-- 2) Fallback : ligne droite + raycast pour eviter les murs
@@ -5275,14 +5293,26 @@ local function computePathTo(targetPos)
 		local hit = Workspace:Raycast(a, dir.Unit * dist, params)
 		return hit == nil
 	end
-	if rayClear(rootPart.Position, targetPos) then
+	if rayClear(startPos, targetPos) then
 		return { targetPos }
 	end
 
-	-- 3) Fallback final : petite etape devant, on laisse MoveTo gerer
-	local flat = Vector3.new(targetPos.X - rootPart.Position.X, 0, targetPos.Z - rootPart.Position.Z)
+	-- 3) Fallback : contourner avec raycast lateral (gauche/droite)
+	local flat = Vector3.new(targetPos.X - startPos.X, 0, targetPos.Z - startPos.Z)
 	if flat.Magnitude > 0.1 then
-		local mid = rootPart.Position + flat.Unit * math.min(8, flat.Magnitude * 0.5)
+		local flatDir = flat.Unit
+		local right = Vector3.new(flatDir.Z, 0, -flatDir.X)
+		-- Essayer gauche puis droite
+		for _, offsetDir in ipairs({right, -right}) do
+			for dist = 5, 20, 5 do
+				local detour = startPos + flatDir * math.min(8, flat.Magnitude * 0.4) + offsetDir * dist
+				if rayClear(startPos + offsetDir * dist, detour) and rayClear(detour, targetPos) then
+					return { detour, targetPos }
+				end
+			end
+		end
+		-- Dernier recours : petite etape devant
+		local mid = startPos + flatDir * math.min(8, flat.Magnitude * 0.5)
 		return { mid + Vector3.new(0, 2, 0) }
 	end
 	return {}
@@ -5336,7 +5366,7 @@ local function manageFollowLoop(start)
 			local moved = gotoWalkState.stuckPos and (rootPart.Position - gotoWalkState.stuckPos).Magnitude or 999
 			local timeStuck = tick() - gotoWalkState.stuckTimer
 
-			if moved < 2 and timeStuck > 3 then
+			if moved < 2 and timeStuck > 1.5 then
 				-- Bloque : tenter de sauter
 				if gotoWalkState.stuckJumps < 2 and tick() - gotoWalkState.lastJumpTime > 0.5 then
 					humanoid.Jump = true
@@ -5371,7 +5401,7 @@ local function manageFollowLoop(start)
 			end
 
 			-- Relancer MoveTo periodiquement pour eviter que le humanoid s'arrete
-			if tick() - (gotoWalkState.lastMoveTo or 0) > 0.5 then
+			if tick() - (gotoWalkState.lastMoveTo or 0) > 0.2 then
 				humanoid:MoveTo(wp)
 				gotoWalkState.lastMoveTo = tick()
 			end
@@ -5389,11 +5419,148 @@ local gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, fun
 	gotoWalkState.enabled = on
 	if on then
 		gotoWalkState.active = true
+		-- Indicateur flottant a lecran
+		if not gotoWalkState.indicator then
+			local ind = Instance.new("TextLabel")
+			ind.Size = UDim2.new(0, 140, 0, 28)
+			ind.Position = UDim2.new(0, 15, 0, 15)
+			ind.BackgroundColor3 = Color3.fromRGB(40, 140, 80)
+			ind.BackgroundTransparency = 0.2
+			ind.Text = "GOTO WALK ACTIF"
+			ind.Font = Enum.Font.GothamBold
+			ind.TextSize = 11
+			ind.TextColor3 = Color3.new(1, 1, 1)
+			ind.BorderSizePixel = 0
+			ind.ZIndex = 999
+			ind.Parent = screenGui
+			createCorner(ind, 6)
+			gotoWalkState.indicator = ind
+		end
 	else
 		gotoWalkState.active = false
 		manageFollowLoop(false)
 		clearWalkVisuals()
+		if gotoWalkState.indicator then
+			gotoWalkState.indicator:Destroy()
+			gotoWalkState.indicator = nil
+		end
+		-- Stopper le mode AFK aussi
+		gotoWalkState.afkMode = false
 		-- Garder target et path pour pouvoir reprendre
+	end
+end)
+
+-- Mode AFK : auto-walk vers des points aleatoires + chat avec les gens
+local function startAfkMode()
+	gotoWalkState.afkMode = true
+	if not gotoWalkState.enabled then
+		gotoWalkSwitch.set(true)
+	end
+	
+	local function pickRandomTarget()
+		updateCharacter()
+		if not rootPart then return nil end
+		local origin = rootPart.Position
+		-- Choisir un point aleatoire dans un rayon de 50-200 studs
+		local angle = math.random() * math.pi * 2
+		local dist = math.random(50, 200)
+		local target = origin + Vector3.new(math.cos(angle) * dist, 0, math.sin(angle) * dist)
+		-- Raycast vers le bas pour trouver le sol
+		local params = RaycastParams.new()
+		params.FilterDescendantsInstances = {character}
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		local hit = Workspace:Raycast(target + Vector3.new(0, 50, 0), Vector3.new(0, -100, 0), params)
+		if hit then
+			return hit.Position + Vector3.new(0, 2, 0)
+		end
+		return target
+	end
+	
+	local function chatWithNearbyPlayers()
+		updateCharacter()
+		if not rootPart then return end
+		local myPos = rootPart.Position
+		for _, plr in ipairs(Players:GetPlayers()) do
+			if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+				local theirPos = plr.Character.HumanoidRootPart.Position
+				local d = (myPos - theirPos).Magnitude
+				if d < 20 and tick() - gotoWalkState.afkLastChat > 10 then
+					gotoWalkState.afkLastChat = tick()
+					local greetings = {"salut", "yo", "hello", "ca va", "hey", "bonjour", "cc"}
+					local msg = greetings[math.random(1, #greetings)]
+					pcall(function()
+						local chatEvent = Workspace:FindFirstChild("SayMessageRequest")
+						if chatEvent then
+							chatEvent:FireServer(msg)
+						end
+					end)
+					break
+				end
+			end
+		end
+	end
+	
+	-- Indicateur AFK
+	if not gotoWalkState.afkIndicator then
+		local afkInd = Instance.new("TextLabel")
+		afkInd.Size = UDim2.new(0, 140, 0, 28)
+		afkInd.Position = UDim2.new(0, 15, 0, 48)
+		afkInd.BackgroundColor3 = Color3.fromRGB(140, 60, 160)
+		afkInd.BackgroundTransparency = 0.2
+		afkInd.Text = "MODE AFK ACTIF"
+		afkInd.Font = Enum.Font.GothamBold
+		afkInd.TextSize = 11
+		afkInd.TextColor3 = Color3.new(1, 1, 1)
+		afkInd.BorderSizePixel = 0
+		afkInd.ZIndex = 999
+		afkInd.Parent = screenGui
+		createCorner(afkInd, 6)
+		gotoWalkState.afkIndicator = afkInd
+	end
+	
+	gotoWalkState.afkConnection = RunService.Heartbeat:Connect(function()
+		if not gotoWalkState.afkMode then return end
+		updateCharacter()
+		if not rootPart or not humanoid then return end
+		
+		-- Si on est arrive ou qu'il n'y a pas de chemin, en choisir un nouveau
+		if not gotoWalkState.path or #gotoWalkState.path == 0 or gotoWalkState.currentWaypointIdx > #gotoWalkState.path then
+			task.wait(1)
+			local newTarget = pickRandomTarget()
+			if newTarget then
+				local newPath = computePathTo(newTarget)
+				if #newPath > 0 then
+					gotoWalkState.target = newTarget
+					gotoWalkState.path = newPath
+					gotoWalkState.currentWaypointIdx = 1
+					manageFollowLoop(true)
+					visualizeWaypoints(newPath)
+				end
+			end
+		end
+		
+		-- Chat avec les gens proches de temps en temps
+		chatWithNearbyPlayers()
+	end)
+end
+
+local function stopAfkMode()
+	gotoWalkState.afkMode = false
+	if gotoWalkState.afkConnection then
+		gotoWalkState.afkConnection:Disconnect()
+		gotoWalkState.afkConnection = nil
+	end
+	if gotoWalkState.afkIndicator then
+		gotoWalkState.afkIndicator:Destroy()
+		gotoWalkState.afkIndicator = nil
+	end
+end
+
+local afkSwitch = createSwitch(movePage, "Mode AFK (auto-walk)", 168, function(on)
+	if on then
+		startAfkMode()
+	else
+		stopAfkMode()
 	end
 end)
 
