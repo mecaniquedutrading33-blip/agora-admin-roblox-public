@@ -2,12 +2,12 @@
 -- LocalScript dans StarterPlayerScripts ou executeur
 
 local SETTINGS = {
-	SpiderSpeed = 16,
-	SpiderHoverDistance = 2.6,
+	SpiderSpeed = 24,
+	SpiderHoverDistance = 3.0,
 	SpiderNetworkCompensation = 0.8,
-	SpiderJumpPower = 60,
-	SpiderJumpCooldown = 0.5,
-	SpiderTransitionSpeed = 15
+	SpiderJumpPower = 70,
+	SpiderJumpCooldown = 0.4,
+	SpiderTransitionSpeed = 25
 }
 _G.SETTINGS = SETTINGS
 
@@ -797,7 +797,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.03"
+	_G.CURRENT_VERSION = "v40.05"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -5752,7 +5752,7 @@ task.delay(10, function()
                             t.Size = UDim2.new(1, -20, 0, 30)
                             t.Position = UDim2.new(0, 10, 0, 8)
                             t.BackgroundTransparency = 1
-                            t.Text = "Mise a jour disponible"
+                            t.Text = "[Agora] Mise a jour disponible"
                             t.TextColor3 = Color3.fromRGB(100, 200, 255)
                             t.Font = Enum.Font.GothamBold
                             t.TextSize = 15
@@ -5853,7 +5853,7 @@ task.delay(10, function()
                                     _G._agoraAU = nil
                                     _G._agoraUpdating = nil
                                     task.wait(0.3)
-                                    local rU = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache=" .. tostring(tick())
+                                    local rU = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache=" .. tostring(tick()) .. "&r=" .. tostring(math.random(100000, 999999))
                                     local okR, code2 = pcall(function() return game:HttpGet(rU, true) end)
                                     if okR and code2 and #code2 > 100 then
                                         aG:Destroy()
