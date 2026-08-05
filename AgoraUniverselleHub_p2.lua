@@ -1840,10 +1840,12 @@ local hitboxSwitch = createSwitch(extraScroll, "Hitbox expander", 0, function(on
 end)
 
 createButton(extraScroll, "Obtenir Ghost V4", 0, Color3.fromRGB(110, 60, 160), function()
-	giveGhostTool()
+	local ok, err = pcall(giveGhostTool)
+	if not ok then warn("[AGORA] Ghost Tool error: " .. tostring(err)) end
 end)
 createButton(extraScroll, "Obtenir Eleven Master", 0, Color3.fromRGB(60, 120, 160), function()
-	giveElevenTool()
+	local ok, err = pcall(giveElevenTool)
+	if not ok then warn("[AGORA] Eleven Tool error: " .. tostring(err)) end
 end)
 createButton(extraScroll, "Obtenir Spider Tool", 0, Color3.fromRGB(60, 160, 90), function()
 	local ok, err = pcall(giveSpiderTool)
@@ -4289,15 +4291,20 @@ end)
 -- (L'update des stats FPS/ping est maintenant dans la page Joueurs)
 
 function giveGhostTool()
-	if LocalPlayer.Backpack:FindFirstChild("Invisible_V4") or (character and character:FindFirstChild("Invisible_V4")) then return end
+	if not LocalPlayer then return end
+	local backpack = LocalPlayer:FindFirstChild("Backpack")
+	if not backpack then backpack = Instance.new("Backpack"); backpack.Parent = LocalPlayer end
+	if backpack:FindFirstChild("Invisible_V4") then return end
+	local char = LocalPlayer.Character
+	if char and char:FindFirstChild("Invisible_V4") then return end
 	for _, v in ipairs(LocalPlayer.PlayerGui:GetChildren()) do
 		if v:IsA("ScreenGui") and (v.Name:find("Chronos") or v.Name:find("Ghost")) then v:Destroy() end
 	end
-
+	
 	local tool = Instance.new("Tool")
 	tool.Name = "Invisible_V4"
 	tool.RequiresHandle = false
-	tool.Parent = bp
+	tool.Parent = backpack
 
 	local isInvisible = false
 	local ghostChar = nil
@@ -4376,7 +4383,12 @@ function giveGhostTool()
 end
 
 function giveElevenTool()
-	if LocalPlayer.Backpack:FindFirstChild("Eleven_Master_PZ70") or (character and character:FindFirstChild("Eleven_Master_PZ70")) then return end
+	if not LocalPlayer then return end
+	local backpack = LocalPlayer:FindFirstChild("Backpack")
+	if not backpack then backpack = Instance.new("Backpack"); backpack.Parent = LocalPlayer end
+	if backpack:FindFirstChild("Eleven_Master_PZ70") then return end
+	local char = LocalPlayer.Character
+	if char and char:FindFirstChild("Eleven_Master_PZ70") then return end
 	local tool = Instance.new("Tool")
 	tool.Name = "Eleven_Master_PZ70"
 	tool.RequiresHandle = true
@@ -4386,7 +4398,7 @@ function giveElevenTool()
 	h.Transparency = 1
 	h.CanCollide = false
 	h.Parent = tool
-	tool.Parent = bp
+	tool.Parent = backpack
 
 	local targetPart = nil
 	local bp, bg = nil, nil
