@@ -797,7 +797,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.06"
+	_G.CURRENT_VERSION = "v40.09"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -5725,7 +5725,7 @@ task.delay(10, function()
         pcall(function()
             if not _G._agoraAU and not _G._agoraUpdating then
                 _G._agoraAU = true
-                local vurl = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_version.lua&nocache=" .. tostring(tick())
+                local vurl = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_version.lua&nocache=" .. tostring(tick()) .. "&r=" .. tostring(math.random(100000, 999999))
                 local ok, rv = pcall(function() return game:HttpGet(vurl, true) end)
                 if ok and rv then
                     rv = rv:gsub('return "', ''):gsub('"', ''):gsub("%s", "")
@@ -5852,7 +5852,7 @@ task.delay(10, function()
                                     aL.Text = "Redemarrage..."
                                     _G._agoraAU = nil
                                     _G._agoraUpdating = nil
-                                    task.wait(0.3)
+                                    task.wait(2)
                                     local rU = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache=" .. tostring(tick()) .. "&r=" .. tostring(math.random(100000, 999999))
                                     local okR, code2 = pcall(function() return game:HttpGet(rU, true) end)
                                     if okR and code2 and #code2 > 100 then
