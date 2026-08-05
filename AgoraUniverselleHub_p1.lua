@@ -797,7 +797,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.07"
+	_G.CURRENT_VERSION = "v40.06"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -4670,12 +4670,12 @@ local function startFly()
 								local currentCF = flyState.gyro.CFrame
 								flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt2))
 							end
-							-- CanCollide=false sur TOUTES les parts (incluant HRP) + FORCER Physics + stop ALL anims
-									if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
-										for _, part in ipairs(character:GetDescendants()) do
-											if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end
-										end
-									end
+							-- CanCollide=false sur body parts (sauf HRP) + FORCER Physics + stop ALL anims
+							if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
+								for _, part in ipairs(character:GetDescendants()) do
+									if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then part.CanCollide = false end
+								end
+							end
 									if humanoid then
 										pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 										pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
@@ -4767,10 +4767,10 @@ local function startFly()
 				end
 			end)
 		end
-		-- Desactiver collision sur TOUTES les parts (incluant HRP = zero collision sol)
+		-- CanCollide=false sur body parts (sauf HRP = garde collision murs/sol)
 		if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 			for _, part in ipairs(character:GetDescendants()) do
-				if part:IsA("BasePart") and part.CanCollide then
+				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then
 					part.CanCollide = false
 				end
 			end
@@ -4827,10 +4827,10 @@ local function startFly()
 			flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt))
 		end
 
-		-- Maintenir CanCollide=false sur TOUTES les parts (incluant HRP = zero collision sol)
+		-- CanCollide=false sur body parts (sauf HRP = garde collision murs/sol)
 		if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 			for _, part in ipairs(character:GetDescendants()) do
-				if part:IsA("BasePart") and part.CanCollide then
+				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then
 					part.CanCollide = false
 				end
 			end
