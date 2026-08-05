@@ -797,10 +797,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.15"
+	_G.CURRENT_VERSION = "v40.16"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.16: Notif join seulement amis (pinned) + fix Activity Log texte invisible (row height 42px + TextWrapped + couleurs plus vives)",
 		"v40.15: Meilleurs sons (intro cinema + UI click) -- whoosh=Urgent Action stinger, ding=mixkit achievement bell, boom=Cinematic Bass Boom, click=ui-simple-button-click",
 		"v40.01: Fly Physics state permanent (zero sursaut) + stop ALL anims + Landed/Climbing disabled + antiInfiniteJump fly guard",
 		"v39.99: FIX noclip (p2 stale values + double loop Stepped+RenderStepped + ALL parts) + fly guard CharacterAdded",
@@ -2369,7 +2370,7 @@ local function createPlayerEntry(plr)
 			else
 				for idx, log in ipairs(logs) do
 					local row = Instance.new("Frame")
-					row.Size = UDim2.new(1, -6, 0, 0)
+					row.Size = UDim2.new(1, -6, 0, 42)
 					row.AutomaticSize = Enum.AutomaticSize.Y
 					row.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 					row.BorderSizePixel = 0
@@ -2407,8 +2408,9 @@ local function createPlayerEntry(plr)
 					typeLbl.Text = log.type
 					typeLbl.Font = Enum.Font.GothamBold
 					typeLbl.TextSize = 12
-					typeLbl.TextColor3 = Color3.fromRGB(230, 230, 240)
+					typeLbl.TextColor3 = Color3.fromRGB(240, 240, 250)
 					typeLbl.TextXAlignment = Enum.TextXAlignment.Left
+					typeLbl.TextWrapped = true
 					typeLbl.Parent = row
 
 					local detLbl = Instance.new("TextLabel")
@@ -2418,8 +2420,10 @@ local function createPlayerEntry(plr)
 					detLbl.Text = log.detail
 					detLbl.Font = Enum.Font.Gotham
 					detLbl.TextSize = 11
-					detLbl.TextColor3 = Color3.fromRGB(160, 160, 180)
+					detLbl.TextColor3 = Color3.fromRGB(180, 180, 200)
 					detLbl.TextXAlignment = Enum.TextXAlignment.Left
+					detLbl.TextWrapped = true
+					detLbl.TextTruncate = Enum.TextTruncate.AtEnd
 					detLbl.Parent = row
 				end
 			end
@@ -3652,7 +3656,7 @@ Players.PlayerAdded:Connect(function(plr)
 	task.wait(0.3)
 	addPlayerCard(plr)
 	-- Notif si joueur epingle rejoint
-	if pinnedNotifSettings.join and plr ~= LocalPlayer then
+	if pinnedNotifSettings.join and plr ~= LocalPlayer and pinnedPlayers[plr] then
 		showNotif("[Pin] " .. plr.DisplayName .. " a rejoint", Color3.fromRGB(80, 200, 120))
 	end
 	-- Notif chat pour joueurs epingles
