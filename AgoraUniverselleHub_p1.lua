@@ -9,6 +9,7 @@ local SETTINGS = {
 	SpiderJumpCooldown = 0.5,
 	SpiderTransitionSpeed = 15
 }
+_G.SETTINGS = SETTINGS
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -796,7 +797,7 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.02"
+	_G.CURRENT_VERSION = "v40.03"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
@@ -5572,6 +5573,7 @@ _G._P1["TweenService"] = TweenService
 _G._P1["HttpService"] = HttpService
 _G._P1["SoundService"] = SoundService
 _G._P1["TextChatService"] = TextChatService
+_G._P1["SETTINGS"] = SETTINGS
 _G._P1["LocalPlayer"] = LocalPlayer
 _G._P1["Mouse"] = Mouse
 _G._P1["Camera"] = Camera
