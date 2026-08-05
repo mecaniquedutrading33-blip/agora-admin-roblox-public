@@ -2067,13 +2067,23 @@ createSwitch(saCard, "Remote Fly (via RemoteEvent)", 4, function(on)
 	end
 end)
 
--- Check ServerAuthority au demarrage + periodicite
+-- Check ServerAuthority au demarrage + periodicite (sans deplacement physique)
 task.spawn(function()
+	-- Check initial une seule fois
+	if not saForceLocal and isServerAuthority() then
+		saCard.Visible = true
+	end
+	-- Apres le check initial, seulement verifier l'attribut (sans deplacer le joueur)
 	while true do
-		if not saForceLocal and isServerAuthority() then
-			saCard.Visible = true
+		task.wait(30)
+		if not saForceLocal then
+			local ok, result = pcall(function()
+				return Workspace:GetAttribute("AuthorityMode") == "Server"
+			end)
+			if ok and result then
+				saCard.Visible = true
+			end
 		end
-		task.wait(10)
 	end
 end)
 
