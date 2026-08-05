@@ -1840,14 +1840,13 @@ local hitboxSwitch = createSwitch(extraScroll, "Hitbox expander", 0, function(on
 end)
 
 createButton(extraScroll, "Obtenir Ghost V4", 0, Color3.fromRGB(110, 60, 160), function()
-	pcall(function() giveGhostTool() end)
+	giveGhostTool()
 end)
 createButton(extraScroll, "Obtenir Eleven Master", 0, Color3.fromRGB(60, 120, 160), function()
-	pcall(function() giveElevenTool() end)
+	giveElevenTool()
 end)
 createButton(extraScroll, "Obtenir Spider Tool", 0, Color3.fromRGB(60, 160, 90), function()
-	local ok, err = pcall(function() giveSpiderTool() end)
-	if not ok then warn("[AGORA] Spider Tool error: " .. tostring(err)) end
+	giveSpiderTool()
 end)
 
 -- Fallback notify global si le panel n'en fournit pas
@@ -4567,10 +4566,7 @@ function giveElevenTool()
 	end)
 end
 function giveSpiderTool()
-	if not LocalPlayer then warn("[AGORA] Spider: LocalPlayer nil") return end
-	local backpack = LocalPlayer:FindFirstChild("Backpack")
-	if not backpack then warn("[AGORA] Spider: Backpack nil") return end
-	if backpack:FindFirstChild("SpiderTool") or (character and character:FindFirstChild("SpiderTool")) then return end
+	if LocalPlayer.Backpack:FindFirstChild("SpiderTool") or (character and character:FindFirstChild("SpiderTool")) then return end
 
 	local tool = Instance.new("Tool")
 	tool.Name = "SpiderTool"
@@ -4662,7 +4658,7 @@ function giveSpiderTool()
 			currentHitNormal = hitNormal
 
 			if isClimbing then
-				smoothedNormal = smoothedNormal:Lerp(hitNormal, deltaTime * SETTINGS.SpiderTransitionSpeed)
+				smoothedNormal = smoothedNormal:Lerp(hitNormal, 1 - math.exp(-SETTINGS.SpiderTransitionSpeed * deltaTime))
 				hum.AutoRotate = false
 				hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
 				if hum:GetState() ~= Enum.HumanoidStateType.RunningNoPhysics then
@@ -4695,7 +4691,7 @@ function giveSpiderTool()
 				local distFromWall = math.abs((pos - hitPosition):Dot(smoothedNormal))
 				local hover = SETTINGS.SpiderHoverDistance
 				if wallMoveDir.Magnitude > 0.1 then hover = hover + SETTINGS.SpiderNetworkCompensation end
-				local pushForce = (hover - distFromWall) * 15
+				local pushForce = math.clamp((hover - distFromWall) * 20, -200, 200)
 
 				bodyVelocity.VectorVelocity = (wallMoveDir * SETTINGS.SpiderSpeed) + (smoothedNormal * pushForce)
 
