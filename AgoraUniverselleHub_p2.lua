@@ -2405,7 +2405,7 @@ RunService.Heartbeat:Connect(function()
 	end
 
 	-- Anti Speed Hack: bloquer WalkSpeed anormal (sauf si on l'a set nous-meme)
-	if protectionsState.antiSpeedHack and not flyState.flying then
+	if protectionsState.antiSpeedHack and not flyState.flying and not noclipState.enabled then
 		local ws = humanoid.WalkSpeed
 		if ws > protectionsState.lastWalkSpeed + 50 then
 			humanoid.WalkSpeed = protectionsState.lastWalkSpeed
