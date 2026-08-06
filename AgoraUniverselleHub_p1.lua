@@ -809,10 +809,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.23"
+	_G.CURRENT_VERSION = "v40.24"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.24: Suppression popup auto-update (indicateur Home seulement)",
 		"v40.23: Logo panel coins arrondis + onglet Move en scroll (fix boutons superposes click-to-walk/AFK)",
 		"v40.21: Fix Activity Log texte invisible (ZIndex 102 + row 48px + border + couleurs plus vives + textes plus grands)",
 		"v40.20: Popup MAJ au demarrage + indicateur Home anime si Plus tard + pas de spam popup",
@@ -6073,101 +6074,11 @@ task.delay(8, function()
                     if rv ~= cv and rv ~= "" then
                         _G._agoraUpdateAvailable = true
                         _G._agoraUpdateVersion = rv
-                        -- Mettre a jour l'indicateur Home
                         if _G._agoraUpdateIndicator then
                             pcall(function()
                                 _G._agoraUpdateIndicator.Text = "  MAJ disponible: " .. rv
                                 _G._agoraUpdateIndicator.Visible = true
                                 _G._agoraUpdateBtn.Visible = true
-                            end)
-                        end
-                        -- Show popup ONLY if not already dismissed
-                        if not _G._agoraUpdateDismissed then
-                            pcall(function()
-                                local sg = Instance.new("ScreenGui")
-                                sg.Name = "AgoraUpdatePrompt"
-                                sg.ResetOnSpawn = false
-                                sg.DisplayOrder = 99998
-                                local okp, par = pcall(function() return game:GetService("CoreGui") end)
-                                if not okp or not par then par = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") end
-                                sg.Parent = par
-                                local f = Instance.new("Frame")
-                                f.Size = UDim2.new(0, 280, 0, 140)
-                                f.Position = UDim2.new(0.5, -140, 0.5, -70)
-                                f.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-                                f.BorderSizePixel = 0
-                                f.Parent = sg
-                                local fc = Instance.new("UICorner") fc.CornerRadius = UDim.new(0, 10) fc.Parent = f
-                                local fs = Instance.new("UIStroke") fs.Color = Color3.fromRGB(100, 200, 255) fs.Thickness = 2 fs.Parent = f
-                                local t = Instance.new("TextLabel")
-                                t.Size = UDim2.new(1, -20, 0, 30)
-                                t.Position = UDim2.new(0, 10, 0, 10)
-                                t.BackgroundTransparency = 1
-                                t.Text = "[Agora] Mise a jour disponible"
-                                t.TextColor3 = Color3.fromRGB(100, 200, 255)
-                                t.Font = Enum.Font.GothamBold
-                                t.TextSize = 16
-                                t.Parent = f
-                                local d = Instance.new("TextLabel")
-                                d.Size = UDim2.new(1, -20, 0, 35)
-                                d.Position = UDim2.new(0, 10, 0, 38)
-                                d.BackgroundTransparency = 1
-                                d.Text = "Version " .. rv .. " disponible\nVous avez " .. cv
-                                d.TextColor3 = Color3.fromRGB(200, 200, 210)
-                                d.Font = Enum.Font.Gotham
-                                d.TextSize = 13
-                                d.TextWrapped = true
-                                d.Parent = f
-                                local yB = Instance.new("TextButton")
-                                yB.Size = UDim2.new(0, 120, 0, 34)
-                                yB.Position = UDim2.new(0, 15, 0, 92)
-                                yB.BackgroundColor3 = Color3.fromRGB(80, 180, 100)
-                                yB.Text = "Mettre a jour"
-                                yB.TextColor3 = Color3.fromRGB(255, 255, 255)
-                                yB.Font = Enum.Font.GothamBold
-                                yB.TextSize = 14
-                                yB.Parent = f
-                                local yC = Instance.new("UICorner") yC.CornerRadius = UDim.new(0, 6) yC.Parent = yB
-                                local nB = Instance.new("TextButton")
-                                nB.Size = UDim2.new(0, 120, 0, 34)
-                                nB.Position = UDim2.new(0, 145, 0, 92)
-                                nB.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-                                nB.Text = "Plus tard"
-                                nB.TextColor3 = Color3.fromRGB(200, 200, 210)
-                                nB.Font = Enum.Font.Gotham
-                                nB.TextSize = 14
-                                nB.Parent = f
-                                local nC = Instance.new("UICorner") nC.CornerRadius = UDim.new(0, 6) nC.Parent = nB
-                                -- Bouton "Mettre a jour" = lancer la MAJ
-                                yB.MouseButton1Click:Connect(function()
-                                    sg:Destroy()
-                                    if _G._agoraPerformUpdate then pcall(_G._agoraPerformUpdate) end
-                                end)
-                                -- Bouton "Plus tard" = dismiss + montrer indicateur Home
-                                nB.MouseButton1Click:Connect(function()
-                                    _G._agoraUpdateDismissed = true
-                                    sg:Destroy()
-                                    -- Animer l'indicateur Home (pulse)
-                                    if _G._agoraUpdateIndicator then
-                                        pcall(function()
-                                            _G._agoraUpdateIndicator.Text = "  MAJ disponible: " .. rv
-                                            _G._agoraUpdateIndicator.Visible = true
-                                            _G._agoraUpdateBtn.Visible = true
-                                            -- Animation pulse sur l'indicateur
-                                            task.spawn(function()
-                                                while _G._agoraUpdateIndicator and _G._agoraUpdateIndicator.Parent do
-                                                    pcall(function()
-                                                        _G._agoraUpdateIndicator.TextTransparency = 0.3
-                                                        task.wait(0.5)
-                                                        _G._agoraUpdateIndicator.TextTransparency = 0
-                                                        task.wait(0.5)
-                                                    end)
-                                                    if not _G._agoraUpdateAvailable then break end
-                                                end
-                                            end)
-                                        end)
-                                    end
-                                end)
                             end)
                         end
                     else
