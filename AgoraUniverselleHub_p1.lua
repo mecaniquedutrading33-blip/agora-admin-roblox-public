@@ -809,10 +809,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.24"
+	_G.CURRENT_VERSION = "v40.25"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.25: Indicateur MAJ Home deplace en haut (plus visible)",
 		"v40.24: Suppression popup auto-update (indicateur Home seulement)",
 		"v40.23: Logo panel coins arrondis + onglet Move en scroll (fix boutons superposes click-to-walk/AFK)",
 		"v40.21: Fix Activity Log texte invisible (ZIndex 102 + row 48px + border + couleurs plus vives + textes plus grands)",
@@ -1182,11 +1183,11 @@ local protectionsPage = createTab("Protections")
 	updInd.TextColor3 = Color3.fromRGB(100, 200, 255)
 	updInd.TextXAlignment = Enum.TextXAlignment.Left
 	updInd.Visible = false
-	updInd.LayoutOrder = 8
+	updInd.LayoutOrder = 0
 	updInd.Parent = homeScroll
 	createCorner(updInd, 6)
 	_G._agoraUpdateIndicator = updInd
-	
+
 	local updBtn = Instance.new("TextButton")
 	updBtn.Size = UDim2.new(1, -8, 0, 32)
 	updBtn.BackgroundColor3 = Color3.fromRGB(80, 180, 100)
@@ -1195,7 +1196,7 @@ local protectionsPage = createTab("Protections")
 	updBtn.Font = Enum.Font.GothamBold
 	updBtn.TextSize = 12
 	updBtn.Visible = false
-	updBtn.LayoutOrder = 9
+	updBtn.LayoutOrder = 1
 	updBtn.Parent = homeScroll
 	createCorner(updBtn, 6)
 	updBtn.MouseButton1Click:Connect(function()
