@@ -809,10 +809,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.26"
+	_G.CURRENT_VERSION = "v40.27"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.27: Fix Eleven Tool (Backpack Instance.new -> WaitForChild) + meme fix Ghost/Spider",
 		"v40.26: Fly ignore WASD pendant le chat + nettoyage complet ancien panel avant update",
 		"v40.25: Indicateur MAJ Home deplace en haut (plus visible)",
 		"v40.24: Suppression popup auto-update (indicateur Home seulement)",

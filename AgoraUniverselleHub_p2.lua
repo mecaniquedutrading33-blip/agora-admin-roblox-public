@@ -4304,7 +4304,8 @@ end)
 function giveGhostTool()
 	if not LocalPlayer then return end
 	local backpack = LocalPlayer:FindFirstChild("Backpack")
-	if not backpack then backpack = Instance.new("Backpack"); backpack.Parent = LocalPlayer end
+	if not backpack then backpack = LocalPlayer:WaitForChild("Backpack", 5) end
+	if not backpack then return end
 	if backpack:FindFirstChild("Invisible_V4") then return end
 	local char = LocalPlayer.Character
 	if char and char:FindFirstChild("Invisible_V4") then return end
@@ -4398,7 +4399,10 @@ end
 function giveElevenTool()
 	if not LocalPlayer then return end
 	local backpack = LocalPlayer:FindFirstChild("Backpack")
-	if not backpack then backpack = Instance.new("Backpack"); backpack.Parent = LocalPlayer end
+	if not backpack then
+		backpack = LocalPlayer:WaitForChild("Backpack", 5)
+	end
+	if not backpack then return end
 	if backpack:FindFirstChild("Eleven_Master_PZ70") then return end
 	local char = LocalPlayer.Character
 	if char and char:FindFirstChild("Eleven_Master_PZ70") then return end
@@ -4595,9 +4599,9 @@ function giveSpiderTool()
 	if not LocalPlayer then warn("[AGORA] Spider: LocalPlayer nil") return end
 	local bp = LocalPlayer:FindFirstChild("Backpack")
 	if not bp then
-		bp = Instance.new("Backpack")
-		bp.Parent = LocalPlayer
+		bp = LocalPlayer:WaitForChild("Backpack", 5)
 	end
+	if not bp then return end
 	if bp:FindFirstChild("SpiderTool") then return end
 	local char = LocalPlayer.Character
 	if char and char:FindFirstChild("SpiderTool") then return end
