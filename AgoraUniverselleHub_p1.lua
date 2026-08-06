@@ -588,6 +588,7 @@ createStroke(topBar, Color3.fromRGB(80, 80, 100), 0.8)
 	titleLogo.BackgroundTransparency = 1
 	titleLogo.Image = "rbxassetid://102429262384981"
 	titleLogo.Parent = _topBar
+	_createCorner(titleLogo, 6)
 
 	-- Badge "UNIVERSELLE" petit et penche, a droite du titre
 	local uniBadge = Instance.new("TextLabel")
@@ -789,6 +790,17 @@ end
 local homePage = createTab("Home")
 local playersPage = createTab("Joueurs")
 local movePage = createTab("Move")
+local moveScroll = Instance.new("ScrollingFrame")
+moveScroll.Size = UDim2.new(1, 0, 1, 0)
+moveScroll.BackgroundTransparency = 1
+moveScroll.BorderSizePixel = 0
+moveScroll.ScrollBarThickness = 4
+moveScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+moveScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+moveScroll.Parent = movePage
+local moveLayout = Instance.new("UIListLayout")
+moveLayout.Padding = UDim.new(0, 6)
+moveLayout.Parent = moveScroll
 local extraPage = createTab("Extra")
 local remotesPage = createTab("Remotes")
 local registryPage = createTab("Registry")
@@ -797,10 +809,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.22"
+	_G.CURRENT_VERSION = "v40.23"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.23: Logo panel coins arrondis + onglet Move en scroll (fix boutons superposes click-to-walk/AFK)",
 		"v40.21: Fix Activity Log texte invisible (ZIndex 102 + row 48px + border + couleurs plus vives + textes plus grands)",
 		"v40.20: Popup MAJ au demarrage + indicateur Home anime si Plus tard + pas de spam popup",
 		"v40.19: Auto-update sans popup (indicateur Home seulement) + shutdown complet (BodyMovers+ScreenGui) + fix WalkSpeed slider",
@@ -5163,15 +5176,15 @@ local function createSlider(parent, labelText, yPos, min, max, default, callback
 	}
 end
 
-local flySwitch = createSwitch(movePage, "Fly", 10, function(on)
+local flySwitch = createSwitch(moveScroll, "Fly", 0, function(on)
 	if on then startFly() else stopFly() end
 end)
 
-local flySlider = createSlider(movePage, "Vitesse Fly", 52, 20, 500, flyState.speed, function(v)
+local flySlider = createSlider(moveScroll, "Vitesse Fly", 0, 20, 500, flyState.speed, function(v)
 	flyState.speed = math.floor(v)
 end, Color3.fromRGB(100, 180, 255))
 
-local noclipSwitch = createSwitch(movePage, "NoClip", 108, function(on)
+local noclipSwitch = createSwitch(moveScroll, "NoClip", 0, function(on)
 	noclipState.enabled = on
 	if on then
 		updateCharacter()
@@ -5461,7 +5474,7 @@ local function manageFollowLoop(start)
 	end
 end
 
-local gotoWalkSwitch = createSwitch(movePage, "Go to Walk (click sol)", 150, function(on)
+local gotoWalkSwitch = createSwitch(moveScroll, "Go to Walk (click sol)", 0, function(on)
 	gotoWalkState.enabled = on
 	if on then
 		gotoWalkState.active = true
@@ -5602,7 +5615,7 @@ local function stopAfkMode()
 	end
 end
 
-local afkSwitch = createSwitch(movePage, "Mode AFK (auto-walk)", 168, function(on)
+local afkSwitch = createSwitch(moveScroll, "Mode AFK (auto-walk)", 0, function(on)
 	if on then
 		startAfkMode()
 	else
@@ -5610,7 +5623,7 @@ local afkSwitch = createSwitch(movePage, "Mode AFK (auto-walk)", 168, function(o
 	end
 end)
 
-local infiniteJumpSwitch = createSwitch(movePage, "Saut infini", 192, function(on)
+local infiniteJumpSwitch = createSwitch(moveScroll, "Saut infini", 0, function(on)
 	jumpState.infinite = on
 end)
 
@@ -5618,13 +5631,13 @@ local function refreshNoClipSwitch()
 	noclipSwitch.set(false)
 end
 
-local walkSlider = createSlider(movePage, "Vitesse marche", 234, 1, 250, 16, function(v)
+local walkSlider = createSlider(moveScroll, "Vitesse marche", 0, 1, 250, 16, function(v)
 	walkSpeedState.value = math.floor(v)
 	updateCharacter()
 	if humanoid then humanoid.WalkSpeed = walkSpeedState.value end
 end, Color3.fromRGB(255, 100, 100))
 
-local walkResetBtn = createButton(movePage, "Reset vitesse", 288, Color3.fromRGB(80, 80, 90), function()
+local walkResetBtn = createButton(moveScroll, "Reset vitesse", 0, Color3.fromRGB(80, 80, 90), function()
 	walkSpeedState.value = 16
 	walkSlider.set(16)
 	updateCharacter()
@@ -5633,7 +5646,6 @@ end)
 
 local platformLabel = Instance.new("TextLabel")
 platformLabel.Size = UDim2.new(1, -16, 0, 30)
-platformLabel.Position = UDim2.new(0, 8, 0, 328)
 platformLabel.BackgroundTransparency = 1
 platformLabel.Text = "Plateforme: F10 (+=monter -=descendre)"
 platformLabel.Font = Enum.Font.Gotham
@@ -5641,14 +5653,13 @@ platformLabel.TextSize = 11
 platformLabel.TextWrapped = true
 platformLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 platformLabel.TextXAlignment = Enum.TextXAlignment.Left
-platformLabel.Parent = movePage
+platformLabel.Parent = moveScroll
 
 -- Boutons F10 pour mobile (toggle + monter/descendre)
 local platBtnRow = Instance.new("Frame")
 platBtnRow.Size = UDim2.new(1, -16, 0, 36)
-platBtnRow.Position = UDim2.new(0, 8, 0, 360)
 platBtnRow.BackgroundTransparency = 1
-platBtnRow.Parent = movePage
+platBtnRow.Parent = moveScroll
 
 local platToggleBtn = Instance.new("TextButton")
 platToggleBtn.Size = UDim2.new(0.34, 0, 1, 0)
