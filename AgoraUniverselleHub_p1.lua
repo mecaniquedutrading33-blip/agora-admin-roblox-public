@@ -809,10 +809,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.25"
+	_G.CURRENT_VERSION = "v40.26"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.26: Fly ignore WASD pendant le chat + nettoyage complet ancien panel avant update",
 		"v40.25: Indicateur MAJ Home deplace en haut (plus visible)",
 		"v40.24: Suppression popup auto-update (indicateur Home seulement)",
 		"v40.23: Logo panel coins arrondis + onglet Move en scroll (fix boutons superposes click-to-walk/AFK)",
@@ -5028,13 +5029,16 @@ local function startFly()
 		end
 
 		local move = Vector3.zero
-		-- PC controls (clavier)
-		if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move += Camera.CFrame.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= Camera.CFrame.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then move -= Camera.CFrame.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += Camera.CFrame.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
-		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0, 1, 0) end
+		-- PC controls (clavier) -- ignorer si le joueur ecrit dans le chat
+		local chatFocus = UserInputService:GetFocusedTextBox()
+		if not chatFocus then
+			if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move += Camera.CFrame.LookVector end
+			if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= Camera.CFrame.LookVector end
+			if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then move -= Camera.CFrame.RightVector end
+			if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += Camera.CFrame.RightVector end
+			if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
+			if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0, 1, 0) end
+		end
 		-- Mobile controls (joystick + boutons)
 		if flyState.mobileInput and flyState.mobileInput.Magnitude > 0 then
 			move += Camera.CFrame.LookVector * flyState.mobileInput.Z + Camera.CFrame.RightVector * flyState.mobileInput.X
@@ -6125,15 +6129,24 @@ _G._agoraPerformUpdate = function()
         end
     end
     if _G.shutdownPanel then pcall(_G.shutdownPanel) end
+    -- Detruire TOUTES les anciennes UI + loops avant de charger la nouvelle
     pcall(function()
         local okp, par = pcall(function() return game:GetService("CoreGui") end)
         if not okp or not par then par = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") end
+        -- Detruire tous les ScreenGui Agora/Milan
         for _, g in ipairs(par:GetChildren()) do
             if g:IsA("ScreenGui") and (g.Name:match("Agora") or g.Name:match("Milan")) then
                 g:Destroy()
             end
         end
+        -- Detruire aussi les ScreenGui sans nom qui pourraient trainer
+        for _, g in ipairs(par:GetChildren()) do
+            if g:IsA("ScreenGui") and g.Name == "ScreenGui" then
+                g:Destroy()
+            end
+        end
     end)
+    -- Detruire les BodyMovers sur le personnage
     pcall(function()
         local char = game:GetService("Players").LocalPlayer.Character
         if char then
@@ -6144,6 +6157,9 @@ _G._agoraPerformUpdate = function()
             end
         end
     end)
+    -- Reset flags pour que la nouvelle version parte propre
+    _G._agoraAU = nil
+    _G._agoraUpdateAvailable = false
     task.spawn(function()
         local aG = Instance.new("ScreenGui")
         aG.Name = "AgoraUpdAnim"
