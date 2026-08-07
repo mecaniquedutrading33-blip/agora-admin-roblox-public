@@ -811,10 +811,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.29"
+	_G.CURRENT_VERSION = "v40.30"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.30: shutdownPanel deconnecte gotoWalk/aimbot + TextWrapped goodbye + cleanup connections",
 		"v40.29: Eleven Tool fix (Unequipped ne kill pas le loop + UnitRay nil guard + chat guard Nine + cleanup mort) + UIStroke Contextual partout + TextWrapped labels longs",
 		"v40.28: Popup MAJ bas-droite anime slide-in (une fois, plus de spam)",
 		"v40.27: Fix Eleven Tool (Backpack Instance.new -> WaitForChild) + meme fix Ghost/Spider",
@@ -1811,6 +1812,7 @@ closeBtn.MouseButton1Click:Connect(function()
 		goodbye.Text = "Au revoir " .. LocalPlayer.DisplayName .. " revenez vite... 3:)"
 		goodbye.Font = Enum.Font.GothamBold
 		goodbye.TextSize = 22
+		goodbye.TextWrapped = true
 		goodbye.TextColor3 = Color3.fromRGB(120, 255, 180)
 		goodbye.TextStrokeTransparency = 0.3
 		goodbye.TextTransparency = 1
@@ -1877,8 +1879,12 @@ local function shutdownPanel()
 	if antiKillSwitch and antiKillSwitch.get and antiKillSwitch.get() then antiKillSwitch.set(false) end
 	if antiAFKSwitch and antiAFKSwitch.get and antiAFKSwitch.get() then antiAFKSwitch.set(false) end
 	if gotoWalkSwitch and gotoWalkSwitch.get and gotoWalkSwitch.get() then gotoWalkSwitch.set(false) end
-	-- Stop AFK mode
+	-- Stop AFK mode + gotoWalk connections
 	if gotoWalkState.afkMode then stopAfkMode() end
+	if gotoWalkState.followConnection then gotoWalkState.followConnection:Disconnect() gotoWalkState.followConnection = nil end
+	if gotoWalkState.afkConnection then gotoWalkState.afkConnection:Disconnect() gotoWalkState.afkConnection = nil end
+	-- Stop aimbot
+	if _G.aimbotSwitch and _G.aimbotSwitch.get and _G.aimbotSwitch.get() then _G.aimbotSwitch.set(false) end
 	if infiniteJumpSwitch and infiniteJumpSwitch.get and infiniteJumpSwitch.get() then infiniteJumpSwitch.set(false) end
 	if platformState and platformState.enabled then
 		platformState.enabled = false
