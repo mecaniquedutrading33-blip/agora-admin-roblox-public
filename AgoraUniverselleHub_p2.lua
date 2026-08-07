@@ -95,6 +95,7 @@ if not createStroke then
         local s = Instance.new("UIStroke")
         s.Color = color or Color3.fromRGB(60, 60, 60)
         s.Thickness = thickness or 1
+        s.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
         s.Parent = parent
         return s
     end
@@ -449,6 +450,7 @@ createCorner(acMarker, 7)
 local acMarkerStroke = Instance.new("UIStroke")
 acMarkerStroke.Color = Color3.fromRGB(255, 200, 200)
 acMarkerStroke.Thickness = 1.5
+acMarkerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 acMarkerStroke.Parent = acMarker
 
 local function showMarkerAt(screenPos)
@@ -1733,6 +1735,7 @@ end)()
 	aimCircleCorner.Parent = aimCircle
 	local aimCircleStroke = Instance.new("UIStroke")
 	aimCircleStroke.Color = Color3.fromRGB(255, 60, 60)
+	aimCircleStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 	aimCircleStroke.Thickness = 3
 	aimCircleStroke.Transparency = 0.3
 	aimCircleStroke.Parent = aimCircle
@@ -1797,6 +1800,7 @@ end)()
 		else
 			if aimCircle.Visible then aimCircle.Visible = false end
 			aimStatusLabel.Text = " Aucune cible visible (hors portee ou derriere un mur)"
+			aimStatusLabel.TextWrapped = true
 			aimStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
 		end
 	end)
@@ -3210,6 +3214,7 @@ do
 		subtitle.Position = UDim2.new(0, 8, 0, 26)
 		subtitle.BackgroundTransparency = 1
 		subtitle.Text = "Tape un tag et appuie sur Ajouter (max 20 car.)"
+		subtitle.TextWrapped = true
 		subtitle.TextColor3 = Color3.fromRGB(180, 180, 200)
 		subtitle.Font = Enum.Font.Gotham
 		subtitle.TextSize = 10
@@ -3429,6 +3434,7 @@ local function renderResult(data, parent)
 		wLbl.Position = UDim2.new(0, 8, 0, 0)
 		wLbl.BackgroundTransparency = 1
 		wLbl.Text = "  APIs Roblox bloquees par l'executeur  essaie Synapse X, Wave ou Fluxus pour voir les details (jeux favoris, badges, groupes, etc.)"
+		wLbl.TextWrapped = true
 		wLbl.Font = Enum.Font.GothamBold
 		wLbl.TextSize = 10
 		wLbl.TextColor3 = Color3.fromRGB(255, 200, 100)
@@ -4441,7 +4447,7 @@ function giveElevenTool()
 	end
 
 	local function findTarget()
-		local tgt = eMouse.Target
+		local tgt = eMouse and eMouse.Target
 		if tgt and tgt:IsA("BasePart") and not tgt.Anchored and not isPlayerPart(tgt) then
 			local model = tgt:FindFirstAncestorOfClass("Model")
 			if model then
@@ -4468,16 +4474,19 @@ function giveElevenTool()
 		LocalPlayer.CameraMinZoomDistance = 0.5
 	end
 
+	-- RenderStepped loop (garde actif tout le temps, juste check active)
 	local elevenRS = RunService.RenderStepped:Connect(function()
 		if active and targetPart and bp then
 			if not targetPart.Parent then cleanupHolding() return end
 			LocalPlayer.CameraMaxZoomDistance = lockedZoom
 			LocalPlayer.CameraMinZoomDistance = lockedZoom
 			if not rotationMode then
-				local ray = eMouse.UnitRay
-				bp.Position = ray.Origin + ray.Direction * distance
-				bp.P = 20000
-				bp.MaxForce = Vector3.one * math.huge
+				local ray = eMouse and eMouse.UnitRay
+				if ray then
+					bp.Position = ray.Origin + ray.Direction * distance
+					bp.P = 20000
+					bp.MaxForce = Vector3.one * math.huge
+				end
 			end
 		elseif active then
 			LocalPlayer.CameraMaxZoomDistance = 100
@@ -4527,7 +4536,9 @@ function giveElevenTool()
 
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if processed then return end
-		if input.KeyCode == Enum.KeyCode.Nine then
+		-- Ignorer si le joueur ecrit dans le chat
+		if UserInputService:GetFocusedTextBox() then return end
+		if input.KeyCode == Enum.KeyCode.Nine and active then
 			ghostActive = not ghostActive
 			local char = LocalPlayer.Character
 			local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -4592,7 +4603,18 @@ function giveElevenTool()
 	tool.Unequipped:Connect(function()
 		active = false
 		cleanupHolding()
-		if elevenRS then elevenRS:Disconnect() elevenRS = nil end
+		-- NE PAS deconnecter elevenRS ici -- le loop reste actif pour re-equiper
+		-- On deconnecte seulement quand le tool est detruit ou shutdownPanel
+	end)
+	-- Cleanup sur mort du personnage
+	LocalPlayer.CharacterAdded:Connect(function()
+		task.wait(1)
+		if ghostActive then
+			ghostActive = false
+			if ghostConn then ghostConn:Disconnect() ghostConn = nil end
+			if ghostChar then ghostChar:Destroy() ghostChar = nil end
+		end
+		cleanupHolding()
 	end)
 end
 function giveSpiderTool()

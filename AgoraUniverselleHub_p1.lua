@@ -264,6 +264,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 				local stroke = Instance.new("UIStroke")
 				stroke.Color = Color3.fromRGB(100, 80, 180)
 				stroke.Thickness = 2
+				stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 				stroke.Parent = frame
 				local title = Instance.new("TextLabel")
 				title.Size = UDim2.new(1, 0, 0, 40)
@@ -610,6 +611,7 @@ createStroke(topBar, Color3.fromRGB(80, 80, 100), 0.8)
 	local badgeStroke = Instance.new("UIStroke")
 	badgeStroke.Color = Color3.fromRGB(150, 100, 220)
 	badgeStroke.Thickness = 1
+	badgeStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 	badgeStroke.Parent = uniBadge
 end)()
 
@@ -809,10 +811,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.28"
+	_G.CURRENT_VERSION = "v40.29"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.29: Eleven Tool fix (Unequipped ne kill pas le loop + UnitRay nil guard + chat guard Nine + cleanup mort) + UIStroke Contextual partout + TextWrapped labels longs",
 		"v40.28: Popup MAJ bas-droite anime slide-in (une fois, plus de spam)",
 		"v40.27: Fix Eleven Tool (Backpack Instance.new -> WaitForChild) + meme fix Ghost/Spider",
 		"v40.26: Fly ignore WASD pendant le chat + nettoyage complet ancien panel avant update",
@@ -1639,6 +1642,7 @@ local minimized = false
 	_createCorner(btn, 14)
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = Color3.fromRGB(120, 80, 220)
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 	stroke.Thickness = 2
 	stroke.Parent = btn
 
@@ -4674,6 +4678,7 @@ end
 		bs.Color = Color3.fromRGB(140, 100, 230)
 		bs.Thickness = 2
 		bs.Transparency = 0.4
+		bs.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 		bs.Parent = base
 		local knob = Instance.new("Frame")
 		knob.Name = "Knob"
@@ -4706,6 +4711,7 @@ end
 		local us = Instance.new("UIStroke")
 		us.Color = Color3.fromRGB(140, 100, 230)
 		us.Thickness = 2
+		us.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 		us.Transparency = 0.4
 		us.Parent = upBtn
 		local dnBtn = Instance.new("TextButton")
@@ -4727,6 +4733,7 @@ end
 		dc.Parent = dnBtn
 		local ds = Instance.new("UIStroke")
 		ds.Color = Color3.fromRGB(140, 100, 230)
+		ds.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 		ds.Thickness = 2
 		ds.Transparency = 0.4
 		ds.Parent = dnBtn
@@ -6106,7 +6113,7 @@ task.delay(8, function()
                                 f.BorderSizePixel = 0
                                 f.Parent = sg
                                 local fc = Instance.new("UICorner") fc.CornerRadius = UDim.new(0, 10) fc.Parent = f
-                                local fs = Instance.new("UIStroke") fs.Color = Color3.fromRGB(100, 200, 255) fs.Thickness = 2 fs.Parent = f
+                                local fs = Instance.new("UIStroke") fs.Color = Color3.fromRGB(100, 200, 255) fs.Thickness = 2 fs.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual fs.Parent = f
                                 local icon = Instance.new("TextLabel")
                                 icon.Size = UDim2.new(0, 30, 0, 30)
                                 icon.Position = UDim2.new(0, 10, 0, 10)
@@ -6280,7 +6287,7 @@ _G._agoraPerformUpdate = function()
         aF.BorderSizePixel = 0
         aF.Parent = aG
         local aC = Instance.new("UICorner") aC.CornerRadius = UDim.new(0, 12) aC.Parent = aF
-        local aS = Instance.new("UIStroke") aS.Color = Color3.fromRGB(100, 200, 255) aS.Thickness = 2 aS.Parent = aF
+        local aS = Instance.new("UIStroke") aS.Color = Color3.fromRGB(100, 200, 255) aS.Thickness = 2 aS.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual aS.Parent = aF
         local aL = Instance.new("TextLabel")
         aL.Size = UDim2.new(1, 0, 1, 0)
         aL.BackgroundTransparency = 1
