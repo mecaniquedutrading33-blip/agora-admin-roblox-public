@@ -820,11 +820,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.32"
+	_G.CURRENT_VERSION = "v40.33"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v40.32: Popup MAJ reactif au nom de Lou",
+		"v40.33: Popup MAJ une seule fois au total (persiste via writefile, plus de popup a chaque reload)",
 		"v40.29: Eleven Tool fix (Unequipped ne kill pas le loop + UnitRay nil guard + chat guard Nine + cleanup mort) + UIStroke Contextual partout + TextWrapped labels longs",
 		"v40.28: Popup MAJ bas-droite anime slide-in (une fois, plus de spam)",
 		"v40.27: Fix Eleven Tool (Backpack Instance.new -> WaitForChild) + meme fix Ghost/Spider",
@@ -6088,10 +6088,20 @@ task.spawn(function()
     end
 end)
 
--- AUTO-UPDATE CHECK (popup une fois, puis indicateur Home si "Plus tard")
+-- AUTO-UPDATE CHECK (popup une seule fois par version distante, persiste entre reloads)
 _G._agoraUpdateAvailable = false
 _G._agoraUpdateVersion = nil
 _G._agoraUpdateDismissed = false
+
+-- Persistance du popup deja montre (UNE SEULE FOIS au total, pas a chaque MAJ)
+local function _agoraReadShown()
+	local ok, d = pcall(function() return readfile("agora_update_shown.txt") end)
+	if ok and d and d == "1" then return true end
+	return false
+end
+local function _agoraWriteShown()
+	pcall(function() writefile("agora_update_shown.txt", "1") end)
+end
 
 -- Check version en arriere-plan
 task.delay(8, function()
@@ -6114,9 +6124,11 @@ task.delay(8, function()
                                 _G._agoraUpdateBtn.Visible = true
                             end)
                         end
-                        -- Popup bas-droite anime (slide-in) au nom de Lou
-                        if not _G._agoraUpdateDismissed and not _G._agoraPopupShown then
+                        -- Popup bas-droite anime (slide-in) au nom de Lou, UNE SEULE FOIS au total
+                        local shownOnce = _agoraReadShown()
+                        if not _G._agoraUpdateDismissed and not _G._agoraPopupShown and not shownOnce then
                             _G._agoraPopupShown = true
+                            _agoraWriteShown()
                             pcall(function()
                                 local okp, par = pcall(function() return game:GetService("CoreGui") end)
                                 if not okp or not par then par = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") end
