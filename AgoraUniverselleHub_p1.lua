@@ -820,11 +820,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.31"
+	_G.CURRENT_VERSION = "v40.32"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v40.31: Version mobile adaptee (panel 460x520 -> taille ecran) + popup MAJ au demarrage desactive (indicateur Home seulement) + bulle notif TextWrapped sans debordement",
+		"v40.32: Popup MAJ reactif au nom de Lou",
 		"v40.29: Eleven Tool fix (Unequipped ne kill pas le loop + UnitRay nil guard + chat guard Nine + cleanup mort) + UIStroke Contextual partout + TextWrapped labels longs",
 		"v40.28: Popup MAJ bas-droite anime slide-in (une fois, plus de spam)",
 		"v40.27: Fix Eleven Tool (Backpack Instance.new -> WaitForChild) + meme fix Ghost/Spider",
@@ -6114,9 +6114,8 @@ task.delay(8, function()
                                 _G._agoraUpdateBtn.Visible = true
                             end)
                         end
-                        -- Popup bas-droite anime (slide-in) desactive : Emerick veut UNIQUEMENT l'indicateur silencieux Home
-                        -- (le popup au demarrage le derangeait, cf. v40.24/v40.19)
-                        if false then
+                        -- Popup bas-droite anime (slide-in) au nom de Lou
+                        if not _G._agoraUpdateDismissed and not _G._agoraPopupShown then
                             _G._agoraPopupShown = true
                             pcall(function()
                                 local okp, par = pcall(function() return game:GetService("CoreGui") end)
@@ -6147,7 +6146,7 @@ task.delay(8, function()
                                 title.Size = UDim2.new(1, -50, 0, 20)
                                 title.Position = UDim2.new(0, 42, 0, 10)
                                 title.BackgroundTransparency = 1
-                                title.Text = "MAJ disponible"
+                                title.Text = "Lou"
                                 title.Font = Enum.Font.GothamBold
                                 title.TextSize = 14
                                 title.TextColor3 = Color3.fromRGB(100, 200, 255)
