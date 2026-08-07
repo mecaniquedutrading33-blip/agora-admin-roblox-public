@@ -360,8 +360,17 @@ screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui", 10)
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 460, 0, 520)
-mainFrame.Position = UDim2.new(0.5, -230, 0.5, -260)
+local _dt = getDeviceType()
+local _scrW = (game:GetService("GuiService"):GetScreenResolution() or Vector2.new(1280, 720)).X
+local _scrH = (game:GetService("GuiService"):GetScreenResolution() or Vector2.new(1280, 720)).Y
+local _panelW, _panelH = 460, 520
+if _dt == "Mobile" then
+	-- Mobile: panel prend quasi toute la largeur/ecran, reste lisible
+	_panelW = math.min(460, math.max(300, _scrW - 20))
+	_panelH = math.min(520, math.max(400, _scrH - 60))
+end
+mainFrame.Size = UDim2.new(0, _panelW, 0, _panelH)
+mainFrame.Position = UDim2.new(0.5, -_panelW / 2, 0.5, -_panelH / 2)
 mainFrame.Visible = false  -- Sera revele apres l'intro
 -- S'assure que le panel reste visible et ne se fait pas pousser par le chat au demarrage
 task.delay(0, function()
@@ -811,11 +820,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.30"
+	_G.CURRENT_VERSION = "v40.31"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v40.30: shutdownPanel deconnecte gotoWalk/aimbot + TextWrapped goodbye + cleanup connections",
+		"v40.31: Version mobile adaptee (panel 460x520 -> taille ecran) + popup MAJ au demarrage desactive (indicateur Home seulement) + bulle notif TextWrapped sans debordement",
 		"v40.29: Eleven Tool fix (Unequipped ne kill pas le loop + UnitRay nil guard + chat guard Nine + cleanup mort) + UIStroke Contextual partout + TextWrapped labels longs",
 		"v40.28: Popup MAJ bas-droite anime slide-in (une fois, plus de spam)",
 		"v40.27: Fix Eleven Tool (Backpack Instance.new -> WaitForChild) + meme fix Ghost/Spider",
@@ -1989,15 +1998,17 @@ local notifFrames = {}
 local function showNotif(text, color)
 	color = color or Color3.fromRGB(80, 160, 255)
 	local n = #notifFrames
+	local notifW = _dt == "Mobile" and 300 or 240
+	local notifH = _dt == "Mobile" and 44 or 32
 	-- Decaler les anciennes vers le haut
 	for i = 1, n do
 		if notifFrames[i] and notifFrames[i].Parent then
-			notifFrames[i].Position = UDim2.new(1, -260, 1, -60 - (n - i + 1) * 40)
+			notifFrames[i].Position = UDim2.new(1, -(notifW + 20), 1, -60 - (n - i + 1) * (notifH + 8))
 		end
 	end
 	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(0, 240, 0, 32)
-	frame.Position = UDim2.new(1, -260, 1, -60)
+	frame.Size = UDim2.new(0, notifW, 0, notifH)
+	frame.Position = UDim2.new(1, -(notifW + 20), 1, -60)
 	frame.BackgroundColor3 = color
 	frame.BackgroundTransparency = 0.15
 	frame.BorderSizePixel = 0
@@ -2006,20 +2017,22 @@ local function showNotif(text, color)
 	createCorner(frame, 8)
 	createStroke(frame, Color3.fromRGB(255, 255, 255), 1)
 	local lbl = Instance.new("TextLabel")
-	lbl.Size = UDim2.new(1, -10, 1, 0)
-	lbl.Position = UDim2.new(0, 5, 0, 0)
+	lbl.Size = UDim2.new(1, -12, 1, 0)
+	lbl.Position = UDim2.new(0, 6, 0, 0)
 	lbl.BackgroundTransparency = 1
 	lbl.Text = text
 	lbl.Font = Enum.Font.GothamSemibold
 	lbl.TextSize = 12
 	lbl.TextColor3 = Color3.new(1, 1, 1)
 	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.TextYAlignment = Enum.TextYAlignment.Center
+	lbl.TextWrapped = true
 	lbl.TextTruncate = Enum.TextTruncate.AtEnd
 	lbl.Parent = frame
 	notifFrames[#notifFrames + 1] = frame
 	-- Animation slide-in
 	frame.Position = UDim2.new(1, 0, 1, -60)
-	tween(frame, {Position = UDim2.new(1, -260, 1, -60)}, 0.3)
+	tween(frame, {Position = UDim2.new(1, -(notifW + 20), 1, -60)}, 0.3)
 	-- Auto-remove apres 4s
 	task.delay(4, function()
 		tween(frame, {Position = UDim2.new(1, 0, 1, -60), BackgroundTransparency = 1}, 0.3)
@@ -2032,10 +2045,10 @@ local function showNotif(text, color)
 		-- Recaler les restantes
 		for i, f in ipairs(notifFrames) do
 			if f and f.Parent then
-				f.Position = UDim2.new(1, -260, 1, -60 - (#notifFrames - i) * 40)
+				f.Position = UDim2.new(1, -(notifW + 20), 1, -60 - (#notifFrames - i) * (notifH + 8))
 			end
-	end
-end)
+		end
+	end)
 end
 _G._agora_showNotif = showNotif
 
@@ -6101,8 +6114,9 @@ task.delay(8, function()
                                 _G._agoraUpdateBtn.Visible = true
                             end)
                         end
-                        -- Popup bas-droite anime (slide-in) une seule fois
-                        if not _G._agoraUpdateDismissed and not _G._agoraPopupShown then
+                        -- Popup bas-droite anime (slide-in) desactive : Emerick veut UNIQUEMENT l'indicateur silencieux Home
+                        -- (le popup au demarrage le derangeait, cf. v40.24/v40.19)
+                        if false then
                             _G._agoraPopupShown = true
                             pcall(function()
                                 local okp, par = pcall(function() return game:GetService("CoreGui") end)
