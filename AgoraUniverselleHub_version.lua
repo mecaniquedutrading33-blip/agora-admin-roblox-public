@@ -1,2 +1,1 @@
--- Agora Universelle Hub - Version
-return "v40.34"
+return "v40.35"
