@@ -4356,7 +4356,7 @@ function giveGhostTool()
 					if p.Name:find("Foot") or p.Name:find("Leg") then p.CanCollide = false end
 				end
 			end
-			local targetCf = char:GetPivot() * CFrame.new(0, OFFSET_UNDER, 0)
+			local targetCf = char:GetPivot() * CFrame.new(5000, OFFSET_UNDER, 5000)
 			char:PivotTo(targetCf)
 			if char.PrimaryPart then char.PrimaryPart.Anchored = true end
 			-- Zero velocity pour pas que Roblox remonte le perso
