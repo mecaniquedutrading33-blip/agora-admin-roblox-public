@@ -820,11 +820,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.33"
+	_G.CURRENT_VERSION = "v40.34"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v40.33: Popup MAJ une seule fois au total (persiste via writefile, plus de popup a chaque reload)",
+		"v40.34: Fly mobile = joystick natif Roblox (plus de joystick custom) + monte/descend en regardant haut/bas",
 		"v40.29: Eleven Tool fix (Unequipped ne kill pas le loop + UnitRay nil guard + chat guard Nine + cleanup mort) + UIStroke Contextual partout + TextWrapped labels longs",
 		"v40.28: Popup MAJ bas-droite anime slide-in (une fois, plus de spam)",
 		"v40.27: Fix Eleven Tool (Backpack Instance.new -> WaitForChild) + meme fix Ghost/Spider",
@@ -4672,143 +4672,16 @@ local function stopFly()
 	end
 end
 
--- ============= FLY MOBILE JOYSTICK (auto-show on touch devices) =============
-;(function(_fly, _screenGui)
+-- ============= FLY MOBILE (joystick natif Roblox) =============
+;(function(_fly)
 	local function isMobile()
 		return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 	end
-	local function ensureMobileUi()
-		if _fly.mobileUiCreated then return end
-		_fly.mobileUiCreated = true
-		local base = Instance.new("Frame")
-		base.Name = "FlyJoystickBase"
-		base.Size = UDim2.new(0, 110, 0, 110)
-		base.Position = UDim2.new(0, 30, 1, -240)
-		base.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
-		base.BackgroundTransparency = 0.35
-		base.BorderSizePixel = 0
-		base.Visible = false
-		base.ZIndex = 50
-		base.Parent = _screenGui
-		local bc = Instance.new("UICorner")
-		bc.CornerRadius = UDim.new(1, 0)
-		bc.Parent = base
-		local bs = Instance.new("UIStroke")
-		bs.Color = Color3.fromRGB(140, 100, 230)
-		bs.Thickness = 2
-		bs.Transparency = 0.4
-		bs.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-		bs.Parent = base
-		local knob = Instance.new("Frame")
-		knob.Name = "Knob"
-		knob.Size = UDim2.new(0, 50, 0, 50)
-		knob.Position = UDim2.new(0.5, -25, 0.5, -25)
-		knob.BackgroundColor3 = Color3.fromRGB(180, 140, 255)
-		knob.BorderSizePixel = 0
-		knob.ZIndex = 51
-		knob.Parent = base
-		local kc = Instance.new("UICorner")
-		kc.CornerRadius = UDim.new(1, 0)
-		kc.Parent = knob
-		local upBtn = Instance.new("TextButton")
-		upBtn.Name = "FlyUp"
-		upBtn.Size = UDim2.new(0, 60, 0, 60)
-		upBtn.Position = UDim2.new(0, 30, 1, -130)
-		upBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
-		upBtn.BackgroundTransparency = 0.35
-		upBtn.BorderSizePixel = 0
-		upBtn.Text = "+"
-		upBtn.TextColor3 = Color3.fromRGB(140, 100, 230)
-		upBtn.Font = Enum.Font.GothamBold
-		upBtn.TextSize = 22
-		upBtn.Visible = false
-		upBtn.ZIndex = 50
-		upBtn.Parent = _screenGui
-		local uc = Instance.new("UICorner")
-		uc.CornerRadius = UDim.new(1, 0)
-		uc.Parent = upBtn
-		local us = Instance.new("UIStroke")
-		us.Color = Color3.fromRGB(140, 100, 230)
-		us.Thickness = 2
-		us.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-		us.Transparency = 0.4
-		us.Parent = upBtn
-		local dnBtn = Instance.new("TextButton")
-		dnBtn.Name = "FlyDown"
-		dnBtn.Size = UDim2.new(0, 60, 0, 60)
-		dnBtn.Position = UDim2.new(0, 100, 1, -130)
-		dnBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
-		dnBtn.BackgroundTransparency = 0.35
-		dnBtn.BorderSizePixel = 0
-		dnBtn.Text = "-"
-		dnBtn.TextColor3 = Color3.fromRGB(140, 100, 230)
-		dnBtn.Font = Enum.Font.GothamBold
-		dnBtn.TextSize = 22
-		dnBtn.Visible = false
-		dnBtn.ZIndex = 50
-		dnBtn.Parent = _screenGui
-		local dc = Instance.new("UICorner")
-		dc.CornerRadius = UDim.new(1, 0)
-		dc.Parent = dnBtn
-		local ds = Instance.new("UIStroke")
-		ds.Color = Color3.fromRGB(140, 100, 230)
-		ds.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-		ds.Thickness = 2
-		ds.Transparency = 0.4
-		ds.Parent = dnBtn
-		_fly.mobileBase = base
-		_fly.mobileKnob = knob
-		_fly.mobileUp = upBtn
-		_fly.mobileDown = dnBtn
-		-- Joystick drag handler
-		base.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.Touch then
-				_fly.mobileStickId = input
-			end
-		end)
-		upBtn.MouseButton1Down:Connect(function() _fly.mobileUpHeld = true end)
-		upBtn.MouseButton1Up:Connect(function() _fly.mobileUpHeld = false end)
-		dnBtn.MouseButton1Down:Connect(function() _fly.mobileDownHeld = true end)
-		dnBtn.MouseButton1Up:Connect(function() _fly.mobileDownHeld = false end)
-		-- Use direct touch state via .TouchEnded events
-		upBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then _fly.mobileUpHeld = true end end)
-		upBtn.InputEnded:Connect(function() _fly.mobileUpHeld = false end)
-		dnBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then _fly.mobileDownHeld = true end end)
-		dnBtn.InputEnded:Connect(function() _fly.mobileDownHeld = false end)
-	end
-	-- Track mobile joystick in RenderStepped via global InputChanged
-	UserInputService.InputChanged:Connect(function(input, gpe)
-		if not _fly.flying or not _fly.mobileStickId then return end
-		if gpe then return end
-		if input ~= _fly.mobileStickId then return end
-		if input.UserInputState == Enum.UserInputState.End then
-			_fly.mobileStickId = nil
-			_fly.mobileInput = Vector3.zero
-			if _fly.mobileKnob then _fly.mobileKnob.Position = UDim2.new(0.5, -25, 0.5, -25) end
-			return
-		end
-		-- Convert position relative to joystick base
-		local base = _fly.mobileBase
-		if not base or not _fly.mobileKnob then return end
-		local center = base.AbsolutePosition + base.AbsoluteSize / 2
-		local radius = base.AbsoluteSize.X / 2
-		local delta = input.Position - center
-		local dist = math.min(delta.Magnitude, radius)
-		local dir = delta.Magnitude > 0 and delta.Unit or Vector2.new(0, 0)
-		local knobOffset = dir * dist
-		_fly.mobileKnob.Position = UDim2.new(0.5, knobOffset.X - 25, 0.5, knobOffset.Y - 25)
-		-- Normalized input for camera-relative direction (-1..1)
-		_fly.mobileInput = Vector3.new(dir.X, 0, dir.Y)
-	end)
-	-- Public API used by startFly/stopFly
-	_fly.showMobileUi = function(visible)
-		ensureMobileUi()
-		if _fly.mobileBase then _fly.mobileBase.Visible = visible end
-		if _fly.mobileUp then _fly.mobileUp.Visible = visible end
-		if _fly.mobileDown then _fly.mobileDown.Visible = visible end
-	end
+	-- Plus de joystick custom : on utilise le joystick natif Roblox (Gamepad1/Thumbstick1)
+	-- qui apparait automatiquement sur mobile. showMobileUi devient un no-op.
+	_fly.showMobileUi = function() end
 	_fly.isMobile = isMobile
-end)(flyState, screenGui)
+end)(flyState)
 
 local function startFly()
 	updateCharacter()
@@ -4903,11 +4776,17 @@ local function startFly()
 							if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += Camera.CFrame.RightVector end
 							if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
 							if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0, 1, 0) end
-							if flyState.mobileInput and flyState.mobileInput.Magnitude > 0 then
-								move += Camera.CFrame.LookVector * flyState.mobileInput.Z + Camera.CFrame.RightVector * flyState.mobileInput.X
+							-- Mobile: joystick natif Roblox (Gamepad1/Thumbstick1) + LookVector camera (monte/descend en regardant haut/bas)
+							local stick = UserInputService:GetGamepadState(Enum.UserInputType.Gamepad1)
+							local sx, sy = 0, 0
+							for _, s in ipairs(stick) do
+								if s.KeyCode == Enum.KeyCode.Thumbstick1 then
+									sx, sy = s.Position.X, s.Position.Y
+								end
 							end
-							if flyState.mobileUpHeld then move += Vector3.new(0, 1, 0) end
-							if flyState.mobileDownHeld then move -= Vector3.new(0, 1, 0) end
+							if math.abs(sx) > 0.1 or math.abs(sy) > 0.1 then
+								move += Camera.CFrame.LookVector * -sy + Camera.CFrame.RightVector * sx
+							end
 							-- SMOOTH VELOCITY LERP
 							if move.Magnitude > 0 then
 								flyState.targetVel = move.Unit * flyState.speed
@@ -5067,12 +4946,17 @@ local function startFly()
 			if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
 			if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0, 1, 0) end
 		end
-		-- Mobile controls (joystick + boutons)
-		if flyState.mobileInput and flyState.mobileInput.Magnitude > 0 then
-			move += Camera.CFrame.LookVector * flyState.mobileInput.Z + Camera.CFrame.RightVector * flyState.mobileInput.X
+		-- Mobile: joystick natif Roblox (Gamepad1/Thumbstick1) + LookVector camera (monte/descend en regardant haut/bas)
+		local stick = UserInputService:GetGamepadState(Enum.UserInputType.Gamepad1)
+		local sx, sy = 0, 0
+		for _, s in ipairs(stick) do
+			if s.KeyCode == Enum.KeyCode.Thumbstick1 then
+				sx, sy = s.Position.X, s.Position.Y
+			end
 		end
-		if flyState.mobileUpHeld then move += Vector3.new(0, 1, 0) end
-		if flyState.mobileDownHeld then move -= Vector3.new(0, 1, 0) end
+		if math.abs(sx) > 0.1 or math.abs(sy) > 0.1 then
+			move += Camera.CFrame.LookVector * -sy + Camera.CFrame.RightVector * sx
+		end
 
 		-- === SMOOTH VELOCITY LERP ===
 		-- Target velocity = direction * speed (or zero if no input)
