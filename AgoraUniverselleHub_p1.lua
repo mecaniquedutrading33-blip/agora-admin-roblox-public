@@ -820,10 +820,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.35"
+	_G.CURRENT_VERSION = "v40.36"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.36: Gravite (Zero Gravite + slider custom + reset) deplacee dans l'onglet Move",
 		"v40.34: Fly mobile = joystick natif Roblox (plus de joystick custom) + monte/descend en regardant haut/bas",
 		"v40.35: Ghost Tool — vrai perso teleporte 5000 studs sous la map DECALE (x+z, pas pile dessous)",
 		"v40.29: Eleven Tool fix (Unequipped ne kill pas le loop + UnitRay nil guard + chat guard Nine + cleanup mort) + UIStroke Contextual partout + TextWrapped labels longs",
@@ -5652,7 +5653,7 @@ local localState = {
 	timeOfDay = 12,
 }
 
-local zeroGSwitch = createSwitch(localPage, "Zero Gravite", 10, function(on)
+local zeroGSwitch = createSwitch(moveScroll, "Zero Gravite", 0, function(on)
 	localState.zeroGravity = on
 	if on then
 		Workspace.Gravity = 0
@@ -5683,7 +5684,7 @@ gravityContainer.Size = UDim2.new(1, -16, 0, 86)
 gravityContainer.Position = UDim2.new(0, 8, 0, 56)
 gravityContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 gravityContainer.BorderSizePixel = 0
-gravityContainer.Parent = localPage
+gravityContainer.Parent = moveScroll
 createCorner(gravityContainer, 10)
 createStroke(gravityContainer, Color3.fromRGB(45, 45, 55), 1)
 
@@ -5766,11 +5767,11 @@ gravityInput.FocusLost:Connect(function(enterPressed)
 	setGravityExact(gravityInput.Text)
 end)
 
-local resetGravityBtn = createButton(localPage, "Reset gravite normale", 148, Color3.fromRGB(80, 80, 90), function()
+local resetGravityBtn = createButton(moveScroll, "Reset gravite normale", 0, Color3.fromRGB(80, 80, 90), function()
 	setGravityExact(196.2)
 end)
 resetGravityBtn.Size = UDim2.new(1, -16, 0, 30)
-resetGravityBtn.Position = UDim2.new(0, 8, 0, 148)
+resetGravityBtn.Position = UDim2.new(0, 8, 0, 0)
 
 local timeSwitch = createSwitch(localPage, "Temps custom", 200, function(on)
 	if on then
