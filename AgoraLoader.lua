@@ -77,7 +77,7 @@ local function loadCommands()
 		if okCmd then return resCmd or {} end
 	end
 	local url = PROXY_URL .. "Commands.lua&nocache=" .. tick()
-	local okHttp, source = pcall(function() return HttpService:GetAsync(url, true) end)
+	local okHttp, source = pcall(function() return HttpService:GetAsync(url) end)
 	if okHttp and source and #source > 100 then
 		local okParse, fn = pcall(function() return loadstring(source) end)
 		if okParse and fn then
@@ -110,7 +110,7 @@ local function loadMainModule()
 		end
 	end
 	local url = PROXY_URL .. "MainModule.lua&nocache=" .. tick()
-	local ok, source = pcall(function() return HttpService:GetAsync(url, true) end)
+	local ok, source = pcall(function() return HttpService:GetAsync(url) end)
 	if ok and source and #source > 1000 then
 		local ok2, loaderFn = pcall(function() return loadstring(source) end)
 		if ok2 and loaderFn then
@@ -240,7 +240,7 @@ local function loadAntiCheat()
 		return
 	end
 	local url = PROXY_URL .. "AntiCheat.lua&nocache=" .. tick()
-	local ok, source = pcall(function() return HttpService:GetAsync(url, true) end)
+	local ok, source = pcall(function() return HttpService:GetAsync(url) end)
 	if ok and source and #source > 100 then
 		local ok2, fn = pcall(function() return loadstring(source) end)
 		if ok2 and fn then
