@@ -193,38 +193,69 @@ if GetRanksFunc then
 	end
 end
 
--- ──── 6) Auto-clone du ScreenGui ────
-local originalGui = scriptFolder:FindFirstChild("AgoraAdmin")
-if not originalGui or not originalGui:IsA("ScreenGui") then
-	for _, child in ipairs(scriptFolder:GetChildren()) do
-		if child:IsA("ScreenGui") then originalGui = child; break end
+-- ──── 6) Créer le ScreenGui + AdminLogoBtn + LocalScript client ────
+-- Le client (AgoraAdminLS.lua) est chargé via le proxy et placé DANS le ScreenGui
+-- pour qu'il s'exécute côté client quand le ScreenGui est répliqué dans PlayerGui.
+local clientSource = nil
+local function loadClientSource()
+	local url = PROXY_URL .. "AgoraAdminLS.lua&nocache=" .. tick()
+	local ok, source = pcall(function() return HttpService:GetAsync(url, true) end)
+	if ok and source and #source > 1000 then
+		clientSource = source
+		print("[AGORA] Client chargé via proxy (" .. #source .. " octets)")
+	else
+		warn("[AGORA] Client introuvable via proxy — UI ne s'affichera pas")
 	end
-	if not originalGui then
-		for _, child in ipairs(scriptFolder:GetDescendants()) do
-			if child:IsA("ScreenGui") then originalGui = child; break end
-		end
+end
+loadClientSource()
+
+local function ensureGuiForPlayer(plr)
+	local pg = plr:WaitForChild("PlayerGui")
+	local existing = pg:FindFirstChild("AgoraAdmin")
+	if existing then existing:Destroy() end
+
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "AgoraAdmin"
+	gui.ResetOnSpawn = false
+	gui.DisplayOrder = 99999
+	gui.Parent = pg
+
+	local btn = Instance.new("TextButton")
+	btn.Name = "AdminLogoBtn"
+	btn.Size = UDim2.new(0, 36, 0, 36)
+	btn.Position = UDim2.new(1, -50, 1, -50)
+	btn.AnchorPoint = Vector2.new(0, 0)
+	btn.BackgroundColor3 = Color3.fromRGB(18, 8, 32)
+	btn.BackgroundTransparency = 0.2
+	btn.Text = "A"
+	btn.TextColor3 = Color3.fromRGB(0, 240, 255)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 20
+	btn.ZIndex = 99999
+	btn.Parent = gui
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(1, 0)
+	corner.Parent = btn
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(0, 240, 255)
+	stroke.Thickness = 2
+	stroke.Transparency = 0.3
+	stroke.Parent = btn
+
+	-- LocalScript client DANS le ScreenGui (s'exécute quand répliqué)
+	if clientSource then
+		local client = Instance.new("LocalScript")
+		client.Name = "AgoraAdminLS"
+		client.Source = clientSource
+		client.Parent = gui
 	end
 end
 
-if originalGui then
-	for _, child in ipairs(StarterGui:GetChildren()) do
-		if child:IsA("ScreenGui") and child.Name == originalGui.Name then
-			child:Destroy()
-		end
-	end
-	local cloneGui = originalGui:Clone()
-	cloneGui.ResetOnSpawn = false
-	cloneGui.Parent = StarterGui
-	for _, plr in ipairs(Players:GetPlayers()) do
-		local pg = plr:FindFirstChild("PlayerGui")
-		if pg and not pg:FindFirstChild(cloneGui.Name) then
-			local playClone = originalGui:Clone()
-			playClone.ResetOnSpawn = false
-			playClone.Parent = pg
-		end
-	end
-else
-	warn("[AGORA] ScreenGui non trouvé dans " .. scriptFolder.Name)
+Players.PlayerAdded:Connect(ensureGuiForPlayer)
+for _, plr in ipairs(Players:GetPlayers()) do
+	task.spawn(function() ensureGuiForPlayer(plr) end)
 end
 
 -- ──── 7) SettingsEvent : envoyer SETTINGS aux clients ────
