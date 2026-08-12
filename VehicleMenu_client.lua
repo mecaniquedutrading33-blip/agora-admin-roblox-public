@@ -876,20 +876,20 @@ RemotePanel.Name = "VehicleRemotePanel"
 RemotePanel.Size = UDim2.new(0, 220, 0, 120)
 RemotePanel.Position = UDim2.new(0, 80, 0.5, 0)
 RemotePanel.AnchorPoint = Vector2.new(0, 0.5)
-RemotePanel.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-RemotePanel.BackgroundTransparency = 0.1
+RemotePanel.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+RemotePanel.BackgroundTransparency = 0
 RemotePanel.Visible = false
 RemotePanel.ZIndex = 30
 Instance.new("UICorner", RemotePanel).CornerRadius = UDim.new(0, 12)
 local remotePanelStroke = Instance.new("UIStroke", RemotePanel)
-remotePanelStroke.Color = Color3.fromRGB(60, 60, 80)
-remotePanelStroke.Thickness = 1.5
+remotePanelStroke.Color = Color3.fromRGB(90, 90, 120)
+remotePanelStroke.Thickness = 2
 
 local RemoteImg = Instance.new("ImageLabel", RemotePanel)
 RemoteImg.Size = UDim2.new(0, 50, 0, 50)
 RemoteImg.Position = UDim2.new(0, 8, 0.5, 0)
 RemoteImg.AnchorPoint = Vector2.new(0, 0.5)
-RemoteImg.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+RemoteImg.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 RemoteImg.ScaleType = Enum.ScaleType.Fit
 RemoteImg.Image = ""
 Instance.new("UICorner", RemoteImg).CornerRadius = UDim.new(0, 6)
@@ -900,8 +900,8 @@ RemoteName.Position = UDim2.new(0, 64, 0, 12)
 RemoteName.BackgroundTransparency = 1
 RemoteName.Text = "Véhicule"
 RemoteName.Font = Enum.Font.GothamBold
-RemoteName.TextSize = 13
-RemoteName.TextColor3 = Color3.fromRGB(240, 240, 255)
+RemoteName.TextSize = 14
+RemoteName.TextColor3 = Color3.new(1, 1, 1)
 RemoteName.TextXAlignment = Enum.TextXAlignment.Left
 RemoteName.TextTruncate = Enum.TextTruncate.AtEnd
 
@@ -910,20 +910,27 @@ RemoteStatus.Size = UDim2.new(1, -80, 0, 16)
 RemoteStatus.Position = UDim2.new(0, 64, 0, 34)
 RemoteStatus.BackgroundTransparency = 1
 RemoteStatus.Text = "🔓 Déverrouillé"
-RemoteStatus.Font = Enum.Font.Gotham
-RemoteStatus.TextSize = 12
-RemoteStatus.TextColor3 = Color3.fromRGB(100, 200, 120)
+RemoteStatus.Font = Enum.Font.GothamBold
+RemoteStatus.TextSize = 13
+RemoteStatus.TextColor3 = Color3.fromRGB(100, 220, 130)
 RemoteStatus.TextXAlignment = Enum.TextXAlignment.Left
 
 local RemoteLockBtn = Instance.new("TextButton", RemotePanel)
-RemoteLockBtn.Size = UDim2.new(0.86, 0, 0, 34)
-RemoteLockBtn.Position = UDim2.new(0.07, 0, 1, -42)
-RemoteLockBtn.BackgroundColor3 = Color3.fromRGB(40, 120, 220)
+RemoteLockBtn.Size = UDim2.new(0.86, 0, 0, 36)
+RemoteLockBtn.Position = UDim2.new(0.07, 0, 1, -44)
+RemoteLockBtn.BackgroundColor3 = Color3.fromRGB(60, 150, 255)
 RemoteLockBtn.Text = "🔒 Verrouiller"
 RemoteLockBtn.Font = Enum.Font.GothamBold
-RemoteLockBtn.TextSize = 13
+RemoteLockBtn.TextSize = 14
 RemoteLockBtn.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", RemoteLockBtn).CornerRadius = UDim.new(0, 8)
+
+-- Son bip bip pour le verrouillage
+local LockSound = Instance.new("Sound")
+LockSound.Name = "VehicleLockBeep"
+LockSound.SoundId = "rbxassetid://88442833509532"
+LockSound.Volume = 0.5
+LockSound.Parent = ScreenGui
 
 -- Ferme la manette si on clique le bouton flottant
 RemoteBtn.MouseButton1Click:Connect(function()
@@ -956,6 +963,7 @@ end
 
 RemoteLockBtn.MouseButton1Click:Connect(function()
 	ClickSound:Play()
+	LockSound:Play()
 	remoteLocked = not remoteLocked
 	VehicleEvent:FireServer("ToggleLock", {Locked = remoteLocked})
 	updateRemote()
