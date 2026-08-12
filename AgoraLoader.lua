@@ -193,50 +193,11 @@ if GetRanksFunc then
 	end
 end
 
--- ──── 6) Créer le ScreenGui + AdminLogoBtn ────
--- NOTE: un Script serveur ne peut PAS écrire le code d'un LocalScript (restriction Roblox).
--- Le client UI est chargé par un petit bootstrap LocalScript dans StarterPlayerScripts
--- (AgoraClientBootstrap) qui fetch le code via le proxy et le loadstring.
-local function ensureGuiForPlayer(plr)
-	local pg = plr:WaitForChild("PlayerGui")
-	local existing = pg:FindFirstChild("AgoraAdmin")
-	if existing then existing:Destroy() end
-
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "AgoraAdmin"
-	gui.ResetOnSpawn = false
-	gui.DisplayOrder = 99999
-	gui.Parent = pg
-
-	local btn = Instance.new("TextButton")
-	btn.Name = "AdminLogoBtn"
-	btn.Size = UDim2.new(0, 36, 0, 36)
-	btn.Position = UDim2.new(1, -50, 1, -50)
-	btn.AnchorPoint = Vector2.new(0, 0)
-	btn.BackgroundColor3 = Color3.fromRGB(18, 8, 32)
-	btn.BackgroundTransparency = 0.2
-	btn.Text = "A"
-	btn.TextColor3 = Color3.fromRGB(0, 240, 255)
-	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 20
-	btn.ZIndex = 99999
-	btn.Parent = gui
-
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(1, 0)
-	corner.Parent = btn
-
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = Color3.fromRGB(0, 240, 255)
-	stroke.Thickness = 2
-	stroke.Transparency = 0.3
-	stroke.Parent = btn
-end
-
-Players.PlayerAdded:Connect(ensureGuiForPlayer)
-for _, plr in ipairs(Players:GetPlayers()) do
-	task.spawn(function() ensureGuiForPlayer(plr) end)
-end
+-- ──── 6) ScreenGui + AdminLogoBtn créés par le bootstrap client ────
+-- NOTE: le ScreenGui + AdminLogoBtn sont créés côté client par
+-- AgoraClientBootstrap.lua (StarterPlayerScripts). Un Script serveur ne peut
+-- pas écrire le code d'un LocalScript, donc le client UI est chargé par le bootstrap.
+-- (Aucune action serveur nécessaire ici — le client gère son propre ScreenGui.)
 
 -- ──── 7) SettingsEvent : envoyer SETTINGS aux clients ────
 local SettingsEvent = sr:FindFirstChild("SettingsEvent")
