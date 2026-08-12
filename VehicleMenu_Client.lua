@@ -514,6 +514,9 @@ local function updateMenuLayout()
 	end
 end
 
+-- Forward-declare selectCar (défini plus bas) pour éviter le nil dans les handlers
+local selectCar
+
 local function refreshVehicleList()
 	-- Vide la liste
 	for _, child in ipairs(LeftPanel:GetChildren()) do
@@ -609,7 +612,7 @@ local function refreshVehicleList()
 	end
 end
 
-local function selectCar(name)
+selectCar = function(name)
 	selectedVehicle = name
 	local info = VEHICLE_DATA[name]
 	if not info then return end
