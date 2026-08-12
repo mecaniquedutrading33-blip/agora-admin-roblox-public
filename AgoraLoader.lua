@@ -193,11 +193,31 @@ if GetRanksFunc then
 	end
 end
 
--- ──── 6) ScreenGui + AdminLogoBtn créés par le bootstrap client ────
--- NOTE: le ScreenGui + AdminLogoBtn sont créés côté client par
--- AgoraClientBootstrap.lua (StarterPlayerScripts). Un Script serveur ne peut
--- pas écrire le code d'un LocalScript, donc le client UI est chargé par le bootstrap.
--- (Aucune action serveur nécessaire ici — le client gère son propre ScreenGui.)
+-- ──── 6) Cloner le ScreenGui AgoraAdmin dans StarterGui ────
+-- Le ScreenGui (avec AdminLogoBtn + LocalScript client) est dans le dossier.
+-- Le Loader le clone dans StarterGui → Roblox le réplique dans PlayerGui
+-- et exécute le LocalScript client.
+local function cloneGui()
+	local gui = scriptFolder:FindFirstChild("AgoraAdmin")
+	if not gui then
+		for _, child in ipairs(scriptFolder:GetDescendants()) do
+			if child.Name == "AgoraAdmin" and child:IsA("ScreenGui") then
+				gui = child
+				break
+			end
+		end
+	end
+	if not gui then
+		warn("[AGORA] ScreenGui 'AgoraAdmin' introuvable dans le dossier — UI client absente")
+		return
+	end
+	-- Clone dans StarterGui (Roblox réplique vers PlayerGui + exécute le LocalScript)
+	local clone = gui:Clone()
+	clone.ResetOnSpawn = false
+	clone.Parent = StarterGui
+	print("[AGORA] ScreenGui 'AgoraAdmin' cloné dans StarterGui")
+end
+cloneGui()
 
 -- ──── 7) SettingsEvent : envoyer SETTINGS aux clients ────
 local SettingsEvent = sr:FindFirstChild("SettingsEvent")
