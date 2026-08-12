@@ -593,7 +593,7 @@ local function selectCar(name)
 
 	local rawId = string.match(info.Image, "%d+")
 	if rawId then
-		PreviewImage.Image = "http://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=" .. rawId
+		PreviewImage.Image = "rbxassetid://" .. rawId
 	else
 		PreviewImage.Image = info.Image
 	end
@@ -870,7 +870,7 @@ local function updateRemote()
 
 	local rawId = string.match(info.Image, "%d+")
 	if rawId then
-		RemoteImg.Image = "http://www.roblox.com/Thumbs/Asset.ashx?width=150&height=150&assetId=" .. rawId
+		RemoteImg.Image = "rbxassetid://" .. rawId
 	else
 		RemoteImg.Image = info.Image
 	end
