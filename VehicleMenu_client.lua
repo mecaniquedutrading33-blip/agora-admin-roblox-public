@@ -854,16 +854,16 @@ local remotePanelOpen = false
 -- Bouton flottant (clé) fixe au milieu-gauche de l'écran
 local RemoteBtn = Instance.new("TextButton", ScreenGui)
 RemoteBtn.Name = "VehicleRemoteBtn"
-RemoteBtn.Size = UDim2.new(0, 56, 0, 56)
+RemoteBtn.Size = UDim2.new(0, 60, 0, 60)
 RemoteBtn.Position = UDim2.new(0, 15, 0.5, 0)
 RemoteBtn.AnchorPoint = Vector2.new(0, 0.5)
-RemoteBtn.BackgroundColor3 = Color3.fromRGB(20, 22, 30)
-RemoteBtn.Text = "🔑"
+RemoteBtn.BackgroundColor3 = Color3.fromRGB(30, 34, 46)
+RemoteBtn.Text = "CLES"
 RemoteBtn.Font = Enum.Font.GothamBlack
-RemoteBtn.TextSize = 24
+RemoteBtn.TextSize = 12
 RemoteBtn.TextColor3 = Color3.new(1, 1, 1)
 RemoteBtn.ZIndex = 30
-RemoteBtn.Visible = false
+RemoteBtn.Visible = true
 local remoteCorner = Instance.new("UICorner", RemoteBtn)
 remoteCorner.CornerRadius = UDim.new(0, 14)
 local remoteBtnStroke = Instance.new("UIStroke", RemoteBtn)
@@ -873,32 +873,31 @@ remoteBtnStroke.Thickness = 2
 -- Manette de verrouillage (panel compact, fixe)
 local RemotePanel = Instance.new("Frame", ScreenGui)
 RemotePanel.Name = "VehicleRemotePanel"
-RemotePanel.Size = UDim2.new(0, 220, 0, 120)
-RemotePanel.Position = UDim2.new(0, 80, 0.5, 0)
+RemotePanel.Size = UDim2.new(0, 230, 0, 130)
+RemotePanel.Position = UDim2.new(0, 85, 0.5, 0)
 RemotePanel.AnchorPoint = Vector2.new(0, 0.5)
-RemotePanel.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+RemotePanel.BackgroundColor3 = Color3.fromRGB(32, 32, 44)
 RemotePanel.BackgroundTransparency = 0
 RemotePanel.Visible = false
 RemotePanel.ZIndex = 30
 Instance.new("UICorner", RemotePanel).CornerRadius = UDim.new(0, 12)
 local remotePanelStroke = Instance.new("UIStroke", RemotePanel)
-remotePanelStroke.Color = Color3.fromRGB(90, 90, 120)
+remotePanelStroke.Color = Color3.fromRGB(100, 100, 140)
 remotePanelStroke.Thickness = 2
 
 local RemoteImg = Instance.new("ImageLabel", RemotePanel)
-RemoteImg.Size = UDim2.new(0, 50, 0, 50)
-RemoteImg.Position = UDim2.new(0, 8, 0.5, 0)
-RemoteImg.AnchorPoint = Vector2.new(0, 0.5)
-RemoteImg.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+RemoteImg.Size = UDim2.new(0, 56, 0, 56)
+RemoteImg.Position = UDim2.new(0, 8, 0, 8)
+RemoteImg.BackgroundColor3 = Color3.fromRGB(45, 45, 58)
 RemoteImg.ScaleType = Enum.ScaleType.Fit
 RemoteImg.Image = ""
 Instance.new("UICorner", RemoteImg).CornerRadius = UDim.new(0, 6)
 
 local RemoteName = Instance.new("TextLabel", RemotePanel)
 RemoteName.Size = UDim2.new(1, -80, 0, 20)
-RemoteName.Position = UDim2.new(0, 64, 0, 12)
+RemoteName.Position = UDim2.new(0, 70, 0, 10)
 RemoteName.BackgroundTransparency = 1
-RemoteName.Text = "Véhicule"
+RemoteName.Text = "Vehicule"
 RemoteName.Font = Enum.Font.GothamBold
 RemoteName.TextSize = 14
 RemoteName.TextColor3 = Color3.new(1, 1, 1)
@@ -907,20 +906,20 @@ RemoteName.TextTruncate = Enum.TextTruncate.AtEnd
 
 local RemoteStatus = Instance.new("TextLabel", RemotePanel)
 RemoteStatus.Size = UDim2.new(1, -80, 0, 16)
-RemoteStatus.Position = UDim2.new(0, 64, 0, 34)
+RemoteStatus.Position = UDim2.new(0, 70, 0, 32)
 RemoteStatus.BackgroundTransparency = 1
-RemoteStatus.Text = "🔓 Déverrouillé"
+RemoteStatus.Text = "Deverrouille"
 RemoteStatus.Font = Enum.Font.GothamBold
 RemoteStatus.TextSize = 13
 RemoteStatus.TextColor3 = Color3.fromRGB(100, 220, 130)
 RemoteStatus.TextXAlignment = Enum.TextXAlignment.Left
 
 local RemoteLockBtn = Instance.new("TextButton", RemotePanel)
-RemoteLockBtn.Size = UDim2.new(0.86, 0, 0, 36)
-RemoteLockBtn.Position = UDim2.new(0.07, 0, 1, -44)
+RemoteLockBtn.Size = UDim2.new(0.9, 0, 0, 38)
+RemoteLockBtn.Position = UDim2.new(0.05, 0, 1, -46)
 RemoteLockBtn.BackgroundColor3 = Color3.fromRGB(60, 150, 255)
-RemoteLockBtn.Text = "🔒 Verrouiller"
-RemoteLockBtn.Font = Enum.Font.GothamBold
+RemoteLockBtn.Text = "VERROUILLER"
+RemoteLockBtn.Font = Enum.Font.GothamBlack
 RemoteLockBtn.TextSize = 14
 RemoteLockBtn.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", RemoteLockBtn).CornerRadius = UDim.new(0, 8)
@@ -955,10 +954,10 @@ local function updateRemote()
 		RemoteImg.Image = info.Image
 	end
 	RemoteName.Text = selectedVehicle
-	RemoteStatus.Text = remoteLocked and "🔒 Verrouillé" or "🔓 Déverrouillé"
-	RemoteStatus.TextColor3 = remoteLocked and Color3.fromRGB(255, 180, 50) or Color3.fromRGB(100, 200, 120)
-	RemoteLockBtn.Text = remoteLocked and "🔓 Déverrouiller" or "🔒 Verrouiller"
-	RemoteLockBtn.BackgroundColor3 = remoteLocked and Color3.fromRGB(220, 160, 40) or Color3.fromRGB(40, 120, 220)
+	RemoteStatus.Text = remoteLocked and "VERROUILLE" or "DEVERROUILLE"
+	RemoteStatus.TextColor3 = remoteLocked and Color3.fromRGB(255, 180, 50) or Color3.fromRGB(100, 220, 130)
+	RemoteLockBtn.Text = remoteLocked and "DEVERROUILLER" or "VERROUILLER"
+	RemoteLockBtn.BackgroundColor3 = remoteLocked and Color3.fromRGB(220, 160, 40) or Color3.fromRGB(60, 150, 255)
 end
 
 RemoteLockBtn.MouseButton1Click:Connect(function()
