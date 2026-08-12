@@ -291,6 +291,19 @@ CategoryLabel.TextSize = isMobile and 10 or 12
 CategoryLabel.TextColor3 = COLORS.Accent
 CategoryLabel.TextXAlignment = Enum.TextXAlignment.Left
 
+-- Nom du véhicule sous l'image
+local VehicleNameLabel = Instance.new("TextLabel", RightPanel)
+VehicleNameLabel.Size = UDim2.new(1, -20, 0, 24)
+VehicleNameLabel.Position = UDim2.new(0, 10, 0.55, -32)
+VehicleNameLabel.BackgroundTransparency = 1
+VehicleNameLabel.Text = ""
+VehicleNameLabel.Font = Enum.Font.GothamBlack
+VehicleNameLabel.TextSize = isMobile and 13 or 16
+VehicleNameLabel.TextColor3 = COLORS.Text
+VehicleNameLabel.TextXAlignment = Enum.TextXAlignment.Left
+VehicleNameLabel.TextYAlignment = Enum.TextYAlignment.Bottom
+VehicleNameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+
 local DescriptionLabel = Instance.new("TextLabel", RightPanel)
 DescriptionLabel.Size = UDim2.new(1, -20, 0.18, 0)
 DescriptionLabel.Position = UDim2.new(0, 10, 0.55, 30)
@@ -316,7 +329,7 @@ ActionBtn.Text = "🚗 GÉNÉRER LA VOITURE"
 ActionBtn.Font = Enum.Font.GothamBlack
 ActionBtn.TextSize = isMobile and 12 or 16
 ActionBtn.TextColor3 = Color3.new(1, 1, 1)
-ActionBtn.Visible = true
+ActionBtn.Visible = false
 ActionBtn.AutoButtonColor = false
 Instance.new("UICorner", ActionBtn).CornerRadius = UDim.new(0, 8)
 local actionStroke = Instance.new("UIStroke", ActionBtn)
@@ -629,6 +642,7 @@ selectCar = function(name)
 	local staffText = info.StaffOnly and "\n\n⚠️ [VÉHICULE RÉSERVÉ AU STAFF]" or ""
 	DescriptionLabel.Text = info.Desc .. staffText .. "\n\nPrix actuel : " .. costStr
 	CategoryLabel.Text = "📁 " .. (info.Category or "Véhicule")
+	VehicleNameLabel.Text = name
 
 	ActionBtn.Visible = true
 	ActionBtn.BackgroundColor3 = COLORS.Green
@@ -832,64 +846,95 @@ local function displayAlert(data)
 end
 
 -- ============================================================
--- TÉLÉCOMMANDE DE VÉRROUILLAGE (suit la voiture)
+-- MANNETTE DE VÉRROUILLAGE (bouton flottant au milieu-gauche)
 -- ============================================================
-local RemoteBtn = Instance.new("Frame", ScreenGui)
-RemoteBtn.Name = "VehicleRemote"
-RemoteBtn.Size = UDim2.new(0, 200, 0, 60)
+local remoteLocked = false
+local remotePanelOpen = false
+
+-- Bouton flottant (clé) fixe au milieu-gauche de l'écran
+local RemoteBtn = Instance.new("TextButton", ScreenGui)
+RemoteBtn.Name = "VehicleRemoteBtn"
+RemoteBtn.Size = UDim2.new(0, 56, 0, 56)
 RemoteBtn.Position = UDim2.new(0, 15, 0.5, 0)
 RemoteBtn.AnchorPoint = Vector2.new(0, 0.5)
-RemoteBtn.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-RemoteBtn.BackgroundTransparency = 0.15
+RemoteBtn.BackgroundColor3 = Color3.fromRGB(20, 22, 30)
+RemoteBtn.Text = "🔑"
+RemoteBtn.Font = Enum.Font.GothamBlack
+RemoteBtn.TextSize = 24
+RemoteBtn.TextColor3 = Color3.new(1, 1, 1)
+RemoteBtn.ZIndex = 30
 RemoteBtn.Visible = false
-RemoteBtn.ZIndex = 20
-Instance.new("UICorner", RemoteBtn).CornerRadius = UDim.new(0, 10)
-local remoteStroke = Instance.new("UIStroke", RemoteBtn)
-remoteStroke.Color = Color3.fromRGB(60, 60, 80)
-remoteStroke.Thickness = 1.5
+local remoteCorner = Instance.new("UICorner", RemoteBtn)
+remoteCorner.CornerRadius = UDim.new(0, 14)
+local remoteBtnStroke = Instance.new("UIStroke", RemoteBtn)
+remoteBtnStroke.Color = Color3.fromRGB(80, 130, 255)
+remoteBtnStroke.Thickness = 2
 
-local RemoteImg = Instance.new("ImageLabel", RemoteBtn)
+-- Manette de verrouillage (panel compact, fixe)
+local RemotePanel = Instance.new("Frame", ScreenGui)
+RemotePanel.Name = "VehicleRemotePanel"
+RemotePanel.Size = UDim2.new(0, 220, 0, 120)
+RemotePanel.Position = UDim2.new(0, 80, 0.5, 0)
+RemotePanel.AnchorPoint = Vector2.new(0, 0.5)
+RemotePanel.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+RemotePanel.BackgroundTransparency = 0.1
+RemotePanel.Visible = false
+RemotePanel.ZIndex = 30
+Instance.new("UICorner", RemotePanel).CornerRadius = UDim.new(0, 12)
+local remotePanelStroke = Instance.new("UIStroke", RemotePanel)
+remotePanelStroke.Color = Color3.fromRGB(60, 60, 80)
+remotePanelStroke.Thickness = 1.5
+
+local RemoteImg = Instance.new("ImageLabel", RemotePanel)
 RemoteImg.Size = UDim2.new(0, 50, 0, 50)
-RemoteImg.Position = UDim2.new(0, 5, 0.5, 0)
+RemoteImg.Position = UDim2.new(0, 8, 0.5, 0)
 RemoteImg.AnchorPoint = Vector2.new(0, 0.5)
 RemoteImg.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
 RemoteImg.ScaleType = Enum.ScaleType.Fit
 RemoteImg.Image = ""
 Instance.new("UICorner", RemoteImg).CornerRadius = UDim.new(0, 6)
 
-local RemoteName = Instance.new("TextLabel", RemoteBtn)
-RemoteName.Size = UDim2.new(1, -70, 0, 20)
-RemoteName.Position = UDim2.new(0, 60, 0, 8)
+local RemoteName = Instance.new("TextLabel", RemotePanel)
+RemoteName.Size = UDim2.new(1, -80, 0, 20)
+RemoteName.Position = UDim2.new(0, 64, 0, 12)
 RemoteName.BackgroundTransparency = 1
 RemoteName.Text = "Véhicule"
 RemoteName.Font = Enum.Font.GothamBold
-RemoteName.TextSize = 12
+RemoteName.TextSize = 13
 RemoteName.TextColor3 = Color3.fromRGB(240, 240, 255)
 RemoteName.TextXAlignment = Enum.TextXAlignment.Left
 RemoteName.TextTruncate = Enum.TextTruncate.AtEnd
 
-local RemoteStatus = Instance.new("TextLabel", RemoteBtn)
-RemoteStatus.Size = UDim2.new(1, -70, 0, 16)
-RemoteStatus.Position = UDim2.new(0, 60, 0, 30)
+local RemoteStatus = Instance.new("TextLabel", RemotePanel)
+RemoteStatus.Size = UDim2.new(1, -80, 0, 16)
+RemoteStatus.Position = UDim2.new(0, 64, 0, 34)
 RemoteStatus.BackgroundTransparency = 1
 RemoteStatus.Text = "🔓 Déverrouillé"
 RemoteStatus.Font = Enum.Font.Gotham
-RemoteStatus.TextSize = 11
+RemoteStatus.TextSize = 12
 RemoteStatus.TextColor3 = Color3.fromRGB(100, 200, 120)
 RemoteStatus.TextXAlignment = Enum.TextXAlignment.Left
 
-local RemoteLockBtn = Instance.new("TextButton", RemoteBtn)
-RemoteLockBtn.Size = UDim2.new(0, 40, 0, 40)
-RemoteLockBtn.Position = UDim2.new(1, -45, 0.5, 0)
-RemoteLockBtn.AnchorPoint = Vector2.new(0, 0.5)
+local RemoteLockBtn = Instance.new("TextButton", RemotePanel)
+RemoteLockBtn.Size = UDim2.new(0.86, 0, 0, 34)
+RemoteLockBtn.Position = UDim2.new(0.07, 0, 1, -42)
 RemoteLockBtn.BackgroundColor3 = Color3.fromRGB(40, 120, 220)
-RemoteLockBtn.Text = "🔒"
-RemoteLockBtn.Font = Enum.Font.GothamBlack
-RemoteLockBtn.TextSize = 18
+RemoteLockBtn.Text = "🔒 Verrouiller"
+RemoteLockBtn.Font = Enum.Font.GothamBold
+RemoteLockBtn.TextSize = 13
 RemoteLockBtn.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", RemoteLockBtn).CornerRadius = UDim.new(0, 8)
 
-local remoteLocked = false
+-- Ferme la manette si on clique le bouton flottant
+RemoteBtn.MouseButton1Click:Connect(function()
+	ClickSound:Play()
+	remotePanelOpen = not remotePanelOpen
+	if remotePanelOpen then
+		RemotePanel.Visible = true
+	else
+		RemotePanel.Visible = false
+	end
+end)
 
 local function updateRemote()
 	if not selectedVehicle then return end
@@ -905,6 +950,7 @@ local function updateRemote()
 	RemoteName.Text = selectedVehicle
 	RemoteStatus.Text = remoteLocked and "🔒 Verrouillé" or "🔓 Déverrouillé"
 	RemoteStatus.TextColor3 = remoteLocked and Color3.fromRGB(255, 180, 50) or Color3.fromRGB(100, 200, 120)
+	RemoteLockBtn.Text = remoteLocked and "🔓 Déverrouiller" or "🔒 Verrouiller"
 	RemoteLockBtn.BackgroundColor3 = remoteLocked and Color3.fromRGB(220, 160, 40) or Color3.fromRGB(40, 120, 220)
 end
 
@@ -915,43 +961,17 @@ RemoteLockBtn.MouseButton1Click:Connect(function()
 	updateRemote()
 end)
 
--- Suit la voiture du joueur
-task.spawn(function()
-	while task.wait(0.1) do
-		local char = Player.Character
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-		if hrp then
-			-- Cherche la voiture la plus proche appartenant au joueur (via le menu)
-			local nearest = nil
-			local nearestDist = 30
-			for _, v in ipairs(workspace:GetChildren()) do
-				if v:IsA("Model") and v:FindFirstChildOfClass("VehicleSeat") then
-					local vhrp = v:FindFirstChild("HumanoidRootPart") or v.PrimaryPart
-					if vhrp then
-						local dist = (vhrp.Position - hrp.Position).Magnitude
-						if dist < nearestDist then
-							nearest = v
-							nearestDist = dist
-						end
-					end
-				end
-			end
-			if nearest then
-				RemoteBtn.Visible = true
-				-- Position à gauche de la voiture
-				local cam = workspace.CurrentCamera
-				local screenPos, onScreen = cam:WorldToScreenPoint(nearest:GetPivot().Position + Vector3.new(0, 2, 0))
-				if onScreen then
-					RemoteBtn.Position = UDim2.new(0, math.clamp(screenPos.X - 220, 10, 100000), 0, math.clamp(screenPos.Y, 10, 100000))
-				end
-			else
-				RemoteBtn.Visible = false
-			end
-		else
-			RemoteBtn.Visible = false
+-- Le bouton clé apparaît quand le joueur a une voiture générée (via serveur)
+-- On le montre toujours après une sélection de véhicule dans le menu.
+selectCar = (function(oldSelectCar)
+	return function(name)
+		oldSelectCar(name)
+		if RemoteBtn then
+			RemoteBtn.Visible = true
+			updateRemote()
 		end
 	end
-end)
+end)(selectCar)
 
 -- ============================================================
 -- RÉCEPTION SERVEUR
