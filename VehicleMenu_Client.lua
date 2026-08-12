@@ -531,7 +531,7 @@ local function refreshVehicleList()
 
 		local ItemBtn = Instance.new("TextButton")
 		ItemBtn.Name = name
-		ItemBtn.Size = UDim2.new(1, -5, 0, isMobile and 45 or 55)
+		ItemBtn.Size = UDim2.new(1, -5, 0, isMobile and 50 or 60)
 		ItemBtn.BackgroundColor3 = COLORS.Card
 		ItemBtn.Text = "  " .. name
 		ItemBtn.Font = Enum.Font.GothamBold
@@ -543,6 +543,24 @@ local function refreshVehicleList()
 		Instance.new("UICorner", ItemBtn).CornerRadius = UDim.new(0, 8)
 		local strk = Instance.new("UIStroke", ItemBtn)
 		strk.Color = COLORS.Stroke
+
+		-- Miniature du véhicule dans la liste
+		local itemImg = Instance.new("ImageLabel", ItemBtn)
+		itemImg.Name = "ItemImage"
+		itemImg.Size = UDim2.new(0, isMobile and 40 or 48, 0, isMobile and 40 or 48)
+		itemImg.Position = UDim2.new(0, 6, 0.5, 0)
+		itemImg.AnchorPoint = Vector2.new(0, 0.5)
+		itemImg.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+		itemImg.ScaleType = Enum.ScaleType.Fit
+		itemImg.Image = ""
+		Instance.new("UICorner", itemImg).CornerRadius = UDim.new(0, 6)
+		local iid = string.match(info.Image, "%d+")
+		if iid then
+			itemImg.Image = "rbxthumb://type=Asset&id=" .. iid .. "&w=100&h=100"
+		end
+
+		-- Décale le texte pour laisser la place à la miniature
+		ItemBtn.Text = "     " .. name
 
 		local PriceLabel = Instance.new("TextLabel", ItemBtn)
 		PriceLabel.Name = "PriceLabel"
@@ -593,7 +611,7 @@ local function selectCar(name)
 
 	local rawId = string.match(info.Image, "%d+")
 	if rawId then
-		PreviewImage.Image = "rbxassetid://" .. rawId
+		PreviewImage.Image = "rbxthumb://type=Asset&id=" .. rawId .. "&w=420&h=420"
 	else
 		PreviewImage.Image = info.Image
 	end
@@ -870,7 +888,7 @@ local function updateRemote()
 
 	local rawId = string.match(info.Image, "%d+")
 	if rawId then
-		RemoteImg.Image = "rbxassetid://" .. rawId
+		RemoteImg.Image = "rbxthumb://type=Asset&id=" .. rawId .. "&w=150&h=150"
 	else
 		RemoteImg.Image = info.Image
 	end
