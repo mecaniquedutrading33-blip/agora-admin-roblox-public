@@ -1,22 +1,21 @@
--- Agora Admin Loader v19.0 - Supabase proxy for hidden server-side code
--- Place ce Script dans ServerScriptService/TON_DOSSIER/
--- Settings.lua + ScreenGui (avec LocalScript DEDANS) restent locaux
--- MainModule + Commands + AntiCheat sont charges via proxy Supabase (code cache)
+-- ============================================================
+-- Agora Admin Loader v20.0 — Hybride (proxy Supabase Emerick)
+-- Crée les 27 remotes attendus par le client + charge
+-- Commands/MainModule/AntiCheat via proxy Supabase (code caché)
+-- ============================================================
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local HttpService = game:GetService("HttpService")
-local StarterGui = game:GetService("StarterGui")
+local Players             = game:GetService("Players")
+local ReplicatedStorage   = game:GetService("ReplicatedStorage")
+local RunService          = game:GetService("RunService")
+local HttpService         = game:GetService("HttpService")
+local StarterGui          = game:GetService("StarterGui")
+local ServerScriptService = game:GetService("ServerScriptService")
 
-local isStudio = RunService:IsStudio()
-
--- PROXY URL - sert les fichiers cotes depuis le repo prive
+-- PROXY URL — Supabase d'Emerick (agora-universelle)
 local PROXY_URL = "https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle?file="
 
--- 1) Trouver Settings.lua dans le dossier actuel
+-- ──── 1) Trouver Settings.lua dans le dossier ────
 local scriptFolder = script.Parent
-
 local settingsFile = scriptFolder:FindFirstChild("Settings")
 if not settingsFile then
 	for _, child in ipairs(scriptFolder:GetDescendants()) do
@@ -26,47 +25,175 @@ if not settingsFile then
 		end
 	end
 end
-
 if not settingsFile then
 	warn("[AGORA] Settings.lua introuvable dans " .. scriptFolder.Name)
 	return
 end
 
 local SETTINGS
-local ok, err = pcall(function()
-	SETTINGS = require(settingsFile)
-end)
+local ok, err = pcall(function() SETTINGS = require(settingsFile) end)
 if not ok then
 	warn("[AGORA] Erreur require Settings.lua : " .. tostring(err))
 	return
 end
 
--- 2) CREER SystemRemotes
-local SystemRemotes = ReplicatedStorage:FindFirstChild("SystemRemotes")
-if not SystemRemotes then
-	SystemRemotes = Instance.new("Folder")
-	SystemRemotes.Name = "SystemRemotes"
-	SystemRemotes.Parent = ReplicatedStorage
+-- ──── 2) Créer SystemRemotes + 27 remotes ────
+local sr = ReplicatedStorage:FindFirstChild("SystemRemotes")
+if not sr then
+	sr = Instance.new("Folder")
+	sr.Name = "SystemRemotes"
+	sr.Parent = ReplicatedStorage
 end
 
-local function ensureRemote(name, class)
-	local r = SystemRemotes:FindFirstChild(name)
-	if not r then
-		r = Instance.new(class)
-		r.Name = name
-		r.Parent = SystemRemotes
+local function mk(n, t)
+	if not sr:FindFirstChild(n) then
+		local r = Instance.new(t)
+		r.Name = n
+		r.Parent = sr
 	end
-	return r
 end
 
-ensureRemote("GetCmdsFunc", "RemoteFunction")
-ensureRemote("RefreshEvent", "RemoteEvent")
-ensureRemote("NotifEvent", "RemoteEvent")
-ensureRemote("FlyEvent", "RemoteEvent")
-ensureRemote("SettingsEvent", "RemoteEvent")
-ensureRemote("CmdBarEvent", "RemoteEvent")
+-- 23 RemoteEvents
+mk("FlyEvent","RemoteEvent"); mk("NotifEvent","RemoteEvent"); mk("AnnounceEvent","RemoteEvent")
+mk("RefreshEvent","RemoteEvent"); mk("SettingsEvent","RemoteEvent"); mk("FeedbackEvent","RemoteEvent")
+mk("WarnEvent","RemoteEvent"); mk("NoclipEvent","RemoteEvent"); mk("UnbanEvent","RemoteEvent")
+mk("UpdateCmdEvent","RemoteEvent"); mk("LogsEvent","RemoteEvent"); mk("BubbleChatEvent","RemoteEvent")
+mk("CmdBarEvent","RemoteEvent"); mk("ForceChatEvent","RemoteEvent"); mk("RevokeRoleEvent","RemoteEvent")
+mk("ACAlertEvent","RemoteEvent"); mk("SuspectAddEvent","RemoteEvent"); mk("SuspectRemEvent","RemoteEvent")
+mk("TicketAlertEvent","RemoteEvent"); mk("ClientACReport","RemoteEvent"); mk("ClientStateReport","RemoteEvent")
+mk("EmotePanelEvent","RemoteEvent"); mk("AcToggleEvent","RemoteEvent")
 
--- 3) AUTO-CLONE DU SCREENGUI
+-- 4 RemoteFunctions
+mk("GetBansFunc","RemoteFunction"); mk("GetCmdsFunc","RemoteFunction")
+mk("GetRanksFunc","RemoteFunction"); mk("SuspectListFunc","RemoteFunction")
+
+print("[AGORA] SystemRemotes OK (" .. #sr:GetChildren() .. " remotes)")
+
+-- ──── 3) Charger Commands (proxy, fallback local) ────
+local function loadCommands()
+	local commandsModule = scriptFolder:FindFirstChild("Commands")
+	if commandsModule then
+		local okCmd, resCmd = pcall(function() return require(commandsModule) end)
+		if okCmd then return resCmd or {} end
+	end
+	local url = PROXY_URL .. "Commands.lua&nocache=" .. tick()
+	local okHttp, source = pcall(function() return HttpService:GetAsync(url, true) end)
+	if okHttp and source and #source > 100 then
+		local okParse, fn = pcall(function() return loadstring(source) end)
+		if okParse and fn then
+			local okRun, cmds = pcall(fn)
+			if okRun and type(cmds) == "table" then
+				return cmds
+			end
+		end
+	end
+	warn("[AGORA] Commands introuvable — table vide")
+	return {}
+end
+
+local Commands = loadCommands()
+
+-- ──── 4) Charger MainModule (proxy, fallback local) ────
+local MainModule = nil
+local function loadMainModule()
+	local module = scriptFolder:FindFirstChild("MainModule")
+	if module then
+		local mainMod = require(module)
+		if type(mainMod) == "function" then
+			local ok, result = pcall(function() return mainMod(SETTINGS, Commands, script) end)
+			if ok and result then return result end
+		elseif type(mainMod) == "table" then
+			if mainMod.Init then
+				pcall(function() return mainMod.Init(sr, SETTINGS, Commands) end)
+			end
+			return mainMod
+		end
+	end
+	local url = PROXY_URL .. "MainModule.lua&nocache=" .. tick()
+	local ok, source = pcall(function() return HttpService:GetAsync(url, true) end)
+	if ok and source and #source > 1000 then
+		local ok2, loaderFn = pcall(function() return loadstring(source) end)
+		if ok2 and loaderFn then
+			local ok3, maybeFunc = pcall(function() return loaderFn() end)
+			if ok3 and type(maybeFunc) == "function" then
+				local ok4, result = pcall(function() return maybeFunc(SETTINGS, Commands, script) end)
+				if ok4 and result then return result end
+			elseif ok3 and type(maybeFunc) == "table" then
+				return maybeFunc
+			end
+		end
+	end
+	warn("[AGORA] MainModule introuvable — serveur minimal actif")
+	return {
+		Init = function() end,
+		GetCommands = function() return Commands end,
+		GetRanks = function() return {} end,
+		ProcessCommand = function() return nil, "MainModule absent" end,
+		HasPermission = function() return false end,
+		Version = "minimal"
+	}
+end
+
+MainModule = loadMainModule()
+
+-- ──── 5) GetCmdsFunc : retourner les 6 valeurs attendues par le client ────
+local function buildRolesData()
+	local hierarchy, order, colors = {}, {}, {}
+	if MainModule and MainModule.GetRanks then
+		local ok, ranks = pcall(MainModule.GetRanks)
+		if ok and type(ranks) == "table" then
+			for _, r in ipairs(ranks) do
+				if type(r) == "table" and r.Name then
+					hierarchy[r.Name] = r.Level or 6
+					table.insert(order, r.Name)
+					colors[r.Name] = r.Color
+				end
+			end
+		end
+	end
+	-- Fallback si vide
+	if #order == 0 then
+		local def = { {Name="Fondateur",Level=1,Color=Color3.fromRGB(255,215,0)}, {Name="Co-Fondateur",Level=2,Color=Color3.fromRGB(255,140,0)}, {Name="Admin",Level=3,Color=Color3.fromRGB(255,0,0)}, {Name="Modérateur",Level=4,Color=Color3.fromRGB(0,255,140)}, {Name="Premium",Level=5,Color=Color3.fromRGB(0,240,255)}, {Name="Joueurs",Level=6,Color=Color3.fromRGB(200,200,200)} }
+		for _, r in ipairs(def) do
+			hierarchy[r.Name] = r.Level
+			table.insert(order, r.Name)
+			colors[r.Name] = r.Color
+		end
+	end
+	return hierarchy, order, colors
+end
+
+local GetCmdsFunc = sr:FindFirstChild("GetCmdsFunc")
+if GetCmdsFunc then
+	GetCmdsFunc.OnServerInvoke = function(player)
+		local cmds = Commands
+		if MainModule and MainModule.GetCommands then
+			local ok, res = pcall(MainModule.GetCommands)
+			if ok and type(res) == "table" then cmds = res end
+		end
+		local role = "Joueurs"
+		if _G.Agora_getPlayerRole then
+			pcall(function() role = _G.Agora_getPlayerRole(player) or "Joueurs" end)
+		end
+		local hw = true
+		local rH, rO, rC = buildRolesData()
+		return cmds, role, hw, rH, rO, rC
+	end
+end
+
+-- GetRanksFunc
+local GetRanksFunc = sr:FindFirstChild("GetRanksFunc")
+if GetRanksFunc then
+	GetRanksFunc.OnServerInvoke = function()
+		if MainModule and MainModule.GetRanks then
+			local ok, res = pcall(MainModule.GetRanks)
+			if ok then return res end
+		end
+		return {}
+	end
+end
+
+-- ──── 6) Auto-clone du ScreenGui ────
 local originalGui = scriptFolder:FindFirstChild("AgoraAdmin")
 if not originalGui or not originalGui:IsA("ScreenGui") then
 	for _, child in ipairs(scriptFolder:GetChildren()) do
@@ -85,11 +212,9 @@ if originalGui then
 			child:Destroy()
 		end
 	end
-
 	local cloneGui = originalGui:Clone()
 	cloneGui.ResetOnSpawn = false
 	cloneGui.Parent = StarterGui
-
 	for _, plr in ipairs(Players:GetPlayers()) do
 		local pg = plr:FindFirstChild("PlayerGui")
 		if pg and not pg:FindFirstChild(cloneGui.Name) then
@@ -99,102 +224,15 @@ if originalGui then
 		end
 	end
 else
-	warn("[AGORA] ScreenGui non trouve dans " .. scriptFolder.Name)
+	warn("[AGORA] ScreenGui non trouvé dans " .. scriptFolder.Name)
 end
 
--- 4) CHARGER COMMANDS DEPUIS LE PROXY (si pas local)
-local function loadCommands()
-	local commandsModule = scriptFolder:FindFirstChild("Commands")
-	if commandsModule then
-		local okCmd, resCmd = pcall(function() return require(commandsModule) end)
-		if okCmd then return resCmd or {} end
-	end
-
-	local url = PROXY_URL .. "Commands.lua&nocache=" .. tick()
-	local okHttp, source = pcall(function() return HttpService:GetAsync(url, true) end)
-	if okHttp and source and #source > 100 then
-		local okParse, fn = pcall(function() return loadstring(source) end)
-		if okParse and fn then
-			local okRun, cmds = pcall(fn)
-			if okRun and type(cmds) == "table" then
-				return cmds
-			end
-		end
-	end
-	return {}
-end
-
-local Commands = loadCommands()
-
--- 5) CHARGER MAINMODULE DEPUIS LE PROXY (code serveur cache)
-local function loadMainModule()
-	local module = scriptFolder:FindFirstChild("MainModule")
-	if module then
-		local mainMod = require(module)
-		if type(mainMod) == "function" then
-			local ok, result = pcall(function() return mainMod(SETTINGS, Commands, script) end)
-			if ok and result then return result end
-		elseif type(mainMod) == "table" then
-			if mainMod.Init then
-				pcall(function() return mainMod.Init(SystemRemotes, SETTINGS, Commands) end)
-			end
-			return mainMod
-		end
-	end
-
-	local url = PROXY_URL .. "MainModule.lua&nocache=" .. tick()
-	local ok, source = pcall(function() return HttpService:GetAsync(url, true) end)
-
-	if ok and source and #source > 1000 then
-		local ok2, loaderFn = pcall(function() return loadstring(source) end)
-		if ok2 and loaderFn then
-			local ok3, maybeFunc = pcall(function() return loaderFn() end)
-			if ok3 and type(maybeFunc) == "function" then
-				local ok4, result = pcall(function()
-					return maybeFunc(SETTINGS, Commands, script)
-				end)
-				if ok4 and result then
-					return result
-				end
-			elseif ok3 and type(maybeFunc) == "table" then
-				return maybeFunc
-			end
-		end
-	end
-
-	warn("[AGORA] MainModule introuvable — serveur minimal actif")
-	return {
-		Init = function() end,
-		GetCommands = function() return Commands end,
-		ExecCommand = function() return nil, "MainModule absent" end
-	}
-end
-
-local MainModule = loadMainModule()
-
--- 6) Setup GetCmdsFunc
-local GetCmdsFunc = SystemRemotes:FindFirstChild("GetCmdsFunc")
-if GetCmdsFunc then
-	GetCmdsFunc.OnServerInvoke = function(player)
-		local cmds = Commands
-		if MainModule and MainModule.GetCommands then
-			local ok, res = pcall(MainModule.GetCommands)
-			if ok then cmds = res or Commands end
-		end
-		return cmds
-	end
-end
-
--- 7) SettingsEvent: envoyer SETTINGS aux clients
-local SettingsEvent = SystemRemotes:FindFirstChild("SettingsEvent")
+-- ──── 7) SettingsEvent : envoyer SETTINGS aux clients ────
+local SettingsEvent = sr:FindFirstChild("SettingsEvent")
 if SettingsEvent then
 	local function sendSettings(plr)
-		pcall(function()
-			SettingsEvent:FireClient(plr, "UpdatePrefix", SETTINGS.Prefix or ";")
-		end)
-		pcall(function()
-			SettingsEvent:FireClient(plr, "UpdateConfig", SETTINGS)
-		end)
+		pcall(function() SettingsEvent:FireClient(plr, "UpdatePrefix", SETTINGS.Prefix or ";") end)
+		pcall(function() SettingsEvent:FireClient(plr, "UpdateConfig", SETTINGS) end)
 	end
 	Players.PlayerAdded:Connect(sendSettings)
 	for _, plr in ipairs(Players:GetPlayers()) do
@@ -202,7 +240,7 @@ if SettingsEvent then
 	end
 end
 
--- 8) AntiCheat optionnel depuis le proxy
+-- ──── 8) AntiCheat optionnel depuis le proxy ────
 local function loadAntiCheat()
 	local acModule = scriptFolder:FindFirstChild("AntiCheat")
 	if acModule then
@@ -218,7 +256,6 @@ local function loadAntiCheat()
 		end
 	end
 end
-
 task.spawn(loadAntiCheat)
 
-Players.PlayerAdded:Connect(function(plr) end)
+print("[AGORA] ✅ SYSTEM READY v20.0 — " .. #sr:GetChildren() .. " remotes, " .. (type(Commands)=="table" and #Commands or 0) .. " commandes")
