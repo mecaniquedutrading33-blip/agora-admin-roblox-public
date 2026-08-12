@@ -193,22 +193,10 @@ if GetRanksFunc then
 	end
 end
 
--- ──── 6) Créer le ScreenGui + AdminLogoBtn + LocalScript client ────
--- Le client (AgoraAdminLS.lua) est chargé via le proxy et placé DANS le ScreenGui
--- pour qu'il s'exécute côté client quand le ScreenGui est répliqué dans PlayerGui.
-local clientSource = nil
-local function loadClientSource()
-	local url = PROXY_URL .. "AgoraAdminLS.lua&nocache=" .. tick()
-	local ok, source = pcall(function() return HttpService:GetAsync(url, true) end)
-	if ok and source and #source > 1000 then
-		clientSource = source
-		print("[AGORA] Client chargé via proxy (" .. #source .. " octets)")
-	else
-		warn("[AGORA] Client introuvable via proxy — UI ne s'affichera pas")
-	end
-end
-loadClientSource()
-
+-- ──── 6) Créer le ScreenGui + AdminLogoBtn ────
+-- NOTE: un Script serveur ne peut PAS écrire le code d'un LocalScript (restriction Roblox).
+-- Le client UI est chargé par un petit bootstrap LocalScript dans StarterPlayerScripts
+-- (AgoraClientBootstrap) qui fetch le code via le proxy et le loadstring.
 local function ensureGuiForPlayer(plr)
 	local pg = plr:WaitForChild("PlayerGui")
 	local existing = pg:FindFirstChild("AgoraAdmin")
@@ -243,14 +231,6 @@ local function ensureGuiForPlayer(plr)
 	stroke.Thickness = 2
 	stroke.Transparency = 0.3
 	stroke.Parent = btn
-
-	-- LocalScript client DANS le ScreenGui (s'exécute quand répliqué)
-	if clientSource then
-		local client = Instance.new("LocalScript")
-		client.Name = "AgoraAdminLS"
-		client.Source = clientSource
-		client.Parent = gui
-	end
 end
 
 Players.PlayerAdded:Connect(ensureGuiForPlayer)
