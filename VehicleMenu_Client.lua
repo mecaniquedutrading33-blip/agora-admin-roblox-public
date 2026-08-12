@@ -310,12 +310,17 @@ local ActionBtn = Instance.new("TextButton", ControlFrame)
 ActionBtn.Size = UDim2.new(1, 0, 1, 0)
 ActionBtn.Position = UDim2.new(0, 0, 0, 0)
 ActionBtn.BackgroundColor3 = COLORS.Green
-ActionBtn.Text = "GÉNÉRER LA VOITURE"
+ActionBtn.Text = "🚗 GÉNÉRER LA VOITURE"
 ActionBtn.Font = Enum.Font.GothamBlack
 ActionBtn.TextSize = isMobile and 12 or 16
 ActionBtn.TextColor3 = Color3.new(1, 1, 1)
-ActionBtn.Visible = false
+ActionBtn.Visible = true
+ActionBtn.AutoButtonColor = false
 Instance.new("UICorner", ActionBtn).CornerRadius = UDim.new(0, 8)
+local actionStroke = Instance.new("UIStroke", ActionBtn)
+actionStroke.Color = Color3.fromRGB(255, 255, 255)
+actionStroke.Thickness = 2
+actionStroke.Transparency = 0.5
 
 -- Boutons admin (bas gauche)
 local AdminConfigBtn = Instance.new("TextButton", MainFrame)
@@ -624,8 +629,11 @@ local function selectCar(name)
 	CategoryLabel.Text = "📁 " .. (info.Category or "Véhicule")
 
 	ActionBtn.Visible = true
-	ActionBtn.Size = UDim2.new(1, 0, 0, 0)
-	TweenService:Create(ActionBtn, TweenInfo.new(0.4, Enum.EasingStyle.Bounce), {Size = UDim2.new(1, 0, 1, 0)}):Play()
+	ActionBtn.BackgroundColor3 = COLORS.Green
+	ActionBtn.Text = "🚗 GÉNÉRER LA VOITURE"
+	ActionBtn.TextColor3 = Color3.new(1, 1, 1)
+	actionStroke.Transparency = 0.5
+	ActionBtn.Size = UDim2.new(1, 0, 1, 0)
 end
 
 local function toggleMenu(state)
