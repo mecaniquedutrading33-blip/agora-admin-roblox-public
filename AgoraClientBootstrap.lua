@@ -1,38 +1,59 @@
 -- ============================================================
--- Agora Client Bootstrap v1.0
+-- Agora Client Bootstrap v1.1
 -- Place ce LocalScript dans StarterPlayerScripts
--- Il charge le client UI (AgoraAdminLS.lua) via le proxy Supabase
--- et l'exécute. Le ScreenGui + AdminLogoBtn sont créés par le Loader serveur.
+-- Crée le ScreenGui + AdminLogoBtn (style Roblox noir) PUIS
+-- charge le client UI (AgoraAdminLS.lua) via le proxy Supabase.
 -- ============================================================
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
 
 local PROXY_URL = "https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle?file="
 
 local LocalPlayer = Players.LocalPlayer
+local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Attendre que le ScreenGui créé par le Loader serveur existe
-local function waitForGui()
-	local pg = LocalPlayer:WaitForChild("PlayerGui")
-	for i = 1, 40 do
-		local gui = pg:FindFirstChild("AgoraAdmin")
-		if gui and gui:FindFirstChild("AdminLogoBtn") then
-			return gui
-		end
-		task.wait(0.25)
-	end
-	return nil
+-- ──── Créer le ScreenGui + AdminLogoBtn (style Roblox noir) ────
+local function ensureGui()
+	local existing = playerGui:FindFirstChild("AgoraAdmin")
+	if existing then existing:Destroy() end
+
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "AgoraAdmin"
+	gui.ResetOnSpawn = false
+	gui.DisplayOrder = 99999
+	gui.Parent = playerGui
+
+	local btn = Instance.new("TextButton")
+	btn.Name = "AdminLogoBtn"
+	btn.Size = UDim2.new(0, 36, 0, 36)
+	btn.Position = UDim2.new(1, -50, 1, -50)
+	btn.AnchorPoint = Vector2.new(0, 0)
+	btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)   -- fond noir
+	btn.BackgroundTransparency = 0
+	btn.Text = "A"
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)   -- A blanc
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 20
+	btn.ZIndex = 99999
+	btn.Parent = gui
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0.2, 0)
+	corner.Parent = btn
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(255, 255, 255)
+	stroke.Thickness = 1
+	stroke.Transparency = 0.4
+	stroke.Parent = btn
+
+	return gui
 end
 
--- Charger et exécuter le client
+-- ──── Charger et exécuter le client ────
 local function loadClient()
-	local gui = waitForGui()
-	if not gui then
-		warn("[AGORA] ScreenGui AgoraAdmin introuvable après 10s — vérifie le Loader serveur")
-		return
-	end
+	ensureGui()
 
 	local url = PROXY_URL .. "AgoraAdminLS.lua&nocache=" .. tick()
 	local ok, source = pcall(function() return HttpService:GetAsync(url, true) end)
