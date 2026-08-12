@@ -39,8 +39,7 @@ local DataStoreService = game:GetService("DataStoreService")
 local PriceStore = DataStoreService:GetDataStore("VehiclePrices_v101")
 local AdminStore = DataStoreService:GetDataStore("VehicleAdmins_v101")
 
-local VehiclesFolder = ServerStorage:WaitForChild("Voiture dans le menu")
-
+-- Crée le RemoteEvent AVANT tout WaitForChild pour ne jamais bloquer le client
 local VehicleSystem = ReplicatedStorage:FindFirstChild("VehicleSystem")
 if not VehicleSystem then
 	VehicleSystem = Instance.new("Folder")
@@ -53,6 +52,18 @@ if not VehicleEvent then
 	VehicleEvent = Instance.new("RemoteEvent")
 	VehicleEvent.Name = "VehicleEvent"
 	VehicleEvent.Parent = VehicleSystem
+end
+
+-- Dossier véhicules : ne bloque PAS le script s'il manque (timeout 10s)
+local VehiclesFolder = ServerStorage:FindFirstChild("Voiture dans le menu")
+if not VehiclesFolder then
+	VehiclesFolder = ServerStorage:WaitForChild("Voiture dans le menu", 10)
+end
+if not VehiclesFolder then
+	warn("[VehicleMenu] Dossier 'Voiture dans le menu' introuvable dans ServerStorage !")
+	VehiclesFolder = Instance.new("Folder")
+	VehiclesFolder.Name = "Voiture dans le menu"
+	VehiclesFolder.Parent = ServerStorage
 end
 
 local activeVehicles = {}
