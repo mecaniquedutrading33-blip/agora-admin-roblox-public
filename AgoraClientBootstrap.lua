@@ -27,7 +27,7 @@ local function ensureGui()
 	local btn = Instance.new("TextButton")
 	btn.Name = "AdminLogoBtn"
 	btn.Size = UDim2.new(0, 36, 0, 36)
-	btn.Position = UDim2.new(1, -50, 1, -50)
+	btn.Position = UDim2.new(0, 8, 0, 8)   -- haut-gauche, à côté des boutons Roblox
 	btn.AnchorPoint = Vector2.new(0, 0)
 	btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)   -- fond noir
 	btn.BackgroundTransparency = 0
@@ -56,7 +56,8 @@ local function loadClient()
 	ensureGui()
 
 	local url = PROXY_URL .. "AgoraAdminLS.lua&nocache=" .. tick()
-	local ok, source = pcall(function() return HttpService:GetAsync(url, true) end)
+	-- NOTE: PAS de 2e arg (true) à GetAsync — le proxy renvoie du Lua brut, pas du JSON.
+	local ok, source = pcall(function() return HttpService:GetAsync(url) end)
 	if not ok or not source or #source < 1000 then
 		warn("[AGORA] Client introuvable via proxy — UI ne s'affichera pas")
 		return
