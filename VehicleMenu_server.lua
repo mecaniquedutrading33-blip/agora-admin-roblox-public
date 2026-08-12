@@ -287,6 +287,16 @@ VehicleEvent.OnServerEvent:Connect(function(player, action, data)
 					for _, desc in ipairs(vehicle:GetDescendants()) do
 						if desc:IsA("VehicleSeat") then
 							desc.Locked = locked
+							-- Sort le joueur déjà assis quand on verrouille
+							if locked then
+								local occupant = desc.Occupant
+								if occupant and occupant.Parent then
+									local hum = occupant:FindFirstChildOfClass("Humanoid")
+									if hum then
+										hum.Sit = false
+									end
+								end
+							end
 							count = count + 1
 						end
 					end
