@@ -12,7 +12,7 @@ local StarterGui = game:GetService("StarterGui")
 local isStudio = RunService:IsStudio()
 
 -- PROXY URL - sert les fichiers cotes depuis le repo prive
-local PROXY_URL = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-proxy?file="
+local PROXY_URL = "https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle?file="
 
 -- 1) Trouver Settings.lua dans le dossier actuel
 local scriptFolder = script.Parent
