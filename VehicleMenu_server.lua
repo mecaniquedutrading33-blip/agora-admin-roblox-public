@@ -187,7 +187,12 @@ VehicleEvent.OnServerEvent:Connect(function(player, action, data)
 
 		local partCFrame = spawnPart.CFrame
 		local partSize = spawnPart.Size
-		local partRotation = partCFrame.Rotation
+		-- Rotation à plat (jamais à l'envers) face à l'avant du point de spawn
+		local flatLook = Vector3.new(partCFrame.LookVector.X, 0, partCFrame.LookVector.Z)
+		if flatLook.Magnitude < 0.001 then
+			flatLook = Vector3.new(0, 0, -1)
+		end
+		local partRotation = CFrame.lookAt(partCFrame.Position, partCFrame.Position + flatLook).Rotation
 
 		local longestAxis = (partSize.X > partSize.Z) and "X" or "Z"
 		local length = partSize[longestAxis]
