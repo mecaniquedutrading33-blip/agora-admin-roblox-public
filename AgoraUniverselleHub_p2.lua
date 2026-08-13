@@ -4670,8 +4670,9 @@ function giveSpiderTool()
 	tool.Equipped:Connect(function()
 		local char = LocalPlayer.Character
 		if not char then return end
-		local root = char:WaitForChild("HumanoidRootPart")
-		local hum = char:WaitForChild("Humanoid")
+		local root = char:WaitForChild("HumanoidRootPart", 5)
+		local hum = char:WaitForChild("Humanoid", 5)
+		if not root or not hum then return end
 
 		attachment = Instance.new("Attachment")
 		attachment.Parent = root
@@ -4747,6 +4748,10 @@ function giveSpiderTool()
 				smoothedNormal = smoothedNormal:Lerp(hitNormal, 1 - math.exp(-SETTINGS.SpiderTransitionSpeed * deltaTime))
 				hum.AutoRotate = false
 				hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+				if not wasClimbing then
+					-- Petit retour visuel/audio au debut de l'escalade (securise, jamais bloquant)
+					pcall(function() playSound(88442833509532, 0.12) end)
+				end
 				if hum:GetState() ~= Enum.HumanoidStateType.RunningNoPhysics then
 					hum:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
 				end
