@@ -215,7 +215,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 		-- Re-activer le noclip sur le nouveau perso
 		if character then
 			for _, p in ipairs(character:GetDescendants()) do
-				if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
+				if p:IsA("BasePart") and (p.Name ~= "HumanoidRootPart" or ns.enabled) then
 					p.CanCollide = false
 				end
 			end
@@ -223,12 +223,10 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 		ns.loop = RunService.RenderStepped:Connect(function()
 			updateCharacter()
 			if not ns.enabled then return end
-			local fs = _G["flyState"]
-			if fs and fs.flying then return end
 			if humanoid and humanoid.Sit and humanoid.SeatPart then return end
 			if character then
 				for _, p in ipairs(character:GetDescendants()) do
-					if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
+					if p:IsA("BasePart") and (p.Name ~= "HumanoidRootPart" or ns.enabled) then
 						p.CanCollide = false
 					end
 				end
@@ -820,10 +818,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.36"
+	_G.CURRENT_VERSION = "v40.37"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.37: NoClip actif en vol (HRP inclus) — traverser les murs avec le switch NoClip pendant le fly",
 		"v40.36: Gravite (Zero Gravite + slider custom + reset) deplacee dans l'onglet Move",
 		"v40.34: Fly mobile = joystick natif Roblox (plus de joystick custom) + monte/descend en regardant haut/bas",
 		"v40.35: Ghost Tool — vrai perso teleporte 5000 studs sous la map DECALE (x+z, pas pile dessous)",
@@ -4751,7 +4750,7 @@ local function startFly()
 							-- CanCollide=false sur body parts (sauf HRP) + FORCER Physics + stop ALL anims
 							if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 								for _, part in ipairs(character:GetDescendants()) do
-									if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then part.CanCollide = false end
+									if part:IsA("BasePart") and (part.Name ~= "HumanoidRootPart" or (noclipState and noclipState.enabled)) and part.CanCollide then part.CanCollide = false end
 								end
 							end
 									if humanoid then
@@ -4851,10 +4850,10 @@ local function startFly()
 				end
 			end)
 		end
-		-- CanCollide=false sur body parts (sauf HRP = garde collision murs/sol)
+		-- CanCollide=false sur body parts (HRP inclus si noclip actif = traverser les murs en vol)
 		if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 			for _, part in ipairs(character:GetDescendants()) do
-				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then
+				if part:IsA("BasePart") and (part.Name ~= "HumanoidRootPart" or (noclipState and noclipState.enabled)) and part.CanCollide then
 					part.CanCollide = false
 				end
 			end
@@ -4911,10 +4910,10 @@ local function startFly()
 			flyState.gyro.CFrame = currentCF:Lerp(targetCF, 1 - math.exp(-0.25 * 60 * dt))
 		end
 
-		-- CanCollide=false sur body parts (sauf HRP = garde collision murs/sol)
+		-- CanCollide=false sur body parts (HRP inclus si noclip actif = traverser les murs en vol)
 		if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 			for _, part in ipairs(character:GetDescendants()) do
-				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.CanCollide then
+				if part:IsA("BasePart") and (part.Name ~= "HumanoidRootPart" or (noclipState and noclipState.enabled)) and part.CanCollide then
 					part.CanCollide = false
 				end
 			end
@@ -5118,7 +5117,6 @@ local noclipSwitch = createSwitch(moveScroll, "NoClip", 0, function(on)
 		-- Double boucle : Stepped + RenderStepped pour max couverture
 		local function setNoClip()
 			if not noclipState.enabled then return end
-			if flyState and flyState.flying then return end
 			if humanoid and humanoid.Sit and humanoid.SeatPart then return end
 			if character then
 				for _, p in ipairs(character:GetDescendants()) do
