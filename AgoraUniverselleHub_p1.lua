@@ -818,10 +818,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.43"
+	_G.CURRENT_VERSION = "v40.44"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.44: Fix detection Server Authority (carte ne reste plus bloquee sur active - sync ON/OFF + source de verite = attribut, plus de faux positifs)",
 		"v40.43: Voyant rouge cheat plus lisible (texte ! visible) + badge device deplace (plus de chevauchement) + detection anti-faux-positif respawn",
 		"v40.42: TP joueur fonctionne meme tres loin (RequestStreamAroundAsync charge la zone avant de teleporter)",
 		"v40.41: Fix badge device (plus de chevauchement avec le bouton Pin) — place entre le nom et Pin",
