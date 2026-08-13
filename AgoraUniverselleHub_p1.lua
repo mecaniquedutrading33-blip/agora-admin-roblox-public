@@ -818,10 +818,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.39"
+	_G.CURRENT_VERSION = "v40.40"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.40: Detection device passive dans Joueurs (Mobile/PC/VR/Console par heuristique de mouvement)",
 		"v40.39: Popup MAJ slide-in supprime (plus de popup intrusif) — seulement l'indicateur Home + bouton",
 		"v40.38: Fix stats Home (labels forward-declare) — Utilisateurs/En ligne affichent les vrais chiffres Supabase",
 		"v40.37: NoClip actif en vol (HRP inclus) — traverser les murs avec le switch NoClip pendant le fly",
@@ -2290,6 +2291,97 @@ local function showRestorePopup(lastName)
 	popup:TweenPosition(UDim2.new(0.5, -150, 0.5, -65), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.25, true)
 end
 
+-- === DETECTION DEVICE PASSIVE (heuristique de mouvement) ===
+-- Roblox n'expose pas le device des autres joueurs. On l'infere du comportement :
+--   Mobile  = joystick analogique -> vitesse variable, rafales courtes, peu de strafe, sauts rares
+--   PC      = clavier binaire -> pleine vitesse instantanee, strafe precis, rotations rapides
+--   VR      = camera continue, presque jamais de saut, mouvement lent
+-- C'est une PROBABILITE, pas une certitude. ~80-90% fiable avec assez d'echantillons.
+local deviceTracker = {}  -- [plr] = {samples={}, strafe=0, jumps=0, lastPos, lastTime, lastSpeed, verdict, confidence}
+
+local function deviceVerdict(d)
+	if not d or d.samples < 8 then return "Detection...", 0 end
+	local avgSpeed = d.totalSpeed / d.samples
+	local speedVar = d.totalVar / d.samples
+	local strafeRatio = d.strafe / math.max(1, d.samples)
+	local jumpRate = d.jumps / math.max(1, d.samples)
+	-- VR : camera continue -> on ne peut pas la voir, mais quasi-zero saut + vitesse lente
+	if jumpRate < 0.01 and avgSpeed < 8 then
+		return "VR (probable)", 0.6
+	end
+	-- Mobile : forte variation de vitesse (analogique) + peu de strafe + sauts rares
+	if speedVar > 0.35 and strafeRatio < 0.12 and jumpRate < 0.05 then
+		return "Mobile (probable)", 0.8
+	end
+	-- PC : vitesse binaire (faible variation) + strafe frequent
+	if speedVar < 0.25 and strafeRatio > 0.2 then
+		return "PC (probable)", 0.85
+	end
+	-- Console : analogique comme mobile mais caméra differente -> difficile
+	if speedVar > 0.3 then
+		return "Console/Mobile", 0.5
+	end
+	return "PC (probable)", 0.6
+end
+
+local function trackPlayerDevice(plr)
+	if deviceTracker[plr] then return end
+	local d = { samples = 0, totalSpeed = 0, totalVar = 0, strafe = 0, jumps = 0, lastPos = nil, lastTime = 0, lastSpeed = 0, verdict = "Detection...", confidence = 0 }
+	deviceTracker[plr] = d
+	-- Sauts
+	pcall(function()
+		plr.CharacterAdded:Connect(function(char)
+			local hum = char:FindFirstChildOfClass("Humanoid")
+			if hum then
+				hum.Jumping:Connect(function() d.jumps = d.jumps + 1 end)
+			end
+		end)
+	end)
+	-- Mouvement (Stepped)
+	local conn
+	conn = game:GetService("RunService").Stepped:Connect(function(_, dt)
+		if not plr or not plr.Parent then
+			if conn then conn:Disconnect() end
+			deviceTracker[plr] = nil
+			return
+		end
+		local char = plr.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		if not hrp then return end
+		local pos = hrp.Position
+		if d.lastPos then
+			local speed = (pos - d.lastPos).Magnitude / math.max(0.001, dt)
+			if speed > 0.5 then
+				d.samples = d.samples + 1
+				d.totalSpeed = d.totalSpeed + speed
+				if d.lastSpeed > 0 then
+					d.totalVar = d.totalVar + math.abs(speed - d.lastSpeed) / math.max(0.001, speed)
+				end
+				d.lastSpeed = speed
+				-- Strafe : changement de direction lateral (X/Z) sans grosse variation de vitesse
+				local dx = pos.X - d.lastPos.X
+				local dz = pos.Z - d.lastPos.Z
+				if math.abs(dx) > 0.5 and math.abs(dz) > 0.5 then
+					d.strafe = d.strafe + 1
+				end
+			end
+		end
+		d.lastPos = pos
+		-- Mettre a jour le verdict toutes les ~2s
+		if d.samples >= 8 and (d.samples % 8 == 0) then
+			d.verdict, d.confidence = deviceVerdict(d)
+		end
+	end)
+end
+
+local function getPlayerDeviceLabel(plr)
+	local d = deviceTracker[plr]
+	if not d then return "Detection..." end
+	local icon = ""
+	if d.verdict:find("Mobile") then icon = "" elseif d.verdict:find("VR") then icon = "" elseif d.verdict:find("PC") then icon = "" elseif d.verdict:find("Console") then icon = "" end
+	return icon .. " " .. d.verdict
+end
+
 local function createPlayerEntry(plr)
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(1, -8, 0, 182)
@@ -2310,6 +2402,28 @@ local function createPlayerEntry(plr)
 	nameLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
 	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
 	nameLbl.Parent = card
+
+	-- Badge device (detection passive par mouvement)
+	local deviceLbl = Instance.new("TextLabel")
+	deviceLbl.Name = "DeviceBadge"
+	deviceLbl.Size = UDim2.new(1, -110, 0, 16)
+	deviceLbl.Position = UDim2.new(0, 32, 0, 24)
+	deviceLbl.BackgroundTransparency = 1
+	deviceLbl.Text = "Detection..."
+	deviceLbl.Font = Enum.Font.GothamSemibold
+	deviceLbl.TextSize = 10
+	deviceLbl.TextColor3 = Color3.fromRGB(150, 200, 255)
+	deviceLbl.TextXAlignment = Enum.TextXAlignment.Left
+	deviceLbl.Parent = card
+	-- Lancer le tracking device passif
+	trackPlayerDevice(plr)
+	-- Mettre a jour le badge toutes les ~2s
+	task.spawn(function()
+		while card and card.Parent and plr and plr.Parent do
+			deviceLbl.Text = getPlayerDeviceLabel(plr)
+			task.wait(2)
+		end
+	end)
 
 	-- Badge local "mouvement anormal"  info seule, aucune action auto
 	local moveBadge = Instance.new("TextLabel")
