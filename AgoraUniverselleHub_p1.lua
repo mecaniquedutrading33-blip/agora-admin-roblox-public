@@ -818,10 +818,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.48"
+	_G.CURRENT_VERSION = "v40.49"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.49: Fix ESP mauve - le contour violet etait applique a TOUS les joueurs ESP (pas juste l'epingle) - maintenant seul le joueur pin est mauve, les autres gardent le contour blanc",
 		"v40.48: Fix pin joueur - plus de re-tri de toute la liste quand on epingle (le pin ne deplace plus les autres cartes) - garde notifications + ESP mauve",
 		"v40.47: ESP mauve (permanent) pour les joueurs epingles ^pin - bouton ESP violet visible seulement sur les joueurs pin + Spider Tool plus robuste (son au climb, chargement character securise)",
 		"v40.46: Registry - bouton Rejoindre le jeu du joueur (nom du jeu affiche) - rejoins le jeu ou il est en un clic",
@@ -4179,8 +4180,15 @@ RunService.RenderStepped:Connect(function()
 				if data.hl then
 					data.hl.FillColor = col
 					data.hl.FillTransparency = 0.65
-					data.hl.OutlineColor = Color3.fromRGB(220, 140, 255)
-					data.hl.OutlineTransparency = 0.1
+					if data.pinnedPurple then
+						-- ESP MAUVE : contour violet UNIQUEMENT pour le joueur epingle
+						data.hl.OutlineColor = Color3.fromRGB(220, 140, 255)
+						data.hl.OutlineTransparency = 0.1
+					else
+						-- contour blanc normal pour les autres (pas de mauve)
+						data.hl.OutlineColor = Color3.new(1, 1, 1)
+						data.hl.OutlineTransparency = 0.15
+					end
 					data.hl.Enabled = true
 				end
 				if data.bill then data.bill.Enabled = true end
