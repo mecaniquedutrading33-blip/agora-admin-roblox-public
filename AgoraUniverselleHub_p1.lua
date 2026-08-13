@@ -818,10 +818,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.47"
+	_G.CURRENT_VERSION = "v40.48"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.48: Fix pin joueur - plus de re-tri de toute la liste quand on epingle (le pin ne deplace plus les autres cartes) - garde notifications + ESP mauve",
 		"v40.47: ESP mauve (permanent) pour les joueurs epingles ^pin - bouton ESP violet visible seulement sur les joueurs pin + Spider Tool plus robuste (son au climb, chargement character securise)",
 		"v40.46: Registry - bouton Rejoindre le jeu du joueur (nom du jeu affiche) - rejoins le jeu ou il est en un clic",
 		"v40.45: Detection device fiabilisee - detecte les dances/emotes (pattern anime) et exige 20 echantillons avant verdict ferme (plus de faux Mobile sur PC en dance)",
@@ -2875,12 +2876,13 @@ local function createPlayerEntry(plr)
 		if pinnedPlayers[plr] then
 			pinBtn.BackgroundColor3 = Color3.fromRGB(220, 170, 40)
 			pinBtn.TextColor3 = Color3.new(0, 0, 0)
-			card.LayoutOrder = -999 + (plr.Name:byte(1) % 100)
+			-- NE PAS changer le LayoutOrder ici : modifier LayoutOrder re-trie TOUTE
+			-- la liste (SortOrder=LayoutOrder) et fait bouger tous les joueurs quand
+			-- on pin une seule personne (bug signale). La carte epinglee reste en place.
 			espPinBtn.Visible = true
 		else
 			pinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 			pinBtn.TextColor3 = Color3.fromRGB(160, 160, 170)
-			card.LayoutOrder = plr.Name:byte(1) + 1000
 			espPinBtn.Visible = false
 		end
 	end
