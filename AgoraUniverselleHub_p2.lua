@@ -36,6 +36,24 @@ local stopFly = _G["stopFly"]
 local updateCharacter = _G["updateCharacter"]
 local updateLoad = _G["updateLoad"]
 
+-- Resout le NOM d'un jeu a partir de son placeId (API publique games.roblox.com).
+-- Retourne nil si bloque/erreur. Asynchrone securise.
+_G.resolveGameName = _G.resolveGameName or function(placeId)
+	if not placeId or placeId <= 0 then return nil end
+	local ok, res = pcall(function()
+		local r = httpGet("https://games.roblox.com/v1/games/multiget-place-details?placeIds=" .. tostring(placeId))
+		if r and r ~= "" then
+			local d = HttpService:JSONDecode(r)
+			if d and d[1] and d[1].name and d[1].name ~= "" then
+				return tostring(d[1].name)
+			end
+		end
+		return nil
+	end)
+	if ok and res then return res end
+	return nil
+end
+
 -- Restore state
 local flyState = _G["flyState"]
 local flySwitch = _G["flySwitch"]
@@ -3771,12 +3789,22 @@ local function renderResult(data, parent)
 			makeActionBtn(" Profil", Color3.fromRGB(80, 180, 120), 3, function()
 				pcall(function() setclipboard("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile") end)
 			end)
-			-- Rejoindre ce joueur : tente TeleportToPlaceInstance avec son gameId si dispo
-			if data.gameId or data.placeId then
-				makeActionBtn(" Rejoindre", Color3.fromRGB(70, 130, 200), 4, function()
+			-- Rejoindre ce joueur : rejoint le jeu OU il est.
+			-- L'API publique Roblox ne donne QUE le jeu (placeId), pas le serveur exact (jobId).
+			-- On affiche le NOM du jeu + bouton Rejoindre.
+			local gameName = nil
+			if data.placeId and data.placeId > 0 then
+				gameName = _G.resolveGameName and _G.resolveGameName(data.placeId)
+			end
+			if data.placeId then
+				local label = " Rejoindre son jeu"
+				if gameName and gameName ~= "" then
+					label = " Rejoindre : " .. tostring(gameName)
+				end
+				makeActionBtn(label, Color3.fromRGB(70, 130, 200), 4, function()
 					pcall(function()
 						local TS = game:GetService("TeleportService")
-						local pid = data.placeId or data.gameId
+						local pid = data.placeId
 						if data.gameInstanceId and data.gameInstanceId ~= "" then
 							TS:TeleportToPlaceInstance(pid, data.gameInstanceId, LocalPlayer)
 						else
@@ -4004,6 +4032,15 @@ function runRegistrySearch(query)
 						data.presenceLastOnline = p.lastOnline
 						data.presencePlaceId = p.placeId
 						data.presenceUniverseId = p.universeId
+						-- ALIAS pour le bouton Rejoindre : l'API publique ne donne QUE le jeu (placeId),
+						-- jamais le serveur exact (jobId). On alimente data.placeId sinon le bouton
+						-- "Rejoindre" (qui teste data.gameId or data.placeId) ne s'affiche JAMAIS.
+						if p.placeId and p.placeId > 0 then
+							data.placeId = p.placeId
+							if p.gameId and p.gameId ~= "" then
+								data.gameInstanceId = p.gameId
+							end
+						end
 					end
 				end
 			end)
