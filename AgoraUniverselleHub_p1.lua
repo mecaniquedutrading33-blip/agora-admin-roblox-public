@@ -818,10 +818,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.37"
+	_G.CURRENT_VERSION = "v40.38"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.38: Fix stats Home (labels forward-declare) — Utilisateurs/En ligne affichent les vrais chiffres Supabase",
 		"v40.37: NoClip actif en vol (HRP inclus) — traverser les murs avec le switch NoClip pendant le fly",
 		"v40.36: Gravite (Zero Gravite + slider custom + reset) deplacee dans l'onglet Move",
 		"v40.34: Fly mobile = joystick natif Roblox (plus de joystick custom) + monte/descend en regardant haut/bas",
@@ -953,7 +954,9 @@ local protectionsPage = createTab("Protections")
 	
 	-- Stats live
 	local agoraStats = {totalLaunches = 0, onlineUsers = 0}
-	
+	-- Forward-declare des labels (definis plus bas) pour que fetchStats puisse les mettre a jour
+	local totalLabel, onlineLabel
+
 	local function fetchStats()
 		task.spawn(function()
 			local url = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?action=launch&user=" .. (LocalPlayer and LocalPlayer.Name or "Inconnu") .. "&uid=" .. (LocalPlayer and tostring(LocalPlayer.UserId) or "0") .. "&_=" .. math.random(100000,999999)
@@ -1102,7 +1105,7 @@ local protectionsPage = createTab("Protections")
 	createCorner(statsCard, 10)
 	createStroke(statsCard, Color3.fromRGB(50, 50, 70), 1)
 	
-	local totalLabel = Instance.new("TextLabel")
+	totalLabel = Instance.new("TextLabel")
 	totalLabel.Size = UDim2.new(1, -16, 0, 20)
 	totalLabel.Position = UDim2.new(0, 8, 0, 6)
 	totalLabel.BackgroundTransparency = 1
@@ -1113,7 +1116,7 @@ local protectionsPage = createTab("Protections")
 	totalLabel.TextXAlignment = Enum.TextXAlignment.Left
 	totalLabel.Parent = statsCard
 	
-	local onlineLabel = Instance.new("TextLabel")
+	onlineLabel = Instance.new("TextLabel")
 	onlineLabel.Size = UDim2.new(1, -16, 0, 20)
 	onlineLabel.Position = UDim2.new(0, 8, 0, 28)
 	onlineLabel.BackgroundTransparency = 1
