@@ -818,10 +818,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.40"
+	_G.CURRENT_VERSION = "v40.41"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.41: Fix badge device (plus de chevauchement avec le bouton Pin) — place entre le nom et Pin",
 		"v40.40: Detection device passive dans Joueurs (Mobile/PC/VR/Console par heuristique de mouvement) + emoji",
 		"v40.39: Popup MAJ slide-in supprime (plus de popup intrusif) — seulement l'indicateur Home + bouton",
 		"v40.38: Fix stats Home (labels forward-declare) — Utilisateurs/En ligne affichent les vrais chiffres Supabase",
@@ -2402,17 +2403,18 @@ local function createPlayerEntry(plr)
 	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
 	nameLbl.Parent = card
 
-	-- Badge device (detection passive par mouvement) - a droite du nom, avec emoji
+	-- Badge device (detection passive par mouvement) - entre le nom et le bouton Pin
 	local deviceLbl = Instance.new("TextLabel")
 	deviceLbl.Name = "DeviceBadge"
-	deviceLbl.Size = UDim2.new(0, 110, 0, 16)
-	deviceLbl.Position = UDim2.new(1, -118, 0, 4)
+	deviceLbl.Size = UDim2.new(0, 70, 0, 16)
+	deviceLbl.Position = UDim2.new(1, -110, 0, 4)
 	deviceLbl.BackgroundTransparency = 1
 	deviceLbl.Text = "Detection..."
 	deviceLbl.Font = Enum.Font.GothamSemibold
 	deviceLbl.TextSize = 10
 	deviceLbl.TextColor3 = Color3.fromRGB(150, 200, 255)
 	deviceLbl.TextXAlignment = Enum.TextXAlignment.Right
+	deviceLbl.TextTruncate = Enum.TextTruncate.AtEnd
 	deviceLbl.Parent = card
 	-- Lancer le tracking device passif
 	trackPlayerDevice(plr)
