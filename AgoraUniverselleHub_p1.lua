@@ -818,10 +818,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.46"
+	_G.CURRENT_VERSION = "v40.47"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.47: ESP mauve (permanent) pour les joueurs epingles ^pin - bouton ESP violet visible seulement sur les joueurs pin + Spider Tool plus robuste (son au climb, chargement character securise)",
 		"v40.46: Registry - bouton Rejoindre le jeu du joueur (nom du jeu affiche) - rejoins le jeu ou il est en un clic",
 		"v40.45: Detection device fiabilisee - detecte les dances/emotes (pattern anime) et exige 20 echantillons avant verdict ferme (plus de faux Mobile sur PC en dance)",
 		"v40.44: Fix detection Server Authority (carte ne reste plus bloquee sur active - sync ON/OFF + source de verite = attribut, plus de faux positifs)",
@@ -2854,15 +2855,33 @@ local function createPlayerEntry(plr)
 	pinBtn.Parent = card
 	createCorner(pinBtn, 4)
 
+	-- Bouton ESP MAUVE (permanent) : visible seulement pour les joueurs EPINGLES ^pin
+	-- pour les differencier. Active un ESP permanent violet sur ce joueur.
+	local espPinBtn = Instance.new("TextButton")
+	espPinBtn.Size = UDim2.new(0, 54, 0, 24)
+	espPinBtn.Position = UDim2.new(1, -70, 0, 106)
+	espPinBtn.BackgroundColor3 = Color3.fromRGB(150, 60, 220)
+	espPinBtn.Text = "ESP"
+	espPinBtn.Font = Enum.Font.GothamSemibold
+	espPinBtn.TextSize = 11
+	espPinBtn.TextColor3 = Color3.new(1, 1, 1)
+	espPinBtn.BorderSizePixel = 0
+	espPinBtn.Visible = false
+	espPinBtn.Parent = card
+	createCorner(espPinBtn, 6)
+	createStroke(espPinBtn, Color3.fromRGB(200, 120, 255), 1)
+
 	local function updatePinBtn()
 		if pinnedPlayers[plr] then
 			pinBtn.BackgroundColor3 = Color3.fromRGB(220, 170, 40)
 			pinBtn.TextColor3 = Color3.new(0, 0, 0)
 			card.LayoutOrder = -999 + (plr.Name:byte(1) % 100)
+			espPinBtn.Visible = true
 		else
 			pinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 			pinBtn.TextColor3 = Color3.fromRGB(160, 160, 170)
 			card.LayoutOrder = plr.Name:byte(1) + 1000
+			espPinBtn.Visible = false
 		end
 	end
 	updatePinBtn()
@@ -3072,6 +3091,30 @@ local function createPlayerEntry(plr)
 			espBtn.BackgroundColor3 = Color3.fromRGB(60, 140, 80)
 			tempEspActive = false
 		end)
+	end)
+
+	-- ESP MAUVE : ESP permanent violet pour les joueurs epingles (differenciation)
+	espPinBtn.MouseButton1Click:Connect(function()
+		local data = ensureESPForPlayer(plr)
+		if data.pinnedPurple then
+			-- desactive
+			data.pinnedPurple = false
+			espPinBtn.Text = "ESP"
+			espPinBtn.BackgroundColor3 = Color3.fromRGB(150, 60, 220)
+			if not data.active then
+				if data.hl then data.hl.Enabled = false end
+				if data.bill then data.bill.Enabled = false end
+			end
+		else
+			-- active : ESP permanent violet
+			data.pinnedPurple = true
+			data.active = true
+			buildESP(plr)
+			espPinBtn.Text = "ON"
+			espPinBtn.BackgroundColor3 = Color3.fromRGB(80, 220, 255)
+			if data.hl then data.hl.Enabled = true end
+			if data.bill then data.bill.Enabled = true end
+		end
 	end)
 
 	local function showInventoryGui()
@@ -3990,7 +4033,7 @@ end
 
 local function ensureESPForPlayer(plr)
 	if espState.individual[plr] then return espState.individual[plr] end
-	local data = { hl = nil, bill = nil, label = nil, targetPart = nil, humanoid = nil }
+	local data = { hl = nil, bill = nil, label = nil, targetPart = nil, humanoid = nil, pinnedPurple = false }
 	espState.individual[plr] = data
 	return data
 end
@@ -4118,6 +4161,10 @@ RunService.RenderStepped:Connect(function()
 				if data.bill then data.bill.Enabled = true end
 			else
 				local col = distanceColor(dist)
+				-- ESP MAUVE : couleur violette permanente pour les joueurs epingles (differenciation)
+				if data.pinnedPurple then
+					col = Color3.fromRGB(180, 80, 255)
+				end
 				if data.label then
 					local hp = data.humanoid and math.floor(data.humanoid.Health) or 0
 					local chatSym = ""
@@ -4129,6 +4176,9 @@ RunService.RenderStepped:Connect(function()
 				end
 				if data.hl then
 					data.hl.FillColor = col
+					data.hl.FillTransparency = 0.65
+					data.hl.OutlineColor = Color3.fromRGB(220, 140, 255)
+					data.hl.OutlineTransparency = 0.1
 					data.hl.Enabled = true
 				end
 				if data.bill then data.bill.Enabled = true end
