@@ -818,10 +818,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.42"
+	_G.CURRENT_VERSION = "v40.43"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.43: Voyant rouge cheat plus lisible (texte ! visible) + badge device deplace (plus de chevauchement) + detection anti-faux-positif respawn",
 		"v40.42: TP joueur fonctionne meme tres loin (RequestStreamAroundAsync charge la zone avant de teleporter)",
 		"v40.41: Fix badge device (plus de chevauchement avec le bouton Pin) — place entre le nom et Pin",
 		"v40.39: Popup MAJ slide-in supprime (plus de popup intrusif) — seulement l'indicateur Home + bouton",
@@ -2403,11 +2404,11 @@ local function createPlayerEntry(plr)
 	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
 	nameLbl.Parent = card
 
-	-- Badge device (detection passive par mouvement) - a droite du nom, avec emoji
+	-- Badge device (detection passive par mouvement) - a gauche du voyant rouge, avec emoji
 	local deviceLbl = Instance.new("TextLabel")
 	deviceLbl.Name = "DeviceBadge"
-	deviceLbl.Size = UDim2.new(0, 110, 0, 16)
-	deviceLbl.Position = UDim2.new(1, -118, 0, 4)
+	deviceLbl.Size = UDim2.new(0, 72, 0, 16)
+	deviceLbl.Position = UDim2.new(1, -140, 0, 4)
 	deviceLbl.BackgroundTransparency = 1
 	deviceLbl.Text = "Detection..."
 	deviceLbl.Font = Enum.Font.GothamSemibold
@@ -2446,18 +2447,19 @@ local function createPlayerEntry(plr)
 	-- Cheat detection indicator (discreet red triangle)
 	local cheatAlert = Instance.new("TextButton")
 	cheatAlert.Name = "CheatAlert"
-	cheatAlert.Size = UDim2.new(0, 20, 0, 20)
+	cheatAlert.Size = UDim2.new(0, 24, 0, 24)
 	cheatAlert.Position = UDim2.new(1, -60, 0, 4)
 	cheatAlert.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
 	cheatAlert.Text = "!"
 	cheatAlert.Font = Enum.Font.GothamBold
-	cheatAlert.TextSize = 14
+	cheatAlert.TextSize = 16
 	cheatAlert.TextColor3 = Color3.fromRGB(255, 255, 255)
 	cheatAlert.BorderSizePixel = 0
 	cheatAlert.AutoButtonColor = false
 	cheatAlert.Visible = false
+	cheatAlert.ZIndex = 5
 	cheatAlert.Parent = card
-	createCorner(cheatAlert, 10)
+	createCorner(cheatAlert, 6)
 	createStroke(cheatAlert, Color3.fromRGB(255, 100, 100), 1)
 
 	-- Check for logs periodically
