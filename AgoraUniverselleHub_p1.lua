@@ -818,10 +818,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.38"
+	_G.CURRENT_VERSION = "v40.39"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.39: Popup MAJ slide-in supprime (plus de popup intrusif) — seulement l'indicateur Home + bouton",
 		"v40.38: Fix stats Home (labels forward-declare) — Utilisateurs/En ligne affichent les vrais chiffres Supabase",
 		"v40.37: NoClip actif en vol (HRP inclus) — traverser les murs avec le switch NoClip pendant le fly",
 		"v40.36: Gravite (Zero Gravite + slider custom + reset) deplacee dans l'onglet Move",
@@ -6011,110 +6012,7 @@ task.delay(8, function()
                                 _G._agoraUpdateBtn.Visible = true
                             end)
                         end
-                        -- Popup bas-droite anime (slide-in) au nom de Lou, UNE SEULE FOIS au total
-                        local shownOnce = _agoraReadShown()
-                        if not _G._agoraUpdateDismissed and not _G._agoraPopupShown and not shownOnce then
-                            _G._agoraPopupShown = true
-                            _agoraWriteShown()
-                            pcall(function()
-                                local okp, par = pcall(function() return game:GetService("CoreGui") end)
-                                if not okp or not par then par = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") end
-                                local sg = Instance.new("ScreenGui")
-                                sg.Name = "AgoraUpdateSlide"
-                                sg.ResetOnSpawn = false
-                                sg.DisplayOrder = 99998
-                                sg.Parent = par
-                                local f = Instance.new("Frame")
-                                f.Size = UDim2.new(0, 260, 0, 80)
-                                f.Position = UDim2.new(1, 270, 1, -90)
-                                f.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-                                f.BorderSizePixel = 0
-                                f.Parent = sg
-                                local fc = Instance.new("UICorner") fc.CornerRadius = UDim.new(0, 10) fc.Parent = f
-                                local fs = Instance.new("UIStroke") fs.Color = Color3.fromRGB(100, 200, 255) fs.Thickness = 2 fs.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual fs.Parent = f
-                                local icon = Instance.new("TextLabel")
-                                icon.Size = UDim2.new(0, 30, 0, 30)
-                                icon.Position = UDim2.new(0, 10, 0, 10)
-                                icon.BackgroundTransparency = 1
-                                icon.Text = ""
-                                icon.Font = Enum.Font.GothamBold
-                                icon.TextSize = 20
-                                icon.TextColor3 = Color3.fromRGB(100, 200, 255)
-                                icon.Parent = f
-                                local title = Instance.new("TextLabel")
-                                title.Size = UDim2.new(1, -50, 0, 20)
-                                title.Position = UDim2.new(0, 42, 0, 10)
-                                title.BackgroundTransparency = 1
-                                title.Text = "Lou"
-                                title.Font = Enum.Font.GothamBold
-                                title.TextSize = 14
-                                title.TextColor3 = Color3.fromRGB(100, 200, 255)
-                                title.TextXAlignment = Enum.TextXAlignment.Left
-                                title.Parent = f
-                                local desc = Instance.new("TextLabel")
-                                desc.Size = UDim2.new(1, -50, 0, 16)
-                                desc.Position = UDim2.new(0, 42, 0, 32)
-                                desc.BackgroundTransparency = 1
-                                desc.Text = rv .. " disponible"
-                                desc.Font = Enum.Font.Gotham
-                                desc.TextSize = 11
-                                desc.TextColor3 = Color3.fromRGB(180, 180, 200)
-                                desc.TextXAlignment = Enum.TextXAlignment.Left
-                                desc.Parent = f
-                                local yB = Instance.new("TextButton")
-                                yB.Size = UDim2.new(0, 100, 0, 26)
-                                yB.Position = UDim2.new(0, 10, 0, 48)
-                                yB.BackgroundColor3 = Color3.fromRGB(80, 180, 100)
-                                yB.Text = "Mettre a jour"
-                                yB.TextColor3 = Color3.fromRGB(255, 255, 255)
-                                yB.Font = Enum.Font.GothamBold
-                                yB.TextSize = 11
-                                yB.BorderSizePixel = 0
-                                yB.Parent = f
-                                local yC = Instance.new("UICorner") yC.CornerRadius = UDim.new(0, 6) yC.Parent = yB
-                                local nB = Instance.new("TextButton")
-                                nB.Size = UDim2.new(0, 80, 0, 26)
-                                nB.Position = UDim2.new(0, 120, 0, 48)
-                                nB.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-                                nB.Text = "Plus tard"
-                                nB.TextColor3 = Color3.fromRGB(200, 200, 210)
-                                nB.Font = Enum.Font.Gotham
-                                nB.TextSize = 11
-                                nB.BorderSizePixel = 0
-                                nB.Parent = f
-                                local nC = Instance.new("UICorner") nC.CornerRadius = UDim.new(0, 6) nC.Parent = nB
-                                -- Slide-in animation
-                                task.spawn(function()
-                                    task.wait(0.1)
-                                    local t0 = tick()
-                                    while tick() - t0 < 0.4 do
-                                        local a = (tick() - t0) / 0.4
-                                        a = 1 - (1 - a) * (1 - a)
-                                        f.Position = UDim2.new(1, 270 - 270 * a, 1, -90)
-                                        task.wait()
-                                    end
-                                    f.Position = UDim2.new(1, -270, 1, -90)
-                                end)
-                                yB.MouseButton1Click:Connect(function()
-                                    sg:Destroy()
-                                    if _G._agoraPerformUpdate then pcall(_G._agoraPerformUpdate) end
-                                end)
-                                nB.MouseButton1Click:Connect(function()
-                                    _G._agoraUpdateDismissed = true
-                                    -- Slide-out
-                                    task.spawn(function()
-                                        local t0 = tick()
-                                        while tick() - t0 < 0.3 do
-                                            local a = (tick() - t0) / 0.3
-                                            a = a * a
-                                            f.Position = UDim2.new(1, -270 + 270 * a, 1, -90)
-                                            task.wait()
-                                        end
-                                        sg:Destroy()
-                                    end)
-                                end)
-                            end)
-                        end
+                        -- Pas de popup intrusif : l'indicateur Home + bouton MAJ suffisent (preference Emerick)
                     else
                         _G._agoraUpdateAvailable = false
                         _G._agoraUpdateVersion = nil
