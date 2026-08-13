@@ -818,12 +818,12 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.41"
+	_G.CURRENT_VERSION = "v40.42"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.42: TP joueur fonctionne meme tres loin (RequestStreamAroundAsync charge la zone avant de teleporter)",
 		"v40.41: Fix badge device (plus de chevauchement avec le bouton Pin) — place entre le nom et Pin",
-		"v40.40: Detection device passive dans Joueurs (Mobile/PC/VR/Console par heuristique de mouvement) + emoji",
 		"v40.39: Popup MAJ slide-in supprime (plus de popup intrusif) — seulement l'indicateur Home + bouton",
 		"v40.38: Fix stats Home (labels forward-declare) — Utilisateurs/En ligne affichent les vrais chiffres Supabase",
 		"v40.37: NoClip actif en vol (HRP inclus) — traverser les murs avec le switch NoClip pendant le fly",
@@ -2403,18 +2403,17 @@ local function createPlayerEntry(plr)
 	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
 	nameLbl.Parent = card
 
-	-- Badge device (detection passive par mouvement) - entre le nom et le bouton Pin
+	-- Badge device (detection passive par mouvement) - a droite du nom, avec emoji
 	local deviceLbl = Instance.new("TextLabel")
 	deviceLbl.Name = "DeviceBadge"
-	deviceLbl.Size = UDim2.new(0, 70, 0, 16)
-	deviceLbl.Position = UDim2.new(1, -110, 0, 4)
+	deviceLbl.Size = UDim2.new(0, 110, 0, 16)
+	deviceLbl.Position = UDim2.new(1, -118, 0, 4)
 	deviceLbl.BackgroundTransparency = 1
 	deviceLbl.Text = "Detection..."
 	deviceLbl.Font = Enum.Font.GothamSemibold
 	deviceLbl.TextSize = 10
 	deviceLbl.TextColor3 = Color3.fromRGB(150, 200, 255)
 	deviceLbl.TextXAlignment = Enum.TextXAlignment.Right
-	deviceLbl.TextTruncate = Enum.TextTruncate.AtEnd
 	deviceLbl.Parent = card
 	-- Lancer le tracking device passif
 	trackPlayerDevice(plr)
@@ -2925,14 +2924,27 @@ local function createPlayerEntry(plr)
 
 	tpBtn.MouseButton1Click:Connect(function()
 		updateCharacter()
-		if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and rootPart then
-			-- Teleporter devant le joueur, oriente vers lui, a 2 metres
-			local targetHrp = plr.Character:FindFirstChild("HumanoidRootPart")
+		if not rootPart then return end
+		-- Si le character du joueur n'est pas charge (trop loin, streaming), forcer le chargement
+		local targetHrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+		if not targetHrp then
+			-- Essayer de charger la zone autour du joueur (streaming)
+			local okReq = pcall(function()
+				plr:RequestStreamAroundAsync(plr.Character and plr.Character:GetPivot().Position or Vector3.zero)
+			end)
+			-- Attendre que le character se charge (max 3s)
+			local waited = 0
+			while not targetHrp and waited < 3 do
+				task.wait(0.1)
+				waited = waited + 0.1
+				targetHrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+			end
+		end
+		if targetHrp then
+			-- Teleporter devant le joueur, oriente vers lui, a 4 metres
 			local targetPos = targetHrp.Position
 			local targetLook = targetHrp.CFrame.LookVector
-			-- Position = 4 metres devant le joueur (un peu plus loin pour eviter de se coller)
 			local tpPos = targetPos + targetLook * 4
-			-- Orienter vers le joueur (regarder le joueur en face)
 			rootPart.CFrame = CFrame.lookAt(tpPos, targetPos)
 			-- Grace anti-TP protection
 			if protectionsState then
