@@ -1901,13 +1901,22 @@ TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
 end)
 
 -- Server Authority detection (Roblox July 2026 feature)
-local function isServerAuthority()
-	-- Critere 1: attribut officiel
-	local ok, result = pcall(function()
-		return Workspace:GetAttribute("AuthorityMode") == "Server"
+-- Source de verite = attribut officiel Workspace.AuthorityMode. Les tests physiques
+-- (CFrame move / BodyVelocity) donnent des faux positifs (anti-cheat, respawn, joueur
+-- ancre) — on ne les utilise QUE si l'attribut est absent (jeux pre-juillet-2026).
+local function getAuthorityMode()
+	return pcall(function()
+		return Workspace:GetAttribute("AuthorityMode")
 	end)
-	if ok and result then return true end
-	-- Critere 2: tester si un deplacement CFrame est annule par le serveur
+end
+
+local function isServerAuthority()
+	local ok, mode = getAuthorityMode()
+	if ok then
+		-- Attribut present : c'est LA source de verite, pas de test physique.
+		return mode == "Server"
+	end
+	-- Attribut absent (jeu ancien) : fallback physique prudent
 	local ok2, rollback = pcall(function()
 		local char = LocalPlayer.Character
 		if not char then return false end
@@ -1916,29 +1925,10 @@ local function isServerAuthority()
 		local origCF = hrp.CFrame
 		hrp.CFrame = hrp.CFrame + Vector3.new(0, 0.5, 0)
 		task.wait(0.1)
-		local newCF = hrp.CFrame
-		local diff = math.abs(newCF.Y - origCF.Y)
+		local diff = math.abs(hrp.CFrame.Y - origCF.Y)
 		return diff < 0.1
 	end)
-	if ok2 and rollback then return true end
-	-- Critere 3: verifier si BodyVelocity est bloque
-	local ok3, velBlocked = pcall(function()
-		local char = LocalPlayer.Character
-		if not char then return false end
-		local hrp = char:FindFirstChild("HumanoidRootPart")
-		if not hrp then return false end
-		if flyState.flying then return false end
-		local testVel = Instance.new("BodyVelocity")
-		testVel.MaxForce = Vector3.new(0, 9e8, 0)
-		testVel.Velocity = Vector3.new(0, 10, 0)
-		testVel.Parent = hrp
-		task.wait(0.15)
-		local actualVel = hrp.AssemblyLinearVelocity
-		testVel:Destroy()
-		return math.abs(actualVel.Y) < 3
-	end)
-	if ok3 and velBlocked then return true end
-	return false
+	return ok2 and rollback
 end
 
 local saForceLocal = false
@@ -2078,15 +2068,14 @@ task.spawn(function()
 	if not saForceLocal and isServerAuthority() then
 		saCard.Visible = true
 	end
-	-- Apres le check initial, seulement verifier l'attribut (sans deplacer le joueur)
+	-- Apres le check initial, re-evaluer la source de verite (attribut) dans les DEUX sens
 	while true do
 		task.wait(30)
 		if not saForceLocal then
-			local ok, result = pcall(function()
-				return Workspace:GetAttribute("AuthorityMode") == "Server"
-			end)
-			if ok and result then
-				saCard.Visible = true
+			local ok, mode = getAuthorityMode()
+			if ok then
+				-- Attribut present : synchroniser la carte dans les deux sens (ON/OFF)
+				saCard.Visible = (mode == "Server")
 			end
 		end
 	end
