@@ -4924,6 +4924,13 @@ _G["autoClickSwitch"] = autoClickSwitch
 						local uid = plr.UserId
 						if not tracked[uid] then tracked[uid] = {} end
 						local t = tracked[uid]
+						-- Si le character a change (respawn), reinitialiser prevPos pour eviter un faux "Position Delta"
+						if t.charRef ~= char then
+							t.charRef = char
+							t.prevPos = nil
+							t.prevHp = nil
+							t.prevVelY = nil
+						end
 						local pos = hrp.Position
 						local vel = hrp.AssemblyLinearVelocity
 						local flatSpeed = _math.sqrt(vel.X^2 + vel.Z^2)
