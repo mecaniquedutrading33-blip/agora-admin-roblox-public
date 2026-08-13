@@ -818,10 +818,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.44"
+	_G.CURRENT_VERSION = "v40.45"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.45: Detection device fiabilisee - detecte les dances/emotes (pattern anime) et exige 20 echantillons avant verdict ferme (plus de faux Mobile sur PC en dance)",
 		"v40.44: Fix detection Server Authority (carte ne reste plus bloquee sur active - sync ON/OFF + source de verite = attribut, plus de faux positifs)",
 		"v40.43: Voyant rouge cheat plus lisible (texte ! visible) + badge device deplace (plus de chevauchement) + detection anti-faux-positif respawn",
 		"v40.42: TP joueur fonctionne meme tres loin (RequestStreamAroundAsync charge la zone avant de teleporter)",
@@ -2300,14 +2301,24 @@ end
 --   PC      = clavier binaire -> pleine vitesse instantanee, strafe precis, rotations rapides
 --   VR      = camera continue, presque jamais de saut, mouvement lent
 -- C'est une PROBABILITE, pas une certitude. ~80-90% fiable avec assez d'echantillons.
-local deviceTracker = {}  -- [plr] = {samples, totalSpeed, totalVar, strafe, jumps, lastPos, lastSpeed, verdict, confidence}
+local deviceTracker = {}  -- [plr] = {samples, totalSpeed, totalVar, strafe, jumps, turnovers, lastPos, lastSpeed, lastDir, verdict, confidence}
 
 local function deviceVerdict(d)
-	if not d or d.samples < 8 then return "Detection...", 0 end
+	-- Il faut beaucoup plus d'echantillons (20) qu'avant (8) pour un verdict ferme,
+	-- sinon une dance/emote (mouvement fluide sans strafe ni saut) donne un faux "Mobile".
+	if not d or d.samples < 20 then return "Detection...", 0 end
 	local avgSpeed = d.totalSpeed / d.samples
 	local speedVar = d.totalVar / d.samples
 	local strafeRatio = d.strafe / math.max(1, d.samples)
 	local jumpRate = d.jumps / math.max(1, d.samples)
+	-- Taux de retournements : la vitesse change-t-elle de sens tres souvent sans
+	-- deplacement net ? Une animation (dance) alterne regulierement -> taux eleve.
+	local turnRatio = d.turnovers / math.max(1, d.samples)
+	-- 0. Dance/emote : mouvement tres regulier qui change de sens sans cesse (pattern anime)
+	--    -> on refuse de conclure Mobile/PC, on signale l'ambiguite honnetement.
+	if turnRatio > 0.6 and jumpRate < 0.05 and strafeRatio < 0.05 then
+		return "Dance ?", 0.4
+	end
 	-- VR : quasi-zero saut + vitesse lente
 	if jumpRate < 0.01 and avgSpeed < 8 then
 		return "VR", 0.6
@@ -2329,7 +2340,7 @@ end
 
 local function trackPlayerDevice(plr)
 	if deviceTracker[plr] then return end
-	local d = { samples = 0, totalSpeed = 0, totalVar = 0, strafe = 0, jumps = 0, lastPos = nil, lastSpeed = 0, verdict = "Detection...", confidence = 0 }
+	local d = { samples = 0, totalSpeed = 0, totalVar = 0, strafe = 0, jumps = 0, turnovers = 0, lastPos = nil, lastSpeed = 0, lastDir = 0, verdict = "Detection...", confidence = 0 }
 	deviceTracker[plr] = d
 	-- Sauts
 	pcall(function()
@@ -2361,6 +2372,16 @@ local function trackPlayerDevice(plr)
 					d.totalVar = d.totalVar + math.abs(speed - d.lastSpeed) / math.max(0.001, speed)
 				end
 				d.lastSpeed = speed
+				-- Direction horizontale du deplacement (en radians) pour detecter les "turnovers"
+				-- (changements de sens sans deplacement net = pattern d'animation/dance)
+				local ddir = math.atan2(pos.Z - d.lastPos.Z, pos.X - d.lastPos.X)
+				if d.lastDir ~= 0 then
+					local turn = math.abs(ddir - d.lastDir)
+					if turn > 2.4 then  -- virage de plus de ~137 degres
+						d.turnovers = d.turnovers + 1
+					end
+				end
+				d.lastDir = ddir
 				-- Strafe : changement de direction lateral (X/Z)
 				local dx = pos.X - d.lastPos.X
 				local dz = pos.Z - d.lastPos.Z
