@@ -818,10 +818,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.45"
+	_G.CURRENT_VERSION = "v40.46"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.46: Registry - bouton Rejoindre le jeu du joueur (nom du jeu affiche) - rejoins le jeu ou il est en un clic",
 		"v40.45: Detection device fiabilisee - detecte les dances/emotes (pattern anime) et exige 20 echantillons avant verdict ferme (plus de faux Mobile sur PC en dance)",
 		"v40.44: Fix detection Server Authority (carte ne reste plus bloquee sur active - sync ON/OFF + source de verite = attribut, plus de faux positifs)",
 		"v40.43: Voyant rouge cheat plus lisible (texte ! visible) + badge device deplace (plus de chevauchement) + detection anti-faux-positif respawn",
