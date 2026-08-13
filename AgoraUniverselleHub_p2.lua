@@ -913,9 +913,9 @@ end)
 RunService.Stepped:Connect(function(_, dt)
 	updateCharacter()
 	character, humanoid, rootPart = _G._agoraChar, _G._agoraHum, _G._agoraRoot
-	if noclipState.enabled and character and not (humanoid and humanoid.Sit and humanoid.SeatPart) and not flyState.flying then
+	if noclipState.enabled and character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
 		for _, p in ipairs(character:GetDescendants()) do
-			if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = false end
+			if p:IsA("BasePart") and (p.Name ~= "HumanoidRootPart" or noclipState.enabled) then p.CanCollide = false end
 		end
 	end
 	if platformState.enabled and platformState.part then
