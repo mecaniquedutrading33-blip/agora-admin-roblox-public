@@ -3501,11 +3501,53 @@ local function renderResult(data, parent)
 	createCorner(card, 8)
 	createStroke(card, Color3.fromRGB(60, 60, 90), 1)
 
-	-- Badges VERIFIED / PREMIUM / BANNED en haut a droite de la carte
+	-- Badges VERIFIED / PREMIUM / BANNED / PRESENCE en haut de la carte
 	;(function()
 		local hasVerified = data.isVerified == true
 		local hasPremium = data.isPremium == true
 		local isBanned = data.isBanned == true
+		-- Presence : priorite a la detection native (joueur dans CE serveur = en ligne),
+		-- sinon API presence. Fallback honnete si indisponible.
+		local presenceLabel, presenceColor
+		local liveHere = false
+		if data.userId and Players then
+			pcall(function()
+				if Players:GetPlayerByUserId(data.userId) then liveHere = true end
+			end)
+		end
+		if liveHere then
+			presenceLabel = " EN LIGNE (ici)"
+			presenceColor = Color3.fromRGB(60, 200, 100)
+		elseif data.presenceType == 1 then
+			presenceLabel = " EN LIGNE"
+			presenceColor = Color3.fromRGB(60, 200, 100)
+		elseif data.presenceType == 2 then
+			presenceLabel = " EN JEU"
+			presenceColor = Color3.fromRGB(80, 160, 255)
+		elseif data.presenceType == 3 then
+			presenceLabel = " STUDIO"
+			presenceColor = Color3.fromRGB(200, 160, 60)
+		elseif data.presenceType == 0 then
+			presenceLabel = " HORS LIGNE"
+			presenceColor = Color3.fromRGB(140, 140, 150)
+		else
+			presenceLabel = " PRESENCE ?"
+			presenceColor = Color3.fromRGB(120, 120, 130)
+		end
+		-- Badge presence en haut a GAUCHE (toujours visible)
+		local pr = Instance.new("TextLabel")
+		pr.Size = UDim2.new(0, 110, 0, 18)
+		pr.Position = UDim2.new(0, 8, 0, 8)
+		pr.BackgroundColor3 = presenceColor
+		pr.BackgroundTransparency = 0.15
+		pr.BorderSizePixel = 0
+		pr.Font = Enum.Font.GothamBlack
+		pr.Text = presenceLabel
+		pr.TextSize = 9
+		pr.TextColor3 = Color3.fromRGB(255, 255, 255)
+		pr.ZIndex = 5
+		pr.Parent = card
+		createCorner(pr, 4)
 		if not hasVerified and not hasPremium and not isBanned then return end
 		local headerY = 0
 		if hasVerified then
@@ -3698,9 +3740,13 @@ local function renderResult(data, parent)
 	end
 
 	local lines = {}
-	table.insert(lines, " " .. (data.username or "...") .. " ")
-	table.insert(lines, "  Can chat        : [CHATSTATUS]")
+	-- Titre de carte : DisplayName en gros + @username + ID
+	local titleName = data.displayName or data.username or "..."
+	local titleUser = data.username or "..."
+	table.insert(lines, "  " .. titleName .. "  (@ " .. titleUser .. ")")
+	table.insert(lines, "  " .. string.rep("-", 34))
 	table.insert(lines, "   User ID          : " .. (data.userId or "Indisponible"))
+	table.insert(lines, "  Can chat        : [CHATSTATUS]")
 
 	-- Mise a jour async du statut chat (API native Roblox)
 	if data.userId then
@@ -3762,6 +3808,7 @@ local function renderResult(data, parent)
 	table.insert(lines, "   Trades sortants  : " .. (data.tradesOutbound or "Indisponible"))
 	table.insert(lines, "   Trades actifs    : " .. (data.tradesActive or "Indisponible"))
 	-- === LIVE (serveur actuel) : check via natives Roblox ===
+	table.insert(lines, "  " .. string.rep("-", 34))
 	table.insert(lines, "   LIVE (ce serveur) ")
 	if data.userId and Players then
 		local liveFound = false
@@ -3830,6 +3877,7 @@ local function renderResult(data, parent)
 	else
 		table.insert(lines, "   userId manquant")
 	end
+	table.insert(lines, "  " .. string.rep("-", 34))
 	table.insert(lines, "   Amis (nb)        : " .. (data.friendCount or "Indisponible"))
 	table.insert(lines, "   Top 5 amis       : " .. friendsText)
 	table.insert(lines, "   Followers        : " .. (data.followerCount or "Indisponible"))

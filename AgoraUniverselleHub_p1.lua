@@ -831,10 +831,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.50"
+	_G.CURRENT_VERSION = "v40.51"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.51: REGISTRY - badge presence visuel en haut de carte (EN LIGNE ici / EN LIGNE / EN JEU / STUDIO / HORS LIGNE) avec detection native prioritaire + titre de carte (DisplayName @username) + separateurs de sections pour un rendu plus propre + bouton Rejoindre plus fiable",
 		"v40.50: ROBUSTESSE - Hitbox sauvegarde/restaure les valeurs originales exactes (plus de reset en dur) + cleanup au depart + re-applique apres respawn + ne modifie que si necessaire. Fly restaure WalkSpeed/JumpPower/JumpHeight/PlatformStand/AutoRotate originaux (plus de 50/7.2/16 en dur). FPS Boost restaure GlobalShadows/FogEnd/Technology/QualityLevel exacts. AntiSeat = mode perso par defaut (ne casse plus les vehicules) + bouton GLOBAL separe. ESP nettoye au depart du joueur (plus d'ESP fantome). Boucles stats/ESP/hitbox s'arretent au shutdown (flag _agoraRunning). Tools scan: message 'Analyse des outils...' + cache + arriere-plan. Remote Fly experimental (teste le remote avant, ne spamme plus). Go to Walk limite les Parts de visualisation. Camera dynamique (suit CurrentCamera). Shutdown nettoie visuals + camera.",
 		"v40.49: Fix ESP mauve - le contour violet etait applique a TOUS les joueurs ESP (pas juste l'epingle) - maintenant seul le joueur pin est mauve, les autres gardent le contour blanc",
 		"v40.48: Fix pin joueur - plus de re-tri de toute la liste quand on epingle (le pin ne deplace plus les autres cartes) - garde notifications + ESP mauve",
