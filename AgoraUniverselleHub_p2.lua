@@ -1072,7 +1072,7 @@ RunService.Stepped:Connect(function(_, dt)
 -- ============= EXTRA =============
 local fullbrightState = { enabled = false, old = {} }
 local clickTPState = { enabled = false }
-local hitboxState = { enabled = false }
+local hitboxState = { enabled = false, saved = {} }
 
 -- FIX: extraPage overflow (17+ items Y=10..730 > panel height 520px). Wrap in ScrollingFrame.
 local extraScroll = Instance.new("ScrollingFrame")
@@ -1201,7 +1201,7 @@ end)
 
 	-- Update loop pour les 6 stats
 	task.spawn(function()
-		while task.wait(1) do
+		while _G._agoraRunning and task.wait(1) do
 			pcall(function()
 				statPlayers.Text = tostring(#Players:GetPlayers()) .. "/" .. tostring(Players.MaxPlayers)
 				statFPS.Text = tostring(math.floor(_fps))
@@ -1850,15 +1850,17 @@ end)
 local hitboxSwitch = createSwitch(extraScroll, "Hitbox expander", 0, function(on)
 	hitboxState.enabled = on
 	if not on then
-		for _, plr in ipairs(Players:GetPlayers()) do
-			if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+		-- Restaurer EXACTEMENT les proprietes originales sauvegardees
+		for plr, saved in pairs(hitboxState.saved) do
+			if plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
 				local hrp = plr.Character.HumanoidRootPart
-				hrp.Size = Vector3.new(2, 2, 1)
-				hrp.Transparency = 1
-				hrp.Color = Color3.fromRGB(255, 255, 255)
-				hrp.CanCollide = false
+				if saved.size then hrp.Size = saved.size end
+				if saved.transparency ~= nil then hrp.Transparency = saved.transparency end
+				if saved.color then hrp.Color = saved.color end
+				if saved.canCollide ~= nil then hrp.CanCollide = saved.canCollide end
 			end
 		end
+		hitboxState.saved = {}
 	end
 end)
 
@@ -1887,10 +1889,13 @@ local fpsBoostState = { enabled = false, saved = {} }
 createSwitch(extraScroll, "FPS Boost (qualite)", 0, function(on)
 	fpsBoostState.enabled = on
 	if on then
+		-- Sauvegarder TOUTES les valeurs originales avant modification
 		fpsBoostState.saved = {
-			quality = UserSettings().GameSettings.SavedQualityLevel,
-			meshDetail = Workspace.StreamingMinRadius,
-			partCap = Workspace.PartMaterialOptions and 0 or 0,
+			quality = pcall(function() return UserSettings().GameSettings.SavedQualityLevel end) and UserSettings().GameSettings.SavedQualityLevel or nil,
+			renderQuality = pcall(function() return settings().Rendering.QualityLevel end) and settings().Rendering.QualityLevel or nil,
+			globalShadows = Lighting.GlobalShadows,
+			fogEnd = Lighting.FogEnd,
+			technology = Lighting.Technology,
 		}
 		pcall(function() UserSettings().GameSettings.SavedQualityLevel = Enum.SavedQualitySetting.QualityLevel1 end)
 		pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
@@ -1898,9 +1903,16 @@ createSwitch(extraScroll, "FPS Boost (qualite)", 0, function(on)
 		pcall(function() Lighting.FogEnd = 9e9 end)
 		pcall(function() Lighting.Technology = Enum.Technology.Compatibility end)
 	else
-		pcall(function() UserSettings().GameSettings.SavedQualityLevel = fpsBoostState.saved.quality or Enum.SavedQualitySetting.Automatic end)
-		pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic end)
-		pcall(function() Lighting.GlobalShadows = true end)
+		-- Restaurer EXACTEMENT les valeurs originales sauvegardees
+		local s = fpsBoostState.saved
+		if s then
+			if s.quality ~= nil then pcall(function() UserSettings().GameSettings.SavedQualityLevel = s.quality end) end
+			if s.renderQuality ~= nil then pcall(function() settings().Rendering.QualityLevel = s.renderQuality end) end
+			if s.globalShadows ~= nil then pcall(function() Lighting.GlobalShadows = s.globalShadows end) end
+			if s.fogEnd ~= nil then pcall(function() Lighting.FogEnd = s.fogEnd end) end
+			if s.technology ~= nil then pcall(function() Lighting.Technology = s.technology end) end
+		end
+		fpsBoostState.saved = {}
 	end
 end)
 
@@ -2060,21 +2072,43 @@ createSwitch(saCard, "Slow Fly (dans les limites WalkSpeed)", 3, function(on)
 	end
 end)
 
-createSwitch(saCard, "Remote Fly (via RemoteEvent)", 4, function(on)
+createSwitch(saCard, "Remote Fly (via RemoteEvent) [EXPERIMENTAL]", 4, function(on)
 	saBypassState.remoteFly = on
-	-- Tente de trouver un RemoteEvent de mouvement dans le jeu
+	-- EXPERIMENTAL : ne suppose JAMAIS qu'un remote nomme Move/Teleport/Position
+	-- accepte {position=Vector3}. On detecte, on teste UNE fois, on affiche l'etat.
 	if on then
 		task.spawn(function()
-			while saBypassState.remoteFly do
+			-- 1) Trouver un remote candidat (nom move/teleport/position)
+			local candidate = nil
+			for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
+				if obj:IsA("RemoteEvent") and (obj.Name:lower():match("move") or obj.Name:lower():match("teleport") or obj.Name:lower():match("position")) then
+					candidate = obj
+					break
+				end
+			end
+			if not candidate then
+				notify("Remote Fly: aucun remote compatible trouve", Color3.fromRGB(220, 100, 80))
+				saBypassState.remoteFly = false
+				return
+			end
+			-- 2) Test UNIQUE : fire une fois et verifier qu'on ne casse rien
+			local ok = pcall(function()
+				candidate:FireServer({position = rootPart and rootPart.Position or Vector3.zero})
+			end)
+			if not ok then
+				notify("Remote Fly: le remote a rejete la requete (experimental)", Color3.fromRGB(220, 100, 80))
+				saBypassState.remoteFly = false
+				return
+			end
+			notify("Remote Fly: remote '" .. candidate.Name .. "' detecte et teste", Color3.fromRGB(80, 160, 255))
+			-- 3) Boucle lente (1s) et securisee : ne spamme pas, s'arrete si desactive
+			while saBypassState.remoteFly and _G._agoraRunning do
 				pcall(function()
-					for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
-						if obj:IsA("RemoteEvent") and (obj.Name:lower():match("move") or obj.Name:lower():match("teleport") or obj.Name:lower():match("position")) then
-							obj:FireServer({position = rootPart.Position + Vector3.new(0, 10, 0)})
-							break
-						end
+					if rootPart then
+						candidate:FireServer({position = rootPart.Position + Vector3.new(0, 10, 0)})
 					end
 				end)
-				task.wait(0.5)
+				task.wait(1)
 			end
 		end)
 	end
@@ -2158,18 +2192,76 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 	end
 end)
 
+-- Hitbox expander : sauvegarde les valeurs originales au premier passage,
+-- ne modifie que si la valeur n'est pas deja correcte, et re-applique apres respawn.
+local function applyHitboxToPlayer(plr)
+	if plr == LocalPlayer then return end
+	local char = plr.Character
+	if not char then return end
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+	local saved = hitboxState.saved[plr]
+	if not saved then
+		-- Sauvegarder les valeurs originales UNE SEULE FOIS
+		saved = {
+			size = hrp.Size,
+			transparency = hrp.Transparency,
+			color = hrp.Color,
+			canCollide = hrp.CanCollide,
+		}
+		hitboxState.saved[plr] = saved
+	end
+	-- Ne modifier que si la valeur n'est pas deja correcte (evite les modifs repetees)
+	if hrp.Size ~= Vector3.new(15, 15, 15) then hrp.Size = Vector3.new(15, 15, 15) end
+	if hrp.Transparency ~= 0.7 then hrp.Transparency = 0.7 end
+	if hrp.Color ~= Color3.fromRGB(255, 0, 0) then hrp.Color = Color3.fromRGB(255, 0, 0) end
+	if hrp.CanCollide ~= false then hrp.CanCollide = false end
+end
+
+local function restoreHitboxForPlayer(plr)
+	local saved = hitboxState.saved[plr]
+	if not saved then return end
+	if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+		local hrp = plr.Character.HumanoidRootPart
+		if saved.size then hrp.Size = saved.size end
+		if saved.transparency ~= nil then hrp.Transparency = saved.transparency end
+		if saved.color then hrp.Color = saved.color end
+		if saved.canCollide ~= nil then hrp.CanCollide = saved.canCollide end
+	end
+	hitboxState.saved[plr] = nil
+end
+
+-- Re-appliquer apres respawn si la fonctionnalite est active
+local hitboxCharConn = {}
+local function hookHitboxRespawn(plr)
+	if hitboxCharConn[plr] then hitboxCharConn[plr]:Disconnect() end
+	hitboxCharConn[plr] = plr.CharacterAdded:Connect(function()
+		task.wait(0.3)
+		if hitboxState.enabled then applyHitboxToPlayer(plr) end
+	end)
+end
+
+-- Nettoyer proprement quand un joueur quitte
+local hitboxLeaveConn = {}
+local function hookHitboxLeave(plr)
+	if hitboxLeaveConn[plr] then hitboxLeaveConn[plr]:Disconnect() end
+	hitboxLeaveConn[plr] = plr.AncestryChanged:Connect(function()
+		if not plr.Parent then
+			restoreHitboxForPlayer(plr)
+			if hitboxCharConn[plr] then hitboxCharConn[plr]:Disconnect() hitboxCharConn[plr] = nil end
+			if hitboxLeaveConn[plr] then hitboxLeaveConn[plr]:Disconnect() hitboxLeaveConn[plr] = nil end
+		end
+	end)
+end
+
 task.spawn(function()
-	while task.wait(0.4) do
+	while _G._agoraRunning and task.wait(0.4) do
 		if hitboxState.enabled then
 			for _, plr in ipairs(Players:GetPlayers()) do
-				if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-					local hrp = plr.Character.HumanoidRootPart
-					if hrp.Size.X ~= 15 then
-						hrp.Size = Vector3.new(15, 15, 15)
-						hrp.Transparency = 0.7
-						hrp.Color = Color3.fromRGB(255, 0, 0)
-						hrp.CanCollide = false
-					end
+				if plr ~= LocalPlayer then
+					applyHitboxToPlayer(plr)
+					hookHitboxRespawn(plr)
+					hookHitboxLeave(plr)
 				end
 			end
 		end
@@ -2219,6 +2311,12 @@ end)
 local function neutralizeSeat(seat)
 	if not seat then return end
 	if seat:IsA("Seat") or seat:IsA("VehicleSeat") then
+		-- Sauvegarder les valeurs originales UNE SEULE FOIS (attribut deja present = deja neutralise)
+		if not seat:GetAttribute("AgoraSeatSaved") then
+			seat:SetAttribute("AgoraSeatSaved", true)
+			seat:SetAttribute("AgoraSeatDisabled", seat.Disabled)
+			seat:SetAttribute("AgoraSeatCanTouch", seat.CanTouch)
+		end
 		seat.Disabled = true
 		seat.CanTouch = false
 		seat:SetAttribute("Neutralized", true)
@@ -2228,8 +2326,18 @@ end
 local function restoreSeat(seat)
 	if not seat then return end
 	if (seat:IsA("Seat") or seat:IsA("VehicleSeat")) and seat:GetAttribute("Neutralized") then
-		seat.Disabled = false
-		seat.CanTouch = true
+		-- Restaurer EXACTEMENT les valeurs originales sauvegardees
+		if seat:GetAttribute("AgoraSeatSaved") then
+			seat.Disabled = seat:GetAttribute("AgoraSeatDisabled")
+			seat.CanTouch = seat:GetAttribute("AgoraSeatCanTouch")
+			seat:SetAttribute("AgoraSeatSaved", nil)
+			seat:SetAttribute("AgoraSeatDisabled", nil)
+			seat:SetAttribute("AgoraSeatCanTouch", nil)
+		else
+			-- Fallback (pas de sauvegarde) : valeurs par defaut
+			seat.Disabled = false
+			seat.CanTouch = true
+		end
 		seat:SetAttribute("Neutralized", nil)
 	end
 end
@@ -2263,6 +2371,8 @@ local function createProtectionSwitch(name, label, y)
 		protectionsState[name] = on
 		if name == "antiSeat" then
 			if on then
+				-- MODE PERSONNEL (par defaut) : on empeche seulement de s'asseoir,
+				-- on ne modifie PAS les sieges du jeu (evite de casser vehicules/ascenseurs)
 				if protectionsState.antiSeatWatcher then
 					protectionsState.antiSeatWatcher:Disconnect()
 					protectionsState.antiSeatWatcher = nil
@@ -2271,14 +2381,6 @@ local function createProtectionSwitch(name, label, y)
 					protectionsState.antiSeatSitWatcher:Disconnect()
 					protectionsState.antiSeatSitWatcher = nil
 				end
-				for _, obj in ipairs(Workspace:GetDescendants()) do
-					neutralizeSeat(obj)
-				end
-				protectionsState.antiSeatWatcher = Workspace.DescendantAdded:Connect(function(obj)
-					if obj:IsA("Seat") or obj:IsA("VehicleSeat") then
-						neutralizeSeat(obj)
-					end
-				end)
 				protectionsState.antiSeatSitWatcher = createAntiSeatSitWatcher()
 			else
 				if protectionsState.antiSeatWatcher then
@@ -2289,7 +2391,7 @@ local function createProtectionSwitch(name, label, y)
 					protectionsState.antiSeatSitWatcher:Disconnect()
 					protectionsState.antiSeatSitWatcher = nil
 				end
-				-- Restaurer TOUS les sieges neutralises pour qu'on puisse se rassoir
+				-- Restaurer TOUS les sieges neutralises (mode global) pour qu'on puisse se rassoir
 				for _, obj in ipairs(Workspace:GetDescendants()) do
 					restoreSeat(obj)
 				end
@@ -2340,7 +2442,28 @@ createProtectionSwitch = function(name, label, y)
 end
 
 createProtectionSwitch("antiFling", "Anti Fling", 52)
-createProtectionSwitch("antiSeat", "Anti Seat", 94)
+local antiSeatSwitch = createProtectionSwitch("antiSeat", "Anti Seat (perso)", 94)
+-- Mode GLOBAL antiSeat : neutralise TOUS les sieges du jeu (vehicules/ascenseurs inclus)
+-- Seulement si l'utilisateur le demande explicitement (le mode perso est le defaut)
+local antiSeatGlobalBtn = createButton(protectionsScroll, "Anti Seat GLOBAL (tous les sieges)", 0, Color3.fromRGB(120, 60, 60), function()
+	if not protectionsState.antiSeat then
+		-- Activer le mode perso d'abord (le global en depend)
+		protectionsState.antiSeat = true
+		if antiSeatSwitch and antiSeatSwitch.set then antiSeatSwitch.set(true) end
+		protectionsState.antiSeatSitWatcher = createAntiSeatSitWatcher()
+	end
+	-- Neutraliser tous les sieges existants + les nouveaux
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		neutralizeSeat(obj)
+	end
+	if protectionsState.antiSeatWatcher then protectionsState.antiSeatWatcher:Disconnect() end
+	protectionsState.antiSeatWatcher = Workspace.DescendantAdded:Connect(function(obj)
+		if obj:IsA("Seat") or obj:IsA("VehicleSeat") then
+			neutralizeSeat(obj)
+		end
+	end)
+	notify("Anti Seat GLOBAL actif : tous les sieges neutralises", Color3.fromRGB(120, 60, 60))
+end)
 createProtectionSwitch("antiTeleport", "Anti Teleport", 136)
 createProtectionSwitch("antiFall", "Anti Fall", 178)
 createProtectionSwitch("antiKill", "Anti Kill / Spawn TP", 220)
@@ -2711,36 +2834,61 @@ local function _wrapRemotes()
 		toolsListFrame.CanvasSize = UDim2.new(0, 0, 0, toolsListLayout.AbsoluteContentSize.Y + 6)
 	end)
 
+	local toolsCache = nil -- cache des outils (evite de rescanner a chaque ouverture)
+	local toolsCacheTime = 0
 	local function refreshToolsList()
 		for _, child in ipairs(toolsListFrame:GetChildren()) do
 			if child:IsA("TextButton") or child:IsA("TextLabel") then
 				child:Destroy()
 			end
 		end
-		-- Scan TOUS les descendants du jeu (game:GetDescendants)
-		local found = {}
-		local seen = {}
-		for _, obj in ipairs(game:GetDescendants()) do
-			if obj:IsA("Tool") and not seen[obj] then
-				seen[obj] = true
-				table.insert(found, obj)
+		-- Afficher "Analyse des outils..." pendant le scan (evite le freeze visuel)
+		toolsPopupTitle.Text = "Analyse des outils..."
+		local loading = Instance.new("TextLabel")
+		loading.Size = UDim2.new(1, 0, 0, 20)
+		loading.BackgroundTransparency = 1
+		loading.Text = "Analyse des outils..."
+		loading.TextColor3 = Color3.fromRGB(150, 150, 170)
+		loading.TextSize = 11
+		loading.Font = Enum.Font.Gotham
+		loading.Parent = toolsListFrame
+		-- Scan en arriere-plan (task.spawn) pour ne pas bloquer l'interface
+		task.spawn(function()
+			-- Cache : rescanner seulement si > 5s depuis le dernier scan
+			local found = {}
+			if toolsCache and tick() - toolsCacheTime < 5 then
+				found = toolsCache
+			else
+				local seen = {}
+				for _, obj in ipairs(game:GetDescendants()) do
+					if obj:IsA("Tool") and not seen[obj] then
+						seen[obj] = true
+						table.insert(found, obj)
+					end
+				end
+				toolsCache = found
+				toolsCacheTime = tick()
 			end
-		end
-		-- Afficher compteur
-		toolsPopupTitle.Text = "Outils du jeu (" .. #found .. " trouves)"
-		if #found == 0 then
-			local noTools = Instance.new("TextLabel")
-			noTools.Size = UDim2.new(1, 0, 0, 20)
-			noTools.BackgroundTransparency = 1
-			noTools.Text = "Aucun outil trouve dans le jeu"
-			noTools.TextColor3 = Color3.fromRGB(150, 150, 170)
-			noTools.TextSize = 11
-			noTools.Font = Enum.Font.Gotham
-			noTools.Parent = toolsListFrame
-		else
-			for _, tool in ipairs(found) do
-				local toolRow = Instance.new("TextButton")
-				toolRow.Size = UDim2.new(1, 0, 0, 24)
+			-- Reconstruire la liste (le loading label est detruit par le clear du haut)
+			for _, child in ipairs(toolsListFrame:GetChildren()) do
+				if child:IsA("TextButton") or child:IsA("TextLabel") then
+					child:Destroy()
+				end
+			end
+			toolsPopupTitle.Text = "Outils du jeu (" .. #found .. " trouves)"
+			if #found == 0 then
+				local noTools = Instance.new("TextLabel")
+				noTools.Size = UDim2.new(1, 0, 0, 20)
+				noTools.BackgroundTransparency = 1
+				noTools.Text = "Aucun outil trouve dans le jeu"
+				noTools.TextColor3 = Color3.fromRGB(150, 150, 170)
+				noTools.TextSize = 11
+				noTools.Font = Enum.Font.Gotham
+				noTools.Parent = toolsListFrame
+			else
+				for _, tool in ipairs(found) do
+					local toolRow = Instance.new("TextButton")
+					toolRow.Size = UDim2.new(1, 0, 0, 24)
 				toolRow.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 				toolRow.BorderSizePixel = 0
 				toolRow.Text = "  " .. tool.Name .. "  [" .. tool:GetFullName() .. "]"

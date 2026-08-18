@@ -1,6 +1,10 @@
 -- Agora Hub [UNIVERSELLE] - Panel Roblox universel
 -- LocalScript dans StarterPlayerScripts ou executeur
 
+-- Flag global de vie du panel : les boucles permanentes le verifient et s'arretent
+-- quand shutdownPanel le passe a false (evite les boucles fantomes apres fermeture)
+_G._agoraRunning = true
+
 local SETTINGS = {
 	SpiderSpeed = 24,
 	SpiderHoverDistance = 3.0,
@@ -169,7 +173,16 @@ local function httpPost(url, body)
 end
 
 local LocalPlayer = Players.LocalPlayer
+-- Camera dynamique : on suit Workspace.CurrentCamera pour ne pas dependre d'une
+-- reference figee (respawn, vehicule, camera custom du jeu = la camera change)
 local Camera = Workspace.CurrentCamera
+task.spawn(function()
+	while _G._agoraRunning do
+		local cur = Workspace.CurrentCamera
+		if cur and cur ~= Camera then Camera = cur end
+		task.wait(0.5)
+	end
+end)
 local Mouse = LocalPlayer:GetMouse()
 
 -- Memoire client : sauvegarde persistante entre reouvertures du panel
@@ -818,10 +831,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.49"
+	_G.CURRENT_VERSION = "v40.50"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.50: ROBUSTESSE - Hitbox sauvegarde/restaure les valeurs originales exactes (plus de reset en dur) + cleanup au depart + re-applique apres respawn + ne modifie que si necessaire. Fly restaure WalkSpeed/JumpPower/JumpHeight/PlatformStand/AutoRotate originaux (plus de 50/7.2/16 en dur). FPS Boost restaure GlobalShadows/FogEnd/Technology/QualityLevel exacts. AntiSeat = mode perso par defaut (ne casse plus les vehicules) + bouton GLOBAL separe. ESP nettoye au depart du joueur (plus d'ESP fantome). Boucles stats/ESP/hitbox s'arretent au shutdown (flag _agoraRunning). Tools scan: message 'Analyse des outils...' + cache + arriere-plan. Remote Fly experimental (teste le remote avant, ne spamme plus). Go to Walk limite les Parts de visualisation. Camera dynamique (suit CurrentCamera). Shutdown nettoie visuals + camera.",
 		"v40.49: Fix ESP mauve - le contour violet etait applique a TOUS les joueurs ESP (pas juste l'epingle) - maintenant seul le joueur pin est mauve, les autres gardent le contour blanc",
 		"v40.48: Fix pin joueur - plus de re-tri de toute la liste quand on epingle (le pin ne deplace plus les autres cartes) - garde notifications + ESP mauve",
 		"v40.47: ESP mauve (permanent) pour les joueurs epingles ^pin - bouton ESP violet visible seulement sur les joueurs pin + Spider Tool plus robuste (son au climb, chargement character securise)",
@@ -1283,7 +1297,7 @@ local protectionsPage = createTab("Protections")
 	-- Fetch stats
 	fetchStats()
 	task.spawn(function()
-		while true do
+		while _G._agoraRunning do
 			task.wait(60)
 			fetchStats()
 		end
@@ -1865,6 +1879,8 @@ end)
 
 -- == SHUTDOWN ALL FEATURES ==
 local function shutdownPanel()
+	-- Arreter toutes les boucles permanentes (stats, ESP, hitbox, etc.)
+	_G._agoraRunning = false
 	if flyState and flyState.flying then stopFly() end
 	if noclipState and noclipState.enabled then
 		noclipState.enabled = false
@@ -1916,6 +1932,20 @@ local function shutdownPanel()
 			platformState.part = nil
 		end
 	end
+	-- Nettoyer les visuals Go to Walk (Parts temporaires dans Workspace)
+	if gotoWalkState and gotoWalkState.visuals then
+		for _, v in ipairs(gotoWalkState.visuals) do
+			if v and v.Parent then pcall(function() v:Destroy() end) end
+		end
+		gotoWalkState.visuals = {}
+	end
+	-- Remettre la camera normale (si on l'a modifiee)
+	pcall(function()
+		local cam = Workspace.CurrentCamera
+		if cam then
+			cam.CameraType = Enum.CameraType.Custom
+		end
+	end)
 end
 
 local function createSwitch(parent, labelText, yPos, callback, defaultOn)
@@ -2211,7 +2241,7 @@ playersLayout.Parent = playersScroll
 	updateMyCard()
 	-- Update chaque seconde
 	task.spawn(function()
-		while true do
+		while _G._agoraRunning do
 			task.wait(1)
 			updateMyCard()
 		end
@@ -3978,6 +4008,13 @@ Players.PlayerRemoving:Connect(function(plr)
 		end
 		pinnedPlayers[plr] = nil
 	end
+	-- Nettoyer l'ESP de ce joueur (Highlight + Billboard + data) pour eviter les ESP fantomes
+	if espState and espState.individual and espState.individual[plr] then
+		local data = espState.individual[plr]
+		if data.hl and data.hl.Parent then pcall(function() data.hl:Destroy() end) end
+		if data.bill and data.bill.Parent then pcall(function() data.bill:Destroy() end) end
+		espState.individual[plr] = nil
+	end
 	task.wait(0.1)
 	removePlayerCard(plr)
 end)
@@ -4137,6 +4174,7 @@ local function blinkESP(plr, duration)
 end
 
 RunService.RenderStepped:Connect(function()
+	if not _G._agoraRunning then return end
 	updateCharacter()
 	if not rootPart then return end
 	for plr, data in pairs(espState.individual) do
@@ -4241,7 +4279,7 @@ end)
 
 -- Rafraichit l'ESP toutes les 60s sans flash (rebuild silencieux si le personnage a change)
 task.spawn(function()
-	while true do
+	while _G._agoraRunning do
 		task.wait(60)
 		refreshESP()
 	end
@@ -4818,7 +4856,7 @@ local function bootSequence(onComplete)
 end
 
 -- ============= MOVE =============
-local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false, currentVel = Vector3.zero, targetVel = Vector3.zero, seatPart = nil }
+local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false, currentVel = Vector3.zero, targetVel = Vector3.zero, seatPart = nil, saved = nil }
 local noclipState = { enabled = false, loop = nil }
 _G._agora_noclipState = noclipState
 local walkSpeedState = { value = 16 }
@@ -4862,9 +4900,20 @@ local function stopFly()
 			pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end)
 			task.delay(0.2, function()
 				if humanoid and humanoid.Parent then
-					humanoid.JumpPower = 50
-					humanoid.JumpHeight = 7.2
-				humanoid.WalkSpeed = walkSpeedState.value or 16
+					-- Restaurer EXACTEMENT l'etat original sauvegarde au demarrage du fly
+					local s = flyState.saved
+					if s then
+						if s.jumpPower ~= nil then humanoid.JumpPower = s.jumpPower end
+						if s.jumpHeight ~= nil then humanoid.JumpHeight = s.jumpHeight end
+						if s.walkSpeed ~= nil then humanoid.WalkSpeed = s.walkSpeed end
+						if s.autoRotate ~= nil then humanoid.AutoRotate = s.autoRotate end
+						if s.platformStand ~= nil then humanoid.PlatformStand = s.platformStand end
+					else
+						-- Fallback (pas de sauvegarde) : valeurs par defaut Roblox
+						humanoid.JumpPower = 50
+						humanoid.JumpHeight = 7.2
+						humanoid.WalkSpeed = walkSpeedState.value or 16
+					end
 				end
 			end)
 		end
@@ -4881,6 +4930,7 @@ local function stopFly()
 			animate.Disabled = false
 		end
 	end)
+	flyState.saved = nil
 	flySwitch.set(false)
 	-- Active la grace anti-TP + antiFling/Fall pour reinitialiser sans sursauts
 	if protectionsState then
@@ -4903,6 +4953,17 @@ end)(flyState)
 local function startFly()
 	updateCharacter()
 	if flyState.flying or not rootPart then return end
+
+	-- Sauvegarder l'etat original du humanoid pour restauration exacte a l'arret
+	if humanoid then
+		flyState.saved = {
+			walkSpeed = humanoid.WalkSpeed,
+			jumpPower = humanoid.JumpPower,
+			jumpHeight = humanoid.JumpHeight,
+			platformStand = humanoid.PlatformStand,
+			autoRotate = humanoid.AutoRotate,
+		}
+	end
 
 	-- Detecter si on est assis (vehicule/seat)
 	local wasSeated = humanoid and humanoid.Sit and humanoid.SeatPart
@@ -5399,34 +5460,43 @@ end
 
 local function visualizeWaypoints(waypoints)
 	clearWalkVisuals()
+	-- Limiter le nombre de Parts creees (evite des centaines d'Instances sur les longs chemins)
+	local maxVisuals = 40
+	local step = math.max(1, math.floor(#waypoints / maxVisuals))
 	for i, wp in ipairs(waypoints) do
-		local dot = Instance.new("Part")
-		dot.Anchored = true
-		dot.CanCollide = false
-		dot.Transparency = 0.45
-		dot.Shape = Enum.PartType.Ball
-		dot.Size = Vector3.new(0.6, 0.6, 0.6)
-		dot.Color = i == #waypoints and Color3.fromRGB(0, 255, 120) or Color3.fromRGB(120, 180, 255)
-		dot.Position = wp + Vector3.new(0, 0.2, 0)
-		dot.Parent = Workspace
-		table.insert(gotoWalkState.visuals, dot)
-		if i > 1 then
-			local prev = waypoints[i - 1]
-			local seg = Instance.new("Part")
-			seg.Anchored = true
-			seg.CanCollide = false
-			seg.Transparency = 0.7
-			local len = (wp - prev).Magnitude
-			if len > 0.1 then
-				seg.Size = Vector3.new(0.15, 0.15, len)
-				seg.CFrame = CFrame.lookAt(prev, wp) * CFrame.new(0, 0, -len / 2)
-			else
-				seg.Size = Vector3.new(0.15, 0.15, 0.1)
-				seg.CFrame = CFrame.new((prev + wp) / 2)
+		-- Sauter les waypoints intermediaires pour limiter le nombre de Parts,
+		-- mais TOUJOURS afficher le dernier (destination)
+		if i % step ~= 0 and i ~= #waypoints then
+			-- On saute ce waypoint (pas de dot ni de segment)
+		else
+			local dot = Instance.new("Part")
+			dot.Anchored = true
+			dot.CanCollide = false
+			dot.Transparency = 0.45
+			dot.Shape = Enum.PartType.Ball
+			dot.Size = Vector3.new(0.6, 0.6, 0.6)
+			dot.Color = i == #waypoints and Color3.fromRGB(0, 255, 120) or Color3.fromRGB(120, 180, 255)
+			dot.Position = wp + Vector3.new(0, 0.2, 0)
+			dot.Parent = Workspace
+			table.insert(gotoWalkState.visuals, dot)
+			if i > 1 then
+				local prev = waypoints[i - 1]
+				local seg = Instance.new("Part")
+				seg.Anchored = true
+				seg.CanCollide = false
+				seg.Transparency = 0.7
+				local len = (wp - prev).Magnitude
+				if len > 0.1 then
+					seg.Size = Vector3.new(0.15, 0.15, len)
+					seg.CFrame = CFrame.lookAt(prev, wp) * CFrame.new(0, 0, -len / 2)
+				else
+					seg.Size = Vector3.new(0.15, 0.15, 0.1)
+					seg.CFrame = CFrame.new((prev + wp) / 2)
+				end
+				seg.Color = Color3.fromRGB(200, 200, 255)
+				seg.Parent = Workspace
+				table.insert(gotoWalkState.visuals, seg)
 			end
-			seg.Color = Color3.fromRGB(200, 200, 255)
-			seg.Parent = Workspace
-			table.insert(gotoWalkState.visuals, seg)
 		end
 	end
 end
