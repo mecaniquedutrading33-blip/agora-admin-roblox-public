@@ -4579,6 +4579,15 @@ function giveGhostTool()
 		if not char then return end
 		if not isInvisible then
 			isInvisible = true
+			-- Rendre le perso REEL invisible (Transparency=1) + CanCollide=false (passe a travers)
+			-- SANS le teleporter sous la map (y=-50000 declenche l'anti-cheat "sous la map" -> ban)
+			for _, p in ipairs(char:GetDescendants()) do
+				if p:IsA("BasePart") then
+					p.Transparency = 1
+					p.CanCollide = false
+				end
+			end
+			-- Ghost semi-transparent a la position reelle pour interagir avec le monde
 			char.Archivable = true
 			ghostChar = char:Clone()
 			ghostChar.Name = "Ghost_Player"
@@ -4592,15 +4601,6 @@ function giveGhostTool()
 					if p.Name:find("Foot") or p.Name:find("Leg") then p.CanCollide = false end
 				end
 			end
-			local targetCf = char:GetPivot() * CFrame.new(5000, OFFSET_UNDER, 5000)
-			char:PivotTo(targetCf)
-			if char.PrimaryPart then char.PrimaryPart.Anchored = true end
-			-- Zero velocity pour pas que Roblox remonte le perso
-			if char.PrimaryPart then
-				char.PrimaryPart.AssemblyLinearVelocity = Vector3.zero
-				char.PrimaryPart.AssemblyAngularVelocity = Vector3.zero
-			end
-			for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = false end end
 			Camera.CameraSubject = gh
 			ghostConn = RunService.RenderStepped:Connect(function()
 				if isInvisible and ghostChar and LocalPlayer.Character then
@@ -4617,12 +4617,12 @@ function giveGhostTool()
 			if ghostConn then ghostConn:Disconnect() end
 			if ghostChar then
 				local lastPos = ghostChar:GetPivot()
-				if char.PrimaryPart then
-					char.PrimaryPart.Anchored = false
-					char.PrimaryPart.AssemblyLinearVelocity = Vector3.zero
-					char.PrimaryPart.AssemblyAngularVelocity = Vector3.zero
+				for _, p in ipairs(char:GetDescendants()) do
+					if p:IsA("BasePart") then
+						p.Transparency = 0
+						p.CanCollide = true
+					end
 				end
-				for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = true end end
 				char:PivotTo(lastPos)
 				Camera.CameraSubject = char:FindFirstChildOfClass("Humanoid")
 				ghostChar:Destroy()
@@ -4658,6 +4658,19 @@ function giveElevenTool()
 	h.CanCollide = false
 	h.Parent = tool
 	tool.Parent = backpack
+
+	-- Auto-equip le tool pour que Activated se declenche au clic
+	local function equipTool()
+		local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum:EquipTool(tool)
+		end
+	end
+	equipTool()
+	LocalPlayer.CharacterAdded:Connect(function()
+		task.wait(0.5)
+		equipTool()
+	end)
 
 	local targetPart = nil
 	local bp, bg = nil, nil
@@ -4868,6 +4881,19 @@ function giveSpiderTool()
 	tool.Name = "SpiderTool"
 	tool.RequiresHandle = false
 	tool.Parent = bp
+
+	-- Auto-equip le tool pour que Activated se declenche au clic
+	local function equipTool()
+		local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum:EquipTool(tool)
+		end
+	end
+	equipTool()
+	LocalPlayer.CharacterAdded:Connect(function()
+		task.wait(0.5)
+		equipTool()
+	end)
 
 	local connection = nil
 	local jumpConnection = nil
