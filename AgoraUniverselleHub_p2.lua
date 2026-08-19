@@ -1876,6 +1876,10 @@ createButton(extraScroll, "Obtenir Spider Tool", 0, Color3.fromRGB(60, 160, 90),
 	local ok, err = pcall(giveSpiderTool)
 	if not ok then warn("[AGORA] Spider Tool error: " .. tostring(err)) end
 end)
+createButton(extraScroll, "Obtenir Teleport Tool", 0, Color3.fromRGB(0, 200, 255), function()
+	local ok, err = pcall(giveTeleportTool)
+	if not ok then warn("[AGORA] Teleport Tool error: " .. tostring(err)) end
+end)
 
 -- Fallback notify global si le panel n'en fournit pas
 if type(notify) ~= "function" then
@@ -5068,6 +5072,87 @@ function giveSpiderTool()
 			root.AssemblyLinearVelocity = Vector3.zero
 			root.AssemblyAngularVelocity = Vector3.zero
 		end
+	end)
+end
+
+-- ============= TELEPORT TOOL =============
+-- Tool reel : clique sur un endroit/part -> teleportation (se replique au serveur, les autres te voient bouger)
+function giveTeleportTool()
+	if not LocalPlayer then return end
+	local backpack = LocalPlayer:FindFirstChild("Backpack")
+	if not backpack then backpack = LocalPlayer:WaitForChild("Backpack", 5) end
+	if not backpack then return end
+	if backpack:FindFirstChild("TeleportTool") then return end
+	local char = LocalPlayer.Character
+	if char and char:FindFirstChild("TeleportTool") then return end
+
+	local tool = Instance.new("Tool")
+	tool.Name = "TeleportTool"
+	tool.RequiresHandle = false
+	tool.Parent = backpack
+
+	-- Auto-equip
+	local function equipTool()
+		local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+		if hum then hum:EquipTool(tool) end
+	end
+	equipTool()
+	LocalPlayer.CharacterAdded:Connect(function()
+		task.wait(0.5)
+		equipTool()
+	end)
+
+	local mouse = LocalPlayer:GetMouse()
+	local marker = nil
+	local markerConn = nil
+
+	-- Marqueur visuel du point de destination (client-side uniquement)
+	local function clearMarker()
+		if marker then marker:Destroy() marker = nil end
+		if markerConn then markerConn:Disconnect() markerConn = nil end
+	end
+
+	tool.Equipped:Connect(function()
+		marker = Instance.new("Part")
+		marker.Name = "TeleportMarker"
+		marker.Anchored = true
+		marker.CanCollide = false
+		marker.Transparency = 0.6
+		marker.Size = Vector3.new(1, 0.2, 1)
+		marker.Color = Color3.fromRGB(0, 200, 255)
+		marker.Parent = Workspace
+		markerConn = RunService.RenderStepped:Connect(function()
+			local target = mouse.Target
+			if target then
+				marker.CFrame = CFrame.new(target.Position + Vector3.new(0, 0.5, 0))
+			end
+		end)
+	end)
+
+	tool.Unequipped:Connect(clearMarker)
+
+	tool.Activated:Connect(function()
+		local target = mouse.Target
+		local char = LocalPlayer.Character
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+		if not root then return end
+		local dest
+		if target then
+			dest = target.Position + Vector3.new(0, 3, 0)
+		else
+			dest = root.Position + root.CFrame.LookVector * 10
+		end
+		-- Teleportation reelle (repliquee au serveur)
+		root.CFrame = CFrame.new(dest)
+		root.AssemblyLinearVelocity = Vector3.zero
+		root.AssemblyAngularVelocity = Vector3.zero
+		pcall(function() playSound(9114850423, 0.3) end)
+	end)
+
+	-- Cleanup
+	LocalPlayer.CharacterAdded:Connect(function()
+		task.wait(1)
+		clearMarker()
 	end)
 end
 
