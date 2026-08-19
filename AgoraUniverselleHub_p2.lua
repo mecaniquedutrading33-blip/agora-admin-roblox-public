@@ -1935,7 +1935,39 @@ createButton(extraScroll, "Rejoindre ce serveur", 0, Color3.fromRGB(70, 130, 200
 	pcall(function()
 		local TeleportService = game:GetService("TeleportService")
 		_G._agoraAwaitingReload = true
-TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+	end)
+end)
+
+-- Server Hop : teleporte vers un AUTRE serveur du meme jeu (JobId different)
+createButton(extraScroll, "Server Hop", 0, Color3.fromRGB(200, 130, 60), function()
+	pcall(function()
+		local TeleportService = game:GetService("TeleportService")
+		local HttpService = game:GetService("HttpService")
+		_G._agoraAwaitingReload = true
+		-- Recuperer la liste des serveurs actifs du jeu
+		local ok, res = pcall(function()
+			return HttpService:GetAsync("https://games.roblox.com/v1/games/" .. tostring(game.PlaceId) .. "/servers/Public?limit=100")
+		end)
+		if ok and res then
+			local data = HttpService:JSONDecode(res)
+			local servers = data and data.data or {}
+			-- Choisir un serveur DIFFERENT du serveur actuel
+			local target = nil
+			for _, srv in ipairs(servers) do
+				if srv.id ~= game.JobId and srv.playing and srv.playing < srv.maxPlayers then
+					target = srv.id
+					break
+				end
+			end
+			if target then
+				TeleportService:TeleportToPlaceInstance(game.PlaceId, target, LocalPlayer)
+			else
+				notify("Server Hop : aucun autre serveur disponible", Color3.fromRGB(255, 180, 60))
+			end
+		else
+			notify("Server Hop : impossible de recuperer les serveurs", Color3.fromRGB(255, 180, 60))
+		end
 	end)
 end)
 
@@ -5463,6 +5495,10 @@ _G["autoClickSwitch"] = autoClickSwitch
 	end
 
 	_RunService.Heartbeat:Connect(function()
+		-- ===== PAS 1 : collecter les stats de TOUS les joueurs =====
+		-- On mesure la vitesse, l'altitude et le delta de chaque joueur pour
+		-- etablir la "norme" du serveur (chaque jeu a sa propre physique).
+		local stats = {} -- uid -> {speed, velY, delta, ws, hp, maxHp, char}
 		for _, plr in _ipairs(_Players:GetPlayers()) do
 			if plr ~= LocalPlayer then
 				local char = plr.Character
@@ -5473,7 +5509,6 @@ _G["autoClickSwitch"] = autoClickSwitch
 						local uid = plr.UserId
 						if not tracked[uid] then tracked[uid] = {} end
 						local t = tracked[uid]
-						-- Si le character a change (respawn), reinitialiser prevPos pour eviter un faux "Position Delta"
 						if t.charRef ~= char then
 							t.charRef = char
 							t.prevPos = nil
@@ -5487,86 +5522,128 @@ _G["autoClickSwitch"] = autoClickSwitch
 						local ws = hum.WalkSpeed
 						local hp = hum.Health
 						local maxHp = hum.MaxHealth
-
-						-- Track previous state
 						local prev = t.prevPos or pos
-						local prevHp = t.prevHp or hp
 						local delta = (pos - prev).Magnitude
-
-						-- 1. Velocity Alert (speed hack)
-						if not inVehicle and flatSpeed > 50 and ws < 50 and canLog(uid, "velocity") then
-							addLog(uid, "Velocity Alert", "Speed: " .. _math.floor(flatSpeed) .. " (WS:" .. ws .. ")", "warn")
-						end
-
-						-- 2. Altitude Anomaly (fly hack)
-						if not inVehicle and vel.Y > 40 and canLog(uid, "altitude") then
-							-- Check if standing on something (raycast down)
-							local onGround = false
-							_pcall(function()
-								local r = _Workspace:Raycast(pos, Vector3.new(0, -5, 0))
-								if r then onGround = true end
-							end)
-							if not onGround then
-								addLog(uid, "Altitude Anomaly", "Ascending " .. _math.floor(vel.Y) .. "/s at Y:" .. _math.floor(pos.Y), "warn")
-							end
-						end
-
-						-- 3. Position Delta (teleport)
-						if not inVehicle and delta > 150 and canLog(uid, "teleport") then
-							addLog(uid, "Position Delta", "Moved " .. _math.floor(delta) .. " studs in 1 frame", "alert")
-						end
-
-						-- 4. Health Anomaly (god mode)
-						if hp > maxHp and canLog(uid, "godmode") then
-							addLog(uid, "Health Anomaly", "HP: " .. _math.floor(hp) .. "/" .. _math.floor(maxHp), "alert")
-						end
-						if hp < prevHp then
-							t.prevHp = hp
-						elseif hp > prevHp + 50 and canLog(uid, "hpregen") then
-							addLog(uid, "Health Anomaly", "HP jumped " .. _math.floor(prevHp) .. " -> " .. _math.floor(hp), "warn")
-						end
-
-						-- 5. Hitbox Expansion (reach)
-						if canLog(uid, "hitbox") then
-							for _, part in _ipairs(char:GetDescendants()) do
-								if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-									local maxDim = _math.max(part.Size.X, part.Size.Y, part.Size.Z)
-									if maxDim > 30 then
-										addLog(uid, "Hitbox Expansion", part.Name .. " size: " .. _math.floor(maxDim), "warn")
-										break
-									end
-								end
-							end
-						end
-
-						-- 6. Collision Bypass (noclip) - check if CanCollide=false on body parts
-						if canLog(uid, "noclip") and not inVehicle then
-							local nonCollide = 0
-							local total = 0
-							for _, part in _ipairs(char:GetDescendants()) do
-								if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-									total = total + 1
-									if not part.CanCollide then nonCollide = nonCollide + 1 end
-								end
-							end
-							if total > 0 and nonCollide == total and flatSpeed > 5 then
-								addLog(uid, "Collision Bypass", "All " .. total .. " parts non-collide while moving", "info")
-							end
-						end
-
-						-- 7. Air Jump (infinite jump)
-						if canLog(uid, "airjump") and not inVehicle then
-							local state = hum:GetState()
-							if state == Enum.HumanoidStateType.Jumping and vel.Y > 20 and t.prevVelY and t.prevVelY < -5 then
-								addLog(uid, "Air Jump", "Jumped while descending at " .. _math.floor(t.prevVelY) .. "/s", "info")
-							end
-						end
-
-						-- Update tracked state
+						stats[uid] = { speed = flatSpeed, velY = vel.Y, delta = delta, ws = ws, hp = hp, maxHp = maxHp, inVehicle = inVehicle, char = char, hum = hum, t = t }
+						-- Update tracked state (toujours)
 						t.prevPos = pos
 						t.prevVelY = vel.Y
 						t.prevHp = hp
 						t.prevWalkSpeed = ws
+					end
+				end
+			end
+		end
+
+		-- ===== PAS 2 : calculer la moyenne et l'ecart-type =====
+		-- On exclut les joueurs en vehicule (vitesse legitime tres differente).
+		local speeds, velYs, deltas = {}, {}, {}
+		for uid, s in _pairs(stats) do
+			if not s.inVehicle then
+				_table.insert(speeds, s.speed)
+				_table.insert(velYs, s.velY)
+				_table.insert(deltas, s.delta)
+			end
+		end
+		local function mean(list)
+			if #list == 0 then return 0 end
+			local sum = 0
+			for _, v in _ipairs(list) do sum = sum + v end
+			return sum / #list
+		end
+		local function stddev(list, m)
+			if #list < 2 then return 0 end
+			local sum = 0
+			for _, v in _ipairs(list) do sum = sum + (v - m)^2 end
+			return _math.sqrt(sum / #list)
+		end
+		local meanSpeed = mean(speeds)
+		local stdSpeed = stddev(speeds, meanSpeed)
+		local meanVelY = mean(velYs)
+		local stdVelY = stddev(velYs, meanVelY)
+		local meanDelta = mean(deltas)
+		local stdDelta = stddev(deltas, meanDelta)
+
+		-- ===== PAS 3 : detecter les ANOMALIES (joueurs hors norme) =====
+		-- Un joueur est suspect s'il depasse la moyenne de facon significative
+		-- (moyenne + 3*ecart-type, ou un multiple de la moyenne si pas d'ecart-type).
+		-- C'est adaptatif : ca marche sur tous les jeux car on compare au serveur.
+		for uid, s in _pairs(stats) do
+			if not s.inVehicle then
+				local t = s.t
+				local char = s.char
+				local hum = s.hum
+
+				-- 1. Speed hack : vitesse bien au-dessus de la moyenne des autres
+				--    (et au-dessus de son propre WalkSpeed)
+				local speedThreshold = meanSpeed + 3 * stdSpeed
+				if speedThreshold < 30 then speedThreshold = 30 end -- minimum absolu
+				if s.speed > speedThreshold and s.speed > s.ws * 1.5 and canLog(uid, "velocity") then
+					addLog(uid, "Velocity Alert", "Speed: " .. _math.floor(s.speed) .. " (moyenne: " .. _math.floor(meanSpeed) .. ", WS:" .. s.ws .. ")", "warn")
+				end
+
+				-- 2. Altitude Anomaly (fly hack) : monte bien plus vite que la moyenne
+				local velYThreshold = meanVelY + 3 * stdVelY
+				if velYThreshold < 25 then velYThreshold = 25 end
+				if s.velY > velYThreshold then
+					local onGround = false
+					_pcall(function()
+						local r = _Workspace:Raycast(s.char:GetPivot().Position, Vector3.new(0, -5, 0))
+						if r then onGround = true end
+					end)
+					if not onGround and canLog(uid, "altitude") then
+						addLog(uid, "Altitude Anomaly", "Ascending " .. _math.floor(s.velY) .. "/s (moyenne: " .. _math.floor(meanVelY) .. ")", "warn")
+					end
+				end
+
+				-- 3. Position Delta (teleport) : saut de position bien au-dessus de la norme
+				local deltaThreshold = meanDelta + 3 * stdDelta
+				if deltaThreshold < 100 then deltaThreshold = 100 end
+				if s.delta > deltaThreshold and canLog(uid, "teleport") then
+					addLog(uid, "Position Delta", "Moved " .. _math.floor(s.delta) .. " studs (moyenne: " .. _math.floor(meanDelta) .. ")", "alert")
+				end
+
+				-- 4. Health Anomaly (god mode)
+				if s.hp > s.maxHp and canLog(uid, "godmode") then
+					addLog(uid, "Health Anomaly", "HP: " .. _math.floor(s.hp) .. "/" .. _math.floor(s.maxHp), "alert")
+				end
+				if s.hp > (t.prevHp or s.hp) + 50 and canLog(uid, "hpregen") then
+					addLog(uid, "Health Anomaly", "HP jumped " .. _math.floor(t.prevHp or s.hp) .. " -> " .. _math.floor(s.hp), "warn")
+				end
+
+				-- 5. Hitbox Expansion (reach)
+				if canLog(uid, "hitbox") then
+					for _, part in _ipairs(char:GetDescendants()) do
+						if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+							local maxDim = _math.max(part.Size.X, part.Size.Y, part.Size.Z)
+							if maxDim > 30 then
+								addLog(uid, "Hitbox Expansion", part.Name .. " size: " .. _math.floor(maxDim), "warn")
+								break
+							end
+						end
+					end
+				end
+
+				-- 6. Collision Bypass (noclip)
+				if canLog(uid, "noclip") then
+					local nonCollide = 0
+					local total = 0
+					for _, part in _ipairs(char:GetDescendants()) do
+						if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+							total = total + 1
+							if not part.CanCollide then nonCollide = nonCollide + 1 end
+						end
+					end
+					if total > 0 and nonCollide == total and s.speed > 5 then
+						addLog(uid, "Collision Bypass", "All " .. total .. " parts non-collide while moving", "info")
+					end
+				end
+
+				-- 7. Air Jump (infinite jump)
+				if canLog(uid, "airjump") then
+					local state = hum:GetState()
+					if state == Enum.HumanoidStateType.Jumping and s.velY > 20 and t.prevVelY and t.prevVelY < -5 then
+						addLog(uid, "Air Jump", "Jumped while descending at " .. _math.floor(t.prevVelY) .. "/s", "info")
 					end
 				end
 			end
