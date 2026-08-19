@@ -1,13 +1,13 @@
 -- ============================================================
---  DELIVERY TP TOOL  (sans GUI - anti-cheat bloque les GUI)
---  Livre des objets (bouteilles, etc.) vers un point choisi.
+--  SUPPLYBOX TP TOOL  (sans GUI - anti-cheat bloque les GUI)
+--  Teleporte TOUS les parts nommes "SupplyBox" vers une
+--  position precise.
 --
---  FONCTIONNEMENT (raccourcis clavier) :
---  1) Appuie sur  =  pour ACTIVER / DESACTIVER le mode.
---  2) Quand c'est actif, appuie sur  -  pour choisir la
---     DESTINATION (clique ensuite l'endroit ou livrer).
---  3) Ensuite, TOUT ce que tu clickes avec ta souris se
---     teleporte a cette destination.
+--  FONCTIONNEMENT :
+--  Appuie sur  =  pour teleporter TOUS les SupplyBox vers
+--  Vector3.new(20.700, 1.500, -10.900).
+--  Appuie encore sur  =  pour re-teleporter (si de nouveaux
+--  SupplyBox apparaissent).
 --
 --  USAGE : colle dans ton executor (Solara, etc.) et execute.
 -- ============================================================
@@ -17,22 +17,22 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
+
+-- ============ CONFIG ============
+local TARGET_NAME = "SupplyBox"
+local DEST_POS = Vector3.new(20.700, 1.500, -10.900)
 
 -- ============ ETAT ============
 local state = {
-	active = false,        -- le mode est ON
-	waitingDest = false,    -- on attend que tu clickes la destination
-	dest = nil,            -- CFrame de destination
-	destMarker = nil,       -- marqueur visuel de la destination
-	destConn = nil,
+	active = false,
+	lastCount = 0,
 }
 
 -- ============ HELPERS ============
 local function notify(msg, color)
 	pcall(function()
 		local gui = Instance.new("ScreenGui")
-		gui.Name = "DeliveryNotify"
+		gui.Name = "SupplyNotify"
 		gui.ResetOnSpawn = false
 		gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 		local f = Instance.new("Frame")
@@ -61,110 +61,31 @@ local function notify(msg, color)
 	end)
 end
 
--- Marqueur visuel de la destination (sphere cyan)
-local function clearDestMarker()
-	if state.destMarker then
-		pcall(function() state.destMarker:Destroy() end)
-		state.destMarker = nil
-	end
-	if state.destConn then
-		pcall(function() state.destConn:Disconnect() end)
-		state.destConn = nil
-	end
-end
-
-local function showDestMarker(cf)
-	clearDestMarker()
-	local m = Instance.new("Part")
-	m.Name = "DeliveryDestMarker"
-	m.Anchored = true
-	m.CanCollide = false
-	m.Transparency = 0.4
-	m.Size = Vector3.new(3, 3, 3)
-	m.Shape = Enum.PartType.Ball
-	m.Color = Color3.fromRGB(0, 255, 200)
-	m.Material = Enum.Material.Neon
-	m.Parent = workspace
-	state.destMarker = m
-	state.destConn = RunService.RenderStepped:Connect(function()
-		if state.destMarker and state.destMarker.Parent then
-			local s = 3 + math.sin(tick() * 4) * 0.5
-			state.destMarker.Size = Vector3.new(s, s, s)
-		end
-	end)
-end
-
--- Teleporte un objet vers la destination
-local function teleportObject(obj)
-	if not obj or not state.dest then return end
+-- Teleporte TOUS les SupplyBox vers la destination
+local function teleportAllSupplyBoxes()
+	local count = 0
 	pcall(function()
-		if obj:IsA("Model") then
-			local pivot = obj:GetPivot()
-			local dest = state.dest.Position + Vector3.new(0, 2, 0)
-			obj:PivotTo(CFrame.new(dest) * (pivot - pivot.Position))
-		elseif obj:IsA("BasePart") then
-			obj.CFrame = state.dest * CFrame.new(0, 2, 0)
-			obj.AssemblyLinearVelocity = Vector3.zero
-			obj.AssemblyAngularVelocity = Vector3.zero
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj:IsA("BasePart") and obj.Name == TARGET_NAME then
+				obj.CFrame = CFrame.new(DEST_POS)
+				obj.AssemblyLinearVelocity = Vector3.zero
+				obj.AssemblyAngularVelocity = Vector3.zero
+				count = count + 1
+			end
 		end
 	end)
+	state.lastCount = count
+	return count
 end
 
--- ============ DETECTION DU CLIC (DROIT) ============
--- Quand le mode est actif, chaque CLIC DROIT souris teleporte la cible
-local clickConn = UserInputService.InputBegan:Connect(function(input, gpe)
-	if gpe then return end
-	if input.UserInputType ~= Enum.UserInputType.MouseButton2 then return end
-	if not state.active then return end
-
-	-- Si on attend la destination, ce clic definit la destination
-	if state.waitingDest then
-		local hit = Mouse.Hit
-		if hit then
-			state.dest = hit
-			state.waitingDest = false
-			showDestMarker(hit)
-			notify("Destination definie ! Clique sur les objets a livrer.", Color3.fromRGB(0, 255, 200))
-		end
-		return
-	end
-
-	-- Sinon, teleporter la cible clique
-	local target = Mouse.Target
-	if target then
-		local model = target:FindFirstAncestorOfClass("Model")
-		if model and model ~= LocalPlayer.Character then
-			teleportObject(model)
-		else
-			teleportObject(target)
-		end
-	end
-end)
-
--- ============ RACCOURCIS CLAVIER ============
---  =  : activer / desactiver
---  -  : choisir la destination (quand actif)
+-- ============ RACCOURCI CLAVIER ============
+--  =  : teleporter TOUS les SupplyBox vers la destination
 UserInputService.InputBegan:Connect(function(input, gpe)
 	if gpe then return end
 	if input.KeyCode == Enum.KeyCode.Equals then
-		-- Toggle actif/inactif
-		state.active = not state.active
-		if state.active then
-			state.waitingDest = true
-			notify("Mode ACTIVE ! Appuie sur - puis clique la destination.", Color3.fromRGB(0, 255, 200))
-		else
-			state.waitingDest = false
-			clearDestMarker()
-			notify("Mode desactive.", Color3.fromRGB(200, 200, 210))
-		end
-	elseif input.KeyCode == Enum.KeyCode.Minus then
-		-- Choisir la destination
-		if state.active then
-			state.waitingDest = true
-			notify("Clique sur la DESTINATION...", Color3.fromRGB(0, 255, 200))
-		else
-			notify("Active d'abord avec =", Color3.fromRGB(255, 180, 60))
-		end
+		local n = teleportAllSupplyBoxes()
+		state.active = true
+		notify("Teleporte " .. n .. " SupplyBox vers (20.7, 1.5, -10.9)", Color3.fromRGB(0, 255, 200))
 	end
 end)
 
