@@ -4547,6 +4547,19 @@ function giveGhostTool()
 	tool.RequiresHandle = false
 	tool.Parent = backpack
 
+	-- Auto-equip le tool pour que Activated se declenche au clic
+	local function equipTool()
+		local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum:EquipTool(tool)
+		end
+	end
+	equipTool()
+	LocalPlayer.CharacterAdded:Connect(function()
+		task.wait(0.5)
+		equipTool()
+	end)
+
 	local isInvisible = false
 	local ghostChar = nil
 	local ghostConn = nil
