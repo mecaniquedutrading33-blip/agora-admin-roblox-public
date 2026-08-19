@@ -2908,13 +2908,14 @@ local function createPlayerEntry(plr)
 		if pinnedPlayers[plr] then
 			pinBtn.BackgroundColor3 = Color3.fromRGB(220, 170, 40)
 			pinBtn.TextColor3 = Color3.new(0, 0, 0)
-			-- NE PAS changer le LayoutOrder ici : modifier LayoutOrder re-trie TOUTE
-			-- la liste (SortOrder=LayoutOrder) et fait bouger tous les joueurs quand
-			-- on pin une seule personne (bug signale). La carte epinglee reste en place.
+			-- Remonter la carte en haut de la liste (LayoutOrder negatif < byte du nom)
+			card.LayoutOrder = -1000
 			espPinBtn.Visible = true
 		else
 			pinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 			pinBtn.TextColor3 = Color3.fromRGB(160, 160, 170)
+			-- Retour au tri par nom
+			card.LayoutOrder = plr.Name:byte(1)
 			espPinBtn.Visible = false
 		end
 	end
