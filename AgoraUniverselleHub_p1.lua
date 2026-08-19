@@ -2549,7 +2549,9 @@ local function createPlayerEntry(plr)
 			win.ZIndex = 100
 			local okp, par = pcall(function() return game:GetService("CoreGui") end)
 			if not okp or not par then par = LocalPlayer:WaitForChild("PlayerGui") end
-			win.Parent = screenGui
+			-- Parent a CoreGui (toujours visible au-dessus de tout) pour que le popup
+			-- s'affiche meme si le panel est minimise/ferme
+			win.Parent = par
 			createCorner(win, 10)
 			createStroke(win, Color3.fromRGB(200, 80, 80), 1)
 
