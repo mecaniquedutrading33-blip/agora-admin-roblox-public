@@ -1880,6 +1880,11 @@ createButton(extraScroll, "Obtenir Teleport Tool", 0, Color3.fromRGB(0, 200, 255
 	local ok, err = pcall(giveTeleportTool)
 	if not ok then warn("[AGORA] Teleport Tool error: " .. tostring(err)) end
 end)
+createButton(extraScroll, "Obtenir Kill Tool (best effort)", 0, Color3.fromRGB(255, 80, 80), function()
+	local ok, err = pcall(giveKillTool)
+	if not ok then warn("[AGORA] Kill Tool error: " .. tostring(err)) end
+	notify("Kill Tool : best effort - peut ne pas marcher selon le jeu (remotes de degats specifiques)", Color3.fromRGB(255, 180, 60))
+end)
 
 -- Fallback notify global si le panel n'en fournit pas
 if type(notify) ~= "function" then
@@ -5153,6 +5158,147 @@ function giveTeleportTool()
 	LocalPlayer.CharacterAdded:Connect(function()
 		task.wait(1)
 		clearMarker()
+	end)
+end
+
+-- ============= KILL TOOL (BEST EFFORT) =============
+-- Tool "best effort" : essaie de tuer un joueur cible via les remotes du jeu.
+-- Chaque jeu a ses propres remotes de degats -> ca ne marche pas partout.
+-- Detection intelligente : scanne les remotes, ne fire QUE ceux qui ressemblent
+-- a des remotes de degats/mort, avec pcall pour ne jamais crasher.
+function giveKillTool()
+	if not LocalPlayer then return end
+	local backpack = LocalPlayer:FindFirstChild("Backpack")
+	if not backpack then backpack = LocalPlayer:WaitForChild("Backpack", 5) end
+	if not backpack then return end
+	if backpack:FindFirstChild("KillTool") then return end
+	local char = LocalPlayer.Character
+	if char and char:FindFirstChild("KillTool") then return end
+
+	local tool = Instance.new("Tool")
+	tool.Name = "KillTool"
+	tool.RequiresHandle = false
+	tool.Parent = backpack
+
+	-- Auto-equip
+	local function equipTool()
+		local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+		if hum then hum:EquipTool(tool) end
+	end
+	equipTool()
+	LocalPlayer.CharacterAdded:Connect(function()
+		task.wait(0.5)
+		equipTool()
+	end)
+
+	local mouse = LocalPlayer:GetMouse()
+
+	-- Mots-cles pour identifier les remotes de degats/mort (insensibles a la casse)
+	local DAMAGE_KEYWORDS = {
+		"damage", "hurt", "hit", "kill", "attack", "take", "deal", "dmg",
+		"health", "hp", "die", "death", "slash", "punch", "strike", "shoot",
+		"bullet", "melee", "combat", "weapon", "fire", "explosion", "explode",
+	}
+
+	-- Collecte les remotes candidats (RemoteEvent/RemoteFunction) du jeu
+	local function collectDamageRemotes()
+		local candidates = {}
+		local seen = {}
+		local function scan(container)
+			pcall(function()
+				for _, obj in ipairs(container:GetDescendants()) do
+					if (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) and not seen[obj] then
+						seen[obj] = true
+						local name = (obj.Name or ""):lower()
+						for _, kw in ipairs(DAMAGE_KEYWORDS) do
+							if name:find(kw, 1, true) then
+								table.insert(candidates, obj)
+								break
+							end
+						end
+					end
+				end
+			end)
+		end
+		scan(game:GetService("ReplicatedStorage"))
+		scan(workspace)
+		scan(LocalPlayer)
+		return candidates
+	end
+
+	-- Essaie de tuer la cible via les remotes (avec pcall, jamais de crash)
+	local function tryKill(target)
+		local targetChar = target and target.Character
+		local targetHum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
+		local targetRoot = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+
+		-- 1) Methode directe : Humanoid:TakeDamage (marche rarement, mais parfois)
+		if targetHum then
+			pcall(function() targetHum:TakeDamage(999999) end)
+			pcall(function() targetHum.Health = 0 end)
+		end
+
+		-- 2) Fire les remotes candidats avec des arguments varies (best effort)
+		local remotes = collectDamageRemotes()
+		for _, remote in ipairs(remotes) do
+			pcall(function()
+				if remote:IsA("RemoteEvent") then
+					-- Essayer plusieurs combinaisons d'arguments
+					remote:FireServer(target)
+					remote:FireServer(targetChar)
+					remote:FireServer(targetHum)
+					remote:FireServer(targetRoot)
+					remote:FireServer(target, 999999)
+					remote:FireServer(targetChar, 999999)
+					remote:FireServer(targetHum, 999999)
+					remote:FireServer(targetRoot, 999999)
+					remote:FireServer(target.Name)
+					remote:FireServer(target.Name, 999999)
+				elseif remote:IsA("RemoteFunction") then
+					pcall(function() remote:InvokeServer(target) end)
+					pcall(function() remote:InvokeServer(targetChar) end)
+					pcall(function() remote:InvokeServer(targetHum) end)
+					pcall(function() remote:InvokeServer(targetRoot) end)
+					pcall(function() remote:InvokeServer(target, 999999) end)
+					pcall(function() remote:InvokeServer(targetChar, 999999) end)
+					pcall(function() remote:InvokeServer(targetHum, 999999) end)
+					pcall(function() remote:InvokeServer(targetRoot, 999999) end)
+					pcall(function() remote:InvokeServer(target.Name) end)
+					pcall(function() remote:InvokeServer(target.Name, 999999) end)
+				end
+			end)
+		end
+
+		return #remotes
+	end
+
+	tool.Activated:Connect(function()
+		local target = mouse.Target
+		-- Trouver le joueur cible (le modele parent du part clique)
+		local targetPlayer = nil
+		if target then
+			local model = target:FindFirstAncestorOfClass("Model")
+			if model then
+				for _, plr in ipairs(Players:GetPlayers()) do
+					if plr.Character == model then
+						targetPlayer = plr
+						break
+					end
+				end
+			end
+		end
+		if not targetPlayer then
+			notify("Kill Tool : clique sur un JOUEUR (pas un objet)", Color3.fromRGB(255, 180, 60))
+			return
+		end
+		local n = tryKill(targetPlayer)
+		notify("Kill Tool : " .. targetPlayer.Name .. " cible (" .. n .. " remotes essayes) - peut ne pas marcher selon le jeu", Color3.fromRGB(255, 80, 80))
+		pcall(function() playSound(4590662766, 0.3) end)
+	end)
+
+	-- Cleanup
+	LocalPlayer.CharacterAdded:Connect(function()
+		task.wait(1)
 	end)
 end
 
