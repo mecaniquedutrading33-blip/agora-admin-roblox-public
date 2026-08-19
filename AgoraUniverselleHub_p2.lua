@@ -5199,6 +5199,27 @@ function giveKillTool()
 		"health", "hp", "die", "death", "slash", "punch", "strike", "shoot",
 		"bullet", "melee", "combat", "weapon", "fire", "explosion", "explode",
 	}
+	-- Mots-cles NEGATIFS : remotes a EXCLURE (teleport/shop/spawn/mouvement)
+	-- pour eviter les surprises (ex: se teleporter a la cremerie)
+	local EXCLUDE_KEYWORDS = {
+		"teleport", "tp", "warp", "shop", "store", "spawn", "move", "walk",
+		"jump", "sit", "emote", "dance", "buy", "sell", "purchase", "trade",
+		"inventory", "backpack", "equip", "unequip", "respawn", "revive",
+		"camera", "gui", "ui", "chat", "message", "friend", "party", "team",
+		"vehicle", "car", "drive", "mount", "ride", "music", "sound", "animation",
+		"anim", "gesture", "wave", "laugh", "cry", "clap", "point", "salute",
+	}
+
+	-- Verifie si un nom est "obfusque" (purement numerique/alphanumerique aleatoire)
+	-- On ne fire QUE les remotes avec des noms lisibles (on sait ce qu'ils pretendent faire)
+	local function isObfuscated(name)
+		if not name or name == "" then return true end
+		-- Nom purement numerique (ex: 3828913)
+		if name:match("^%d+$") then return true end
+		-- Nom avec chiffres colles sans mots (ex: xbx3828913) -> pas de lettre lisible
+		-- On garde les noms qui ont au moins un mot-clé de degat lisible
+		return false
+	end
 
 	-- Collecte les remotes candidats (RemoteEvent/RemoteFunction) du jeu
 	local function collectDamageRemotes()
@@ -5210,10 +5231,26 @@ function giveKillTool()
 					if (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) and not seen[obj] then
 						seen[obj] = true
 						local name = (obj.Name or ""):lower()
-						for _, kw in ipairs(DAMAGE_KEYWORDS) do
-							if name:find(kw, 1, true) then
-								table.insert(candidates, obj)
-								break
+						-- Exclure les remotes obfusques (noms purement numeriques)
+						if name:match("^%d+$") then
+							-- skip
+						else
+							-- Exclure les remotes de teleport/shop/spawn/mouvement
+							local excluded = false
+							for _, ekw in ipairs(EXCLUDE_KEYWORDS) do
+								if name:find(ekw, 1, true) then
+									excluded = true
+									break
+								end
+							end
+							if not excluded then
+								-- Garder seulement si un mot-cle de degat est present
+								for _, kw in ipairs(DAMAGE_KEYWORDS) do
+									if name:find(kw, 1, true) then
+										table.insert(candidates, obj)
+										break
+									end
+								end
 							end
 						end
 					end
@@ -5226,7 +5263,16 @@ function giveKillTool()
 		return candidates
 	end
 
+	-- Verifie si la cible est morte (Humanoid absent ou Health <= 0)
+	local function isTargetDead(target)
+		local char = target and target.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		if not hum then return true end
+		return hum.Health <= 0
+	end
+
 	-- Essaie de tuer la cible via les remotes (avec pcall, jamais de crash)
+	-- Fire UN remote a la fois, verifie si la cible est morte, s'arrete des que ca marche
 	local function tryKill(target)
 		local targetChar = target and target.Character
 		local targetHum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
@@ -5237,13 +5283,15 @@ function giveKillTool()
 			pcall(function() targetHum:TakeDamage(999999) end)
 			pcall(function() targetHum.Health = 0 end)
 		end
+		if isTargetDead(target) then return 0 end
 
-		-- 2) Fire les remotes candidats avec des arguments varies (best effort)
+		-- 2) Fire les remotes candidats UN PAR UN, verifie la mort entre chaque
 		local remotes = collectDamageRemotes()
+		local fired = 0
 		for _, remote in ipairs(remotes) do
+			if isTargetDead(target) then break end
 			pcall(function()
 				if remote:IsA("RemoteEvent") then
-					-- Essayer plusieurs combinaisons d'arguments
 					remote:FireServer(target)
 					remote:FireServer(targetChar)
 					remote:FireServer(targetHum)
@@ -5267,9 +5315,12 @@ function giveKillTool()
 					pcall(function() remote:InvokeServer(target.Name, 999999) end)
 				end
 			end)
+			fired = fired + 1
+			-- Petit delai pour laisser le serveur traiter avant de verifier
+			task.wait(0.15)
 		end
 
-		return #remotes
+		return fired
 	end
 
 	tool.Activated:Connect(function()
