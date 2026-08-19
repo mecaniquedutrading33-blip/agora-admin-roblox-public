@@ -5459,6 +5459,7 @@ _G["autoClickSwitch"] = autoClickSwitch
 	local _tick = tick
 	local _math = math
 	local _ipairs = ipairs
+	local _pairs = pairs
 	local _pcall = pcall
 	local _table = table
 
