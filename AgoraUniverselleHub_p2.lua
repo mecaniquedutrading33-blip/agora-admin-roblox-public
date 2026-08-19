@@ -2941,7 +2941,8 @@ local function _wrapRemotes()
 		task.defer(function()
 			toolsListFrame.CanvasSize = UDim2.new(0, 0, 0, toolsListLayout.AbsoluteContentSize.Y + 6)
 		end)
-	end
+	end)
+end
 
 	-- Filtre en temps reel
 	toolsSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
