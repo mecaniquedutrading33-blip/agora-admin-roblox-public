@@ -62,14 +62,24 @@ local function notify(msg, color)
 end
 
 -- Teleporte TOUS les SupplyBox vers la destination
+-- Chaque box est etalee legerement autour du point pour ne pas s'empiler
 local function teleportAllSupplyBoxes()
 	local count = 0
 	pcall(function()
 		for _, obj in ipairs(workspace:GetDescendants()) do
 			if obj:IsA("BasePart") and obj.Name == TARGET_NAME then
-				obj.CFrame = CFrame.new(DEST_POS)
+				-- Etaler chaque box autour du point (offset aleatoire dans un rayon de 3 studs)
+				-- pour eviter qu'elles s'empilent toutes au meme endroit
+				local spread = Vector3.new(
+					(math.random() - 0.5) * 6,
+					0,
+					(math.random() - 0.5) * 6
+				)
+				obj.CFrame = CFrame.new(DEST_POS + spread)
 				obj.AssemblyLinearVelocity = Vector3.zero
 				obj.AssemblyAngularVelocity = Vector3.zero
+				-- Garder la collision active pour que la machine puisse les prendre
+				obj.CanCollide = true
 				count = count + 1
 			end
 		end
