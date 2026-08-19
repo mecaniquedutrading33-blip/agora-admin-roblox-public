@@ -110,11 +110,11 @@ local function teleportObject(obj)
 	end)
 end
 
--- ============ DETECTION DU CLIC ============
--- Quand le mode est actif, chaque clic souris teleporte la cible
+-- ============ DETECTION DU CLIC (DROIT) ============
+-- Quand le mode est actif, chaque CLIC DROIT souris teleporte la cible
 local clickConn = UserInputService.InputBegan:Connect(function(input, gpe)
 	if gpe then return end
-	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+	if input.UserInputType ~= Enum.UserInputType.MouseButton2 then return end
 	if not state.active then return end
 
 	-- Si on attend la destination, ce clic definit la destination
