@@ -2702,16 +2702,18 @@ local function releaseAutoProtections(plrName)
 	end
 end
 
--- Boucle de detection adaptative (0.5s)
+-- Boucle de detection adaptative (1s)
 -- PRINCIPE : score de suspicion + PERSISTANCE. Un seul evenement ne suffit jamais
 -- (saut de haut, TP legitime, vehicule rapide). Il faut que le comportement anormal
 -- persiste sur plusieurs frames pour etre considere comme cheat. On exclut les
 -- vehicules (avions/voitures) et on ignore la chute (vitesse Y negative).
+-- Le scan hitbox (GetDescendants) est espace a 2s car c'est le plus couteux.
 task.spawn(function()
 	local lastPositions = {} -- plr -> {pos, time}
 	local suspicion = {}      -- plr -> {score, type, frames}
+	local hitboxTick = 0
 	while true do
-		task.wait(0.5)
+		task.wait(1)
 		if not autoProtectState.enabled then
 			-- Mode auto off : on ne fait rien (pas de spam, pas de lag)
 			lastPositions = {}
@@ -2723,6 +2725,8 @@ task.spawn(function()
 		if not rootPart then continue end
 		local myPos = rootPart.Position
 		local now = tick()
+		hitboxTick = hitboxTick + 1
+		local doHitbox = (hitboxTick % 2 == 0) -- scan hitbox toutes les 2s
 		-- Collecter les vitesses horizontales de tous les joueurs pour la norme
 		local speeds = {}
 		local players = Players:GetPlayers()
@@ -2775,7 +2779,7 @@ task.spawn(function()
 					frameScore = frameScore + 3
 					frameType = "speed"
 				end
-				-- 2. Teleportation : saut de position soudain (delta > 100 studs en 0.5s)
+				-- 2. Teleportation : saut de position soudain (delta > 100 studs en 1s)
 				if delta.Magnitude > 100 then
 					frameScore = frameScore + 2
 					frameType = "teleport"
@@ -2788,8 +2792,8 @@ task.spawn(function()
 					frameType = "fly"
 				end
 			end
-			-- 4. Hitbox anormale (scan leger, seulement si proche) - independant du vehicule
-			if dist < 60 then
+			-- 4. Hitbox anormale (scan espace 2s, seulement si proche) - independant du vehicule
+			if doHitbox and dist < 60 then
 				for _, part in ipairs(plr.Character:GetDescendants()) do
 					if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
 						local maxDim = math.max(part.Size.X, part.Size.Y, part.Size.Z)
@@ -2819,7 +2823,7 @@ task.spawn(function()
 					if s.score == 0 then suspicion[plr] = nil end
 				end
 			end
-			-- DECLENCHEMENT : score >= 6 ET persistance >= 3 frames (1.5s de comportement anormal)
+			-- DECLENCHEMENT : score >= 6 ET persistance >= 3 frames (3s de comportement anormal)
 			if s and s.score >= 6 and s.frames >= 3 then
 				local threatType = s.type or "cheat"
 				if dist < 200 then

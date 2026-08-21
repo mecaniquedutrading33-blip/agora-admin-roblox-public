@@ -5199,7 +5199,9 @@ local function startFly()
 		-- Jouer l'animation de vol (bras a plat) des l'activation, quel que soit l'etat
 		playFlyAnim()
 
-		-- PlatformStand + Physics state = ZERO sursaut permanent
+		-- PlatformStand + desactivation des etats de chute/saut = ZERO sursaut permanent
+		-- NOTE : on NE force PAS ChangeState(Physics) ici car ca fige le modele dans sa
+		-- pose actuelle (pose de saut) et empeche l'animation de vol (bras a plat) de jouer.
 		if humanoid then
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
@@ -5209,7 +5211,6 @@ local function startFly()
 			humanoid.JumpPower = 0
 			humanoid.JumpHeight = 0
 			humanoid.WalkSpeed = 0
-			pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
 		end
 		-- CanCollide=false sur body parts (HRP inclus si noclip actif = traverser les murs en vol)
 		if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
@@ -5279,7 +5280,10 @@ local function startFly()
 				end
 			end
 		end
-		-- FORCER Physics + PlatformStand + WalkSpeed=0 chaque frame (anti-sursaut permanent)
+		-- FORCER PlatformStand + WalkSpeed=0 chaque frame (anti-sursaut permanent)
+		-- NOTE : on NE force PAS ChangeState(Physics) ici car ca fige le modele dans sa
+		-- pose actuelle (pose de saut) et empeche l'animation de vol (bras a plat) de jouer.
+		-- PlatformStand + BodyGyro gardent le corps droit, l'anim de vol joue en boucle.
 		if humanoid then
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false) end)
@@ -5287,9 +5291,6 @@ local function startFly()
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false) end)
 			if not humanoid.PlatformStand then humanoid.PlatformStand = true end
 			if humanoid.WalkSpeed ~= 0 then humanoid.WalkSpeed = 0 end
-			if humanoid:GetState() ~= Enum.HumanoidStateType.Physics then
-				pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
-			end
 			-- L'animation de vol (bras a plat) est jouee par playFlyAnim() et reste active
 		end
 
