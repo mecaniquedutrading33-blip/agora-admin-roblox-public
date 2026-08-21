@@ -1990,6 +1990,7 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	createCorner(knob, 10)
 
 	local state = defaultOn or false
+	local enabled = true
 	local function update(animate)
 		local dur = animate and 0.15 or 0
 		tween(track, {BackgroundColor3 = state and Color3.fromRGB(60, 190, 120) or Color3.fromRGB(60, 60, 70)}, dur)
@@ -2015,7 +2016,6 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 
 	hitbox.MouseButton1Click:Connect(toggle)
 
-	local enabled = true
 	local function setEnabled(v)
 		enabled = v
 		hitbox.Active = v
