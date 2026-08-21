@@ -731,8 +731,10 @@ local function createButton(parent, text, yPos, color, callback)
 	btn.MouseEnter:Connect(function() tween(btn, {BackgroundColor3 = color and color * 1.15 or Color3.fromRGB(60, 95, 200)}, 0.1) end)
 	btn.MouseLeave:Connect(function() tween(btn, {BackgroundColor3 = color or Color3.fromRGB(45, 75, 160)}, 0.1) end)
 	btn.MouseButton1Click:Connect(function()
-		playSound(88442833509532, 0.22)
-		if callback then callback() end
+		-- Appeler le callback EN PREMIER : si playSound leve une erreur (SoundService
+		-- nil, IsLoaded sur objet non parente), le bouton ne doit PAS etre bloque.
+		if callback then pcall(callback) end
+		pcall(function() playSound(88442833509532, 0.22) end)
 	end)
 	return btn
 end
@@ -2079,7 +2081,7 @@ local function showNotif(text, color)
 	frame.Parent = screenGui
 	createCorner(frame, 8)
 	createStroke(frame, Color3.fromRGB(255, 255, 255), 1)
-	-- Logo Agora a gauche
+	-- Logo Agora a gauche (arrondi)
 	local logo = Instance.new("ImageLabel")
 	logo.Size = UDim2.new(0, 24, 0, 24)
 	logo.Position = UDim2.new(0, 8, 0.5, -12)
@@ -2087,6 +2089,7 @@ local function showNotif(text, color)
 	logo.BackgroundTransparency = 1
 	logo.Image = AGORA_LOGO_ID
 	logo.Parent = frame
+	createCorner(logo, 6)
 	-- Texte principal (a droite du logo)
 	local lbl = Instance.new("TextLabel")
 	lbl.Size = UDim2.new(1, -40, 0, 20)
