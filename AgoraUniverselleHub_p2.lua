@@ -1934,8 +1934,12 @@ end)
 createButton(extraScroll, "Rejoindre ce serveur", 0, Color3.fromRGB(70, 130, 200), function()
 	pcall(function()
 		local TeleportService = game:GetService("TeleportService")
-		_G._agoraAwaitingReload = true
-		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+		if game.JobId and game.JobId ~= "" then
+			_G._agoraAwaitingReload = true
+			TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+		else
+			notify("Rejoindre : pas de JobId (Studio ?)", Color3.fromRGB(255, 180, 60))
+		end
 	end)
 end)
 
@@ -1945,28 +1949,29 @@ createButton(extraScroll, "Server Hop", 0, Color3.fromRGB(200, 130, 60), functio
 		local TeleportService = game:GetService("TeleportService")
 		local HttpService = game:GetService("HttpService")
 		_G._agoraAwaitingReload = true
-		-- Recuperer la liste des serveurs actifs du jeu
-		local ok, res = pcall(function()
-			return HttpService:GetAsync("https://games.roblox.com/v1/games/" .. tostring(game.PlaceId) .. "/servers/Public?limit=100")
-		end)
-		if ok and res then
-			local data = HttpService:JSONDecode(res)
-			local servers = data and data.data or {}
-			-- Choisir un serveur DIFFERENT du serveur actuel
-			local target = nil
-			for _, srv in ipairs(servers) do
-				if srv.id ~= game.JobId and srv.playing and srv.playing < srv.maxPlayers then
-					target = srv.id
-					break
+		-- Utiliser httpGet (multi-executeur) au lieu de HttpService:GetAsync,
+		-- bloque silencieusement par Solara sur les domaines externes (*.roblox.com)
+		local res = httpGet("https://games.roblox.com/v1/games/" .. tostring(game.PlaceId) .. "/servers/Public?limit=100")
+		if res and res ~= "" then
+			local ok, data = pcall(function() return HttpService:JSONDecode(res) end)
+			if ok and data and data.data then
+				local target = nil
+				for _, srv in ipairs(data.data) do
+					if srv.id ~= game.JobId and srv.playing and srv.playing < srv.maxPlayers then
+						target = srv.id
+						break
+					end
 				end
-			end
-			if target then
-				TeleportService:TeleportToPlaceInstance(game.PlaceId, target, LocalPlayer)
+				if target then
+					TeleportService:TeleportToPlaceInstance(game.PlaceId, target, LocalPlayer)
+				else
+					notify("Server Hop : aucun autre serveur disponible", Color3.fromRGB(255, 180, 60))
+				end
 			else
-				notify("Server Hop : aucun autre serveur disponible", Color3.fromRGB(255, 180, 60))
+				notify("Server Hop : reponse serveur invalide", Color3.fromRGB(255, 180, 60))
 			end
 		else
-			notify("Server Hop : impossible de recuperer les serveurs", Color3.fromRGB(255, 180, 60))
+			notify("Server Hop : impossible de recuperer les serveurs (API bloquee par l'executeur)", Color3.fromRGB(255, 180, 60))
 		end
 	end)
 end)
