@@ -2443,7 +2443,7 @@ end
 local _protSwitches = {}
 
 -- Master switch: toggle TOUS les switches de protection via .set()
-createSwitch(protectionsScroll, "TOUT ACTIVER / DESACTIVER", 10, function(on)
+local masterProtectSwitch = createSwitch(protectionsScroll, "TOUT ACTIVER / DESACTIVER", 10, function(on)
 	for _, sw in ipairs(_protSwitches) do
 		if sw and sw.get and sw.set then
 			-- Toggle seulement si l'etat actuel != l'etat desire
@@ -2637,6 +2637,10 @@ local function setProtectionSwitchesLocked(locked)
 		if sw and sw.setEnabled then
 			sw.setEnabled(not locked)
 		end
+	end
+	-- Verrouille aussi le master switch "TOUT ACTIVER / DESACTIVER"
+	if masterProtectSwitch and masterProtectSwitch.setEnabled then
+		masterProtectSwitch.setEnabled(not locked)
 	end
 end
 

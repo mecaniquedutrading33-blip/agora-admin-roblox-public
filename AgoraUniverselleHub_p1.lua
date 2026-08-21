@@ -1998,6 +1998,7 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 	update(false)
 
 	local function toggle()
+		if not enabled then return end
 		state = not state
 		update(true)
 		callback(state)
