@@ -811,6 +811,37 @@ reparentChildrenToLocalScroll()
 -- Agrandit le scroll pour accueillir l'autoclicker
 localScroll.CanvasSize = UDim2.new(0, 0, 0, 900)
 
+-- ProximityPrompt E -> F : transforme les prompts qui s'activent avec E en F
+-- (certains jeux utilisent E pour interagir, F pour d'autres actions ; ce switch
+--  force tous les ProximityPrompt a s'activer avec F).
+local promptRemapState = { enabled = false }
+createSwitch(localScroll, "ProximityPrompt E -> F", 0, function(on)
+	promptRemapState.enabled = on
+	if on then
+		-- Applique a tous les prompts existants
+		for _, desc in ipairs(Workspace:GetDescendants()) do
+			if desc:IsA("ProximityPrompt") then
+				desc.KeyboardKeyCode = Enum.KeyCode.F
+			end
+		end
+		notify("ProximityPrompt : E -> F (tous les prompts)", Color3.fromRGB(80, 160, 255))
+	else
+		-- Restaure E sur tous les prompts
+		for _, desc in ipairs(Workspace:GetDescendants()) do
+			if desc:IsA("ProximityPrompt") then
+				desc.KeyboardKeyCode = Enum.KeyCode.E
+			end
+		end
+		notify("ProximityPrompt : restaure E", Color3.fromRGB(200, 160, 60))
+	end
+end)
+-- Applique aussi aux nouveaux prompts ajoutes pendant que le switch est actif
+Workspace.DescendantAdded:Connect(function(desc)
+	if promptRemapState.enabled and desc:IsA("ProximityPrompt") then
+		desc.KeyboardKeyCode = Enum.KeyCode.F
+	end
+end)
+
 -- Empeche le panel d'etre pousse sous le chat au demarrage
 task.delay(0, function()
 	local function clampFrame()
