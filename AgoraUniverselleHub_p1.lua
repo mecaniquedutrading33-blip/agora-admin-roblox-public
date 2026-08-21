@@ -4863,16 +4863,53 @@ local function bootSequence(onComplete)
 end
 
 -- ============= MOVE =============
-local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false, currentVel = Vector3.zero, targetVel = Vector3.zero, seatPart = nil, saved = nil }
+local flyState = { flying = false, decollage = false, speed = 120, gyro = nil, vel = nil, loop = nil, mobileInput = Vector3.zero, mobileUp = false, mobileDown = false, mobileStickId = nil, mobileBase = nil, mobileKnob = nil, mobileBasePos = nil, mobileUiCreated = false, currentVel = Vector3.zero, targetVel = Vector3.zero, seatPart = nil, saved = nil, flyAnim = nil }
 local noclipState = { enabled = false, loop = nil }
 _G._agora_noclipState = noclipState
 local walkSpeedState = { value = 16 }
 local jumpState = { infinite = false }
 local platformState = { enabled = false, part = nil, y = 0, offset = 0 }
 
+-- ============= FLY ANIMATION (bras a plat, tendu) =============
+-- Animation de vol officielle Roblox : bras tendus a plat, corps droit.
+-- Joue TOUJOURS la meme pose quel que soit l'etat d'activation (saut, animation, etc.)
+local FLY_ANIM_ID = "rbxassetid://507766388" -- "Fly" (bras a plat)
+local function playFlyAnim()
+	if not humanoid or not humanoid.Parent then return end
+	-- Arreter toute animation en cours pour eviter le conflit
+	pcall(function()
+		for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+			track:Stop(0)
+		end
+	end)
+	-- Creer et jouer l'animation de vol
+	pcall(function()
+		if flyState.flyAnim then
+			pcall(function() flyState.flyAnim:Stop(0) end)
+			flyState.flyAnim:Destroy()
+			flyState.flyAnim = nil
+		end
+		local anim = Instance.new("Animation")
+		anim.AnimationId = FLY_ANIM_ID
+		local track = humanoid:LoadAnimation(anim)
+		track.Looped = true
+		track:Play(0)
+		flyState.flyAnim = track
+	end)
+end
+local function stopFlyAnim()
+	if flyState.flyAnim then
+		pcall(function() flyState.flyAnim:Stop(0) end)
+		pcall(function() flyState.flyAnim:Destroy() end)
+		flyState.flyAnim = nil
+	end
+end
+
 local function stopFly()
 	-- Arreter le decollage si en cours
 	flyState.decollage = false
+	-- Arreter l'animation de vol (bras a plat)
+	stopFlyAnim()
 	-- Nettoyer le gyro/vel meme pendant le decollage (avant que flying = true)
 	if flyState.gyro then flyState.gyro:Destroy() flyState.gyro = nil end
 	if flyState.vel then flyState.vel:Destroy() flyState.vel = nil end
@@ -5117,6 +5154,9 @@ local function startFly()
 		flyState.vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 		flyState.vel.Parent = rootPart
 
+		-- Jouer l'animation de vol (bras a plat) des l'activation, quel que soit l'etat
+		playFlyAnim()
+
 		-- PlatformStand + Physics state = ZERO sursaut permanent
 		if humanoid then
 			pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end)
@@ -5128,11 +5168,6 @@ local function startFly()
 			humanoid.JumpHeight = 0
 			humanoid.WalkSpeed = 0
 			pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
-			pcall(function()
-				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
-					track:Stop(0)
-				end
-			end)
 		end
 		-- CanCollide=false sur body parts (HRP inclus si noclip actif = traverser les murs en vol)
 		if character and not (humanoid and humanoid.Sit and humanoid.SeatPart) then
@@ -5213,11 +5248,7 @@ local function startFly()
 			if humanoid:GetState() ~= Enum.HumanoidStateType.Physics then
 				pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Physics) end)
 			end
-			pcall(function()
-				for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
-					track:Stop(0)
-				end
-			end)
+			-- L'animation de vol (bras a plat) est jouee par playFlyAnim() et reste active
 		end
 
 		local move = Vector3.zero
