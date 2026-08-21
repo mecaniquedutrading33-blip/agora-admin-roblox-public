@@ -4928,7 +4928,9 @@ local platformState = { enabled = false, part = nil, y = 0, offset = 0 }
 -- ============= FLY ANIMATION (bras a plat, tendu) =============
 -- Animation de vol officielle Roblox : bras tendus a plat, corps droit.
 -- Joue TOUJOURS la meme pose quel que soit l'etat d'activation (saut, animation, etc.)
-local FLY_ANIM_ID = "rbxassetid://507766388" -- "Fly" (bras a plat)
+-- 507766388 = fly bras ecartes en V (trop ecartes). 507767079 = pose de vol plus
+-- compacte (bras et jambes moins ecartes, plus tendu).
+local FLY_ANIM_ID = "rbxassetid://507767079" -- "Fly" compact (bras/jambes serres)
 local function playFlyAnim()
 	if not humanoid or not humanoid.Parent then return end
 	-- Arreter toute animation en cours pour eviter le conflit
