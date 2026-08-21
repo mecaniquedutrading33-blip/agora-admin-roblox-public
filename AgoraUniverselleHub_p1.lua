@@ -4227,6 +4227,19 @@ RunService.RenderStepped:Connect(function()
 	updateCharacter()
 	if not rootPart then return end
 	for plr, data in pairs(espState.individual) do
+		-- Re-resoudre targetPart si le character du joueur a change (respawn) :
+		-- sinon data.targetPart pointe vers l'ancien objet orphelin dont la position
+		-- ne bouge plus -> la distance ESP se fige.
+		if data.targetPart and (not data.targetPart.Parent or data.targetPart.Parent ~= plr.Character) then
+			local char = plr.Character
+			if char then
+				local newTarget = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+				if newTarget then
+					data.targetPart = newTarget
+					if data.bill then data.bill.Adornee = newTarget end
+				end
+			end
+		end
 		if data.active and data.targetPart and data.targetPart.Parent then
 			local dist = (data.targetPart.Position - rootPart.Position).Magnitude
 			if data.blink then
