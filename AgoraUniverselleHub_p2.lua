@@ -2703,13 +2703,19 @@ local function releaseAutoProtections(plrName)
 end
 
 -- Boucle de detection adaptative (0.5s)
+-- PRINCIPE : score de suspicion + PERSISTANCE. Un seul evenement ne suffit jamais
+-- (saut de haut, TP legitime, vehicule rapide). Il faut que le comportement anormal
+-- persiste sur plusieurs frames pour etre considere comme cheat. On exclut les
+-- vehicules (avions/voitures) et on ignore la chute (vitesse Y negative).
 task.spawn(function()
 	local lastPositions = {} -- plr -> {pos, time}
+	local suspicion = {}      -- plr -> {score, type, frames}
 	while true do
 		task.wait(0.5)
 		if not autoProtectState.enabled then
 			-- Mode auto off : on ne fait rien (pas de spam, pas de lag)
 			lastPositions = {}
+			suspicion = {}
 			continue
 		end
 		updateCharacter()
@@ -2756,28 +2762,66 @@ task.spawn(function()
 			local delta = hrp.Position - prev.pos
 			local hSpeed = Vector3.new(delta.X, 0, delta.Z).Magnitude / dt
 			local dist = (hrp.Position - myPos).Magnitude
-			local threatType = nil
-			-- 1. Speed hack : vitesse horizontale bien au-dessus de la norme
-			if hSpeed > threshold and hSpeed > 100 then
-				threatType = "speed"
-			-- 2. Teleportation : saut de position soudain (delta > 100 studs en 0.5s)
-			elseif delta.Magnitude > 100 then
-				threatType = "teleport"
+			-- EXCLUSION VEHICULE : si le joueur est assis dans un vehicule/seat,
+			-- on ne le flag JAMAIS pour speed/fly/teleport (avion, voiture, etc.)
+			local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+			local inVehicle = hum and (hum.Sit or hum.SeatPart ~= nil)
+			-- Score de suspicion pour ce frame
+			local frameScore = 0
+			local frameType = nil
+			if not inVehicle then
+				-- 1. Speed hack : vitesse horizontale bien au-dessus de la norme
+				if hSpeed > threshold and hSpeed > 100 then
+					frameScore = frameScore + 3
+					frameType = "speed"
+				end
+				-- 2. Teleportation : saut de position soudain (delta > 100 studs en 0.5s)
+				if delta.Magnitude > 100 then
+					frameScore = frameScore + 2
+					frameType = "teleport"
+				end
+				-- 3. Fly : altitude soutenue (Y > 30) + vitesse horizontale + pas de vehicule.
+				--    Voler peut etre normal (avions) donc fly seul = score faible, il faut
+				--    persistance + vitesse pour etre un vrai fly-hack.
+				if hrp.Position.Y > 30 and hSpeed > 40 then
+					frameScore = frameScore + 1
+					frameType = "fly"
+				end
 			end
-			-- 3. Hitbox anormale (scan leger, seulement si proche)
-			if not threatType and dist < 60 then
+			-- 4. Hitbox anormale (scan leger, seulement si proche) - independant du vehicule
+			if dist < 60 then
 				for _, part in ipairs(plr.Character:GetDescendants()) do
 					if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
 						local maxDim = math.max(part.Size.X, part.Size.Y, part.Size.Z)
 						if maxDim > 30 then
-							threatType = "hitbox"
+							frameScore = frameScore + 4
+							frameType = "hitbox"
 							break
 						end
 					end
 				end
 			end
-			if threatType then
-				-- Menace proche (dans un rayon raisonnable) : activer les protections
+			-- Accumuler le score avec persistance
+			local s = suspicion[plr]
+			if frameScore > 0 then
+				if not s then
+					s = { score = 0, type = frameType, frames = 0 }
+					suspicion[plr] = s
+				end
+				s.score = s.score + frameScore
+				s.frames = s.frames + 1
+				s.type = frameType
+			else
+				-- Pas d'anomalie ce frame : on decroit le score (retour a la normale)
+				if s then
+					s.score = math.max(0, s.score - 2)
+					s.frames = math.max(0, s.frames - 1)
+					if s.score == 0 then suspicion[plr] = nil end
+				end
+			end
+			-- DECLENCHEMENT : score >= 6 ET persistance >= 3 frames (1.5s de comportement anormal)
+			if s and s.score >= 6 and s.frames >= 3 then
+				local threatType = s.type or "cheat"
 				if dist < 200 then
 					if not autoProtectState.activeThreats[plr] then
 						autoProtectState.activeThreats[plr] = threatType
@@ -2790,7 +2834,7 @@ task.spawn(function()
 					end
 				end
 			else
-				-- Plus de menace pour ce joueur
+				-- Pas encore assez de preuves, ou plus de menace
 				if autoProtectState.activeThreats[plr] then
 					releaseAutoProtections(plr)
 				end
@@ -2801,6 +2845,9 @@ task.spawn(function()
 			if not plr.Parent then
 				releaseAutoProtections(plr)
 			end
+		end
+		for plr in pairs(suspicion) do
+			if not plr.Parent then suspicion[plr] = nil end
 		end
 	end
 end)
