@@ -2014,13 +2014,24 @@ local function createSwitch(parent, labelText, yPos, callback, defaultOn)
 
 	hitbox.MouseButton1Click:Connect(toggle)
 
+	local enabled = true
+	local function setEnabled(v)
+		enabled = v
+		hitbox.Active = v
+		hitbox.AutoButtonColor = v
+		-- Dimmer le switch quand desactive (verrouille par le mode auto)
+		container.BackgroundColor3 = v and Color3.fromRGB(25, 25, 30) or Color3.fromRGB(18, 18, 22)
+		label.TextTransparency = v and 0 or 0.4
+	end
+
 	return {
 		set = function(v)
 			state = v
 			update(true)
 			callback(v)
 		end,
-		get = function() return state end
+		get = function() return state end,
+		setEnabled = setEnabled
 	}
 end
 
@@ -2042,12 +2053,15 @@ local pinnedNotifSettings = {
 _G._agora_pinnedNotifSettings = pinnedNotifSettings
 
 -- Systeme de notification visuelle (bas-droite, auto-disparait 4s)
+-- TOUTES les notifications sont signees "Agora Hub Universelle" avec le logo
+-- pour que l'utilisateur ne confonde jamais une notif du panel avec une notif du jeu.
 local notifFrames = {}
+local AGORA_LOGO_ID = "rbxassetid://102429262384981"
 local function showNotif(text, color)
 	color = color or Color3.fromRGB(80, 160, 255)
 	local n = #notifFrames
-	local notifW = _dt == "Mobile" and 300 or 240
-	local notifH = _dt == "Mobile" and 44 or 32
+	local notifW = _dt == "Mobile" and 320 or 280
+	local notifH = _dt == "Mobile" and 56 or 48
 	-- Decaler les anciennes vers le haut
 	for i = 1, n do
 		if notifFrames[i] and notifFrames[i].Parent then
@@ -2064,19 +2078,41 @@ local function showNotif(text, color)
 	frame.Parent = screenGui
 	createCorner(frame, 8)
 	createStroke(frame, Color3.fromRGB(255, 255, 255), 1)
+	-- Logo Agora a gauche
+	local logo = Instance.new("ImageLabel")
+	logo.Size = UDim2.new(0, 24, 0, 24)
+	logo.Position = UDim2.new(0, 8, 0.5, -12)
+	logo.AnchorPoint = Vector2.new(0, 0.5)
+	logo.BackgroundTransparency = 1
+	logo.Image = AGORA_LOGO_ID
+	logo.Parent = frame
+	-- Texte principal (a droite du logo)
 	local lbl = Instance.new("TextLabel")
-	lbl.Size = UDim2.new(1, -12, 1, 0)
-	lbl.Position = UDim2.new(0, 6, 0, 0)
+	lbl.Size = UDim2.new(1, -40, 0, 20)
+	lbl.Position = UDim2.new(0, 38, 0, 4)
 	lbl.BackgroundTransparency = 1
 	lbl.Text = text
 	lbl.Font = Enum.Font.GothamSemibold
 	lbl.TextSize = 12
 	lbl.TextColor3 = Color3.new(1, 1, 1)
 	lbl.TextXAlignment = Enum.TextXAlignment.Left
-	lbl.TextYAlignment = Enum.TextYAlignment.Center
+	lbl.TextYAlignment = Enum.TextYAlignment.Top
 	lbl.TextWrapped = true
 	lbl.TextTruncate = Enum.TextTruncate.AtEnd
 	lbl.Parent = frame
+	-- Signature "Agora Hub Universelle" en bas
+	local sig = Instance.new("TextLabel")
+	sig.Size = UDim2.new(1, -40, 0, 14)
+	sig.Position = UDim2.new(0, 38, 1, -16)
+	sig.BackgroundTransparency = 1
+	sig.Text = "Agora Hub Universelle"
+	sig.Font = Enum.Font.Gotham
+	sig.TextSize = 9
+	sig.TextColor3 = Color3.fromRGB(255, 255, 255)
+	sig.TextTransparency = 0.35
+	sig.TextXAlignment = Enum.TextXAlignment.Left
+	sig.TextYAlignment = Enum.TextYAlignment.Bottom
+	sig.Parent = frame
 	notifFrames[#notifFrames + 1] = frame
 	-- Animation slide-in
 	frame.Position = UDim2.new(1, 0, 1, -60)
@@ -2099,6 +2135,11 @@ local function showNotif(text, color)
 	end)
 end
 _G._agora_showNotif = showNotif
+-- Exposer `notify` comme global pour que p2 (et tout le code) l'utilise.
+-- Signature (msg, color). p2 a un fallback local mais ne l'utilisera pas si ce global existe.
+_G.notify = function(msg, color)
+	showNotif(tostring(msg), color)
+end
 
 -- searchBox de Joueurs = FILTRE LOCAL de la liste des joueurs connectes
 -- (la recherche officielle par username Roblox reste dans Registry)

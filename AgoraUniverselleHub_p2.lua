@@ -2616,6 +2616,217 @@ task.spawn(function()
 	end
 end)
 
+-- ============= DETECTION DE CHEATERS + MODE AUTO (BETA) =============
+-- Detection ADAPTATIVE : chaque jeu a un comportement different, donc on compare
+-- chaque joueur a la NORME du serveur (moyenne + 3*ecart-type) au lieu de seuils fixes.
+-- On ignore EXPLICITEMENT la chute (vitesse Y negative) : sauter de haut n'est PAS un cheat.
+-- Le mode auto est DESACTIVE PAR DEFAUT. Quand il est actif, il verrouille les autres
+-- switches de protection (c'est le panel qui decide), active les protections necessaires
+-- quand un cheater est proche, et les desactive quand la menace s'eloigne ou quitte.
+local autoProtectState = {
+	enabled = false,          -- mode auto (desactive par defaut)
+	notifications = true,     -- notifications de detection
+	activeThreats = {},       -- joueurs actuellement consideres comme menaces
+	lastNotif = {},           -- anti-spam par joueur
+}
+_G._agora_autoProtectState = autoProtectState
+
+-- Verrouille/ deverrouille tous les switches de protection manuels
+local function setProtectionSwitchesLocked(locked)
+	for _, sw in ipairs(_protSwitches) do
+		if sw and sw.setEnabled then
+			sw.setEnabled(not locked)
+		end
+	end
+end
+
+-- Determine quelles protections activer selon le type de cheat detecte
+local function protectionsForThreat(threatType)
+	local list = {}
+	if threatType == "speed" or threatType == "teleport" then
+		list.antiTeleport = true
+		list.antiFling = true
+	elseif threatType == "hitbox" then
+		list.antiReach = true
+	elseif threatType == "fly" then
+		list.antiTeleport = true
+		list.antiFall = true
+	elseif threatType == "kill" then
+		list.antiKill = true
+		list.antiTeleport = true
+	end
+	return list
+end
+
+-- Active les protections necessaires (mode auto) et notifie
+local function applyAutoProtections(threatType, plrName)
+	local needed = protectionsForThreat(threatType)
+	for name, on in pairs(needed) do
+		if on and not protectionsState[name] then
+			protectionsState[name] = true
+		end
+	end
+	-- Notifier (anti-spam : 1 notif par joueur toutes les 10s)
+	local now = tick()
+	local last = autoProtectState.lastNotif[plrName] or 0
+	if autoProtectState.notifications and now - last > 10 then
+		autoProtectState.lastNotif[plrName] = now
+		notify("Cheater detecte: " .. plrName .. " (" .. threatType .. ") - protections activees", Color3.fromRGB(255, 120, 60))
+	end
+end
+
+-- Desactive les protections quand la menace s'eloigne ou quitte (mode auto)
+local function releaseAutoProtections(plrName)
+	autoProtectState.activeThreats[plrName] = nil
+	-- On ne desactive que si plus AUCUNE menace n'est proche
+	local anyThreat = false
+	for _ in pairs(autoProtectState.activeThreats) do
+		anyThreat = true
+		break
+	end
+	if not anyThreat then
+		-- Remettre les protections a leur etat par defaut (off) sauf celles que l'user avait avant
+		-- En mode auto, on repart de zero : on desactive tout ce qu'on avait active automatiquement
+		for name in pairs(protectionsState) do
+			if name ~= "antiAFK" and name ~= "antiAFKLastAction" and name ~= "lastSafeCFrame" and name ~= "lastHrpPosition" and name ~= "antiKillSavedCFrame" and name ~= "antiSeatWatcher" and name ~= "antiSeatSitWatcher" and name ~= "lastWalkSpeed" and name ~= "lastHealth" then
+				protectionsState[name] = false
+			end
+		end
+		if autoProtectState.notifications then
+			notify("Menace partie - protections desactivees (mode auto reste actif)", Color3.fromRGB(80, 200, 120))
+		end
+	end
+end
+
+-- Boucle de detection adaptative (0.5s)
+task.spawn(function()
+	local lastPositions = {} -- plr -> {pos, time}
+	while true do
+		task.wait(0.5)
+		if not autoProtectState.enabled then
+			-- Mode auto off : on ne fait rien (pas de spam, pas de lag)
+			lastPositions = {}
+			continue
+		end
+		updateCharacter()
+		character, humanoid, rootPart = _G._agoraChar, _G._agoraHum, _G._agoraRoot
+		if not rootPart then continue end
+		local myPos = rootPart.Position
+		local now = tick()
+		-- Collecter les vitesses horizontales de tous les joueurs pour la norme
+		local speeds = {}
+		local players = Players:GetPlayers()
+		for _, plr in ipairs(players) do
+			if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+				local hrp = plr.Character.HumanoidRootPart
+				local prev = lastPositions[plr]
+				if prev then
+					local dt = math.max(0.01, now - prev.time)
+					local delta = hrp.Position - prev.pos
+					-- Vitesse HORIZONTALE uniquement (on ignore la chute Y)
+					local hSpeed = Vector3.new(delta.X, 0, delta.Z).Magnitude / dt
+					table.insert(speeds, hSpeed)
+				end
+				lastPositions[plr] = { pos = hrp.Position, time = now }
+			end
+		end
+		-- Norme du serveur : moyenne + 3*ecart-type (minimum absolu 60 studs/s)
+		local mean, std = 0, 0
+		if #speeds > 0 then
+			local sum = 0
+			for _, s in ipairs(speeds) do sum = sum + s end
+			mean = sum / #speeds
+			local sq = 0
+			for _, s in ipairs(speeds) do sq = sq + (s - mean) * (s - mean) end
+			std = math.sqrt(sq / #speeds)
+		end
+		local threshold = math.max(60, mean + 3 * std)
+		-- Analyser chaque joueur
+		for _, plr in ipairs(players) do
+			if plr == LocalPlayer or not plr.Character then continue end
+			local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+			if not hrp then continue end
+			local prev = lastPositions[plr]
+			if not prev then continue end
+			local dt = math.max(0.01, now - prev.time)
+			local delta = hrp.Position - prev.pos
+			local hSpeed = Vector3.new(delta.X, 0, delta.Z).Magnitude / dt
+			local dist = (hrp.Position - myPos).Magnitude
+			local threatType = nil
+			-- 1. Speed hack : vitesse horizontale bien au-dessus de la norme
+			if hSpeed > threshold and hSpeed > 100 then
+				threatType = "speed"
+			-- 2. Teleportation : saut de position soudain (delta > 100 studs en 0.5s)
+			elseif delta.Magnitude > 100 then
+				threatType = "teleport"
+			end
+			-- 3. Hitbox anormale (scan leger, seulement si proche)
+			if not threatType and dist < 60 then
+				for _, part in ipairs(plr.Character:GetDescendants()) do
+					if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+						local maxDim = math.max(part.Size.X, part.Size.Y, part.Size.Z)
+						if maxDim > 30 then
+							threatType = "hitbox"
+							break
+						end
+					end
+				end
+			end
+			if threatType then
+				-- Menace proche (dans un rayon raisonnable) : activer les protections
+				if dist < 200 then
+					if not autoProtectState.activeThreats[plr] then
+						autoProtectState.activeThreats[plr] = threatType
+						applyAutoProtections(threatType, plr.Name)
+					end
+				else
+					-- Menace loin : on la retire (mais on garde le mode actif)
+					if autoProtectState.activeThreats[plr] then
+						releaseAutoProtections(plr)
+					end
+				end
+			else
+				-- Plus de menace pour ce joueur
+				if autoProtectState.activeThreats[plr] then
+					releaseAutoProtections(plr)
+				end
+			end
+		end
+		-- Nettoyer les joueurs qui ont quitte
+		for plr in pairs(autoProtectState.activeThreats) do
+			if not plr.Parent then
+				releaseAutoProtections(plr)
+			end
+		end
+	end
+end)
+
+-- Switch Mode Auto (BETA) - DESACTIVE PAR DEFAUT
+local autoProtectSwitch = createSwitch(protectionsScroll, "Mode Auto (BETA)", 472, function(on)
+	autoProtectState.enabled = on
+	if on then
+		-- Verrouille les autres switches de protection : c'est le panel qui decide
+		setProtectionSwitchesLocked(true)
+		notify("Mode Auto actif - le panel surveille et active les protections necessaires", Color3.fromRGB(80, 160, 255))
+	else
+		-- Deverrouille et desactive tout ce que le mode auto avait active
+		setProtectionSwitchesLocked(false)
+		for name in pairs(protectionsState) do
+			if name ~= "antiAFK" and name ~= "antiAFKLastAction" and name ~= "lastSafeCFrame" and name ~= "lastHrpPosition" and name ~= "antiKillSavedCFrame" and name ~= "antiSeatWatcher" and name ~= "antiSeatSitWatcher" and name ~= "lastWalkSpeed" and name ~= "lastHealth" then
+				protectionsState[name] = false
+			end
+		end
+		autoProtectState.activeThreats = {}
+		notify("Mode Auto desactive - protections manuelles restaurees", Color3.fromRGB(200, 160, 60))
+	end
+end)
+_G._agora_autoProtectSwitch = autoProtectSwitch
+
+-- Switch Notifications de detection (ON par defaut)
+createSwitch(protectionsScroll, "Notifs detection", 508, function(on)
+	autoProtectState.notifications = on
+end, true)
+
 -- Anti Infinite Jump: empecher les autres de sauter indefiniment
 UserInputService.JumpRequest:Connect(function()
 	if protectionsState.antiInfiniteJump and character and humanoid and not flyState.flying then
