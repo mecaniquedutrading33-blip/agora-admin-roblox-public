@@ -2583,26 +2583,36 @@ RunService.Heartbeat:Connect(function()
 		end
 	end
 
-	-- Anti Reach: detecter hitbox anormale des autres joueurs
-	if protectionsState.antiReach then
-		for _, plr in ipairs(Players:GetPlayers()) do
-			if plr ~= LocalPlayer and plr.Character then
-				for _, part in ipairs(plr.Character:GetDescendants()) do
-					if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-						local maxDim = math.max(part.Size.X, part.Size.Y, part.Size.Z)
-						if maxDim > 30 then
-							-- Hitbox anormale, ignorer ce joueur (ne pas casser le serveur)
-							pcall(function() part.LocalTransparencyModifier = 1 end)
+	if antiVoidState.enabled and pos.Y < -2000 and protectionsState.lastSafeCFrame and not flyState.flying and tick() >= flyGraceUntil then
+		rootPart.CFrame = protectionsState.lastSafeCFrame
+		rootPart.AssemblyLinearVelocity = Vector3.zero
+	end
+end)
+
+-- Anti Reach: detecter hitbox anormale des autres joueurs.
+-- Boucle LENTE (0.5s) au lieu de chaque frame : GetDescendants() sur tous les
+-- personnages a chaque Heartbeat etait la cause du lag quand on active les protections.
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		if protectionsState.antiReach then
+			updateCharacter()
+			character, humanoid, rootPart = _G._agoraChar, _G._agoraHum, _G._agoraRoot
+			if not rootPart then continue end
+			for _, plr in ipairs(Players:GetPlayers()) do
+				if plr ~= LocalPlayer and plr.Character then
+					for _, part in ipairs(plr.Character:GetDescendants()) do
+						if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+							local maxDim = math.max(part.Size.X, part.Size.Y, part.Size.Z)
+							if maxDim > 30 then
+								-- Hitbox anormale, ignorer ce joueur (ne pas casser le serveur)
+								pcall(function() part.LocalTransparencyModifier = 1 end)
+							end
 						end
 					end
 				end
 			end
 		end
-	end
-
-	if antiVoidState.enabled and pos.Y < -2000 and protectionsState.lastSafeCFrame and not flyState.flying and tick() >= flyGraceUntil then
-		rootPart.CFrame = protectionsState.lastSafeCFrame
-		rootPart.AssemblyLinearVelocity = Vector3.zero
 	end
 end)
 
