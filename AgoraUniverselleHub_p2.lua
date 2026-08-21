@@ -2354,21 +2354,6 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	end
 end)
 
-local function neutralizeSeat(seat)
-	if not seat then return end
-	if seat:IsA("Seat") or seat:IsA("VehicleSeat") then
-		-- Sauvegarder les valeurs originales UNE SEULE FOIS (attribut deja present = deja neutralise)
-		if not seat:GetAttribute("AgoraSeatSaved") then
-			seat:SetAttribute("AgoraSeatSaved", true)
-			seat:SetAttribute("AgoraSeatDisabled", seat.Disabled)
-			seat:SetAttribute("AgoraSeatCanTouch", seat.CanTouch)
-		end
-		seat.Disabled = true
-		seat.CanTouch = false
-		seat:SetAttribute("Neutralized", true)
-	end
-end
-
 local function restoreSeat(seat)
 	if not seat then return end
 	if (seat:IsA("Seat") or seat:IsA("VehicleSeat")) and seat:GetAttribute("Neutralized") then
@@ -2489,27 +2474,6 @@ end
 
 createProtectionSwitch("antiFling", "Anti Fling", 52)
 local antiSeatSwitch = createProtectionSwitch("antiSeat", "Anti Seat (perso)", 94)
--- Mode GLOBAL antiSeat : neutralise TOUS les sieges du jeu (vehicules/ascenseurs inclus)
--- Seulement si l'utilisateur le demande explicitement (le mode perso est le defaut)
-local antiSeatGlobalBtn = createButton(protectionsScroll, "Anti Seat GLOBAL (tous les sieges)", 0, Color3.fromRGB(120, 60, 60), function()
-	if not protectionsState.antiSeat then
-		-- Activer le mode perso d'abord (le global en depend)
-		protectionsState.antiSeat = true
-		if antiSeatSwitch and antiSeatSwitch.set then antiSeatSwitch.set(true) end
-		protectionsState.antiSeatSitWatcher = createAntiSeatSitWatcher()
-	end
-	-- Neutraliser tous les sieges existants + les nouveaux
-	for _, obj in ipairs(Workspace:GetDescendants()) do
-		neutralizeSeat(obj)
-	end
-	if protectionsState.antiSeatWatcher then protectionsState.antiSeatWatcher:Disconnect() end
-	protectionsState.antiSeatWatcher = Workspace.DescendantAdded:Connect(function(obj)
-		if obj:IsA("Seat") or obj:IsA("VehicleSeat") then
-			neutralizeSeat(obj)
-		end
-	end)
-	notify("Anti Seat GLOBAL actif : tous les sieges neutralises", Color3.fromRGB(120, 60, 60))
-end)
 createProtectionSwitch("antiTeleport", "Anti Teleport", 136)
 createProtectionSwitch("antiFall", "Anti Fall", 178)
 createProtectionSwitch("antiKill", "Anti Kill / Spawn TP", 220)

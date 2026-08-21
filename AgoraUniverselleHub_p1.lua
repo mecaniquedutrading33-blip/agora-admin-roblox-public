@@ -831,10 +831,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.63"
+	_G.CURRENT_VERSION = "v40.64"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.64: PROTECTIONS - suppression du bouton Anti Seat GLOBAL (inutile, l'Anti Seat perso suffit) + suppression du watcher DescendantAdded qui scannait chaque nouvel objet (source de lag). Anti Seat perso conserve le mode par defaut qui ne casse pas les vehicules",
 		"v40.63: FIX Server Hop + Rejoindre - Server Hop utilisait HttpService:GetAsync (bloque silencieusement par Solara sur *.roblox.com) -> passe par httpGet multi-executeur + JSONDecode securise + messages d'erreur clairs. Rejoindre ce serveur verifie le JobId avant teleport",
 		"v40.62: FIX crash anti-cheat - _pairs etait nil (jamais defini dans l IIFE) -> attempt to call a nil value ligne 5541. Ajout local _pairs = pairs",
 		"v40.51: REGISTRY - badge presence visuel en haut de carte (EN LIGNE ici / EN LIGNE / EN JEU / STUDIO / HORS LIGNE) avec detection native prioritaire + titre de carte (DisplayName @username) + separateurs de sections pour un rendu plus propre + bouton Rejoindre plus fiable",
