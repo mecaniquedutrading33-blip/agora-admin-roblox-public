@@ -9188,3 +9188,304 @@ end)(pages, switchTab)
 		end)
 	end)
 end)(screenGui, shutdownPanel, HttpService, LocalPlayer, createCorner, createStroke)
+
+-- =============================================================
+-- MODE AFK AUTO-WALK (balade automatique cinématique)
+-- Choisit automatiquement des points d'interet (spawns, joueurs,
+-- zones au sol explorables) et se ballade en continu, façon film,
+-- avec pause courte a chaque destination. Autonome : il coupe le
+-- gotoWalk existant pour eviter tout conflit.
+-- Ajouté en IIFE paramétrée (convention du hub).
+-- =============================================================
+;(function(_movePage, _createSwitch, _createButton, _updateCharacter,
+            _gotoWalkState, _gotoWalkSwitch, _PathfindingService,
+            _workspace, _runService, _tween)
+	local state = {
+		enabled = false,
+		active = false,
+		conn = nil,
+		walkConn = nil,
+		points = {},
+		idx = 1,
+		target = nil,
+		lastMoveTo = 0,
+		moving = false,
+		pauseUntil = 0,
+		stuckSince = nil,
+		stuckJump = 0,
+		lastJump = 0,
+		statusLabel = nil,
+	}
+
+	local function status(text)
+		pcall(function()
+			if state.statusLabel then state.statusLabel.Text = text end
+		end)
+	end
+
+	-- Choisit un point d'interet : 60% spawns/zones, 40% joueurs lointains
+	local function pickPoint()
+		local lp = game:GetService("Players").LocalPlayer
+		local char = lp and lp.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		local origin = hrp and hrp.Position or Vector3.new(0, 10, 0)
+		local candidates = {}
+
+		-- Zones d'interet : spawns + gros groupes de parts au sol
+		local function addPoint(p, name)
+			if not p then return end
+			local flat = Vector3.new(p.X - origin.X, 0, p.Z - origin.Z)
+			if flat.Magnitude > 20 then
+				table.insert(candidates, { pos = p, name = name })
+			end
+		end
+
+		-- SpawnLocations (points de respawn du map)
+		pcall(function()
+			local ws = _workspace
+			for _, sp in ipairs(ws:GetChildren()) do
+				if sp:FindFirstChild("SpawnLocation") then
+					for _, sl in ipairs(sp:GetDescendants()) do
+						if sl:IsA("SpawnLocation") then addPoint(sl.Position + Vector3.new(0,3,0), "Spawn") end
+					end
+				end
+			end
+		end)
+
+		-- Joueurs lointains (pour "suivre la foule" un peu, façon film)
+		pcall(function()
+			local Players = game:GetService("Players")
+			for _, plr in ipairs(Players:GetPlayers()) do
+				if plr ~= lp and plr.Character then
+					local p = plr.Character:FindFirstChild("HumanoidRootPart")
+					if p then addPoint(p.Position, plr.Name) end
+				end
+			end
+		end)
+
+		-- Points au sol disperses (exploration) : raycast vers le sol a distance
+		local seeded = false
+		if #candidates < 3 then
+			pcall(function()
+				for i = 1, 6 do
+					local ang = math.random() * math.pi * 2
+					local dist = 60 + math.random() * 100
+					local dir = Vector3.new(math.cos(ang), 0, math.sin(ang))
+					local hit = _workspace:Raycast(origin, dir * dist, RaycastParams.new())
+					if hit then
+						addPoint(hit.Position + Vector3.new(0, 4, 0), "Zone")
+						seeded = true
+					end
+				end
+			end)
+		end
+
+		if #candidates == 0 then
+			-- Dernier recours : point explorable devant/autour du joueur
+			local baseDir = (hrp and hrp.CFrame.LookVector or Vector3.new(1, 0, 0))
+			local ang = math.random() * math.pi * 2
+			local dirx = Vector3.new(math.cos(ang), 0, math.sin(ang))
+			local hit = _workspace:Raycast(origin + Vector3.new(0, 5, 0), dirx * 40, RaycastParams.new())
+			if hit then
+				return hit.Position + Vector3.new(0, 4, 0), "Zone"
+			end
+			return origin + Vector3.new(0, 0, 0) + dirx * 15, nil
+		end
+
+		-- Triage par distance (on prefere les points pas trop loin mais varies)
+		table.sort(candidates, function(a, b)
+			local da = (a.pos - origin).Magnitude
+			local db = (b.pos - origin).Magnitude
+			return da < db
+		end)
+		-- Prendre un point aleatoire parmi les 6 plus proches mais > 20 stud
+		local n = math.min(#candidates, 6)
+		local pick = candidates[math.random(1, n)]
+		return pick.pos, pick.name
+	end
+
+	-- Calcule un chemin fiable vers target
+	local function computePath(targetPos)
+		_updateCharacter()
+		local hrp = _gotoWalkState and _gotoWalkState.target and nil or nil
+		-- recupere rootPart depuis le chunk via upvalue implicite non dispo ici;
+		-- on passe par le character local
+		local lp = game:GetService("Players").LocalPlayer
+		local char = lp and lp.Character
+		local rp = char and char:FindFirstChild("HumanoidRootPart")
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		if not rp or not hum then return {} end
+
+		local waypoints = {}
+		local ok, res = pcall(function()
+			local p = _PathfindingService:CreatePath({ AgentRadius = 2, AgentHeight = 5, AgentCanJump = true, WaypointSpacing = 3 })
+			p:ComputeAsync(rp.Position, targetPos)
+			return p:GetWaypoints()
+		end)
+		if ok and res and #res > 0 then
+			for i, w in ipairs(res) do
+				if w and w.Position then table.insert(waypoints, w.Position) end
+			end
+			if #waypoints > 1 then table.remove(waypoints, 1) end
+			return waypoints
+		end
+		-- Fallback direct
+		return { targetPos }
+	end
+
+	local function stop()
+		if state.walkConn then state.walkConn:Disconnect(); state.walkConn = nil end
+		if state.conn then state.conn:Disconnect(); state.conn = nil end
+		pcall(function()
+			local lp = game:GetService("Players").LocalPlayer
+			local char = lp and lp.Character
+			if char then
+				local hum = char:FindFirstChildOfClass("Humanoid")
+				if hum then hum:MoveTo(char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart.Position or Vector3.zero) end
+			end
+		end)
+		state.enabled = false
+		state.active = false
+		state.moving = false
+	end
+
+	local function start()
+		if state.enabled or state.conn then return end
+		state.enabled = true
+		state.active = true
+		state.idx = 1
+		state.pauseUntil = 0
+		status("🔍 AFK Auto-Walk: recherche d'un point...")
+
+		-- Couper le gotoWalk pour eviter conflit
+		pcall(function()
+			if _gotoWalkState then _gotoWalkState.active = false end
+			if _gotoWalkSwitch then _gotoWalkSwitch.set(false) end
+		end)
+
+		-- Boucle principale de deplacement
+		if not state.walkConn then
+			state.walkConn = _runService.RenderStepped:Connect(function()
+				_updateCharacter()
+				local lp = game:GetService("Players").LocalPlayer
+				local char = lp and lp.Character
+				local hum = char and char:FindFirstChildOfClass("Humanoid")
+				local rp = char and char:FindFirstChild("HumanoidRootPart")
+				if not hum or not rp then return end
+
+				-- Pause a destination (moment "film" : le perso observe)
+				if state.pauseUntil and tick() < state.pauseUntil then
+					hum:MoveTo(rp.Position)
+					return
+				end
+
+				if not state.moving then
+					-- Choisir un nouveau point
+					local pt, name = pickPoint()
+					if not pt then
+						status("⚠ Aucun point trouvé, arrêt")
+						stop()
+						return
+					end
+					local path = computePath(pt)
+					state.target = pt
+					state.path = path
+					state.moving = #path > 0
+					state.stuckSince = nil
+					state.stuckJump = 0
+					if state.moving and hum then
+						status("🚶 Balade → " .. (name or "point") )
+						hum:MoveTo(path[1])
+						state.lastMoveTo = tick()
+					end
+					return
+				end
+
+				-- On suit le chemin
+				if not state.path or #state.path == 0 then
+					-- Arrivé : petite pause, puis point suivant
+					state.moving = false
+					state.pauseUntil = tick() + 2 + math.random() * 2
+					status("👀 Observation...")
+					return
+				end
+
+				local wp = state.path[1]
+				local flatDist = Vector3.new(rp.Position.X - wp.X, 0, rp.Position.Z - wp.Z).Magnitude
+				if flatDist < 4 then
+					table.remove(state.path, 1)
+					if hum then
+						if #state.path > 0 then hum:MoveTo(state.path[1]) else hum:MoveTo(rp.Position) end
+					end
+					state.lastMoveTo = tick()
+					return
+				end
+
+				-- Detection blocage + saut
+				local vel = rp.AssemblyLinearVelocity
+				local spd = Vector3.new(vel.X, 0, vel.Z).Magnitude
+				if flatDist > 4 and spd < 1.5 then
+					if state.stuckSince == nil then state.stuckSince = tick() end
+					if tick() - state.stuckSince > 0.6 then
+						hum.Jump = true
+						state.lastJump = tick()
+						if tick() - state.stuckSince > 2.5 then
+							state.stuckSince = nil
+							-- recalculer
+							local pt = state.target or pickPoint()
+							local np = computePath(pt)
+							state.path = np
+							state.moving = #np > 0
+							state.stuckJump = 0
+							if #np > 0 then hum:MoveTo(np[1]) end
+						end
+					end
+				else
+					state.stuckSince = nil
+				end
+
+				if tick() - state.lastMoveTo > 3 and #state.path > 0 then
+					hum:MoveTo(state.path[1])
+					state.lastMoveTo = tick()
+				end
+			end)
+		end
+	end
+
+	local function toggle(on)
+		if on then start() else stop() end
+	end
+
+	-- Switch + bouton dans l'onglet Move
+	local afkSwitch = _createSwitch(_movePage, "AFK Auto-Walk (balade auto)", 60, toggle)
+	_createButton(_movePage, "Reset AFK", 100, Color3.fromRGB(90, 90, 100), function()
+		stop()
+		state.path = {}
+		state.target = nil
+		state.pauseUntil = 0
+		status("♻ AFK réinitialisé")
+	end)
+
+	-- Label de statut dédié
+	local statusLabel = Instance.new("TextLabel")
+	statusLabel.Size = UDim2.new(1, -20, 0, 20)
+	statusLabel.Position = UDim2.new(0, 10, 0, 132)
+	statusLabel.BackgroundColor3 = Color3.fromRGB(25, 30, 40)
+	statusLabel.TextColor3 = Color3.fromRGB(120, 200, 255)
+	statusLabel.Font = Enum.Font.Gotham
+	statusLabel.TextSize = 12
+	statusLabel.Text = "AFK Auto-Walk: OFF"
+	statusLabel.TextWrapped = true
+	statusLabel.ClipsDescendants = true
+	statusLabel.Parent = _movePage
+	state.statusLabel = statusLabel
+
+	-- petit helper de secours
+	local function smallWalkOffset()
+		return Vector3.new(math.random(-15, 15), 0, math.random(-15, 15))
+	end
+
+	return { toggle = toggle }
+end)(movePage, createSwitch, createButton, updateCharacter,
+    gotoWalkState, gotoWalkSwitch, PathfindingService,
+    Workspace, RunService, tween)
