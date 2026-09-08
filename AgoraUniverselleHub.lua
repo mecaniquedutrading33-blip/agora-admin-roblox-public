@@ -2418,7 +2418,7 @@ local function createPlayerEntry(plr)
 			for _, item in ipairs(items) do
 				if item.Tool and item.Tool.Parent then
 					item.Tool:Clone().Parent = myBackpack
-					stolen += 1
+					stolen = stolen + 1
 				end
 			end
 			if notify then notify("Voles: " .. stolen .. " item(s)", 2) end
@@ -2464,7 +2464,7 @@ local function createPlayerEntry(plr)
 					end
 				end
 				clone.Parent = character
-				copied += 1
+				copied = copied + 1
 			end
 		end
 		local hum = character:FindFirstChildOfClass("Humanoid")
@@ -4050,18 +4050,18 @@ local function startFly()
 
 		local move = Vector3.zero
 		-- PC controls (clavier)
-		if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move += Camera.CFrame.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= Camera.CFrame.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then move -= Camera.CFrame.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += Camera.CFrame.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
-		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0, 1, 0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Z) then move = move + Camera.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - Camera.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then move = move - Camera.CFrame.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + Camera.CFrame.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move = move - Vector3.new(0, 1, 0) end
 		-- Mobile controls (joystick + boutons)
 		if flyState.mobileInput and flyState.mobileInput.Magnitude > 0 then
-			move += Camera.CFrame.LookVector * flyState.mobileInput.Z + Camera.CFrame.RightVector * flyState.mobileInput.X
+			move = move + Camera.CFrame.LookVector * flyState.mobileInput.Z + Camera.CFrame.RightVector * flyState.mobileInput.X
 		end
-		if flyState.mobileUpHeld then move += Vector3.new(0, 1, 0) end
-		if flyState.mobileDownHeld then move -= Vector3.new(0, 1, 0) end
+		if flyState.mobileUpHeld then move = move + Vector3.new(0, 1, 0) end
+		if flyState.mobileDownHeld then move = move - Vector3.new(0, 1, 0) end
 
 		if flyState.vel then
 			flyState.vel.Velocity = move.Magnitude > 0 and move.Unit * flyState.speed or Vector3.zero
@@ -4449,7 +4449,7 @@ local platformLabel = Instance.new("TextLabel")
 platformLabel.Size = UDim2.new(1, -16, 0, 30)
 platformLabel.Position = UDim2.new(0, 8, 0, 328)
 platformLabel.BackgroundTransparency = 1
-platformLabel.Text = "Plateforme: F10 (+=monter -=descendre)"
+platformLabel.Text = "Plateforme: F10 (+=monter = monter - descendre)"
 platformLabel.Font = Enum.Font.Gotham
 platformLabel.TextSize = 11
 platformLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
@@ -5420,10 +5420,10 @@ RunService.Stepped:Connect(function(_, dt)
 		-- Plate FIXE en X/Z : on ne tracke plus la position, on ajuste juste la hauteur
 		-- avec les touches +/-
 		if UserInputService:IsKeyDown(Enum.KeyCode.Equals) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadPlus) then
-			platformState.offset += 25 * dt
+			platformState.offset = platformState.offset + 25 * dt
 		end
 		if UserInputService:IsKeyDown(Enum.KeyCode.Minus) or UserInputService:IsKeyDown(Enum.KeyCode.KeypadMinus) then
-			platformState.offset -= 25 * dt
+			platformState.offset = platformState.offset - 25 * dt
 		end
 		-- Lissage de la position verticale (evite les sauts secs)
 		local smoothing = math.min(1, dt * 12)
@@ -9014,3 +9014,178 @@ end)(mainFrame)
 		end)
 	end)
 end)(pages, switchTab)
+
+-- =============================================================
+-- SYSTEME DE MISE A JOUR AUTOMATIQUE (re-implémentation)
+-- Vérifie la version sur Supabase, affiche un popup avec logo,
+-- et propose de redémarrer le hub si une version plus récente.
+-- Enveloppé en IIFE paramétrée (convention du hub) pour éviter
+-- la limite de 200 locals du chunk principal.
+-- =============================================================
+;(function(_screenGui, _shutdownPanel, _HttpService, _LocalPlayer, _createCorner, _createStroke)
+	-- Version locale (celle du hub qui tourne actuellement)
+	local CURRENT_VERSION = "v39.51"
+
+	-- Version courante (fichier qui retourne: return "v40.64")
+	local VERSION_URL = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_version.lua&nocache=" .. tick()
+	-- URL de recharge du hub complet
+	local HUB_URL = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub.lua&nocache=" .. tick()
+	local LOGO_ID = "rbxassetid://73314612607499"  -- même logo que la top bar
+
+	-- Compare "vX.Y" avec "vW.Z", true si la première est plus récente
+	local function isNewer(v1, v2)
+		local function parse(v)
+			local maj, min = v:match("v(%d+)%.(%d+)")
+			if not maj then return nil end
+			return tonumber(maj), tonumber(min) or 0
+		end
+		local m1, n1 = parse(v1)
+		local m2, n2 = parse(v2)
+		if not m1 or not m2 then return false end
+		if m1 ~= m2 then return m1 > m2 end
+		return n1 > n2
+	end
+
+	local function restartHub()
+		pcall(_shutdownPanel)
+		pcall(function() if _screenGui then _screenGui:Destroy() end end)
+		task.spawn(function()
+			local ok, src = pcall(function() return _HttpService:GetAsync(HUB_URL) end)
+			if ok and src and src ~= "" then
+				local fn = loadstring(src)
+				if fn then pcall(fn) end
+			end
+		end)
+	end
+
+	local function showUpdatePopup(latestVersion)
+		if _G.AgoraUpdatePopupShown then return end
+		_G.AgoraUpdatePopupShown = true
+
+		local popGui = Instance.new("ScreenGui")
+		popGui.Name = "AgoraUpdatePopup"
+		popGui.ResetOnSpawn = false
+		popGui.DisplayOrder = 99998
+		popGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		popGui.Parent = _LocalPlayer:WaitForChild("PlayerGui", 10)
+
+		local backdrop = Instance.new("Frame")
+		backdrop.Size = UDim2.new(1, 0, 1, 0)
+		backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		backdrop.BackgroundTransparency = 0.55
+		backdrop.BorderSizePixel = 0
+		backdrop.ZIndex = 300
+		backdrop.Parent = popGui
+
+		local card = Instance.new("Frame")
+		card.Name = "UpdateCard"
+		card.Size = UDim2.new(0, 360, 0, 250)
+		card.Position = UDim2.new(0.5, -180, 0.5, -125)
+		card.AnchorPoint = Vector2.new(0, 0)
+		card.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+		card.BackgroundTransparency = 0.05
+		card.BorderSizePixel = 0
+		card.ZIndex = 301
+		card.Parent = popGui
+		_createCorner(card, 14)
+		_createStroke(card, Color3.fromRGB(60, 180, 255), 1.5)
+
+		local logo = Instance.new("ImageLabel")
+		logo.Name = "Logo"
+		logo.Size = UDim2.new(0, 64, 0, 64)
+		logo.Position = UDim2.new(0.5, -32, 0, 18)
+		logo.BackgroundTransparency = 1
+		logo.Image = LOGO_ID
+		logo.BorderSizePixel = 0
+		logo.ZIndex = 302
+		logo.Parent = card
+		_createCorner(logo, 12)
+
+		local title = Instance.new("TextLabel")
+		title.Size = UDim2.new(1, -24, 0, 24)
+		title.Position = UDim2.new(0, 12, 0, 92)
+		title.BackgroundTransparency = 1
+		title.Text = "🚀 Nouvelle mise à jour disponible !"
+		title.Font = Enum.Font.GothamBold
+		title.TextSize = 18
+		title.TextColor3 = Color3.fromRGB(60, 200, 255)
+		title.ZIndex = 302
+		title.Parent = card
+
+		local sub = Instance.new("TextLabel")
+		sub.Size = UDim2.new(1, -30, 0, 20)
+		sub.Position = UDim2.new(0, 15, 0, 120)
+		sub.BackgroundTransparency = 1
+		sub.Text = string.format("Version %s → %s", CURRENT_VERSION, latestVersion)
+		sub.Font = Enum.Font.Gotham
+		sub.TextSize = 14
+		sub.TextColor3 = Color3.fromRGB(180, 180, 200)
+		sub.ZIndex = 302
+		sub.Parent = card
+
+		local desc = Instance.new("TextLabel")
+		desc.Size = UDim2.new(1, -40, 0, 30)
+		desc.Position = UDim2.new(0, 20, 0, 142)
+		desc.BackgroundTransparency = 1
+		desc.Text = "Voulez-vous redémarrer le hub ?"
+		desc.Font = Enum.Font.Gotham
+		desc.TextSize = 13
+		desc.TextColor3 = Color3.fromRGB(220, 220, 230)
+		desc.TextWrapped = true
+		desc.ZIndex = 302
+		desc.Parent = card
+
+		local btnYes = Instance.new("TextButton")
+		btnYes.Name = "BtnYes"
+		btnYes.Size = UDim2.new(0, 120, 0, 38)
+		btnYes.Position = UDim2.new(0.5, -130, 0, 190)
+		btnYes.BackgroundColor3 = Color3.fromRGB(40, 170, 90)
+		btnYes.BorderSizePixel = 0
+		btnYes.Text = "✅ Oui, redémarrer"
+		btnYes.Font = Enum.Font.GothamBold
+		btnYes.TextSize = 14
+		btnYes.TextColor3 = Color3.fromRGB(255, 255, 255)
+		btnYes.ZIndex = 303
+		btnYes.Parent = card
+		_createCorner(btnYes, 8)
+
+		local btnNo = Instance.new("TextButton")
+		btnNo.Name = "BtnNo"
+		btnNo.Size = UDim2.new(0, 120, 0, 38)
+		btnNo.Position = UDim2.new(0.5, 10, 0, 190)
+		btnNo.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
+		btnNo.BorderSizePixel = 0
+		btnNo.Text = "❌ Plus tard"
+		btnNo.Font = Enum.Font.GothamBold
+		btnNo.TextSize = 14
+		btnNo.TextColor3 = Color3.fromRGB(200, 200, 210)
+		btnNo.ZIndex = 303
+		btnNo.Parent = card
+		_createCorner(btnNo, 8)
+
+		btnYes.MouseButton1Click:Connect(function()
+			pcall(function() popGui:Destroy() end)
+			restartHub()
+		end)
+
+		btnNo.MouseButton1Click:Connect(function()
+			pcall(function() popGui:Destroy() end)
+			_G.AgoraUpdatePopupShown = false
+		end)
+	end
+
+	-- Vérifie la version au démarrage (après l'intro)
+	task.delay(2.5, function()
+		pcall(function()
+			local ok, src = pcall(function() return _HttpService:GetAsync(VERSION_URL) end)
+			if ok and src and src ~= "" then
+				local fn = loadstring(src)
+				local latest = fn and fn()
+				if type(latest) == "string" and latest ~= CURRENT_VERSION and isNewer(latest, CURRENT_VERSION) then
+					showUpdatePopup(latest)
+				end
+			end
+		end)
+	end)
+end)(screenGui, shutdownPanel, HttpService, LocalPlayer, createCorner, createStroke)
+
