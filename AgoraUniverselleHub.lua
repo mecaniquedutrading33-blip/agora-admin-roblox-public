@@ -9024,7 +9024,7 @@ end)(pages, switchTab)
 -- =============================================================
 ;(function(_screenGui, _shutdownPanel, _HttpService, _LocalPlayer, _createCorner, _createStroke)
 	-- Version locale (celle du hub qui tourne actuellement)
-	local CURRENT_VERSION = "v39.51"
+	local CURRENT_VERSION = "v40.64"
 
 	-- Version courante (fichier qui retourne: return "v40.64")
 	local VERSION_URL = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_version.lua&nocache=" .. tick()
@@ -9188,4 +9188,3 @@ end)(pages, switchTab)
 		end)
 	end)
 end)(screenGui, shutdownPanel, HttpService, LocalPlayer, createCorner, createStroke)
-
