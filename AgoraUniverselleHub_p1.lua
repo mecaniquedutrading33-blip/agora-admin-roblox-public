@@ -635,6 +635,25 @@ createStroke(topBar, Color3.fromRGB(80, 80, 100), 0.8)
 	badgeStroke.Parent = uniBadge
 end)()
 
+-- Indicateur Server Authority (mis a jour par p2 via _G._agoraSAIndicator)
+-- Petit voyant dans la top bar : vert = mode Local, rouge = Server Authority actif
+local saIndicator = Instance.new("TextLabel")
+saIndicator.Name = "SAIndicator"
+saIndicator.Size = UDim2.new(0, 52, 0, 18)
+saIndicator.Position = UDim2.new(0, 232, 0.5, 0)
+saIndicator.AnchorPoint = Vector2.new(0, 0.5)
+saIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+saIndicator.BackgroundTransparency = 0.15
+saIndicator.BorderSizePixel = 0
+saIndicator.Font = Enum.Font.GothamBold
+saIndicator.Text = "SA: ..."
+saIndicator.TextSize = 9
+saIndicator.TextColor3 = Color3.fromRGB(160, 160, 170)
+saIndicator.ZIndex = 5
+saIndicator.Parent = topBar
+createCorner(saIndicator, 4)
+_G._agoraSAIndicator = saIndicator
+
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -110, 1, 0)
 titleLabel.Position = UDim2.new(0, 36, 0, 0)
@@ -833,11 +852,11 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.64"
+	_G.CURRENT_VERSION = "v40.65"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v40.64: PROTECTIONS - suppression du bouton Anti Seat GLOBAL (inutile, l'Anti Seat perso suffit) + suppression du watcher DescendantAdded qui scannait chaque nouvel objet (source de lag). Anti Seat perso conserve le mode par defaut qui ne casse pas les vehicules",
+		"v40.65: MAJ UNIVERSELLE - indicateur Server Authority dans la top bar (SA: Server rouge / SA: Local vert, mis a jour en temps reel) + section TROLL universelle dans Extra (Freeze, Fling, Scare, Spam chat, TP cible vers toi, Kill best effort, Annuler effets) + bouton Troll sur chaque carte joueur (popup d'actions sur ce joueur) + detection cheat amelioree (Invisible + Aimbot, avec tolerance respawn/vehicule) + Registry: bouton Copier tout le profil + infos joueurs enrichies (Followers, Following, Badges)",
 		"v40.63: FIX Server Hop + Rejoindre - Server Hop utilisait HttpService:GetAsync (bloque silencieusement par Solara sur *.roblox.com) -> passe par httpGet multi-executeur + JSONDecode securise + messages d'erreur clairs. Rejoindre ce serveur verifie le JobId avant teleport",
 		"v40.62: FIX crash anti-cheat - _pairs etait nil (jamais defini dans l IIFE) -> attempt to call a nil value ligne 5541. Ajout local _pairs = pairs",
 		"v40.51: REGISTRY - badge presence visuel en haut de carte (EN LIGNE ici / EN LIGNE / EN JEU / STUDIO / HORS LIGNE) avec detection native prioritaire + titre de carte (DisplayName @username) + separateurs de sections pour un rendu plus propre + bouton Rejoindre plus fiable",
@@ -2954,6 +2973,154 @@ local function createPlayerEntry(plr)
 	createCorner(espPinBtn, 6)
 	createStroke(espPinBtn, Color3.fromRGB(200, 120, 255), 1)
 
+	-- Bouton Troll : ouvre un popup d'actions troll sur CE joueur precis
+	local trollBtn = Instance.new("TextButton")
+	trollBtn.Size = UDim2.new(0, 54, 0, 24)
+	trollBtn.Position = UDim2.new(1, -128, 0, 106)
+	trollBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 160)
+	trollBtn.Text = "Troll"
+	trollBtn.Font = Enum.Font.GothamSemibold
+	trollBtn.TextSize = 11
+	trollBtn.TextColor3 = Color3.new(1, 1, 1)
+	trollBtn.BorderSizePixel = 0
+	trollBtn.Parent = card
+	createCorner(trollBtn, 6)
+	createStroke(trollBtn, Color3.fromRGB(255, 120, 200), 1)
+	trollBtn.MouseButton1Click:Connect(function()
+		pcall(function()
+			local existing = screenGui:FindFirstChild("_TrollPanel_" .. plr.Name)
+			if existing then existing:Destroy() return end
+			local win = Instance.new("Frame")
+			win.Name = "_TrollPanel_" .. plr.Name
+			win.Size = UDim2.new(0, 240, 0, 260)
+			win.Position = UDim2.new(0.5, -120, 0.5, -130)
+			win.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+			win.BorderSizePixel = 0
+			win.Active = true
+			win.Draggable = true
+			win.ZIndex = 100
+			win.Parent = screenGui
+			createCorner(win, 10)
+			createStroke(win, Color3.fromRGB(200, 80, 200), 1.2)
+			local title = Instance.new("TextLabel")
+			title.Size = UDim2.new(1, -40, 0, 28)
+			title.Position = UDim2.new(0, 10, 0, 0)
+			title.BackgroundTransparency = 1
+			title.Text = "Troll @" .. plr.Name
+			title.Font = Enum.Font.GothamBold
+			title.TextSize = 13
+			title.TextColor3 = Color3.fromRGB(255, 255, 255)
+			title.TextXAlignment = Enum.TextXAlignment.Left
+			title.Parent = win
+			local closeX = Instance.new("TextButton")
+			closeX.Size = UDim2.new(0, 26, 0, 26)
+			closeX.Position = UDim2.new(1, -32, 0, 4)
+			closeX.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+			closeX.Text = "X"
+			closeX.Font = Enum.Font.GothamBold
+			closeX.TextSize = 13
+			closeX.TextColor3 = Color3.new(1, 1, 1)
+			closeX.BorderSizePixel = 0
+			closeX.Parent = win
+			createCorner(closeX, 6)
+			closeX.MouseButton1Click:Connect(function() win:Destroy() end)
+			-- Actions troll (best effort, pcall)
+			local actions = {
+				{"Freeze", Color3.fromRGB(120, 80, 200), function()
+					pcall(function()
+						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+							plr.Character.HumanoidRootPart.Anchored = true
+							task.delay(3, function()
+								if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+									plr.Character.HumanoidRootPart.Anchored = false
+								end
+							end)
+						end
+					end)
+				end},
+				{"Fling", Color3.fromRGB(200, 100, 60), function()
+					pcall(function()
+						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+							local hrp = plr.Character.HumanoidRootPart
+							local bv = Instance.new("BodyVelocity")
+							bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+							bv.Velocity = Vector3.new(0, 80, 0)
+							bv.Parent = hrp
+							task.delay(1, function() if bv and bv.Parent then bv:Destroy() end end)
+						end
+					end)
+				end},
+				{"Scare", Color3.fromRGB(200, 60, 60), function()
+					pcall(function()
+						if plr.Character then
+							local s = Instance.new("Sound")
+							s.SoundId = "rbxassetid://9042847609"
+							s.Volume = 1
+							s.Parent = plr.Character
+							s:Play()
+							task.delay(2, function() if s and s.Parent then s:Destroy() end end)
+						end
+					end)
+				end},
+				{"TP vers toi", Color3.fromRGB(60, 160, 90), function()
+					pcall(function()
+						updateCharacter()
+						if rootPart and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+							plr.Character.HumanoidRootPart.CFrame = rootPart.CFrame + Vector3.new(0, 3, 0)
+						end
+					end)
+				end},
+				{"Kill (best effort)", Color3.fromRGB(255, 60, 60), function()
+					pcall(function()
+						local fired = 0
+						local seen = {}
+						local function scan(container)
+							for _, obj in ipairs(container:GetDescendants()) do
+								if seen[obj] then continue end
+								seen[obj] = true
+								if (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) and not obj.Name:match("^%d+$") then
+									local n = obj.Name:lower()
+									if n:find("damage") or n:find("hurt") or n:find("hit") or n:find("kill") or n:find("attack") or n:find("health") or n:find("die") then
+										if not (n:find("teleport") or n:find("tp") or n:find("warp") or n:find("shop") or n:find("store") or n:find("spawn") or n:find("move") or n:find("buy") or n:find("sell") or n:find("emote") or n:find("dance") or n:find("vehicle") or n:find("car")) then
+											pcall(function()
+												if obj:IsA("RemoteEvent") then obj:FireServer(plr) else obj:InvokeServer(plr) end
+												fired = fired + 1
+											end)
+										end
+									end
+								end
+							end
+						end
+						scan(ReplicatedStorage)
+						scan(Workspace)
+						scan(LocalPlayer)
+					end)
+				end},
+			}
+			local layout = Instance.new("UIListLayout")
+			layout.Padding = UDim.new(0, 4)
+			layout.SortOrder = Enum.SortOrder.LayoutOrder
+			layout.Parent = win
+			for i, a in ipairs(actions) do
+				local btn = Instance.new("TextButton")
+				btn.Size = UDim2.new(1, -20, 0, 30)
+				btn.Position = UDim2.new(0, 10, 0, 32 + (i - 1) * 36)
+				btn.BackgroundColor3 = a[2]
+				btn.Text = a[1]
+				btn.Font = Enum.Font.GothamBold
+				btn.TextSize = 12
+				btn.TextColor3 = Color3.new(1, 1, 1)
+				btn.BorderSizePixel = 0
+				btn.Parent = win
+				createCorner(btn, 6)
+				btn.MouseButton1Click:Connect(function()
+					a[3]()
+					if notify then notify("Troll: " .. a[1] .. " sur @" .. plr.Name, Color3.fromRGB(255, 120, 200)) end
+				end)
+			end
+		end)
+	end)
+
 	local function updatePinBtn()
 		if pinnedPlayers[plr] then
 			pinBtn.BackgroundColor3 = Color3.fromRGB(220, 170, 40)
@@ -3808,6 +3975,33 @@ local function createPlayerEntry(plr)
 						local d = HttpService:JSONDecode(resp)
 						if d and d.count then
 							table.insert(extra, "Amis : " .. tostring(d.count))
+						end
+					end
+				end)
+				pcall(function()
+					local resp = game:HttpGet("https://friends.roblox.com/v1/users/" .. plr.UserId .. "/followers/count")
+					if resp and resp ~= "" then
+						local d = HttpService:JSONDecode(resp)
+						if d and d.count then
+							table.insert(extra, "Followers : " .. tostring(d.count))
+						end
+					end
+				end)
+				pcall(function()
+					local resp = game:HttpGet("https://friends.roblox.com/v1/users/" .. plr.UserId .. "/followings/count")
+					if resp and resp ~= "" then
+						local d = HttpService:JSONDecode(resp)
+						if d and d.count then
+							table.insert(extra, "Following : " .. tostring(d.count))
+						end
+					end
+				end)
+				pcall(function()
+					local resp = game:HttpGet("https://badges.roblox.com/v1/users/" .. plr.UserId .. "/badges?limit=1&sortOrder=Desc")
+					if resp and resp ~= "" then
+						local d = HttpService:JSONDecode(resp)
+						if d and d.data then
+							table.insert(extra, "Badges : " .. tostring(#d.data))
 						end
 					end
 				end)

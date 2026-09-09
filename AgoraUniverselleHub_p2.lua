@@ -2112,6 +2112,7 @@ saForceBtn.MouseButton1Click:Connect(function()
 		saForceBtn.Text = "Forcer mode Local (desactiver SA)"
 		saForceBtn.BackgroundColor3 = Color3.fromRGB(50, 80, 120)
 	end
+	updateSAIndicator()
 end)
 
 createSwitch(saCard, "Fly Anchored (CFrame lock)", 2, function(on)
@@ -2192,11 +2193,33 @@ createSwitch(saCard, "Remote Fly (via RemoteEvent) [EXPERIMENTAL]", 4, function(
 end)
 
 -- Check ServerAuthority au demarrage + periodicite (sans deplacement physique)
+local function updateSAIndicator()
+	local ind = _G._agoraSAIndicator
+	if not ind then return end
+	if saForceLocal then
+		ind.Text = "SA: Local"
+		ind.BackgroundColor3 = Color3.fromRGB(40, 90, 50)
+		ind.TextColor3 = Color3.fromRGB(120, 220, 140)
+	else
+		local ok, mode = getAuthorityMode()
+		if ok and mode == "Server" then
+			ind.Text = "SA: Server"
+			ind.BackgroundColor3 = Color3.fromRGB(90, 40, 40)
+			ind.TextColor3 = Color3.fromRGB(255, 120, 120)
+		else
+			ind.Text = "SA: Local"
+			ind.BackgroundColor3 = Color3.fromRGB(40, 90, 50)
+			ind.TextColor3 = Color3.fromRGB(120, 220, 140)
+		end
+	end
+end
+
 task.spawn(function()
 	-- Check initial une seule fois
 	if not saForceLocal and isServerAuthority() then
 		saCard.Visible = true
 	end
+	updateSAIndicator()
 	-- Apres le check initial, re-evaluer la source de verite (attribut) dans les DEUX sens
 	while true do
 		task.wait(30)
@@ -2207,6 +2230,7 @@ task.spawn(function()
 				saCard.Visible = (mode == "Server")
 			end
 		end
+		updateSAIndicator()
 	end
 end)
 
@@ -2214,6 +2238,251 @@ end)
 local panicEnabled = false
 createSwitch(extraScroll, "Bouton panique (Shift+P)", 0, function(on)
 	panicEnabled = on
+end)
+
+-- ============= SECTION TROLL UNIVERSELLE =============
+-- Best effort : chaque jeu a ses remotes, donc ces actions peuvent ne pas marcher
+-- partout. Tout est protege par pcall (jamais de crash).
+local trollCard = Instance.new("Frame")
+trollCard.Name = "TrollCard"
+trollCard.Size = UDim2.new(1, -10, 0, 0)
+trollCard.AutomaticSize = Enum.AutomaticSize.Y
+trollCard.BackgroundColor3 = Color3.fromRGB(25, 15, 30)
+trollCard.BorderSizePixel = 0
+trollCard.LayoutOrder = 11
+trollCard.Parent = extraScroll
+createCorner(trollCard, 8)
+createStroke(trollCard, Color3.fromRGB(200, 80, 200), 1)
+
+local trollLayout = Instance.new("UIListLayout")
+trollLayout.SortOrder = Enum.SortOrder.LayoutOrder
+trollLayout.Padding = UDim.new(0, 4)
+trollLayout.Parent = trollCard
+
+local trollPad = Instance.new("UIPadding")
+trollPad.PaddingTop = UDim.new(0, 8)
+trollPad.PaddingBottom = UDim.new(0, 8)
+trollPad.PaddingLeft = UDim.new(0, 12)
+trollPad.PaddingRight = UDim.new(0, 12)
+trollPad.Parent = trollLayout
+
+local trollTitle = Instance.new("TextLabel")
+trollTitle.Size = UDim2.new(1, 0, 0, 20)
+trollTitle.BackgroundTransparency = 1
+trollTitle.Text = "[TROLL] Universel (best effort)"
+trollTitle.Font = Enum.Font.GothamBold
+trollTitle.TextSize = 13
+trollTitle.TextColor3 = Color3.fromRGB(255, 120, 255)
+trollTitle.TextXAlignment = Enum.TextXAlignment.Left
+trollTitle.LayoutOrder = 0
+trollTitle.Parent = trollCard
+
+local trollWarn = Instance.new("TextLabel")
+trollWarn.Size = UDim2.new(1, 0, 0, 26)
+trollWarn.BackgroundTransparency = 1
+trollWarn.Text = "Actions sur les autres joueurs. Chaque jeu a ses remotes, donc ca peut ne pas marcher partout. Tout est securise (pcall)."
+trollWarn.Font = Enum.Font.Gotham
+trollWarn.TextSize = 10
+trollWarn.TextColor3 = Color3.fromRGB(200, 150, 200)
+trollWarn.TextWrapped = true
+trollWarn.TextXAlignment = Enum.TextXAlignment.Left
+trollWarn.LayoutOrder = 1
+trollWarn.Parent = trollCard
+
+-- Helper : trouver le joueur cible (le plus proche, ou le pin)
+local function getTrollTarget()
+	-- Priorite : joueur epingle (pin)
+	local pinned = _G._agora_pinnedPlayers
+	if pinned then
+		for plr in pairs(pinned) do
+			if plr and plr.Parent and plr.Character then return plr end
+		end
+	end
+	-- Sinon : le joueur le plus proche
+	updateCharacter()
+	local myRoot = _G._agoraRoot
+	if not myRoot then return nil end
+	local best, bestDist = nil, math.huge
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+			local d = (plr.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude
+			if d < bestDist then best, bestDist = plr, d end
+		end
+	end
+	return best
+end
+
+-- Helper : fire les remotes de degats/action vers une cible (best effort)
+local function fireTargetRemotes(target, keywords, exclude)
+	local fired = 0
+	local seen = {}
+	local function scan(container)
+		for _, obj in ipairs(container:GetDescendants()) do
+			if seen[obj] then continue end
+			seen[obj] = true
+			if (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) then
+				local n = obj.Name:lower()
+				local match = false
+				for _, kw in ipairs(keywords) do
+					if n:find(kw) then match = true break end
+				end
+				if match then
+					local excluded = false
+					for _, ex in ipairs(exclude or {}) do
+						if n:find(ex) then excluded = true break end
+					end
+					if not excluded and not n:match("^%d+$") then
+						pcall(function()
+							if obj:IsA("RemoteEvent") then
+								obj:FireServer(target)
+							else
+								obj:InvokeServer(target)
+							end
+							fired = fired + 1
+						end)
+					end
+				end
+			end
+		end
+	end
+	scan(ReplicatedStorage)
+	scan(Workspace)
+	scan(LocalPlayer)
+	return fired
+end
+
+-- Bouton : Freeze (figer le joueur cible)
+createButton(trollCard, "Freeze cible (best effort)", 0, Color3.fromRGB(120, 80, 200), function()
+	local target = getTrollTarget()
+	if not target then notify("Troll: aucune cible", Color3.fromRGB(255, 180, 60)) return end
+	local fired = fireTargetRemotes(target, {"freeze", "stun", "slow", "root", "hold"}, {"unfreeze", "unroot", "release"})
+	-- Fallback local : figer le HRP de la cible (visible seulement si pas SA)
+	pcall(function()
+		if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+			target.Character.HumanoidRootPart.Anchored = true
+			task.delay(3, function()
+				if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+					target.Character.HumanoidRootPart.Anchored = false
+				end
+			end)
+		end
+	end)
+	notify("Freeze: " .. target.Name .. " (" .. fired .. " remote(s) fire)", Color3.fromRGB(180, 120, 255))
+end)
+
+-- Bouton : Fling (projeter la cible)
+createButton(trollCard, "Fling cible (best effort)", 0, Color3.fromRGB(200, 100, 60), function()
+	local target = getTrollTarget()
+	if not target then notify("Troll: aucune cible", Color3.fromRGB(255, 180, 60)) return end
+	local fired = fireTargetRemotes(target, {"fling", "launch", "push", "knock", "force", "impulse"}, {"unfling", "stop"})
+	-- Fallback local : appliquer une force au HRP de la cible
+	pcall(function()
+		if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+			local hrp = target.Character.HumanoidRootPart
+			local bv = Instance.new("BodyVelocity")
+			bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+			bv.Velocity = Vector3.new(0, 80, 0)
+			bv.Parent = hrp
+			task.delay(1, function() if bv and bv.Parent then bv:Destroy() end end)
+		end
+	end)
+	notify("Fling: " .. target.Name .. " (" .. fired .. " remote(s) fire)", Color3.fromRGB(255, 160, 100))
+end)
+
+-- Bouton : Scare (jumpscare son fort + flash)
+createButton(trollCard, "Scare cible (son + flash)", 0, Color3.fromRGB(200, 60, 60), function()
+	local target = getTrollTarget()
+	if not target then notify("Troll: aucune cible", Color3.fromRGB(255, 180, 60)) return end
+	-- Son fort cote cible (si on peut jouer un son sur son perso)
+	pcall(function()
+		if target.Character then
+			local s = Instance.new("Sound")
+			s.SoundId = "rbxassetid://9042847609" -- stinger fort
+			s.Volume = 1
+			s.Parent = target.Character
+			s:Play()
+			task.delay(2, function() if s and s.Parent then s:Destroy() end end)
+		end
+	end)
+	-- Flash local (ecran)
+	pcall(function()
+		local flash = Instance.new("Frame")
+		flash.Size = UDim2.new(1, 0, 1, 0)
+		flash.BackgroundColor3 = Color3.new(1, 1, 1)
+		flash.BackgroundTransparency = 0.8
+		flash.ZIndex = 999
+		flash.Parent = screenGui
+		task.delay(0.15, function() if flash then flash:Destroy() end end)
+	end)
+	notify("Scare: " .. target.Name, Color3.fromRGB(255, 120, 120))
+end)
+
+-- Bouton : Spam chat (envoyer des messages)
+createButton(trollCard, "Spam chat (5 msgs)", 0, Color3.fromRGB(60, 120, 200), function()
+	local target = getTrollTarget()
+	local name = target and target.Name or "toi"
+	local msgs = {
+		"Salut " .. name .. " !",
+		"Tu joues bien " .. name .. " ;)",
+		"Agora Hub Universelle te regarde",
+		"GG " .. name .. " !",
+		"Bien joue " .. name .. " !"
+	}
+	for i = 1, 5 do
+		task.delay(i * 0.4, function()
+			pcall(function()
+				if TextChatService and TextChatService.ChatInputBarConfiguration then
+					TextChatService:DisplaySystemMessage(msgs[i])
+				else
+					game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {Text = msgs[i]})
+				end
+			end)
+		end)
+	end
+	notify("Spam chat lance", Color3.fromRGB(120, 200, 255))
+end)
+
+-- Bouton : Teleporter la cible vers toi
+createButton(trollCard, "TP cible vers toi", 0, Color3.fromRGB(60, 160, 90), function()
+	local target = getTrollTarget()
+	if not target then notify("Troll: aucune cible", Color3.fromRGB(255, 180, 60)) return end
+	updateCharacter()
+	local myRoot = _G._agoraRoot
+	if not myRoot then return end
+	local fired = fireTargetRemotes(target, {"teleport", "tp", "move", "position", "warp"}, {"teleportto", "tpto"})
+	-- Fallback local : deplacer le HRP de la cible vers toi
+	pcall(function()
+		if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+			target.Character.HumanoidRootPart.CFrame = myRoot.CFrame + Vector3.new(0, 3, 0)
+		end
+	end)
+	notify("TP: " .. target.Name .. " vers toi (" .. fired .. " remote(s) fire)", Color3.fromRGB(120, 220, 140))
+end)
+
+-- Bouton : Kill cible (best effort)
+createButton(trollCard, "Kill cible (best effort)", 0, Color3.fromRGB(255, 60, 60), function()
+	local target = getTrollTarget()
+	if not target then notify("Troll: aucune cible", Color3.fromRGB(255, 180, 60)) return end
+	local fired = fireTargetRemotes(target, {"damage", "hurt", "hit", "kill", "attack", "health", "die"}, {"teleport", "tp", "warp", "shop", "store", "spawn", "move", "buy", "sell", "emote", "dance", "vehicle", "car"})
+	notify("Kill: " .. target.Name .. " (" .. fired .. " remote(s) fire - best effort)", Color3.fromRGB(255, 100, 100))
+end)
+
+-- Bouton : Annuler les effets locaux (de-anchor / destroy body movers)
+createButton(trollCard, "Annuler effets locaux", 0, Color3.fromRGB(80, 80, 90), function()
+	local target = getTrollTarget()
+	if not target then notify("Troll: aucune cible", Color3.fromRGB(255, 180, 60)) return end
+	pcall(function()
+		if target.Character then
+			for _, v in ipairs(target.Character:GetDescendants()) do
+				if v:IsA("BodyMover") or v:IsA("BodyVelocity") or v:IsA("BodyPosition") or v:IsA("BodyGyro") then
+					v:Destroy()
+				end
+			end
+			local hrp = target.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then hrp.Anchored = false end
+		end
+	end)
+	notify("Effets locaux annules sur " .. target.Name, Color3.fromRGB(160, 160, 180))
 end)
 
 UserInputService.InputBegan:Connect(function(input, gpe)
@@ -4303,6 +4572,14 @@ local function renderResult(data, parent)
 			makeActionBtn(" Profil", Color3.fromRGB(80, 180, 120), 3, function()
 				pcall(function() setclipboard("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile") end)
 			end)
+			-- Copier TOUT le profil (toutes les infos) dans le presse-papier
+			makeActionBtn(" Copier tout", Color3.fromRGB(200, 160, 60), 5, function()
+				pcall(function()
+					local txt = table.concat(lines, "\n")
+					if setclipboard then setclipboard(txt)
+					elseif toclipboard then toclipboard(txt) end
+				end)
+			end)
 			-- Rejoindre ce joueur : rejoint le jeu OU il est.
 			-- L'API publique Roblox ne donne QUE le jeu (placeId), pas le serveur exact (jobId).
 			-- On affiche le NOM du jeu + bouton Rejoindre.
@@ -5791,6 +6068,8 @@ _G["autoClickSwitch"] = autoClickSwitch
 							t.prevPos = nil
 							t.prevHp = nil
 							t.prevVelY = nil
+							t.prevCF = nil
+							t.respawnAt = _tick()
 						end
 						local pos = hrp.Position
 						local vel = hrp.AssemblyLinearVelocity
@@ -5922,6 +6201,52 @@ _G["autoClickSwitch"] = autoClickSwitch
 					if state == Enum.HumanoidStateType.Jumping and s.velY > 20 and t.prevVelY and t.prevVelY < -5 then
 						addLog(uid, "Air Jump", "Jumped while descending at " .. _math.floor(t.prevVelY) .. "/s", "info")
 					end
+				end
+
+				-- 8. Invisible (transparency hack) : perso quasi invisible sans etre mort
+				--    Tolere : respawn (grace 2s), mort, vehicule (certains vehicules ont des
+				--    parts transparentes). Ne flag que si le HRP lui-meme est transparent.
+				if canLog(uid, "invisible") then
+					local hrp = char:FindFirstChild("HumanoidRootPart")
+					if hrp and hrp.Transparency > 0.9 and hum.Health > 0 then
+						local respawnGrace = (t.respawnAt or 0)
+						if _tick() - respawnGrace > 2 then
+							addLog(uid, "Invisible", "HRP transparency " .. _math.floor(hrp.Transparency * 100) .. "% (HP " .. _math.floor(hum.Health) .. ")", "warn")
+						end
+					end
+				end
+
+				-- 9. Aimbot (snap aim) : rotation instantanee du HRP vers un autre joueur
+				--    Tolere : regarder autour (rotation lente), vehicules, respawn.
+				--    Detecte un changement d'orientation > 120 degres en 1 frame vers une cible.
+				if canLog(uid, "aimbot") then
+					local hrp = char:FindFirstChild("HumanoidRootPart")
+					if hrp and t.prevCF then
+						local look = hrp.CFrame.LookVector
+						local prevLook = t.prevCF.LookVector
+						local dot = _math.max(-1, _math.min(1, look:Dot(prevLook)))
+						local angle = _math.acos(dot) * 57.2958 -- degres
+						if angle > 120 then
+							-- Verifier qu'il y a bien une cible proche dans la direction (aimbot reel)
+							local hasTarget = false
+							for _, other in _ipairs(_Players:GetPlayers()) do
+								if other ~= plr and other ~= LocalPlayer and other.Character then
+									local ohrp = other.Character:FindFirstChild("HumanoidRootPart")
+									if ohrp then
+										local toTarget = (ohrp.Position - hrp.Position).Unit
+										if look:Dot(toTarget) > 0.98 then hasTarget = true break end
+									end
+								end
+							end
+							if hasTarget then
+								addLog(uid, "Aimbot", "Snap aim " .. _math.floor(angle) .. " deg vers cible", "alert")
+							end
+						end
+					end
+				end
+				-- Stocker le CFrame pour la detection aimbot au prochain frame
+				if char:FindFirstChild("HumanoidRootPart") then
+					t.prevCF = char.HumanoidRootPart.CFrame
 				end
 			end
 		end
