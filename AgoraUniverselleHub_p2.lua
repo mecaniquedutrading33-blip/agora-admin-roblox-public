@@ -4322,17 +4322,16 @@ local function renderResult(data, parent)
 				openTagPopup(data.userId, data.username, screenGui)
 			end)
 			makeActionBtn(" ID", Color3.fromRGB(80, 130, 200), 2, function()
-				pcall(function() setclipboard(tostring(data.userId)) end)
+				if _G.agoraCopyText then _G.agoraCopyText(tostring(data.userId), "ID copie") end
 			end)
 			makeActionBtn(" Profil", Color3.fromRGB(80, 180, 120), 3, function()
-				pcall(function() setclipboard("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile") end)
+				if _G.agoraCopyText then _G.agoraCopyText("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile", "Profil copie") end
 			end)
 			-- Copier TOUT le profil (toutes les infos) dans le presse-papier
 			makeActionBtn(" Copier tout", Color3.fromRGB(200, 160, 60), 5, function()
 				pcall(function()
 					local txt = table.concat(lines, "\n")
-					if setclipboard then setclipboard(txt)
-					elseif toclipboard then toclipboard(txt) end
+					if _G.agoraCopyText then _G.agoraCopyText(txt, "Profil copie") end
 				end)
 			end)
 			-- Rejoindre ce joueur : rejoint le jeu OU il est.
@@ -4360,7 +4359,7 @@ local function renderResult(data, parent)
 				end)
 			else
 				makeActionBtn(" Profil web", Color3.fromRGB(70, 130, 200), 4, function()
-					pcall(function() setclipboard("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile") end)
+					if _G.agoraCopyText then _G.agoraCopyText("https://www.roblox.com/users/" .. tostring(data.userId) .. "/profile", "Profil copie") end
 				end)
 			end
 		end
