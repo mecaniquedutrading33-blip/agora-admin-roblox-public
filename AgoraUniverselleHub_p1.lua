@@ -5,11 +5,9 @@
 -- quand shutdownPanel le passe a false (evite les boucles fantomes apres fermeture)
 _G._agoraRunning = true
 
--- v40.68 : recuperation des fichiers du hub avec hote + secours.
--- H2 = hote actif. H1 en secours (fonction absente au 09/11, gardee dans la liste au cas ou elle revient).
+-- v40.68 : recuperation des fichiers du hub depuis la liste _G.AGORA_HOSTS (un seul hote : la S).
 _G.AGORA_HOSTS = {
 	"https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle",
-	"https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
 }
 _G.AGORA_FETCH = function(fichier)
 	for _, base in ipairs(_G.AGORA_HOSTS) do
@@ -7576,11 +7574,10 @@ end)()
 
 
 -- AUTO-LOAD PART 2 (split pour la limite de taille de Solara)
--- v40.68 : liste d'hotes avec secours (H2 = hote actif, H1 en secours s'il revient en ligne).
+-- v40.68 : hote unique = la S (seul hote restant). La boucle est conservee : ajouter une URL ici suffit.
 task.spawn(function()
 	local HOSTS = {
 		"https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle",
-		"https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
 	}
 	local code
 	for _, base in ipairs(HOSTS) do
@@ -7628,7 +7625,6 @@ task.delay(8, function()
                 _G._agoraAU = true
                 local VHOSTS = {
                     "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle",
-                    "https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
                 }
                 local rv, ok
                 for _, vbase in ipairs(VHOSTS) do

@@ -12,8 +12,7 @@
 --   entete : la ligne 1 de ce fichier
 --   fin de fichier valide : end)(movePage, createSwitch,
 --
--- Hotes : H2 = hote actif, H1 en secours (sa fonction a disparu le 09/11, gardee au cas ou).
--- Les deux servent les memes octets ; le premier qui repond gagne.
+-- Hote unique : la S. La liste est conservee (fallback si un jour un 2e hote revient).
 -- ---------------------------------------------------------------------------------------
 -- Historique de ce fichier :
 --   v40.66 : derniere version monolithique connue avec bouton AUTO-TEST
@@ -23,7 +22,6 @@
 
 local HOSTS = {
 	"https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle",
-	"https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
 }
 
 local code
