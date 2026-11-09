@@ -37,7 +37,7 @@ for _, base in ipairs(HOSTS) do
 end
 
 if not code then
-	warn("[AGORA] Aiguilleur : partie 1 injoignable sur les deux hotes")
+	warn("[AGORA] Aiguilleur : partie 1 injoignable sur l'hote )
 	return
 end
 

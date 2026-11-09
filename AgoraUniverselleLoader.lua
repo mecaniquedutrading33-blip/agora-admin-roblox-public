@@ -1,7 +1,9 @@
--- Agora Universelle Hub - Loader v26
+-- Agora Universelle Hub - Loader v27
 -- 1 telechargement complet + garde anti-doublon + controle de fin de fichier + secours.
-local H1="https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub.lua"
-local H2="https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub.lua"
+-- v27 : hote unique (la S). L'ancien hote hlxbqtayotwdtspkrlol est supprime : sa fonction
+-- ne repond plus (404), le garder ne faisait qu'ajouter un echec a chaque chargement.
+local H1="https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub.lua"
+local H2=H1
 local R="&_="..math.random(100000,999999)
 local HEAD="-- Agora Hub [UNIVERSELLE]"
 local TAIL="end)(movePage, createSwitch,"
