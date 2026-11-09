@@ -5,11 +5,11 @@
 -- quand shutdownPanel le passe a false (evite les boucles fantomes apres fermeture)
 _G._agoraRunning = true
 
--- v40.68 : recuperation des fichiers du hub avec hote principal + secours.
--- H1 renvoie les octets bruts ; H2 sert de secours (il double-encode parfois les accents).
+-- v40.68 : recuperation des fichiers du hub avec hote + secours.
+-- H2 = hote actif. H1 en secours (fonction absente au 09/11, gardee dans la liste au cas ou elle revient).
 _G.AGORA_HOSTS = {
-	"https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
 	"https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle",
+	"https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
 }
 _G.AGORA_FETCH = function(fichier)
 	for _, base in ipairs(_G.AGORA_HOSTS) do
@@ -7576,11 +7576,11 @@ end)()
 
 
 -- AUTO-LOAD PART 2 (split pour la limite de taille de Solara)
--- v40.68 : hote principal d'abord (il sert les octets bruts, pas de texte double-encode), secours H2.
+-- v40.68 : liste d'hotes avec secours (H2 = hote actif, H1 en secours s'il revient en ligne).
 task.spawn(function()
 	local HOSTS = {
-		"https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
 		"https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle",
+		"https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
 	}
 	local code
 	for _, base in ipairs(HOSTS) do
@@ -7627,8 +7627,8 @@ task.delay(8, function()
             if not _G._agoraUpdating and not _G._agoraAU then
                 _G._agoraAU = true
                 local VHOSTS = {
-                    "https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
                     "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle",
+                    "https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
                 }
                 local rv, ok
                 for _, vbase in ipairs(VHOSTS) do

@@ -12,9 +12,8 @@
 --   entete : la ligne 1 de ce fichier
 --   fin de fichier valide : end)(movePage, createSwitch,
 --
--- Hotes : H1 = hote principal, H2 = secours. Les deux servent les memes octets ; H1 est
--- prefere pour la partie 2 car il renvoie les octets bruts (pas de texte double-encode,
--- ce qui corrige les "..." et les accents affiches en charabia dans l'interface).
+-- Hotes : H2 = hote actif, H1 en secours (sa fonction a disparu le 09/11, gardee au cas ou).
+-- Les deux servent les memes octets ; le premier qui repond gagne.
 -- ---------------------------------------------------------------------------------------
 -- Historique de ce fichier :
 --   v40.66 : derniere version monolithique connue avec bouton AUTO-TEST
@@ -23,8 +22,8 @@
 -- ---------------------------------------------------------------------------------------
 
 local HOSTS = {
-	"https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
 	"https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle",
+	"https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
 }
 
 local code
