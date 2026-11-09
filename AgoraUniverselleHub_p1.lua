@@ -864,10 +864,12 @@ local localPage = createTab("Perso")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.66"
+	_G.CURRENT_VERSION = "v40.68"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
+		"v40.68: Bouton AUTO-TEST restaure dans l'onglet Remotes (v40.66) + Part 2 chargee depuis l'hote principal avec secours (fin du texte double-encode)",
+		"v40.67: Hub redecoupe en 2 parties pour Solara, le loader aiguille sur la partie 1",
 		"v40.66: REFONTE INTERFACE - 8 onglets exactement sur 2 rangees de 4 (plus de nom coupe), panneau 500x600, Registry fusionne dans Joueurs via un segment Joueurs/Registry, badges de carte joueur plus de chevauchement (mouv. / device / voyant), Troll par joueur SUPPRIME (marche jamais), onglet Perso = reglages d'interface utiles (FOV, opacite, notifications, chat, mode photo, sauvegarde), nouvel onglet Scan (surveillance locale sans API) et auto-test des remotes en tache de fond sans lag",
 		"v40.65: MAJ UNIVERSELLE - indicateur Server Authority dans la top bar (SA: Server rouge / SA: Local vert, mis a jour en temps reel) + section TROLL universelle dans Extra (Freeze, Fling, Scare, Spam chat, TP cible vers toi, Kill best effort, Annuler effets) + bouton Troll sur chaque carte joueur (popup d'actions sur ce joueur) + detection cheat amelioree (Invisible + Aimbot, avec tolerance respawn/vehicule) + Registry: bouton Copier tout le profil + infos joueurs enrichies (Followers, Following, Badges)",
 		"v40.63: FIX Server Hop + Rejoindre - Server Hop utilisait HttpService:GetAsync (bloque silencieusement par Solara sur *.roblox.com) -> passe par httpGet multi-executeur + JSONDecode securise + messages d'erreur clairs. Rejoindre ce serveur verifie le JobId avant teleport",
@@ -7552,25 +7554,34 @@ end)()
 end)()
 
 
--- AUTO-LOAD PART 2 (split for Solara 200KB limit)
+-- AUTO-LOAD PART 2 (split pour la limite de taille de Solara)
+-- v40.68 : hote principal d'abord (il sert les octets bruts, pas de texte double-encode), secours H2.
 task.spawn(function()
-    local url = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p2.lua&nocache=" .. tostring(tick())
-    local ok, code = pcall(function()
-        return game:HttpGet(url, true)
-    end)
-    if ok and code and #code > 100 then
-        local fn, err = loadstring(code)
-        if fn then
-            local ok2, err2 = pcall(fn)
-            if not ok2 then
-                warn("[AGORA] Part 2 runtime error: " .. tostring(err2))
-            end
-        else
-            warn("[AGORA] Part 2 load error: " .. tostring(err))
-        end
-    else
-        warn("[AGORA] Part 2 fetch failed")
-    end
+	local HOSTS = {
+		"https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
+		"https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle",
+	}
+	local code
+	for _, base in ipairs(HOSTS) do
+		for essai = 1, 2 do
+			local url = base .. "?file=AgoraUniverselleHub_p2.lua&nocache=" .. tostring(tick()) .. "&r=" .. tostring(math.random(100000, 999999))
+			local ok, res = pcall(function() return game:HttpGet(url, true) end)
+			if ok and type(res) == "string" and #res > 1000 then code = res break end
+			task.wait(0.4)
+		end
+		if code then break end
+	end
+	if not code then
+		warn("[AGORA] Part 2 injoignable (les deux hotes) : le hub restera incomplet")
+		return
+	end
+	local fn, err = loadstring(code)
+	if not fn then
+		warn("[AGORA] Part 2 load error: " .. tostring(err))
+		return
+	end
+	local ok2, err2 = pcall(fn)
+	if not ok2 then warn("[AGORA] Part 2 runtime error: " .. tostring(err2)) end
 end)
 
 -- AUTO-UPDATE CHECK (popup une seule fois par version distante, persiste entre reloads)
@@ -7594,8 +7605,16 @@ task.delay(8, function()
         pcall(function()
             if not _G._agoraUpdating and not _G._agoraAU then
                 _G._agoraAU = true
-                local vurl = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_version.lua&nocache=" .. tostring(tick()) .. "&r=" .. tostring(math.random(100000, 999999))
-                local ok, rv = pcall(function() return game:HttpGet(vurl, true) end)
+                local VHOSTS = {
+                    "https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
+                    "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle",
+                }
+                local rv, ok
+                for _, vbase in ipairs(VHOSTS) do
+                    local vurl = vbase .. "?file=AgoraUniverselleHub_version.lua&nocache=" .. tostring(tick()) .. "&r=" .. tostring(math.random(100000, 999999))
+                    local o, r = pcall(function() return game:HttpGet(vurl, true) end)
+                    if o and type(r) == "string" and #r > 2 then rv = r ok = true break end
+                end
                 if ok and rv then
                     rv = rv:gsub('return "', ''):gsub('"', ''):gsub("%s", "")
                     local cv = (_G.CURRENT_VERSION or CURRENT_VERSION or "v0"):gsub("%s", "")
