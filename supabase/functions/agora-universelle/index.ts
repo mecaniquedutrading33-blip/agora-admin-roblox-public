@@ -11,6 +11,12 @@ const ALLOWED_FILES = [
   "AgoraLoader.lua",
   "MainModule.lua",
   "Commands.lua",
+  // Hub Actuel (v40.68) : aiguilleur + 2 parties + etiquette de version
+  "AgoraUniverselleHub.lua",
+  "AgoraUniverselleHub_p1.lua",
+  "AgoraUniverselleHub_p2.lua",
+  "AgoraUniverselleHub_version.lua",
+  "AgoraUniverselleLoader.lua",
 ];
 
 function decodeBase64Bytes(b64: string): Uint8Array {
