@@ -5,6 +5,26 @@
 -- quand shutdownPanel le passe a false (evite les boucles fantomes apres fermeture)
 _G._agoraRunning = true
 
+-- v40.68 : recuperation des fichiers du hub avec hote principal + secours.
+-- H1 renvoie les octets bruts ; H2 sert de secours (il double-encode parfois les accents).
+_G.AGORA_HOSTS = {
+	"https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle",
+	"https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle",
+}
+_G.AGORA_FETCH = function(fichier)
+	for _, base in ipairs(_G.AGORA_HOSTS) do
+		for essai = 1, 2 do
+			local url = base .. "?file=" .. fichier .. "&nocache=" .. tostring(tick())
+				.. "&r=" .. tostring(math.random(100000, 999999))
+			local ok, res = pcall(function() return game:HttpGet(url, true) end)
+			if ok and type(res) == "string" and #res > 200 then return res end
+			task.wait(0.3)
+		end
+	end
+	warn("[AGORA] telechargement impossible : " .. tostring(fichier))
+	return nil
+end
+
 local SETTINGS = {
 	SpiderSpeed = 24,
 	SpiderHoverDistance = 3.0,
@@ -316,7 +336,8 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 					pcall(function() _G.shutdownPanel() end)
 					task.wait(0.3)
 					pcall(function()
-						loadstring(game:HttpGet("https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache=" .. tick()))()
+						local cReload = _G.AGORA_FETCH and _G.AGORA_FETCH("AgoraUniverselleHub_p1.lua")
+						if cReload then loadstring(cReload)() end
 					end)
 				end)
 				noBtn.MouseButton1Click:Connect(function()
@@ -7732,8 +7753,9 @@ _G._agoraPerformUpdate = function()
         aL.Text = "Redemarrage..."
         _G._agoraUpdating = nil
         task.wait(2)
-        local rU = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_p1.lua&nocache=" .. tostring(tick()) .. "&r=" .. tostring(math.random(100000, 999999))
-        local okR, code2 = pcall(function() return game:HttpGet(rU, true) end)
+        local okR, code2 = pcall(function()
+            return _G.AGORA_FETCH and _G.AGORA_FETCH("AgoraUniverselleHub_p1.lua")
+        end)
         if okR and code2 and #code2 > 100 then
             aG:Destroy()
             local fn = loadstring(code2)
