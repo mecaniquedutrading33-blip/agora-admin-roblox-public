@@ -864,11 +864,10 @@ local localPage = createTab("Perso")
 
 
 ;(function() -- ============= HOME PAGE =============
-	_G.CURRENT_VERSION = "v40.67"
+	_G.CURRENT_VERSION = "v40.66"
 	local CURRENT_VERSION = _G.CURRENT_VERSION
 	
 	local changelogEntries = {
-		"v40.67: CORRECTIFS - opacite du panneau reglable finement (le slider arrondissait a 0 ou 1), bouton Copier fonctionnel meme sans setclipboard (fenetre avec le texte deja selectionne), auto-test des remotes refait : une carte-bouton par remote TOUCHABLE avec ses arguments et l effet mesure, un clic pour rejouer",
 		"v40.66: REFONTE INTERFACE - 8 onglets exactement sur 2 rangees de 4 (plus de nom coupe), panneau 500x600, Registry fusionne dans Joueurs via un segment Joueurs/Registry, badges de carte joueur plus de chevauchement (mouv. / device / voyant), Troll par joueur SUPPRIME (marche jamais), onglet Perso = reglages d'interface utiles (FOV, opacite, notifications, chat, mode photo, sauvegarde), nouvel onglet Scan (surveillance locale sans API) et auto-test des remotes en tache de fond sans lag",
 		"v40.65: MAJ UNIVERSELLE - indicateur Server Authority dans la top bar (SA: Server rouge / SA: Local vert, mis a jour en temps reel) + section TROLL universelle dans Extra (Freeze, Fling, Scare, Spam chat, TP cible vers toi, Kill best effort, Annuler effets) + bouton Troll sur chaque carte joueur (popup d'actions sur ce joueur) + detection cheat amelioree (Invisible + Aimbot, avec tolerance respawn/vehicule) + Registry: bouton Copier tout le profil + infos joueurs enrichies (Followers, Following, Badges)",
 		"v40.63: FIX Server Hop + Rejoindre - Server Hop utilisait HttpService:GetAsync (bloque silencieusement par Solara sur *.roblox.com) -> passe par httpGet multi-executeur + JSONDecode securise + messages d'erreur clairs. Rejoindre ce serveur verifie le JobId avant teleport",
@@ -1203,7 +1202,7 @@ local localPage = createTab("Perso")
 	discordBtn.Parent = homeScroll
 	createCorner(discordBtn, 8)
 	discordBtn.MouseButton1Click:Connect(function()
-		_G.agoraCopyText("https://discord.gg/fVw2rzAMb", "Lien copie")
+		pcall(function() setclipboard("https://discord.gg/fVw2rzAMb") end)
 		discordBtn.Text = "[OK] Lien copie !"
 		task.delay(2, function() discordBtn.Text = "[Discord] Rejoindre le serveur" end)
 	end)
@@ -3143,7 +3142,7 @@ local function createPlayerEntry(plr)
 	createMiniBtn("Team", "team")
 	createMiniBtn("Chat", "chat")
 	createMiniBtn("UserId", "userId", function()
-		_G.agoraCopyText(tostring(plr.UserId), "ID copie")
+		if setclipboard then setclipboard(tostring(plr.UserId)) end
 	end)
 	createMiniBtn("Profil", "profile", function()
 		pcall(function() LocalPlayer:SetCore("ShellOpenUrl", "https://www.roblox.com/users/" .. plr.UserId .. "/profile") end)
@@ -3860,7 +3859,13 @@ local function createPlayerEntry(plr)
 			-- Bouton Copier : copie tout le texte actuel dans le presse-papier
 			copyBtn.MouseButton1Click:Connect(function()
 				local txt = table.concat(allLines, "\n")
-				_G.agoraCopyText(txt, "Copie")
+				pcall(function()
+					if setclipboard then
+						setclipboard(txt)
+					elseif toclipboard then
+						toclipboard(txt)
+					end
+				end)
 				copyBtn.Text = "[v] Copie"
 				copyBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 100)
 				task.delay(1.5, function()
@@ -6347,13 +6352,12 @@ do
 	end, Color3.fromRGB(120, 170, 255))
 	SETTINGS.fov = 70
 
-	-- decimals = 2 : sans ca le slider arrondissait a l'entier (0 ou 1 seulement)
 	createSlider(localPage, "Opacite du panneau", 506, 0, 0.9, 0.35, function(v)
 		pcall(function()
 			mainFrame.BackgroundTransparency = v
 			SETTINGS.panelOpacity = v
 		end)
-	end, Color3.fromRGB(150, 150, 170), 2)
+	end, Color3.fromRGB(150, 150, 170))
 	SETTINGS.panelOpacity = 0.35
 
 	createSwitch(localPage, "Notifications reduites", 552, function(on)
@@ -6538,117 +6542,7 @@ _G["globalESPSwitch"] = globalESPSwitch
 _G["gotoWalkSwitch"] = gotoWalkSwitch
 _G["infiniteJumpSwitch"] = infiniteJumpSwitch
 
--- ============================================================================
--- COPIE UNIVERSELLE (v40.67)
--- setclipboard n'existe pas dans un LocalScript Roblox standard -> "presse-papier
--- indisponible". On essaie toutes les variantes d'executeur, et si aucune
--- n'existe on affiche une fenetre avec le texte DEJA selectionne : Ctrl+C suffit.
--- ============================================================================
-do
-	local function nativeCopy(txt)
-		local fns = { setclipboard, setrbxclipboard, toclipboard, set_clipboard, writeclipboard }
-		for _, f in ipairs(fns) do
-			if typeof(f) == "function" then
-				if pcall(f, txt) then return true end
-			end
-		end
-		return false
-	end
-
-	local function getGui()
-		if screenGui then return screenGui end
-		if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then return LocalPlayer.PlayerGui end
-		return nil
-	end
-
-	local box
-
-	_G.agoraCopyText = function(txt, label)
-		txt = tostring(txt or "")
-		if #txt == 0 then return false end
-		if nativeCopy(txt) then
-			if _G.notify then _G.notify(label or "Copie", Color3.fromRGB(90, 200, 140)) end
-			return true
-		end
-
-		local gui = getGui()
-		if not gui then return false end
-		if box and box.Parent then box:Destroy() end
-
-		box = Instance.new("Frame")
-		box.Name = "CopyFallback"
-		box.Size = UDim2.new(0, 360, 0, 300)
-		box.Position = UDim2.new(0.5, -180, 0.5, -150)
-		box.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
-		box.BorderSizePixel = 0
-		box.ZIndex = 200
-		box.Parent = gui
-		createCorner(box, 10)
-		createStroke(box, Color3.fromRGB(70, 100, 170), 1)
-
-		local t = Instance.new("TextLabel")
-		t.Size = UDim2.new(1, -20, 0, 40)
-		t.Position = UDim2.new(0, 10, 0, 6)
-		t.BackgroundTransparency = 1
-		t.Text = "Presse-papier indisponible.\nLe texte est deja selectionne : Ctrl+A puis Ctrl+C."
-		t.Font = Enum.Font.GothamSemibold
-		t.TextSize = 11
-		t.TextColor3 = Color3.fromRGB(230, 200, 140)
-		t.TextXAlignment = Enum.TextXAlignment.Left
-		t.TextYAlignment = Enum.TextYAlignment.Top
-		t.TextWrapped = true
-		t.ZIndex = 201
-		t.Parent = box
-
-		local tb = Instance.new("TextBox")
-		tb.Size = UDim2.new(1, -20, 1, -92)
-		tb.Position = UDim2.new(0, 10, 0, 50)
-		tb.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
-		tb.TextColor3 = Color3.fromRGB(200, 220, 255)
-		tb.Font = Enum.Font.Code
-		tb.TextSize = 10
-		tb.TextXAlignment = Enum.TextXAlignment.Left
-		tb.TextYAlignment = Enum.TextYAlignment.Top
-		tb.TextWrapped = true
-		tb.MultiLine = true
-		tb.ClearTextOnFocus = false
-		tb.TextEditable = true
-		tb.Text = txt
-		tb.ZIndex = 201
-		tb.Parent = box
-		createCorner(tb, 6)
-
-		local closeB = Instance.new("TextButton")
-		closeB.Size = UDim2.new(0, 110, 0, 26)
-		closeB.Position = UDim2.new(1, -120, 1, -34)
-		closeB.BackgroundColor3 = Color3.fromRGB(60, 70, 110)
-		closeB.Text = "Fermer"
-		closeB.Font = Enum.Font.GothamSemibold
-		closeB.TextSize = 11
-		closeB.TextColor3 = Color3.new(1, 1, 1)
-		closeB.BorderSizePixel = 0
-		closeB.ZIndex = 201
-		closeB.Parent = box
-		createCorner(closeB, 6)
-		closeB.MouseButton1Click:Connect(function()
-			if box then box:Destroy() end
-		end)
-
-		task.defer(function()
-			pcall(function()
-				tb:CaptureFocus()
-				tb.CursorPosition = #txt + 1
-				tb.SelectionStart = 1
-			end)
-		end)
-		if _G.notify then
-			_G.notify("Selectionne tout puis Ctrl+C", Color3.fromRGB(240, 180, 90))
-		end
-		return false
-	end
-end
-
--- ===== MODULES v40.67 : Copie + Scan local + Auto-test remotes =====
+-- ===== MODULES v40.66 : Scan local + Auto-test remotes =====
 
 -- ============================================================================
 -- ONGLET SCAN - surveillance 100% LOCALE (aucune API, aucun quota, aucun lag)
@@ -6968,8 +6862,15 @@ end
 
 	copyBtn.MouseButton1Click:Connect(function()
 		local txt = table.concat(reportLines, "\n")
-		if _G.agoraCopyText then
-			_G.agoraCopyText(txt, "Rapport copie")
+		local done = false
+		pcall(function()
+			if typeof(setclipboard) == "function" then
+				setclipboard(txt)
+				done = true
+			end
+		end)
+		if _G.notify then
+			_G.notify(done and "Rapport copie" or "Presse-papier indisponible", Color3.fromRGB(80, 200, 130))
 		end
 	end)
 
@@ -6989,73 +6890,77 @@ end
 end)()
 
 -- ============================================================================
--- AUTO-TEST DES REMOTES (v40.67)
--- Le panneau sort UNIQUEMENT ce qui est utilisable :
---   * une carte-bouton par remote TOUCHABLE, avec les arguments qui marchent
---     et l'effet mesure. Un clic = on rejoue.
---   * les remotes dont on a vu les vrais arguments (espion) = bouton aussi.
--- Les remotes sans effet sont comptes, pas listes.
+-- AUTO-TEST DES REMOTES  (v40.66)
+-- Objectif : decouvrir tout seul quels remotes changent le ciel, la meteo,
+-- l'heure, le decor... et avec QUELS arguments.
 --
--- ANTI-LAG : aucune boucle par frame. Un seul couloir de test, un remote a la
--- fois, 0,7 s d'ecart, diff borne, lumiere restauree apres chaque essai.
+-- REGLE D'OR ANTI-LAG : rien ne tourne dans une boucle par frame.
+--  - 1 seule coroutine de fond, elle rend la main (task.wait) entre chaque
+--    remote teste ; aucun RenderStepped, aucun GetDescendants en rafale.
+--  - le diff d'etat est borne (600 objets max) et fait en pcall.
+--  - l'espion passif ne coute RIEN : un simple ecouteur par remote.
+--  - arret automatique via le bouton STOP ou au shutdown du hub.
 -- ============================================================================
 ;(function()
 	local remotesPage = _G["remotesPage"]
 	if not remotesPage then return end
 
-	local PlayersSvc = (_G._P1 and _G._P1["Players"]) or game:GetService("Players")
-	local WorkspaceSvc = (_G._P1 and _G._P1["Workspace"]) or game:GetService("Workspace")
-	local LightingSvc = (_G._P1 and _G._P1["Lighting"]) or game:GetService("Lighting")
-	local SoundSvc = (_G._P1 and _G._P1["SoundService"]) or game:GetService("SoundService")
-	local RSvc = game:GetService("ReplicatedStorage")
-	local LocalPlayer = (_G._P1 and _G._P1["LocalPlayer"]) or PlayersSvc.LocalPlayer
+	local PlayersSvc = _G._P1 and _G._P1["Players"] or game:GetService("Players")
+	local WorkspaceSvc = _G._P1 and _G._P1["Workspace"] or game:GetService("Workspace")
+	local LightingSvc = _G._P1 and _G._P1["Lighting"] or game:GetService("Lighting")
+	local SoundSvc = _G._P1 and _G._P1["SoundService"] or game:GetService("SoundService")
+	local LocalPlayer = _G._P1 and _G._P1["LocalPlayer"] or PlayersSvc.LocalPlayer
 
 	local unpackFn = table.unpack or unpack
 	local notify = _G.notify
-	local refreshUi
+	local refreshUi -- declare plus bas (utilise par les closures d'au-dessus)
 
 	local CFG = {
-		spyOn = true,
-		autoTargeted = true,
-		autoGap = 0.7,
-		maxAutoTests = 15,
+		spyOn = true,          -- espion passif : ecoute les args reels envoyes par le serveur
+		autoTargeted = true,   -- test automatique cible (noms map/sky/weather/time...)
+		autoGap = 0.7,         -- secondes entre deux tests automatiques
+		maxAutoTests = 15,     -- plafond du mode automatique (jamais 500 tirs d'un coup)
+		fullFuzz = false,      -- mode complet : DESACTIVE par defaut (risque de kick)
 		fullGap = 0.45,
 	}
 
+	-- Mots-cles de remote qui merite un test automatique
 	local AUTO_KEYWORDS = {
 		"sky", "weather", "meteo", "time", "heure", "day", "night", "nuit", "jour",
 		"light", "lighting", "map", "world", "monde", "theme", "ambiance", "ambient",
 		"fog", "color", "colour", "music", "sound", "son", "event", "round", "manche",
 	}
 
+	-- Remotes a NE JAMAIS toucher automatiquement (risque de ban / de casse)
 	local BLOCK_KEYWORDS = {
-		"admin", "ban", "kick", "moderate", "report", "anticheat", "detect",
+		"admin", "ban", "kick", "moderate", "report", "anticheat", "anti", "detect",
 		"owner", "purchase", "buy", "robux", "receipt", "payment", "verify", "login",
-		"password", "token", "session", "captcha", "vote", "warn",
+		"password", "token", "session", "captcha", "vote", "kick", "warn",
 	}
 
 	local JOURNAL = {}
-	local JOURNAL_MAX = 200
-	local LEARNED = {}
-	local RES = {}
+	local JOURNAL_MAX = 260
+	local LEARNED = {}      -- [remote] = { args1, args2, ... } (venant de l'espion)
+	local FOUND = {}        -- [remote] = description de l'effet
 	local remotes = {}
 	local running = false
+	local autoRunning = false
 	local stopped = false
 	local stats = { tested = 0, found = 0, errors = 0 }
 
-	-- ---------------------------------------------------------------- outils
+	-- ---------------------------------------------------------------- journal
 	local function fmtValue(v, depth)
 		depth = depth or 0
 		local t = typeof(v)
 		if t == "string" then
-			if #v > 24 then v = v:sub(1, 24) .. "…" end
+			if #v > 26 then v = v:sub(1, 26) .. "…" end
 			return "\"" .. v .. "\""
 		elseif t == "number" or t == "boolean" or t == "nil" then
 			return tostring(v)
 		elseif t == "Vector3" then
 			return string.format("(%d,%d,%d)", v.X, v.Y, v.Z)
 		elseif t == "Color3" then
-			return string.format("rgb(%d,%d,%d)", v.R * 255, v.G * 255, v.B * 255)
+			return string.format("couleur(%d,%d,%d)", v.R * 255, v.G * 255, v.B * 255)
 		elseif t == "table" then
 			if depth > 1 then return "{…}" end
 			local parts, n = {}, 0
@@ -7072,16 +6977,10 @@ end)()
 	end
 
 	local function fmtArgs(args)
-		if not args or #args == 0 then return "aucun" end
+		if not args or #args == 0 then return "(aucun)" end
 		local out = {}
 		for i = 1, math.min(#args, 5) do out[i] = fmtValue(args[i]) end
 		return table.concat(out, ", ")
-	end
-
-	local function codeLine(remote, args)
-		local parts = {}
-		for i = 1, #args do parts[i] = fmtValue(args[i]) end
-		return string.format("%s:FireServer(%s)", remote.Name, table.concat(parts, ", "))
 	end
 
 	local function log(kind, text)
@@ -7091,10 +6990,9 @@ end)()
 
 	-- ------------------------------------------------------------ etat / diff
 	local SNAP_PROPS = {
-		"ClockTime", "TimeOfDay", "Brightness", "Ambient", "OutdoorAmbient",
-		"FogEnd", "FogStart", "FogColor", "ExposureCompensation", "GlobalShadows",
-		"EnvironmentDiffuseScale", "EnvironmentSpecularScale",
-		"ColorShift_Top", "ColorShift_Bottom",
+		"ClockTime", "Brightness", "Ambient", "OutdoorAmbient", "FogEnd", "FogStart",
+		"FogColor", "ExposureCompensation", "GlobalShadows", "EnvironmentDiffuseScale",
+		"EnvironmentSpecularScale", "ColorShift_Top", "ColorShift_Bottom",
 	}
 	local SKY_PROPS = {
 		"SkyboxBk", "SkyboxDn", "SkyboxFt", "SkyboxLf", "SkyboxRt", "SkyboxUp",
@@ -7148,42 +7046,62 @@ end)()
 		end
 		for name, count in pairs(b.kids) do
 			if (a.kids[name] or 0) ~= count then
-				out[#out + 1] = string.format("%s x%d -> x%d", name, a.kids[name] or 0, count)
+				out[#out + 1] = string.format("Workspace: %s x%d -> x%d", name, a.kids[name] or 0, count)
 			end
 		end
 		for name in pairs(a.kids) do
-			if not b.kids[name] then out[#out + 1] = name .. " disparu" end
+			if not b.kids[name] then
+				out[#out + 1] = string.format("Workspace: %s a disparu", name)
+			end
 		end
-		if a.sounds ~= b.sounds then out[#out + 1] = string.format("sons %d -> %d", a.sounds, b.sounds) end
-		if a.gui ~= b.gui then out[#out + 1] = string.format("interfaces %d -> %d", a.gui, b.gui) end
+		if a.sounds ~= b.sounds then
+			out[#out + 1] = string.format("Sons %d -> %d", a.sounds, b.sounds)
+		end
+		if a.gui ~= b.gui then
+			out[#out + 1] = string.format("Interfaces %d -> %d", a.gui, b.gui)
+		end
 		return out
 	end
 
+	-- Remet la lumiere comme avant le test : l'ecran d'Emerick reste stable.
 	local function restore(snap)
 		pcall(function()
-			for p, v in pairs(snap.lighting) do pcall(function() LightingSvc[p] = v end) end
+			for p, v in pairs(snap.lighting) do
+				pcall(function() LightingSvc[p] = v end)
+			end
 			local sky = LightingSvc:FindFirstChildOfClass("Sky")
 			if sky then
-				for p, v in pairs(snap.sky) do pcall(function() sky[p] = v end) end
+				for p, v in pairs(snap.sky) do
+					pcall(function() sky[p] = v end)
+				end
 			end
 		end)
 	end
 
 	-- --------------------------------------------------------------- remotes
+	local function keyOf(a, b)
+		return a .. "|" .. b
+	end
+
 	local function collectRemotes()
 		local found = {}
 		local n = 0
-		local function harvest(inst)
-			for _, o in ipairs(inst:GetDescendants()) do
-				n = n + 1
-				if n % 400 == 0 then task.wait() end
-				if o:IsA("RemoteEvent") or o:IsA("RemoteFunction") then
-					found[#found + 1] = o
-				end
+		for _, o in ipairs(WorkspaceSvc:GetDescendants()) do
+			n = n + 1
+			if n % 400 == 0 then task.wait() end
+			if o:IsA("RemoteEvent") or o:IsA("RemoteFunction") then
+				found[#found + 1] = o
 			end
 		end
-		harvest(WorkspaceSvc)
-		harvest(RSvc)
+		-- Les remotes vivent souvent aussi dans ReplicatedStorage
+		local rs = game:GetService("ReplicatedStorage")
+		for _, o in ipairs(rs:GetDescendants()) do
+			n = n + 1
+			if n % 400 == 0 then task.wait() end
+			if o:IsA("RemoteEvent") or o:IsA("RemoteFunction") then
+				found[#found + 1] = o
+			end
+		end
 		return found
 	end
 
@@ -7197,15 +7115,6 @@ end)()
 
 	local function isBlocked(name)
 		return matchesAny(name, BLOCK_KEYWORDS)
-	end
-
-	local function entryOf(r)
-		local e = RES[r]
-		if not e then
-			e = { status = "pending", args = nil, effect = nil }
-			RES[r] = e
-		end
-		return e
 	end
 
 	-- ------------------------------------------------------- espion passif
@@ -7224,22 +7133,15 @@ end)()
 							if not CFG.spyOn then return end
 							local args = { ... }
 							LEARNED[r] = LEARNED[r] or {}
-							if #LEARNED[r] < 6 then LEARNED[r][#LEARNED[r] + 1] = args end
-							local e = entryOf(r)
-							if e.status == "pending" or e.status == "none" then
-								e.status = "seen"
-								e.args = args
+							if #LEARNED[r] < 6 then
+								LEARNED[r][#LEARNED[r] + 1] = args
 							end
 							local now = tick()
 							local last = spied["t_" .. tostring(r)]
 							if not last or now - last > 0.5 then
 								spied["t_" .. tostring(r)] = now
-								log("spy", string.format("%s  %s", r.Name, fmtArgs(args)))
-								local lu = spied["u_" .. tostring(r)]
-								if not lu or now - lu > 1.5 then
-									spied["u_" .. tostring(r)] = now
-									if refreshUi then refreshUi() end
-								end
+								log("spy", string.format("[recu] %s  %s", r.Name, fmtArgs(args)))
+								refreshUi()
 							end
 						end)
 					end)
@@ -7247,16 +7149,54 @@ end)()
 				if n % 40 == 0 then task.wait() end
 			end
 			log("info", string.format("Espion actif sur %d remotes (aucun envoi).", #remotes))
-			if refreshUi then refreshUi() end
+			refreshUi()
 		end)
 	end
 
+	-- Hook des envois sortants (facultatif, seulement si l'executeur le permet).
+	-- Permet d'apprendre les VRAIS arguments que le jeu envoie au serveur
+	-- (ex : le remote qui recoit "Night" quand la map passe en nuit).
+	local outgoingHook = false
+	local function tryOutgoingHook()
+		local ok = pcall(function()
+			local gmt = getrawmetatable(game)
+			if not gmt then return end
+			setreadonly(gmt, false)
+			local old = gmt.__namecall
+			gmt.__namecall = newcclosure(function(self, ...)
+				local pack = { n = select("#", ...), ... }
+				local method = getnamecallmethod()
+				if method == "FireServer" or method == "InvokeServer" then
+					pcall(function()
+						local args = {}
+						for i = 1, pack.n do args[i] = pack[i] end
+						LEARNED[self] = LEARNED[self] or {}
+						if #LEARNED[self] < 6 then LEARNED[self][#LEARNED[self] + 1] = args end
+						log("spy", string.format("[envoye] %s  %s", tostring(self.Name), fmtArgs(args)))
+					end)
+				end
+				return old(self, unpackFn(pack, 1, pack.n))
+			end)
+			setreadonly(gmt, true)
+			outgoingHook = true
+		end)
+		if ok and outgoingHook then
+			log("info", "Hook des envois actifs : les vrais arguments du jeu sont enregistres.")
+		else
+			log("warn", "Hook des envois indisponible : on garde l'espion passif.")
+		end
+	end
+
 	-- ----------------------------------------------------- test d'un remote
+	-- Jeux d'arguments candidats. On commence TOUJOURS par ce que le jeu a
+	-- reellement envoye (espion) : c'est le plus susceptible de marcher.
 	local function candidatesFor(remote)
 		local list = {}
 		local learned = LEARNED[remote]
 		if learned then
-			for i = 1, math.min(#learned, 3) do list[#list + 1] = learned[i] end
+			for i = 1, math.min(#learned, 3) do
+				list[#list + 1] = learned[i]
+			end
 		end
 		list[#list + 1] = {}
 		list[#list + 1] = { 0 }
@@ -7265,23 +7205,21 @@ end)()
 		list[#list + 1] = { false }
 		list[#list + 1] = { "day" }
 		list[#list + 1] = { "night" }
+		list[#list + 1] = { 0, 1 }
 		return list
-	end
-
-	local function fire(remote, args)
-		return pcall(function() remote:FireServer(unpackFn(args)) end)
 	end
 
 	local function testOnce(remote, args)
 		if stopped then return nil end
-		if remote:IsA("RemoteFunction") then return nil end
-		local e = entryOf(remote)
+		if remote:IsA("RemoteFunction") then
+			-- InvokeServer peut bloquer indefiniment : on ne teste pas en auto.
+			return nil
+		end
 		local before = snapshot()
-		local ok = fire(remote, args)
+		local ok = pcall(function() remote:FireServer(unpackFn(args)) end)
 		stats.tested = stats.tested + 1
 		if not ok then
 			stats.errors = stats.errors + 1
-			e.status = "error"
 			return nil
 		end
 		task.wait(0.25)
@@ -7290,16 +7228,13 @@ end)()
 		local d = diff(before, after)
 		if #d > 0 then
 			local desc = table.concat(d, " | ")
-			if #desc > 90 then desc = desc:sub(1, 90) .. "…" end
-			e.status = "found"
-			e.args = args
-			e.effect = desc
+			if #desc > 150 then desc = desc:sub(1, 150) .. "…" end
+			FOUND[remote] = desc
 			stats.found = stats.found + 1
-			log("found", string.format("%s(%s) -> %s", remote.Name, fmtArgs(args), desc))
-			if refreshUi then refreshUi() end
+			log("found", string.format("TROUVE %s  args(%s) -> %s", remote.Name, fmtArgs(args), desc))
+			refreshUi()
 			return desc
 		end
-		if e.status ~= "seen" then e.status = "none" end
 		return nil
 	end
 
@@ -7312,53 +7247,54 @@ end)()
 			local ok, err = pcall(function()
 				if #remotes == 0 then
 					log("info", "Analyse des remotes...")
-					if refreshUi then refreshUi() end
+					refreshUi()
 					remotes = collectRemotes()
 				end
 				local targets = {}
 				for _, r in ipairs(remotes) do
-					local e = entryOf(r)
-					if isBlocked(r.Name) then
-						e.status = "blocked"
-					elseif mode == "full" then
-						targets[#targets + 1] = r
-					elseif matchesAny(r.Name, AUTO_KEYWORDS) then
-						targets[#targets + 1] = r
+					if not isBlocked(r.Name) then
+						if mode == "full" then
+							targets[#targets + 1] = r
+						elseif matchesAny(r.Name, AUTO_KEYWORDS) then
+							targets[#targets + 1] = r
+						end
 					end
 				end
 				if #targets == 0 then
-					log("info", "Aucun remote cible. Utilise le mode complet.")
-					if refreshUi then refreshUi() end
+					log("info", "Aucun remote cible pour ce mode (essaie le mode complet).")
+					refreshUi()
 					return
 				end
 				local cap = (mode == "full") and #targets or math.min(#targets, CFG.maxAutoTests)
-				log("info", string.format("Test %s : %d remotes.", mode == "full" and "COMPLET" or "cible", cap))
-				if refreshUi then refreshUi() end
+				log("info", string.format("Test %s : %d remotes a essayer.", mode == "full" and "COMPLET" or "cible", cap))
+				refreshUi()
 				for i = 1, math.min(cap, #targets) do
 					if stopped or _G._agoraRunning == false then
 						log("warn", "Test interrompu.")
 						break
 					end
 					local r = targets[i]
-					local e = entryOf(r)
 					if r.Parent ~= nil then
+						-- 2 arguments candidats max par remote en mode cible, tous en complet
 						local cands = candidatesFor(r)
 						local maxC = (mode == "full") and #cands or math.min(#cands, 2)
 						for c = 1, maxC do
-							if stopped or e.status == "found" then break end
+							if stopped or FOUND[r] then break end
 							testOnce(r, cands[c])
 							task.wait(mode == "full" and CFG.fullGap or CFG.autoGap)
 						end
 						log("info", string.format("%d/%d  %s", i, cap, r.Name))
 					end
-					if refreshUi then refreshUi() end
+					refreshUi()
 					task.wait(0.05)
 				end
-				log("info", string.format("Termine : %d essais, %d effets.", stats.tested, stats.found))
+				log("info", string.format("Termine : %d essais, %d effets trouves, %d erreurs.", stats.tested, stats.found, stats.errors))
 			end)
-			if not ok then log("warn", "Erreur du moteur : " .. tostring(err)) end
+			if not ok then
+				log("warn", "Erreur du moteur : " .. tostring(err))
+			end
 			running = false
-			if refreshUi then refreshUi() end
+			refreshUi()
 		end)
 	end
 
@@ -7381,27 +7317,27 @@ end)()
 	autoBtn.BorderSizePixel = 0
 	autoBtn.ZIndex = 40
 	autoBtn.Parent = remotesPage
-	createCorner(autoBtn, 5)
+	if _G.createCorner then _G.createCorner(autoBtn, 5) end
 
 	local win = Instance.new("Frame")
 	win.Name = "AutoTestWindow"
-	win.Size = UDim2.new(0, 396, 0, 400)
-	win.Position = UDim2.new(0, 50, 0, 60)
+	win.Size = UDim2.new(0, 372, 0, 322)
+	win.Position = UDim2.new(0, 60, 0, 70)
 	win.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 	win.BorderSizePixel = 0
 	win.Visible = false
 	win.ZIndex = 60
 	win.Parent = guiParent()
-	createCorner(win, 10)
-	createStroke(win, Color3.fromRGB(60, 90, 160), 1)
+	if _G.createCorner then _G.createCorner(win, 10) end
+	if _G.createStroke then _G.createStroke(win, Color3.fromRGB(60, 90, 160), 1) end
 
 	local wTitle = Instance.new("TextLabel")
-	wTitle.Size = UDim2.new(1, -40, 0, 24)
+	wTitle.Size = UDim2.new(1, -80, 0, 26)
 	wTitle.Position = UDim2.new(0, 10, 0, 4)
 	wTitle.BackgroundTransparency = 1
-	wTitle.Text = "Remotes utilisables - un clic pour rejouer"
+	wTitle.Text = "Auto-test des remotes (fond, sans lag)"
 	wTitle.Font = Enum.Font.GothamBold
-	wTitle.TextSize = 11
+	wTitle.TextSize = 12
 	wTitle.TextColor3 = Color3.fromRGB(225, 225, 235)
 	wTitle.TextXAlignment = Enum.TextXAlignment.Left
 	wTitle.ZIndex = 61
@@ -7418,12 +7354,12 @@ end)()
 	closeBtn.BorderSizePixel = 0
 	closeBtn.ZIndex = 61
 	closeBtn.Parent = win
-	createCorner(closeBtn, 5)
+	if _G.createCorner then _G.createCorner(closeBtn, 5) end
 	closeBtn.MouseButton1Click:Connect(function() win.Visible = false end)
 
 	local statusLbl = Instance.new("TextLabel")
 	statusLbl.Size = UDim2.new(1, -20, 0, 14)
-	statusLbl.Position = UDim2.new(0, 10, 0, 28)
+	statusLbl.Position = UDim2.new(0, 10, 0, 30)
 	statusLbl.BackgroundTransparency = 1
 	statusLbl.Text = "en attente"
 	statusLbl.Font = Enum.Font.Gotham
@@ -7436,8 +7372,8 @@ end)()
 
 	local function mkBtn(txt, x, w, col)
 		local b = Instance.new("TextButton")
-		b.Size = UDim2.new(0, w, 0, 22)
-		b.Position = UDim2.new(0, x, 0, 44)
+		b.Size = UDim2.new(0, w, 0, 24)
+		b.Position = UDim2.new(0, x, 0, 46)
 		b.BackgroundColor3 = col
 		b.Text = txt
 		b.Font = Enum.Font.GothamSemibold
@@ -7446,246 +7382,104 @@ end)()
 		b.BorderSizePixel = 0
 		b.ZIndex = 61
 		b.Parent = win
-		createCorner(b, 5)
+		if _G.createCorner then _G.createCorner(b, 5) end
 		return b
 	end
 
-	local runBtn = mkBtn("Test cible", 10, 80, Color3.fromRGB(55, 90, 180))
-	local fullBtn = mkBtn("Complet", 95, 66, Color3.fromRGB(120, 70, 40))
-	local stopBtn = mkBtn("STOP", 166, 50, Color3.fromRGB(140, 50, 50))
-	local copyBtn = mkBtn("Copier", 222, 58, Color3.fromRGB(60, 70, 100))
-	local saveBtn = mkBtn("Sauver", 286, 56, Color3.fromRGB(60, 110, 80))
-	local detBtn = mkBtn("?", 348, 22, Color3.fromRGB(45, 45, 58))
+	local runBtn = mkBtn("Test cible", 10, 84, Color3.fromRGB(55, 90, 180))
+	local fullBtn = mkBtn("Complet", 100, 74, Color3.fromRGB(120, 70, 40))
+	local stopBtn = mkBtn("STOP", 180, 54, Color3.fromRGB(140, 50, 50))
+	local copyBtn = mkBtn("Copier", 240, 58, Color3.fromRGB(60, 70, 100))
+	local saveBtn = mkBtn("Sauver", 302, 60, Color3.fromRGB(60, 110, 80))
 
-	local list = Instance.new("ScrollingFrame")
-	list.Size = UDim2.new(1, -20, 1, -120)
-	list.Position = UDim2.new(0, 10, 0, 72)
-	list.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
-	list.BorderSizePixel = 0
-	list.ScrollBarThickness = 4
-	list.CanvasSize = UDim2.new(0, 0, 0, 0)
-	list.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	list.ZIndex = 61
-	list.Parent = win
-	createCorner(list, 6)
+	local warnLbl = Instance.new("TextLabel")
+	warnLbl.Size = UDim2.new(1, -20, 0, 12)
+	warnLbl.Position = UDim2.new(0, 10, 0, 74)
+	warnLbl.BackgroundTransparency = 1
+	warnLbl.Text = "Complet = risque de kick / de casser la partie. Cible = sans danger."
+	warnLbl.Font = Enum.Font.Gotham
+	warnLbl.TextSize = 9
+	warnLbl.TextColor3 = Color3.fromRGB(200, 150, 80)
+	warnLbl.TextXAlignment = Enum.TextXAlignment.Left
+	warnLbl.TextTruncate = Enum.TextTruncate.AtEnd
+	warnLbl.ZIndex = 61
+	warnLbl.Parent = win
 
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 3)
-	layout.Parent = list
-	local pad = Instance.new("UIPadding")
-	pad.PaddingTop = UDim.new(0, 5)
-	pad.PaddingLeft = UDim.new(0, 5)
-	pad.PaddingRight = UDim.new(0, 5)
-	pad.Parent = list
+	local jList = Instance.new("ScrollingFrame")
+	jList.Size = UDim2.new(1, -20, 1, -132)
+	jList.Position = UDim2.new(0, 10, 0, 92)
+	jList.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
+	jList.BorderSizePixel = 0
+	jList.ScrollBarThickness = 4
+	jList.CanvasSize = UDim2.new(0, 0, 0, 0)
+	jList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	jList.ZIndex = 61
+	jList.Parent = win
+	if _G.createCorner then _G.createCorner(jList, 6) end
 
-	local detFrame = Instance.new("ScrollingFrame")
-	detFrame.Size = UDim2.new(1, -20, 0, 90)
-	detFrame.Position = UDim2.new(0, 10, 1, -100)
-	detFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
-	detFrame.BorderSizePixel = 0
-	detFrame.ScrollBarThickness = 3
-	detFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-	detFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	detFrame.Visible = false
-	detFrame.ZIndex = 62
-	detFrame.Parent = win
-	createCorner(detFrame, 5)
-	local dl = Instance.new("UIListLayout")
-	dl.Padding = UDim.new(0, 1)
-	dl.Parent = detFrame
+	local jLayout = Instance.new("UIListLayout")
+	jLayout.Padding = UDim.new(0, 2)
+	jLayout.Parent = jList
 
-	local RANK = { found = 1, seen = 2, pending = 3, none = 4, error = 5, blocked = 6 }
-	local COLOR = {
-		found = Color3.fromRGB(60, 150, 100),
-		seen = Color3.fromRGB(55, 80, 140),
-		pending = Color3.fromRGB(45, 45, 55),
-		none = Color3.fromRGB(38, 38, 46),
-		error = Color3.fromRGB(90, 55, 55),
-		blocked = Color3.fromRGB(52, 44, 40),
+	local jPad = Instance.new("UIPadding")
+	jPad.PaddingTop = UDim.new(0, 5)
+	jPad.PaddingLeft = UDim.new(0, 6)
+	jPad.PaddingRight = UDim.new(0, 6)
+	jPad.Parent = jList
+
+	local KIND_COLOR = {
+		info = Color3.fromRGB(150, 150, 165),
+		spy = Color3.fromRGB(120, 160, 220),
+		found = Color3.fromRGB(90, 220, 140),
+		warn = Color3.fromRGB(240, 170, 70),
 	}
 
+	local lastShown = 0
 	refreshUi = function()
 		if statusLbl then
-			statusLbl.Text = string.format("%d remotes | %d utilisables | %d essais%s",
-				#remotes, stats.found, stats.tested, running and "  [en cours]" or "")
+			statusLbl.Text = string.format("%d remotes | %d essais | %d effets | %d erreurs%s",
+				#remotes, stats.tested, stats.found, stats.errors, running and "  [en cours]" or "")
 		end
-		for _, c in ipairs(list:GetChildren()) do
-			if c:IsA("TextButton") then c:Destroy() end
+		if #JOURNAL == lastShown then return end
+		lastShown = #JOURNAL
+		for _, c in ipairs(jList:GetChildren()) do
+			if c:IsA("TextLabel") then c:Destroy() end
 		end
-
-		local shown = {}
-		for r, e in pairs(RES) do
-			if r.Parent ~= nil and (e.status == "found" or e.status == "seen" or e.status == "pending") then
-				shown[#shown + 1] = r
-			end
+		local start = math.max(1, #JOURNAL - 60)
+		for i = start, #JOURNAL do
+			local e = JOURNAL[i]
+			local l = Instance.new("TextLabel")
+			l.Size = UDim2.new(1, -4, 0, 12)
+			l.BackgroundTransparency = 1
+			l.Text = e.text
+			l.Font = Enum.Font.Code
+			l.TextSize = 9
+			l.TextColor3 = KIND_COLOR[e.kind] or KIND_COLOR.info
+			l.TextXAlignment = Enum.TextXAlignment.Left
+			l.TextTruncate = Enum.TextTruncate.AtEnd
+			l.ZIndex = 62
+			l.Parent = jList
 		end
-		table.sort(shown, function(a, b)
-			local ra, rb = RANK[RES[a].status] or 9, RANK[RES[b].status] or 9
-			if ra ~= rb then return ra < rb end
-			return a.Name < b.Name
+		task.defer(function()
+			pcall(function() jList.CanvasPosition = Vector2.new(0, math.max(0, jLayout.AbsoluteContentSize.Y - jList.AbsoluteSize.Y + 10)) end)
 		end)
-		local limited = math.min(#shown, 40)
-		for i = 1, limited do
-			local r = shown[i]
-			local e = RES[r]
-			local card = Instance.new("TextButton")
-			card.Size = UDim2.new(1, -4, 0, 40)
-			card.BackgroundColor3 = COLOR[e.status] or COLOR.pending
-			card.Text = ""
-			card.AutoButtonColor = true
-			card.BorderSizePixel = 0
-			card.ZIndex = 62
-			card.Parent = list
-			createCorner(card, 6)
-
-			local nameLbl = Instance.new("TextLabel")
-			nameLbl.Size = UDim2.new(1, -110, 0, 14)
-			nameLbl.Position = UDim2.new(0, 8, 0, 3)
-			nameLbl.BackgroundTransparency = 1
-			nameLbl.Text = (e.status == "found" and "TOUCHABLE  " or (e.status == "seen" and "ARGS VUS  " or "EN ATTENTE  ")) .. r.Name
-			nameLbl.Font = Enum.Font.GothamBold
-			nameLbl.TextSize = 10
-			nameLbl.TextColor3 = (e.status == "pending") and Color3.fromRGB(175, 175, 195) or Color3.new(1, 1, 1)
-			nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-			nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
-			nameLbl.ZIndex = 63
-			nameLbl.Parent = card
-
-			local subLbl = Instance.new("TextLabel")
-			subLbl.Size = UDim2.new(1, -110, 0, 20)
-			subLbl.Position = UDim2.new(0, 8, 0, 17)
-			subLbl.BackgroundTransparency = 1
-			subLbl.Text = (e.args and ("args(" .. fmtArgs(e.args) .. ")") or "args inconnus") ..
-				(e.effect and ("   ->  " .. e.effect) or "")
-			subLbl.Font = Enum.Font.Code
-			subLbl.TextSize = 8
-			subLbl.TextColor3 = Color3.fromRGB(215, 225, 245)
-			subLbl.TextXAlignment = Enum.TextXAlignment.Left
-			subLbl.TextTruncate = Enum.TextTruncate.AtEnd
-			subLbl.ZIndex = 63
-			subLbl.Parent = card
-
-			local playBtn = Instance.new("TextButton")
-			playBtn.Size = UDim2.new(0, 66, 0, 24)
-			playBtn.Position = UDim2.new(1, -72, 0, 8)
-			playBtn.BackgroundColor3 = Color3.fromRGB(20, 30, 45)
-			playBtn.Text = e.args and "REJOUER" or (r:IsA("RemoteFunction") and "APPELER" or "TESTER")
-			playBtn.Font = Enum.Font.GothamBold
-			playBtn.TextSize = 9
-			playBtn.TextColor3 = Color3.fromRGB(180, 220, 255)
-			playBtn.BorderSizePixel = 0
-			playBtn.ZIndex = 64
-			playBtn.Parent = card
-			createCorner(playBtn, 5)
-
-			local argsForClick = e.args
-			local function doIt()
-				if r.Parent == nil then return end
-				if r:IsA("RemoteFunction") and not argsForClick then
-					task.spawn(function()
-						local ok, res = pcall(function() return r:InvokeServer() end)
-						log(ok and "found" or "warn", string.format("%s -> %s", r.Name,
-							ok and ("retourne " .. fmtValue(res)) or "erreur a l'appel"))
-						local e2 = entryOf(r)
-						if ok then
-							e2.status = "found"
-							e2.args = {}
-							e2.effect = "retourne " .. fmtValue(res)
-							stats.found = stats.found + 1
-						end
-						if refreshUi then refreshUi() end
-					end)
-					return
-				end
-				if argsForClick then
-					fire(r, argsForClick)
-					if notify then notify("Rejoue : " .. r.Name, Color3.fromRGB(120, 190, 255)) end
-				else
-					local cands = candidatesFor(r)
-					for _, c in ipairs(cands) do
-						if testOnce(r, c) then break end
-						task.wait(0.35)
-					end
-					if refreshUi then refreshUi() end
-				end
-			end
-			card.MouseButton1Click:Connect(doIt)
-			playBtn.MouseButton1Click:Connect(doIt)
-		end
-
-		if #shown > limited then
-			local more = Instance.new("TextLabel")
-			more.Size = UDim2.new(1, -4, 0, 16)
-			more.BackgroundTransparency = 1
-			more.Text = string.format("+ %d autres remotes en attente (lance le test complet)", #shown - limited)
-			more.Font = Enum.Font.Gotham
-			more.TextSize = 9
-			more.TextColor3 = Color3.fromRGB(140, 140, 160)
-			more.TextXAlignment = Enum.TextXAlignment.Left
-			more.ZIndex = 62
-			more.Parent = list
-		end
-
-		if detFrame.Visible then
-			for _, c in ipairs(detFrame:GetChildren()) do
-				if c:IsA("TextLabel") then c:Destroy() end
-			end
-			local start = math.max(1, #JOURNAL - 80)
-			for i = start, #JOURNAL do
-				local l = Instance.new("TextLabel")
-				l.Size = UDim2.new(1, -6, 0, 11)
-				l.BackgroundTransparency = 1
-				l.Text = JOURNAL[i].text
-				l.Font = Enum.Font.Code
-				l.TextSize = 8
-				l.TextColor3 = Color3.fromRGB(150, 160, 180)
-				l.TextXAlignment = Enum.TextXAlignment.Left
-				l.TextTruncate = Enum.TextTruncate.AtEnd
-				l.ZIndex = 63
-				l.Parent = detFrame
-			end
-		end
-	end
-
-	local function buildTextList()
-		local lines = { "REMOTES UTILISABLES" }
-		for r, e in pairs(RES) do
-			if r.Parent ~= nil and e.status == "found" and e.args then
-				lines[#lines + 1] = string.format("%s  |  args(%s)  |  %s  |  %s",
-					r.Name, fmtArgs(e.args), tostring(e.effect), codeLine(r, e.args))
-			end
-		end
-		lines[#lines + 1] = ""
-		lines[#lines + 1] = "ARGS OBSERVES"
-		for r, e in pairs(RES) do
-			if r.Parent ~= nil and e.status == "seen" and e.args then
-				lines[#lines + 1] = string.format("%s  |  args(%s)  |  %s", r.Name, fmtArgs(e.args), codeLine(r, e.args))
-			end
-		end
-		return table.concat(lines, "\n")
 	end
 
 	autoBtn.MouseButton1Click:Connect(function()
 		win.Visible = not win.Visible
-		if win.Visible and refreshUi then refreshUi() end
+		if win.Visible then refreshUi() end
 	end)
 
 	runBtn.MouseButton1Click:Connect(function() runPlan("targeted") end)
 	fullBtn.MouseButton1Click:Connect(function()
-		if not fullBtn:GetAttribute("confirm") then
-			fullBtn:SetAttribute("confirm", true)
-			fullBtn.Text = "Sur ?"
-			if notify then notify("Re-clique pour le mode complet (risque de kick)", Color3.fromRGB(240, 170, 70)) end
-			task.delay(4, function()
-				pcall(function()
-					fullBtn:SetAttribute("confirm", false)
-					fullBtn.Text = "Complet"
-				end)
-			end)
+		if not CFG.fullFuzz then
+			-- double clic de confirmation : premier clic = avertissement
+			CFG.fullFuzz = true
+			if notify then notify("Re-clique pour confirmer le mode complet (risque de kick)", Color3.fromRGB(240, 170, 70)) end
+			task.delay(4, function() CFG.fullFuzz = false end)
 			return
 		end
-		fullBtn:SetAttribute("confirm", false)
-		fullBtn.Text = "Complet"
+		CFG.fullFuzz = false
 		runPlan("full")
 	end)
 	stopBtn.MouseButton1Click:Connect(function()
@@ -7693,57 +7487,48 @@ end)()
 		if notify then notify("Auto-test arrete", Color3.fromRGB(240, 120, 120)) end
 	end)
 	copyBtn.MouseButton1Click:Connect(function()
-		_G.agoraCopyText(buildTextList(), "Liste copiee")
+		local lines = {}
+		for _, e in ipairs(JOURNAL) do lines[#lines + 1] = e.text end
+		pcall(function()
+			if typeof(setclipboard) == "function" then setclipboard(table.concat(lines, "\n")) end
+		end)
 	end)
 	saveBtn.MouseButton1Click:Connect(function()
-		local txt = buildTextList()
-		local done = false
+		local lines = {}
+		for _, e in ipairs(JOURNAL) do lines[#lines + 1] = e.text end
 		pcall(function()
-			if typeof(writefile) == "function" then
-				writefile("agora_remotes.txt", txt)
-				done = true
-			end
+			if typeof(writefile) == "function" then writefile("agora_autotest_remotes.txt", table.concat(lines, "\n")) end
 		end)
-		if notify then
-			notify(done and "Enregistre dans agora_remotes.txt" or "Pas de writefile",
-				done and Color3.fromRGB(90, 200, 140) or Color3.fromRGB(240, 170, 70))
-		end
-	end)
-	detBtn.MouseButton1Click:Connect(function()
-		detFrame.Visible = not detFrame.Visible
-		if refreshUi then refreshUi() end
 	end)
 
+	-- Deplacement de la fenetre (drag simple, sans boucle)
 	local dragging, dragStart, startPos = false, nil, nil
 	wTitle.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = true
 			dragStart = i.Position
 			startPos = win.Position
 		end
 	end)
 	game:GetService("UserInputService").InputChanged:Connect(function(i)
-		if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+		if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
 			local d = i.Position - dragStart
 			win.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
 		end
 	end)
 	game:GetService("UserInputService").InputEnded:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
-		end
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
 	end)
 
+	-- --------------------------------------------------------------- demarrage
+	-- Tout demarre en tache de fond, apres le chargement : aucun impact sur
+	-- l'ouverture du hub ni sur les premieres secondes de jeu.
 	task.delay(1.5, function()
 		task.spawn(function()
 			local ok = pcall(function()
 				remotes = collectRemotes()
-				for _, r in ipairs(remotes) do
-					local e = entryOf(r)
-					if isBlocked(r.Name) then e.status = "blocked" end
-				end
 				log("info", string.format("%d remotes detectes au demarrage.", #remotes))
-				if refreshUi then refreshUi() end
+				refreshUi()
 			end)
 			if ok then
 				startSpy()
@@ -7758,7 +7543,7 @@ end)()
 	_G._agoraAutoRemotes = {
 		cfg = CFG,
 		journal = JOURNAL,
-		res = RES,
+		found = FOUND,
 		learned = LEARNED,
 		run = runPlan,
 		stop = function() stopped = true end,
