@@ -21,26 +21,6 @@ local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local SoundService = game:GetService("SoundService")
 
--- =============================================================
--- VERROU BANC D'ESSAI (OPTIONNEL - desactive par defaut)
--- Par defaut le panel demarre partout : Studio, jeu publie et
--- executeur externe (Solara, etc.). Pour le restreindre volontairement,
--- mettre AVANT le loader :  _G.AGORA_STRICT_STUDIO = true
--- et/ou lister des PlaceId dans la table ci-dessous.
--- =============================================================
-_G.AGORA_PLACES_AUTORISEES = _G.AGORA_PLACES_AUTORISEES or {
-	-- [123456789] = true,  -- ajouter ici le PlaceId d'une place de test publiee
-}
-_G.AGORA_STRICT_STUDIO = (_G.AGORA_STRICT_STUDIO == true)
-if _G.AGORA_STRICT_STUDIO == true and not RunService:IsStudio() and not _G.AGORA_PLACES_AUTORISEES[game.PlaceId] then
-	warn("[Agora] Banc d'essai reserve a Roblox Studio et aux places autorisees (PlaceId " .. tostring(game.PlaceId) .. " refuse).")
-	return
-end
-
--- Version UNIQUE du hub : lue par la page Home ET par le systeme de mise a jour.
--- A chaque publication : monter ce numero ET AgoraUniverselleHub_version.lua ensemble.
-_G.AGORA_VERSION = "v40.69"
-
 -- Helper multi-fallback pour verifier si un joueur peut chatter (client-only, pas d'acces serveur)
 _G._resolveCanChat = function(target, callback)
 	task.spawn(function()
@@ -214,10 +194,16 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	char:WaitForChild("Humanoid")
 	task.wait(0.2)
 	updateCharacter()
-	-- La remise a zero fly/noclip/ESP est branchee plus bas (apres la declaration
-	-- de flyState, noclipState, espState, globalESPEnabled). Ici ces variables
-	-- n'existent pas encore : les utiliser ici plantait a chaque respawn.
-	if _G._agoraOnRespawn then pcall(_G._agoraOnRespawn) end
+	if flyState.flying then
+		stopFly()
+	end
+	if noclipState.enabled then
+		noclipState.enabled = false
+		refreshNoClipSwitch()
+	end
+	if espState.enabled or globalESPEnabled then
+		refreshESP()
+	end
 end)
 
 local function getDeviceType()
@@ -699,11 +685,9 @@ local protectionsPage = createTab("Protections")
 
 
 ;(function() -- ============= HOME PAGE =============
-	local CURRENT_VERSION = _G.AGORA_VERSION
+	local CURRENT_VERSION = "v39.51"
 	
 	local changelogEntries = {
-		"v40.69: verrou Studio rendu optionnel (_G.AGORA_STRICT_STUDIO) - de nouveau utilisable dans Solara",
-		"v40.68: Verrou Studio + fix respawn (fly/noclip/ESP) + popup MAJ en boucle",
 		"v39.51: Emojis ASCII + master switch Protections",
 		"v39.43: Enrichissement joueurs (connexion, badges)",
 		"v39.42: Fix fly + noclip + ESP + aimbot",
@@ -783,7 +767,7 @@ local protectionsPage = createTab("Protections")
 	
 	local function fetchStats()
 		task.spawn(function()
-			local url = "https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle?action=launch&user=" .. (LocalPlayer and LocalPlayer.Name or "Inconnu") .. "&uid=" .. (LocalPlayer and tostring(LocalPlayer.UserId) or "0") .. "&_=" .. math.random(100000,999999)
+			local url = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?action=launch&user=" .. (LocalPlayer and LocalPlayer.Name or "Inconnu") .. "&uid=" .. (LocalPlayer and tostring(LocalPlayer.UserId) or "0") .. "&_=" .. math.random(100000,999999)
 			local data = httpGet(url)
 			if data then
 				local ok, json = pcall(function() return HttpService:JSONDecode(data) end)
@@ -4465,7 +4449,7 @@ local platformLabel = Instance.new("TextLabel")
 platformLabel.Size = UDim2.new(1, -16, 0, 30)
 platformLabel.Position = UDim2.new(0, 8, 0, 328)
 platformLabel.BackgroundTransparency = 1
-platformLabel.Text = "Plateforme : F10  |  + monter  |  - descendre"
+platformLabel.Text = "Plateforme: F10 (+=monter = monter - descendre)"
 platformLabel.Font = Enum.Font.Gotham
 platformLabel.TextSize = 11
 platformLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
@@ -4640,21 +4624,6 @@ local globalESPSwitch = createSwitch(localPage, "ESP Global", 404, function(on)
 		clearESP()
 	end
 end)
-
--- Remise a zero au respawn (appelee par le CharacterAdded du haut du fichier).
--- Placee ICI car toutes les variables utilisees sont declarees au-dessus.
-_G._agoraOnRespawn = function()
-	if flyState.flying then
-		stopFly()
-	end
-	if noclipState.enabled then
-		noclipState.enabled = false
-		refreshNoClipSwitch()
-	end
-	if espState.enabled or globalESPEnabled then
-		refreshESP()
-	end
-end
 
 
 -- ============= AUTO CLICKER =============
@@ -9055,12 +9024,12 @@ end)(pages, switchTab)
 -- =============================================================
 ;(function(_screenGui, _shutdownPanel, _HttpService, _LocalPlayer, _createCorner, _createStroke)
 	-- Version locale (celle du hub qui tourne actuellement)
-	local CURRENT_VERSION = _G.AGORA_VERSION
+	local CURRENT_VERSION = "v40.64"
 
 	-- Version courante (fichier qui retourne: return "v40.64")
-	local VERSION_URL = "https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_version.lua&nocache=" .. tick()
+	local VERSION_URL = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub_version.lua&nocache=" .. tick()
 	-- URL de recharge du hub complet
-	local HUB_URL = "https://hlxbqtayotwdtspkrlol.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub.lua&nocache=" .. tick()
+	local HUB_URL = "https://sagefoquydjxkgjyhqrm.supabase.co/functions/v1/agora-universelle?file=AgoraUniverselleHub.lua&nocache=" .. tick()
 	local LOGO_ID = "rbxassetid://73314612607499"  -- même logo que la top bar
 
 	-- Compare "vX.Y" avec "vW.Z", true si la première est plus récente
